@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Zimmer Bergstein und Zimmer Reintal auf dem Hof Kruckenhaus in Breitenbach am Inn, Tirol. Zwei gemütliche Doppelzimmer im 1. OG mit gemeinsamer Küche und Bad." />
+  <meta name="keywords" content="Zimmer Tirol, Übernachtung Breitenbach am Inn, Zimmer Kruckenhaus, Bergstein, Reintal, Urlaub Tirol" />
+  <meta name="robots" content="index, follow" />
+
+  <meta property="og:title" content="Zimmer Bergstein &amp; Reintal – Kruckenhaus Tirol" />
+  <meta property="og:description" content="Zwei gemütliche Zimmer im 1. OG des Bauernhauses mit gemeinsamer Küche und Bad. Ideal für Paare oder Alleinreisende." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.kruckenhaus.at/zimmer.html" />
+
+  <link rel="canonical" href="https://www.kruckenhaus.at/zimmer.html" />
+  <title>Zimmer Bergstein &amp; Reintal – Kruckenhaus Tirol</title>
+  <link rel="stylesheet" href="css/style.css" />
+
+  <style>
+    /* Zimmer-spezifische Styles */
+    .zimmer-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--spacing-md);
+    }
+
+    .zimmer-card {
+      background-color: var(--color-cream);
+      border-radius: var(--border-radius-lg);
+      overflow: hidden;
+      box-shadow: var(--shadow-md);
+      transition: transform var(--transition-med), box-shadow var(--transition-med);
+    }
+
+    .zimmer-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .zimmer-card-image {
+      aspect-ratio: 16/9;
+      background: linear-gradient(135deg, var(--color-beige), #d4b896);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      color: var(--color-dark);
+      text-align: center;
+      padding: 1rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .zimmer-card-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      position: absolute;
+      inset: 0;
+      filter: sepia(10%) saturate(1.05);
+    }
+
+    .zimmer-card-image .img-placeholder {
+      min-height: auto;
+      background: none;
+      position: relative;
+      z-index: 1;
+    }
+
+    .zimmer-card-body {
+      padding: var(--spacing-md);
+    }
+
+    .zimmer-card-body h3 {
+      font-size: 1.6rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .zimmer-badge {
+      display: inline-block;
+      background-color: var(--color-primary);
+      color: var(--color-white);
+      padding: 0.2rem 0.75rem;
+      border-radius: 20px;
+      font-size: 0.8rem;
+      font-weight: 700;
+      margin-bottom: var(--spacing-sm);
+    }
+
+    .zimmer-badge.green {
+      background-color: var(--color-green);
+    }
+
+    .zimmer-preis {
+      display: flex;
+      align-items: baseline;
+      gap: 0.4rem;
+      margin: var(--spacing-sm) 0;
+      padding: var(--spacing-sm);
+      background: linear-gradient(135deg, rgba(139,94,60,0.07), rgba(92,122,78,0.07));
+      border-radius: var(--border-radius);
+      border-left: 3px solid var(--color-primary);
+    }
+
+    .zimmer-preis .preis-zahl {
+      font-family: var(--font-heading);
+      font-size: 2rem;
+      color: var(--color-primary);
+      font-weight: 700;
+      line-height: 1;
+    }
+
+    .zimmer-preis .preis-info {
+      font-size: 0.85rem;
+      color: var(--color-text);
+    }
+
+    .zimmer-features {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin-top: var(--spacing-sm);
+    }
+
+    .zimmer-feature {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.9rem;
+    }
+
+    .zimmer-feature-icon {
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    /* Gemeinschaftsbereich */
+    .shared-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--spacing-sm);
+    }
+
+    .shared-item {
+      display: flex;
+      align-items: flex-start;
+      gap: var(--spacing-sm);
+      background-color: var(--color-white);
+      border-radius: var(--border-radius-lg);
+      padding: var(--spacing-sm) var(--spacing-md);
+      box-shadow: var(--shadow-sm);
+      border-left: 4px solid var(--color-green);
+    }
+
+    .shared-icon {
+      font-size: 2.2rem;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+
+    .shared-item h4 {
+      margin-bottom: 0.25rem;
+    }
+
+    .shared-item ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 0.2rem;
+    }
+
+    .shared-item ul li {
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .shared-item ul li::before {
+      content: '✓';
+      color: var(--color-green);
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+
+    /* Kombinationsbuchung */
+    .kombi-box {
+      background: linear-gradient(135deg, var(--color-dark), #3a2010);
+      border-radius: var(--border-radius-lg);
+      padding: var(--spacing-md);
+      color: var(--color-beige);
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: var(--spacing-sm);
+      align-items: center;
+    }
+
+    .kombi-box h3 {
+      color: var(--color-beige);
+    }
+
+    .kombi-box p {
+      color: rgba(253,250,247,0.85);
+      margin: 0;
+    }
+
+    @media (min-width: 768px) {
+      .zimmer-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .shared-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+      .kombi-box {
+        grid-template-columns: 1fr auto;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header scrolled" role="banner">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo" aria-label="Kruckenhaus – Zur Startseite">
+        Kruckenhaus
+        <span>Hof &amp; Ferienwohnung</span>
+      </a>
+      <nav class="nav-menu" role="navigation" aria-label="Hauptnavigation">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
+        <a href="zimmer.html" class="nav-link active">Zimmer</a>
+        <a href="lage.html" class="nav-link">Lage</a>
+        <a href="preise.html" class="nav-link">Preise</a>
+        <a href="kontakt.html" class="nav-link">Kontakt</a>
+      </nav>
+      <button class="hamburger" aria-label="Menü öffnen" aria-expanded="false" aria-controls="nav-overlay">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="nav-overlay" id="nav-overlay" role="navigation" aria-label="Mobile Navigation">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
+    <a href="zimmer.html" class="nav-link active">Zimmer</a>
+    <a href="lage.html" class="nav-link">Lage</a>
+    <a href="preise.html" class="nav-link">Preise</a>
+    <a href="kontakt.html" class="nav-link">Kontakt</a>
+    <div class="lang-switcher">🇩🇪 DE | 🇬🇧 EN</div>
+  </nav>
+
+  <main id="main-content">
+
+    <!-- PAGE HERO -->
+    <section class="page-hero" aria-label="Zimmer Bergstein und Reintal">
+      <div class="page-hero-content container">
+        <nav class="breadcrumb" aria-label="Brotkrümelpfad">
+          <a href="index.html">Home</a>
+          <span class="breadcrumb-sep" aria-hidden="true">›</span>
+          <span aria-current="page">Zimmer</span>
+        </nav>
+        <span class="section-label" style="color: var(--color-beige);">1. Obergeschoss</span>
+        <h1>Zimmer Bergstein &amp; Reintal</h1>
+        <p>Zwei gemütliche Zimmer mit Tiroler Charme im Herzen unseres Bauernhauses</p>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         EINLEITUNG
+         ======================================================== -->
+    <section class="section" aria-label="Über die Zimmer">
+      <div class="container">
+        <div class="intro-grid">
+          <div class="intro-image slide-left">
+            <!-- Foto: images/zimmer-eingang.jpg -->
+            <div class="img-placeholder">
+              <span>🏠</span>
+              <strong>1. Obergeschoss</strong>
+              <small>Foto: zimmer-eingang.jpg einfügen</small>
+            </div>
+          </div>
+          <div class="slide-right">
+            <span class="section-label">Ruhig, gemütlich, authentisch</span>
+            <h2>Übernachten im Bauernhaus</h2>
+            <div class="divider" style="margin-left: 0;"></div>
+            <p>
+              Im ersten Obergeschoss unseres alten Tiroler Bauernhauses befinden sich zwei
+              liebevoll eingerichtete Zimmer – das <strong>Zimmer Bergstein</strong> und das
+              <strong>Zimmer Reintal</strong>. Beide Zimmer teilen sich ein gemeinsames
+              Bad mit WC sowie die Küche.
+            </p>
+            <p>
+              Ideal für Paare, Alleinreisende oder zwei befreundete Pärchen, die gemeinsam
+              Urlaub machen. Wer beide Zimmer bucht, hat das gesamte Obergeschoss für sich.
+            </p>
+            <p>
+              Genießen Sie die Ruhe, den Blick auf die Tiroler Bergwelt und die Gastfreundschaft
+              unseres Hofs – mit all dem Komfort, den Sie für einen entspannten Aufenthalt brauchen.
+            </p>
+            <a href="kontakt.html" class="btn btn-primary">Zimmer anfragen</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         DIE ZWEI ZIMMER
+         ======================================================== -->
+    <section class="section section-alt" aria-label="Die Zimmer im Detail">
+      <div class="container">
+        <div class="section-header slide-up">
+          <span class="section-label">Ihre Unterkunft</span>
+          <h2>Die Zimmer</h2>
+          <div class="divider"></div>
+          <p>Jedes Zimmer hat seinen eigenen Charakter – beide haben Tiroler Charme</p>
+        </div>
+
+        <div class="zimmer-grid">
+
+          <!-- Zimmer Bergstein -->
+          <article class="zimmer-card slide-left" aria-label="Zimmer Bergstein">
+            <div class="zimmer-card-image">
+              <!-- Foto: images/zimmer-bergstein.jpg (empfohlen: 1200×675 px) -->
+              <div class="img-placeholder" style="min-height: auto; background: linear-gradient(135deg, #b8a090, #8B5E3C); color: white;">
+                <span>🪟</span>
+                <strong>Zimmer Bergstein</strong>
+                <small>Foto: zimmer-bergstein.jpg einfügen</small>
+              </div>
+            </div>
+            <div class="zimmer-card-body">
+              <span class="zimmer-badge">Zimmer 1</span>
+              <h3>Bergstein</h3>
+              <p style="font-size: 0.95rem; margin-bottom: var(--spacing-sm);">
+                Das Zimmer Bergstein besticht durch seinen direkten Blick auf die umliegende
+                Berglandschaft. Rustikal eingerichtet mit warmen Holztönen und
+                gemütlicher Atmosphäre.
+              </p>
+
+              <div class="zimmer-preis">
+                <div class="preis-zahl">ab <span data-preis="zimmer-nebensaison-nacht">€&thinsp;60</span></div>
+                <div class="preis-info">pro Zimmer / Nacht<br><small>Hauptsaison: ab <span data-preis="zimmer-hauptsaison-nacht">€&thinsp;75</span>/Nacht</small></div>
+              </div>
+
+              <div class="zimmer-features">
+                <div class="zimmer-feature">
+                  <span class="zimmer-feature-icon" aria-hidden="true">🛏️</span>
+                  <span>Doppelbett<br><small>(Platzhalter)</small></span>
+                </div>
+                <div class="zimmer-feature">
+                  <span class="zimmer-feature-icon" aria-hidden="true">📐</span>
+                  <span>ca. XX m²<br><small>(Platzhalter)</small></span>
+                </div>
+                <div class="zimmer-feature">
+                  <span class="zimmer-feature-icon" aria-hidden="true">🪟</span>
+                  <span>Bergblick</span>
+                </div>
+                <div class="zimmer-feature">
+                  <span class="zimmer-feature-icon" aria-hidden="true">📶</span>
+                  <span>Gratis WLAN</span>
+                </div>
+                <div class="zimmer-feature">
+                  <span class="zimmer-feature-icon" aria-hidden="true">☀️</span>
+                  <span>Südlage</span>
+                </div>
+                <div class="zimmer-feature">
+                  <span class="zimmer-feature-icon" aria-hidden="true">🧴</span>
+                  <span>Handtücher inkl.</span>
+                </div>
+              </div>
+
+              <div style="margin-top: var(--spacing-sm);">
+                <a href="kontakt.html?zimmer=bergstein" class="btn btn-primary" style="width: 100%; text-align: center; display: block;">
+                  Zimmer Bergstein anfragen
+                </a>
+              </div>
+            </div>
+          </article>
+
+          <!-- Zimmer Reintal -->
+          <article class="zimmer-card slide-right" aria-label="Zimmer Reintal">
+            <div class="zimmer-card-image">
+              <!-- Foto: images/zimmer-reintal.jpg (empfohlen: 1200×675 px) -->
+              <div class="img-placeholder" style="min-height: auto; background: linear-gradient(135deg, #90a890, #5C7A4E); color: white;">
+                <span>🌿</span>
+                <strong>Zimmer Reintal</strong>
+                <small>Foto: zimmer-reintal.jpg einfügen</small>
+              </div>
+            </div>
+            <div class="zimmer-card-body">
+              <span class="zimmer-badge green">Zimmer 2</span>
+              <h3>Reintal</h3>
+              <p style="font-size: 0.95rem; margin-bottom: var(--spacing-sm);">
+                Das Zimmer Reintal lädt mit seiner ruhigen Ausrichtung zur Erholung ein.
+                Naturnahe Materialien und Tiroler Handwerkskunst schaffen eine
+                entspannte Wohlfühlatmosphäre.
+              </p>
+
+              <div class="zimmer-preis" style="border-left-color: var(--color-green);">
+                <div class="preis-zahl" style="color: var(--color-green);">ab <span data-preis="zimmer-nebensaison-nacht">€&thinsp;60</span></div>
+                <div class="preis-info">pro Zimmer / Nacht<br><small>Hauptsaison: ab <span data-preis="zimmer-hauptsaison-nacht">€&thinsp;75</span>/Nacht</small></div>
+              </div>
+
+              <div class="zimmer-features">
+                <div class="zimmer-feature">
+                  <span class="zimmer-feature-icon" aria-hidden="true">🛏️</span>
+                  <span>Doppelbett<br><small>(Platzhalter)</small></span>
+                </div>
+                <div class="zimmer-feature">
+                  <span class="zimmer-feature-icon" aria-hidden="true">📐</span>
+                  <span>ca. XX m²<br><small>(Platzhalter)</small></span>
+                </div>
+                <div class="zimmer-feature">
+                  <span class="zimmer-feature-icon" aria-hidden="true">🌿</span>
+                  <span>Gartenblick</span>
+                </div>
+                <div class="zimmer-feature">
+                  <span class="zimmer-feature-icon" aria-hidden="true">📶</span>
+                  <span>Gratis WLAN</span>
+                </div>
+                <div class="zimmer-feature">
+                  <span class="zimmer-feature-icon" aria-hidden="true">🪵</span>
+                  <span>Holzböden</span>
+                </div>
+                <div class="zimmer-feature">
+                  <span class="zimmer-feature-icon" aria-hidden="true">🧴</span>
+                  <span>Handtücher inkl.</span>
+                </div>
+              </div>
+
+              <div style="margin-top: var(--spacing-sm);">
+                <a href="kontakt.html?zimmer=reintal" class="btn btn-green" style="width: 100%; text-align: center; display: block;">
+                  Zimmer Reintal anfragen
+                </a>
+              </div>
+            </div>
+          </article>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         GEMEINSCHAFTSBEREICH
+         ======================================================== -->
+    <section class="section" aria-label="Gemeinsam genutzte Bereiche">
+      <div class="container">
+        <div class="section-header slide-up">
+          <span class="section-label">Geteilt, aber komfortabel</span>
+          <h2>Gemeinschaftsbereiche</h2>
+          <div class="divider"></div>
+          <p>Beide Zimmer nutzen die folgenden Bereiche gemeinsam</p>
+        </div>
+
+        <div class="shared-grid">
+
+          <div class="shared-item slide-left">
+            <span class="shared-icon" aria-hidden="true">🚿</span>
+            <div>
+              <h4>Bad &amp; WC</h4>
+              <ul>
+                <li>Dusche</li>
+                <li>WC</li>
+                <li>Waschbecken</li>
+                <li>Spiegel &amp; Ablage</li>
+                <li>Haartrockner</li>
+                <li>Handtücher inklusive</li>
+              </ul>
+            </div>
+          </div>
+
+          <div class="shared-item slide-right">
+            <span class="shared-icon" aria-hidden="true">🍳</span>
+            <div>
+              <h4>Küche</h4>
+              <ul>
+                <li>Herd (2–4 Platten)</li>
+                <li>Kühlschrank</li>
+                <li>Mikrowelle</li>
+                <li>Kaffeemaschine / Wasserkocher</li>
+                <li>Geschirr &amp; Besteck</li>
+                <li>Esstisch</li>
+              </ul>
+            </div>
+          </div>
+
+        </div>
+
+        <div style="margin-top: var(--spacing-md); padding: 1rem 1.5rem; background: rgba(92,122,78,0.1); border-left: 4px solid var(--color-green); border-radius: var(--border-radius);" class="slide-up">
+          <p style="margin: 0; font-size: 0.9rem;">
+            <strong>💡 Tipp für Gruppen:</strong> Bei gleichzeitiger Buchung beider Zimmer haben Sie das gesamte Obergeschoss exklusiv für sich – ideal für zwei Paare oder kleine Reisegruppen. Kombinationsrabatt auf Anfrage!
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         PREISÜBERSICHT
+         ======================================================== -->
+    <section class="section section-alt" aria-label="Preise der Zimmer">
+      <div class="container">
+        <div class="section-header slide-up">
+          <span class="section-label">Unsere Zimmerpreise</span>
+          <h2>Preise</h2>
+          <div class="divider"></div>
+        </div>
+
+        <div style="display: grid; grid-template-columns: 1fr; gap: var(--spacing-md); max-width: 800px; margin: 0 auto;">
+
+          <!-- Preistabelle Zimmer -->
+          <div class="slide-up" style="overflow-x: auto;">
+            <table class="zusatz-table" aria-label="Zimmerpreise">
+              <thead>
+                <tr>
+                  <th>Saison</th>
+                  <th>Preis / Zimmer / Nacht</th>
+                  <th>Mindestaufenthalt</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td><strong>Hauptsaison</strong><br><small data-preis="hauptsaison-zeitraum" style="opacity:0.7;">Juli – Aug | Weihnachten | Ostern</small></td>
+                  <td><strong>ab <span data-preis="zimmer-hauptsaison-nacht">€&thinsp;75</span></strong></td>
+                  <td data-preis="zimmer-hauptsaison-mindest">3 Nächte</td>
+                </tr>
+                <tr>
+                  <td><strong>Nebensaison</strong><br><small data-preis="nebensaison-zeitraum" style="opacity:0.7;">Sept – Juni (außer Feiertage)</small></td>
+                  <td><strong>ab <span data-preis="zimmer-nebensaison-nacht">€&thinsp;60</span></strong></td>
+                  <td data-preis="zimmer-nebensaison-mindest">2 Nächte</td>
+                </tr>
+                <tr>
+                  <td>Ortstaxe (Kurtaxe)</td>
+                  <td><span data-preis="ortstaxe">€&thinsp;2,80 / Person / Nacht</span></td>
+                  <td>Ab 14 Jahren</td>
+                </tr>
+                <tr>
+                  <td>Endreinigung</td>
+                  <td><span data-preis="zimmer-endreinigung">€&thinsp;25</span></td>
+                  <td>Einmalig, pro Zimmer</td>
+                </tr>
+                <tr>
+                  <td>Beide Zimmer zusammen</td>
+                  <td><strong>Auf Anfrage</strong></td>
+                  <td>Kombinationsrabatt möglich</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <div style="padding: 1rem 1.5rem; background: rgba(139,94,60,0.08); border-left: 4px solid var(--color-primary); border-radius: var(--border-radius);" class="slide-up">
+            <p style="margin: 0; font-size: 0.9rem;">
+              <strong>ℹ️ Hinweis:</strong> Alle Preise sind Richtwerte und können je nach Reisezeitraum variieren. Verbindliche Preise erhalten Sie auf Anfrage.
+              Die <a href="preise.html#storno">Stornobedingungen</a> und <a href="preise.html#zahlung">Zahlungsoptionen</a> gelten analog zur Ferienwohnung.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         HAUSORDNUNG (kompakt)
+         ======================================================== -->
+    <section class="section" aria-label="Hausordnung">
+      <div class="container">
+        <div class="section-header slide-up">
+          <span class="section-label">Wichtige Informationen</span>
+          <h2>Check-in &amp; Hausordnung</h2>
+          <div class="divider"></div>
+        </div>
+
+        <div class="hausordnung-grid">
+
+          <div class="slide-left">
+            <div class="checkin-box" style="margin-bottom: 1rem;">
+              <h4>🔑 Check-in</h4>
+              <div class="checkin-time">Ab 15:00 Uhr</div>
+              <p style="margin: 0; font-size: 0.9rem;">Früherer Check-in nach Absprache möglich.</p>
+            </div>
+            <div class="checkin-box" style="border-left-color: var(--color-green);">
+              <h4>🚪 Check-out</h4>
+              <div class="checkin-time" style="color: var(--color-green);">Bis 10:00 Uhr</div>
+              <p style="margin: 0; font-size: 0.9rem;">Späterer Check-out gegen Aufpreis nach Absprache.</p>
+            </div>
+          </div>
+
+          <div class="slide-right">
+            <h3>Unsere Bitte an Sie</h3>
+            <ul class="rules-list">
+              <li>
+                <span class="rule-icon" aria-hidden="true">🚬</span>
+                <span>Rauchen im Haus ist nicht gestattet. Außenbereich steht zur Verfügung.</span>
+              </li>
+              <li>
+                <span class="rule-icon" aria-hidden="true">🔇</span>
+                <span>Nachtruhe ab 22:00 Uhr. Bitte Rücksicht auf andere Hausbewohner und Gäste.</span>
+              </li>
+              <li>
+                <span class="rule-icon" aria-hidden="true">🧹</span>
+                <span>Küche und Gemeinschaftsräume nach Nutzung bitte aufräumen und reinigen.</span>
+              </li>
+              <li>
+                <span class="rule-icon" aria-hidden="true">♻️</span>
+                <span>Mülltrennung erwünscht. Mülleimer und Anleitung in der Küche.</span>
+              </li>
+              <li>
+                <span class="rule-icon" aria-hidden="true">🐾</span>
+                <span>Haustiere in den Zimmern auf Anfrage (Gebühr: €15/Aufenthalt).</span>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         KOMBINATIONSBUCHUNG & CTA
+         ======================================================== -->
+    <section class="section section-alt">
+      <div class="container">
+
+        <!-- Kombibuchungs-Box -->
+        <div class="kombi-box slide-up" style="margin-bottom: var(--spacing-md);">
+          <div>
+            <h3>🏠 Auch die Ferienwohnung verfügbar!</h3>
+            <p>
+              Für größere Gruppen oder Familien steht zusätzlich unsere vollausgestattete
+              Ferienwohnung im Erdgeschoss zur Verfügung – mit eigenem Eingang, Terrasse und Bergblick.
+            </p>
+          </div>
+          <a href="ferienwohnung.html" class="btn btn-outline" style="color: var(--color-beige); border-color: var(--color-beige); white-space: nowrap;">
+            Zur Ferienwohnung
+          </a>
+        </div>
+
+        <!-- CTA -->
+        <div class="text-center slide-up">
+          <span class="section-label">Bereit für Ihren Aufenthalt?</span>
+          <h2>Zimmer jetzt anfragen</h2>
+          <div class="divider"></div>
+          <p style="max-width: 550px; margin: 0 auto var(--spacing-md);">
+            Schreiben Sie uns mit Ihrem Wunschzimmer, Reisezeitraum und Personenanzahl –
+            wir antworten innerhalb von 24 Stunden.
+          </p>
+          <a href="kontakt.html" class="btn btn-primary" style="margin-right: 1rem;">Anfrage senden</a>
+          <a href="preise.html" class="btn btn-green">Alle Preise ansehen</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="footer-logo">Kruckenhaus<span>Hof &amp; Ferienwohnung</span></span>
+          <p class="footer-tagline">Ihre Tiroler Unterkunft in Breitenbach am Inn.</p>
+          <div class="social-links" style="margin-top: 1rem;">
+            <a href="#" class="social-link" aria-label="Facebook">📘</a>
+            <a href="#" class="social-link" aria-label="Instagram">📷</a>
+          </div>
+        </div>
+        <div class="footer-nav">
+          <h4>Navigation</h4>
+          <ul>
+            <li><a href="index.html">Startseite</a></li>
+            <li><a href="ferienwohnung.html">Ferienwohnung</a></li>
+            <li><a href="zimmer.html">Zimmer</a></li>
+            <li><a href="lage.html">Lage &amp; Umgebung</a></li>
+            <li><a href="preise.html">Preise &amp; Buchung</a></li>
+            <li><a href="kontakt.html">Kontakt</a></li>
+          </ul>
+        </div>
+        <div class="footer-nav">
+          <h4>Rechtliches</h4>
+          <ul>
+            <li><a href="datenschutz.html">Datenschutz</a></li>
+            <li><a href="impressum.html">Impressum</a></li>
+          </ul>
+        </div>
+        <div class="footer-contact">
+          <h4>Kontakt</h4>
+          <p>Florian &amp; Kathrin</p>
+          <p>Oberberg 70, 6252 Breitenbach am Inn</p>
+          <p><a href="mailto:info@kruckenhaus.at">info@kruckenhaus.at</a></p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 Hof Kruckenhaus – Florian &amp; Kathrin | Breitenbach am Inn, Tirol</p>
+        <div class="footer-links">
+          <a href="datenschutz.html">Datenschutzerklärung</a>
+          <a href="impressum.html">Impressum</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="cookie-banner" role="dialog" aria-label="Cookie-Hinweis" aria-live="polite">
+    <p>🍪 Diese Website verwendet Cookies. <a href="datenschutz.html">Mehr erfahren</a>.</p>
+    <div class="cookie-actions">
+      <button class="btn btn-primary cookie-accept">Akzeptieren</button>
+      <button class="btn btn-outline cookie-decline" style="color: var(--color-beige); border-color: rgba(253,250,247,0.4);">Ablehnen</button>
+    </div>
+  </div>
+
+  <button class="back-to-top" aria-label="Zurück nach oben">↑</button>
+  <script src="js/preise-config.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>
