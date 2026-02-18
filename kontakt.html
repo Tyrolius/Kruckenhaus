@@ -273,19 +273,29 @@
           <div class="divider"></div>
         </div>
 
-        <!-- Karte Platzhalter -->
-        <!-- Tipp: Ersetzen Sie durch Google Maps iFrame (siehe lage.html) -->
+        <!-- OpenStreetMap iFrame (DSGVO-konform, kein API-Key erforderlich) -->
         <div class="map-container slide-up">
-          <div class="map-placeholder" role="img" aria-label="Kartenplatzhalter">
-            <span aria-hidden="true">🗺️</span>
-            <strong>Google Maps</strong>
-            <p style="margin: 0; font-size: 0.9rem;">Oberberg 70, 6252 Breitenbach am Inn</p>
-            <a href="https://maps.google.com/?q=Oberberg+70,+6252+Breitenbach+am+Inn,+Austria"
-               target="_blank" rel="noopener noreferrer"
-               class="btn btn-primary" style="margin-top: 0.5rem; font-size: 0.85rem;">
-              In Google Maps öffnen ↗
-            </a>
-          </div>
+          <iframe
+            src="https://www.openstreetmap.org/export/embed.html?bbox=11.878%2C47.437%2C11.938%2C47.457&amp;layer=mapnik&amp;marker=47.4472%2C11.9081"
+            width="100%"
+            height="350"
+            style="border:0;"
+            loading="lazy"
+            title="Anfahrt Hof Kruckenhaus – Breitenbach am Inn auf OpenStreetMap"
+            aria-label="Interaktive Karte: Hof Kruckenhaus, Oberberg 70, 6252 Breitenbach am Inn">
+          </iframe>
+        </div>
+        <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 0.75rem;">
+          <a href="https://www.openstreetmap.org/?mlat=47.4472&amp;mlon=11.9081#map=15/47.4472/11.9081"
+             target="_blank" rel="noopener noreferrer"
+             class="btn btn-outline" style="color: var(--color-dark); border-color: var(--color-primary); font-size: 0.85rem;">
+            OpenStreetMap öffnen ↗
+          </a>
+          <a href="https://maps.google.com/?q=Oberberg+70,+6252+Breitenbach+am+Inn,+Austria"
+             target="_blank" rel="noopener noreferrer"
+             class="btn btn-primary" style="font-size: 0.85rem;">
+            Google Maps öffnen ↗
+          </a>
         </div>
 
         <!-- Parken -->

@@ -203,24 +203,41 @@
             Prüfen Sie die Verfügbarkeit und buchen Sie direkt online:
           </p>
 
-          <!-- Smoobu Booking Widget wird hier eingefügt -->
           <!--
-            Smoobu Widget Einbindung:
-            1. Loggen Sie sich in Ihr Smoobu-Konto ein
-            2. Gehen Sie zu "Einstellungen > Buchungs-Widget"
-            3. Kopieren Sie den Widget-Code
-            4. Ersetzen Sie den folgenden Platzhalter-Block mit dem kopierten Code
+            ╔═══════════════════════════════════════════════════════════════╗
+            ║            SMOOBU BUCHUNGS-WIDGET – EINBINDUNG               ║
+            ╠═══════════════════════════════════════════════════════════════╣
+            ║  Schritt-für-Schritt Anleitung:                               ║
+            ║                                                               ║
+            ║  1. Anmelden bei:  https://app.smoobu.com                     ║
+            ║  2. Navigieren zu: Einstellungen → Buchungs-Widget            ║
+            ║  3. Farben, Sprache (DE) und Währung (EUR) konfigurieren      ║
+            ║  4. Auf "Code generieren" klicken                             ║
+            ║  5. Den generierten <script>/<iframe>-Code kopieren           ║
+            ║  6. Den gesamten Platzhalter-Block unten damit ersetzen       ║
+            ║                                                               ║
+            ║  Typisches Format des Smoobu-Codes:                           ║
+            ║  <script src="https://hotels.smoobu.com/js/widget.js"         ║
+            ║    data-apiKey="IHR-API-KEY"                                  ║
+            ║    data-language="de" data-currency="EUR"></script>           ║
+            ║  <div id="smoobuBookingTool"></div>                           ║
+            ╚═══════════════════════════════════════════════════════════════╝
           -->
-          <div class="booking-widget-placeholder" role="region" aria-label="Buchungskalender-Platzhalter">
+
+          <!-- ▼▼▼ SMOOBU-CODE HIER EINFÜGEN (Platzhalter ersetzen) ▼▼▼ -->
+          <div class="booking-widget-placeholder" role="region" aria-label="Buchungskalender">
             <span style="font-size: 2.5rem;" aria-hidden="true">📅</span>
-            <h4 style="margin: 0.5rem 0;">Buchungskalender</h4>
-            <p style="margin: 0 0 1rem; font-size: 0.9rem; color: var(--color-text);">
-              Hier wird das Smoobu-Buchungswidget eingebettet.<br>
-              <em>Für die Aktivierung folgen Sie bitte der Anleitung in der README.md</em>
+            <h4 style="margin: 0.5rem 0;">Online-Buchungskalender</h4>
+            <p style="margin: 0 0 0.5rem; font-size: 0.95rem; color: var(--color-text); font-weight: 700;">
+              Das Smoobu-Buchungs-Widget wird hier nach Einrichtung angezeigt.
             </p>
-            <a href="kontakt.html" class="btn btn-primary">Verfügbarkeit anfragen</a>
+            <p style="margin: 0 0 1.25rem; font-size: 0.88rem; color: var(--color-text); opacity: 0.8;">
+              Nach Einbindung erscheint hier der interaktive Kalender mit Echtzeit-Verfügbarkeit
+              und direkter Online-Buchungsfunktion.
+            </p>
+            <a href="kontakt.html" class="btn btn-primary">Jetzt Verfügbarkeit anfragen</a>
           </div>
-          <!-- Ende Smoobu Widget Platzhalter -->
+          <!-- ▲▲▲ ENDE SMOOBU PLATZHALTER ▲▲▲ -->
 
           <p style="margin-top: 1rem; font-size: 0.85rem; color: var(--color-text); opacity: 0.8;">
             Alternativ: <a href="kontakt.html">Senden Sie uns eine Anfrage</a> – wir antworten innerhalb von 24 Stunden.

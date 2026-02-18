@@ -74,30 +74,23 @@
           <div class="divider"></div>
         </div>
 
-        <!-- Google Maps: Platzhalter iFrame -->
-        <!-- Tipp: Ersetzen Sie das img-Tag durch den echten Google Maps iFrame:
-             <iframe src="https://maps.google.com/maps?q=Oberberg+70+6252+Breitenbach+am+Inn&output=embed"
-                     width="100%" height="450" style="border:0;" allowfullscreen loading="lazy"
-                     referrerpolicy="no-referrer-when-downgrade" title="Lage Hof Kruckenhaus">
-             </iframe>
-        -->
+        <!-- OpenStreetMap iFrame (DSGVO-konform, kein API-Key erforderlich) -->
+        <!-- Koordinaten: Breitenbach am Inn (47.4472°N, 11.9081°E) -->
+        <!-- Tipp: Für exakten Hofstandort Koordinaten unter openstreetmap.org ermitteln
+             und die bbox/marker-Parameter der URL entsprechend anpassen. -->
         <div class="map-container slide-up">
-          <div class="map-placeholder" role="img" aria-label="Kartenplatzhalter – Google Maps iFrame hier einfügen">
-            <span aria-hidden="true">🗺️</span>
-            <strong>Google Maps Karte</strong>
-            <p style="margin: 0; font-size: 0.9rem; max-width: 400px;">
-              Hier wird die interaktive Google Maps Karte eingebettet.<br>
-              <em>Adresse: Oberberg 70, 6252 Breitenbach am Inn</em>
-            </p>
-            <a href="https://maps.google.com/?q=Oberberg+70,+6252+Breitenbach+am+Inn,+Austria"
-               target="_blank" rel="noopener noreferrer"
-               class="btn btn-primary" style="margin-top: 0.5rem; font-size: 0.85rem;">
-              In Google Maps öffnen ↗
-            </a>
-          </div>
+          <iframe
+            src="https://www.openstreetmap.org/export/embed.html?bbox=11.878%2C47.437%2C11.938%2C47.457&amp;layer=mapnik&amp;marker=47.4472%2C11.9081"
+            width="100%"
+            height="450"
+            style="border:0;"
+            loading="lazy"
+            title="Lage Hof Kruckenhaus – Breitenbach am Inn auf OpenStreetMap"
+            aria-label="Interaktive Karte: Hof Kruckenhaus, Oberberg 70, 6252 Breitenbach am Inn">
+          </iframe>
         </div>
 
-        <!-- Adress-Info -->
+        <!-- Adress-Info + Karten-Links -->
         <div style="text-align: center; margin-top: 1.5rem;" class="slide-up">
           <p>
             <strong>Hof Kruckenhaus</strong><br>
@@ -105,6 +98,18 @@
             6252 Breitenbach am Inn<br>
             Tirol, Österreich
           </p>
+          <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; margin-top: 0.75rem;">
+            <a href="https://www.openstreetmap.org/?mlat=47.4472&amp;mlon=11.9081#map=15/47.4472/11.9081"
+               target="_blank" rel="noopener noreferrer"
+               class="btn btn-outline" style="color: var(--color-dark); border-color: var(--color-primary); font-size: 0.85rem;">
+              OpenStreetMap öffnen ↗
+            </a>
+            <a href="https://maps.google.com/?q=Oberberg+70,+6252+Breitenbach+am+Inn,+Austria"
+               target="_blank" rel="noopener noreferrer"
+               class="btn btn-primary" style="font-size: 0.85rem;">
+              Google Maps öffnen ↗
+            </a>
+          </div>
         </div>
       </div>
     </section>
