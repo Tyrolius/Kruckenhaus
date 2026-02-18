@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Kontaktieren Sie Florian & Kathrin vom Hof Kruckenhaus in Breitenbach am Inn, Tirol. Anfragen, Buchungen und alle Informationen zur Ferienwohnung." />
+  <meta name="keywords" content="Kontakt Kruckenhaus, Ferienwohnung anfragen, Breitenbach am Inn Kontakt" />
+  <meta name="robots" content="index, follow" />
+
+  <meta property="og:title" content="Kontakt – Kruckenhaus Tirol" />
+  <meta property="og:description" content="Wir freuen uns auf Ihre Anfrage! Kontaktieren Sie uns per Formular, E-Mail oder Telefon." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.kruckenhaus.at/kontakt.html" />
+
+  <link rel="canonical" href="https://www.kruckenhaus.at/kontakt.html" />
+  <title>Kontakt – Kruckenhaus Tirol</title>
+  <link rel="stylesheet" href="css/style.css" />
+
+  <!-- Strukturierte Daten (Schema.org) für lokales Unternehmen -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LodgingBusiness",
+    "name": "Hof Kruckenhaus – Ferienwohnung",
+    "description": "Ferienwohnung in Breitenbach am Inn, Tirol, Österreich",
+    "url": "https://www.kruckenhaus.at",
+    "email": "info@kruckenhaus.at",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Oberberg 70",
+      "postalCode": "6252",
+      "addressLocality": "Breitenbach am Inn",
+      "addressRegion": "Tirol",
+      "addressCountry": "AT"
+    },
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "47.445",
+      "longitude": "11.908"
+    }
+  }
+  </script>
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header scrolled" role="banner">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo" aria-label="Kruckenhaus – Zur Startseite">
+        Kruckenhaus
+        <span>Hof &amp; Ferienwohnung</span>
+      </a>
+      <nav class="nav-menu" role="navigation" aria-label="Hauptnavigation">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
+        <a href="lage.html" class="nav-link">Lage</a>
+        <a href="preise.html" class="nav-link">Preise</a>
+        <a href="kontakt.html" class="nav-link active">Kontakt</a>
+      </nav>
+      <button class="hamburger" aria-label="Menü öffnen" aria-expanded="false" aria-controls="nav-overlay">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="nav-overlay" id="nav-overlay" role="navigation" aria-label="Mobile Navigation">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
+    <a href="lage.html" class="nav-link">Lage</a>
+    <a href="preise.html" class="nav-link">Preise</a>
+    <a href="kontakt.html" class="nav-link active">Kontakt</a>
+    <div class="lang-switcher">🇩🇪 DE | 🇬🇧 EN</div>
+  </nav>
+
+  <main id="main-content">
+
+    <!-- PAGE HERO -->
+    <section class="page-hero" aria-label="Kontakt">
+      <div class="page-hero-content container">
+        <nav class="breadcrumb" aria-label="Brotkrümelpfad">
+          <a href="index.html">Home</a>
+          <span class="breadcrumb-sep" aria-hidden="true">›</span>
+          <span aria-current="page">Kontakt</span>
+        </nav>
+        <span class="section-label" style="color: var(--color-beige);">Wir freuen uns auf Sie</span>
+        <h1>Kontakt</h1>
+        <p>Schreiben Sie uns – wir antworten innerhalb von 24 Stunden</p>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         KONTAKT HAUPTBEREICH
+         ======================================================== -->
+    <section class="section" aria-label="Kontaktformular und Kontaktdaten">
+      <div class="container">
+
+        <div class="kontakt-grid">
+
+          <!-- Kontaktformular -->
+          <div class="slide-left">
+            <h2 style="margin-bottom: 0.5rem;">Ihre Anfrage</h2>
+            <p style="margin-bottom: 1.5rem; font-size: 0.95rem; color: var(--color-text);">
+              Nutzen Sie das Formular für Buchungsanfragen, Fragen zur Wohnung oder sonstige Anliegen.
+            </p>
+
+            <form class="contact-form" id="contact-form" novalidate
+                  method="POST"
+                  data-netlify="true"
+                  name="kontakt"
+                  netlify-honeypot="bot-field">
+              <!-- Netlify Spam-Schutz -->
+              <p style="display: none;">
+                <label>Nicht ausfüllen: <input name="bot-field" /></label>
+              </p>
+              <input type="hidden" name="form-name" value="kontakt" />
+
+              <div class="form-group">
+                <label for="name">Vollständiger Name <span aria-label="Pflichtfeld" style="color: var(--color-primary);">*</span></label>
+                <input type="text" id="name" name="name" required
+                       autocomplete="name"
+                       placeholder="Vorname Nachname" />
+              </div>
+
+              <div class="form-group">
+                <label for="email">E-Mail-Adresse <span aria-label="Pflichtfeld" style="color: var(--color-primary);">*</span></label>
+                <input type="email" id="email" name="email" required
+                       autocomplete="email"
+                       placeholder="ihre@email.at" />
+              </div>
+
+              <div class="form-group">
+                <label for="phone">Telefonnummer <span style="font-weight: 400; opacity: 0.7;">(optional)</span></label>
+                <input type="tel" id="phone" name="phone"
+                       autocomplete="tel"
+                       placeholder="+43 000 000 000" />
+              </div>
+
+              <div class="form-group">
+                <label for="anreise">Gewünschte Anreise <span style="font-weight: 400; opacity: 0.7;">(optional)</span></label>
+                <input type="date" id="anreise" name="anreise" />
+              </div>
+
+              <div class="form-group">
+                <label for="abreise">Gewünschte Abreise <span style="font-weight: 400; opacity: 0.7;">(optional)</span></label>
+                <input type="date" id="abreise" name="abreise" />
+              </div>
+
+              <div class="form-group">
+                <label for="personen">Anzahl Personen <span style="font-weight: 400; opacity: 0.7;">(optional)</span></label>
+                <select id="personen" name="personen">
+                  <option value="">Bitte wählen</option>
+                  <option value="1">1 Person</option>
+                  <option value="2">2 Personen</option>
+                  <option value="3">3 Personen</option>
+                  <option value="4">4 Personen</option>
+                  <option value="5">5 Personen</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="message">Ihre Nachricht <span aria-label="Pflichtfeld" style="color: var(--color-primary);">*</span></label>
+                <textarea id="message" name="message" required
+                          placeholder="Beschreiben Sie Ihren Urlaubswunsch, stellen Sie Fragen oder teilen Sie uns besondere Wünsche mit..."></textarea>
+                <div class="form-hint">Mindestens 10 Zeichen</div>
+              </div>
+
+              <!-- DSGVO Hinweis -->
+              <div class="form-dsgvo">
+                <strong>🔒 Datenschutzhinweis:</strong>
+                Ihre Daten werden ausschließlich zur Bearbeitung Ihrer Anfrage verwendet und nicht an Dritte weitergegeben.
+                Weitere Informationen finden Sie in unserer <a href="datenschutz.html">Datenschutzerklärung</a>.
+                Mit dem Absenden des Formulars stimmen Sie der Verarbeitung Ihrer Daten zu.
+              </div>
+
+              <div style="margin-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary" style="width: 100%; padding: 1rem;">
+                  ✉️ Anfrage senden
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Kontaktinformationen -->
+          <div class="contact-info slide-right">
+
+            <div class="contact-info-card">
+              <h3 style="margin-bottom: 1rem;">Kontaktdaten</h3>
+
+              <div class="contact-item">
+                <span class="contact-icon" aria-hidden="true">👫</span>
+                <div>
+                  <h4>Ihre Gastgeber</h4>
+                  <p><strong>Florian &amp; Kathrin</strong><br>
+                  Hof Kruckenhaus</p>
+                </div>
+              </div>
+
+              <div class="contact-item">
+                <span class="contact-icon" aria-hidden="true">📍</span>
+                <div>
+                  <h4>Adresse</h4>
+                  <p>
+                    Oberberg 70<br>
+                    6252 Breitenbach am Inn<br>
+                    Tirol, Österreich
+                  </p>
+                </div>
+              </div>
+
+              <div class="contact-item">
+                <span class="contact-icon" aria-hidden="true">✉️</span>
+                <div>
+                  <h4>E-Mail</h4>
+                  <p><a href="mailto:info@kruckenhaus.at">info@kruckenhaus.at</a></p>
+                  <p style="font-size: 0.85rem; opacity: 0.8; margin: 0;">Wir antworten innerhalb von 24 Stunden</p>
+                </div>
+              </div>
+
+              <div class="contact-item">
+                <span class="contact-icon" aria-hidden="true">📞</span>
+                <div>
+                  <h4>Telefon</h4>
+                  <p><a href="tel:+43000000000">+43 ... (Platzhalter)</a></p>
+                  <p style="font-size: 0.85rem; opacity: 0.8; margin: 0;">Erreichbar täglich 9:00–20:00 Uhr</p>
+                </div>
+              </div>
+
+              <div class="contact-item">
+                <span class="contact-icon" aria-hidden="true">💬</span>
+                <div>
+                  <h4>WhatsApp</h4>
+                  <p>
+                    <a href="https://wa.me/43000000000" target="_blank" rel="noopener noreferrer">
+                      Nachricht per WhatsApp senden
+                    </a>
+                  </p>
+                  <p style="font-size: 0.85rem; opacity: 0.8; margin: 0;">Schnelle Antwort auf unkomplizierte Fragen</p>
+                </div>
+              </div>
+
+            </div>
+
+            <!-- Reaktionszeiten -->
+            <div style="background: linear-gradient(135deg, var(--color-green), #3a5a2e); border-radius: var(--border-radius-lg); padding: 1.5rem; color: var(--color-white); margin-top: 1rem;">
+              <h4 style="color: var(--color-white); margin-bottom: 0.75rem;">⚡ Schnelle Rückmeldung</h4>
+              <ul style="list-style: none; display: grid; gap: 0.5rem;">
+                <li style="font-size: 0.9rem;">📧 E-Mail: innerhalb 24 Stunden</li>
+                <li style="font-size: 0.9rem;">📞 Telefon: sofort während Erreichbarkeit</li>
+                <li style="font-size: 0.9rem;">💬 WhatsApp: innerhalb weniger Stunden</li>
+              </ul>
+            </div>
+
+            <!-- Sprachen -->
+            <div style="background: var(--color-cream); border-radius: var(--border-radius); padding: 1rem; margin-top: 1rem; box-shadow: var(--shadow-sm);">
+              <h4 style="margin-bottom: 0.5rem;">🌍 Wir sprechen</h4>
+              <p style="margin: 0; font-size: 0.9rem;">🇩🇪 Deutsch &nbsp;|&nbsp; 🇬🇧 Englisch</p>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         KARTE (Anfahrt)
+         ======================================================== -->
+    <section class="section section-alt" aria-label="Anfahrtskarte">
+      <div class="container">
+        <div class="section-header slide-up">
+          <span class="section-label">So finden Sie uns</span>
+          <h2>Anfahrt &amp; Parken</h2>
+          <div class="divider"></div>
+        </div>
+
+        <!-- Karte Platzhalter -->
+        <!-- Tipp: Ersetzen Sie durch Google Maps iFrame (siehe lage.html) -->
+        <div class="map-container slide-up">
+          <div class="map-placeholder" role="img" aria-label="Kartenplatzhalter">
+            <span aria-hidden="true">🗺️</span>
+            <strong>Google Maps</strong>
+            <p style="margin: 0; font-size: 0.9rem;">Oberberg 70, 6252 Breitenbach am Inn</p>
+            <a href="https://maps.google.com/?q=Oberberg+70,+6252+Breitenbach+am+Inn,+Austria"
+               target="_blank" rel="noopener noreferrer"
+               class="btn btn-primary" style="margin-top: 0.5rem; font-size: 0.85rem;">
+              In Google Maps öffnen ↗
+            </a>
+          </div>
+        </div>
+
+        <!-- Parken -->
+        <div style="margin-top: 2rem; display: grid; grid-template-columns: 1fr; gap: 1rem;" class="slide-up">
+          <div style="background: var(--color-cream); border-radius: var(--border-radius-lg); padding: 1.5rem; box-shadow: var(--shadow-sm); border-left: 4px solid var(--color-green);">
+            <h3 style="margin-bottom: 0.75rem;">🅿️ Parken</h3>
+            <p>
+              Kostenlose Parkplätze direkt am Hof für alle Gäste. Es stehen <strong>2 Stellplätze</strong> zur Verfügung.
+              Bei Anreise mit Wohnmobil oder Anhänger bitte vorab Bescheid geben – größere Stellfläche möglich.
+            </p>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- FAQ -->
+    <section class="section" aria-label="Häufige Fragen">
+      <div class="container">
+        <div class="section-header slide-up">
+          <span class="section-label">Ihre Fragen, unsere Antworten</span>
+          <h2>Häufige Fragen</h2>
+          <div class="divider"></div>
+        </div>
+
+        <div style="display: grid; gap: 1rem; max-width: 800px; margin: 0 auto;">
+
+          <details style="background: var(--color-cream); border-radius: var(--border-radius); padding: 1rem 1.5rem; box-shadow: var(--shadow-sm); cursor: pointer;" class="slide-up delay-1">
+            <summary style="font-weight: 700; font-size: 1rem; color: var(--color-dark); list-style: none; display: flex; justify-content: space-between; align-items: center;">
+              Wie läuft die Buchung ab?
+              <span aria-hidden="true" style="font-size: 1.3rem; color: var(--color-primary);">+</span>
+            </summary>
+            <p style="margin: 0.75rem 0 0; font-size: 0.95rem;">
+              Senden Sie uns eine Anfrage mit Ihrem Wunschzeitraum über das Formular oder per E-Mail.
+              Wir bestätigen die Verfügbarkeit und senden Ihnen eine Buchungsbestätigung mit allen Details.
+              Eine Anzahlung von 30% sichert Ihre Reservierung.
+            </p>
+          </details>
+
+          <details style="background: var(--color-cream); border-radius: var(--border-radius); padding: 1rem 1.5rem; box-shadow: var(--shadow-sm); cursor: pointer;" class="slide-up delay-2">
+            <summary style="font-weight: 700; font-size: 1rem; color: var(--color-dark); list-style: none; display: flex; justify-content: space-between; align-items: center;">
+              Ist die Wohnung auch für lange Aufenthalte buchbar?
+              <span aria-hidden="true" style="font-size: 1.3rem; color: var(--color-primary);">+</span>
+            </summary>
+            <p style="margin: 0.75rem 0 0; font-size: 0.95rem;">
+              Ja! Für Langzeit-Aufenthalte (4+ Wochen) bieten wir gerne Sonderkonditionen an.
+              Kontaktieren Sie uns für ein individuelles Angebot.
+            </p>
+          </details>
+
+          <details style="background: var(--color-cream); border-radius: var(--border-radius); padding: 1rem 1.5rem; box-shadow: var(--shadow-sm); cursor: pointer;" class="slide-up delay-3">
+            <summary style="font-weight: 700; font-size: 1rem; color: var(--color-dark); list-style: none; display: flex; justify-content: space-between; align-items: center;">
+              Sind Haustiere erlaubt?
+              <span aria-hidden="true" style="font-size: 1.3rem; color: var(--color-primary);">+</span>
+            </summary>
+            <p style="margin: 0.75rem 0 0; font-size: 0.95rem;">
+              Haustiere sind nach vorheriger Absprache willkommen. Es wird eine Haustierpauschale von €20/Aufenthalt berechnet.
+              Bitte bei der Buchungsanfrage angeben, welches Tier Sie mitbringen.
+            </p>
+          </details>
+
+          <details style="background: var(--color-cream); border-radius: var(--border-radius); padding: 1rem 1.5rem; box-shadow: var(--shadow-sm); cursor: pointer;" class="slide-up delay-4">
+            <summary style="font-weight: 700; font-size: 1rem; color: var(--color-dark); list-style: none; display: flex; justify-content: space-between; align-items: center;">
+              Gibt es Einkaufsmöglichkeiten in der Nähe?
+              <span aria-hidden="true" style="font-size: 1.3rem; color: var(--color-primary);">+</span>
+            </summary>
+            <p style="margin: 0.75rem 0 0; font-size: 0.95rem;">
+              Ja! Im Ortskern von Breitenbach am Inn gibt es einen Supermarkt, eine Bäckerei und weitere Geschäfte.
+              Kufstein (ca. 15 km) bietet ein breites Einkaufsangebot inkl. großer Supermärkte.
+            </p>
+          </details>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="footer-logo">Kruckenhaus<span>Hof &amp; Ferienwohnung</span></span>
+          <p class="footer-tagline">Ihre Tiroler Ferienwohnung in Breitenbach am Inn.</p>
+          <div class="social-links" style="margin-top: 1rem;">
+            <a href="#" class="social-link" aria-label="Facebook">📘</a>
+            <a href="#" class="social-link" aria-label="Instagram">📷</a>
+          </div>
+        </div>
+        <div class="footer-nav">
+          <h4>Navigation</h4>
+          <ul>
+            <li><a href="index.html">Startseite</a></li>
+            <li><a href="ferienwohnung.html">Ferienwohnung</a></li>
+            <li><a href="lage.html">Lage &amp; Umgebung</a></li>
+            <li><a href="preise.html">Preise &amp; Buchung</a></li>
+            <li><a href="kontakt.html">Kontakt</a></li>
+          </ul>
+        </div>
+        <div class="footer-nav">
+          <h4>Rechtliches</h4>
+          <ul>
+            <li><a href="datenschutz.html">Datenschutz</a></li>
+            <li><a href="impressum.html">Impressum</a></li>
+          </ul>
+        </div>
+        <div class="footer-contact">
+          <h4>Kontakt</h4>
+          <p>Florian &amp; Kathrin</p>
+          <p>Oberberg 70, 6252 Breitenbach am Inn</p>
+          <p><a href="mailto:info@kruckenhaus.at">info@kruckenhaus.at</a></p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 Hof Kruckenhaus – Florian &amp; Kathrin | Breitenbach am Inn, Tirol</p>
+        <div class="footer-links">
+          <a href="datenschutz.html">Datenschutzerklärung</a>
+          <a href="impressum.html">Impressum</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="cookie-banner" role="dialog" aria-label="Cookie-Hinweis" aria-live="polite">
+    <p>🍪 Diese Website verwendet Cookies. <a href="datenschutz.html">Mehr erfahren</a>.</p>
+    <div class="cookie-actions">
+      <button class="btn btn-primary cookie-accept">Akzeptieren</button>
+      <button class="btn btn-outline cookie-decline" style="color: var(--color-beige); border-color: rgba(253,250,247,0.4);">Ablehnen</button>
+    </div>
+  </div>
+
+  <button class="back-to-top" aria-label="Zurück nach oben">↑</button>
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Entdecken Sie unsere Ferienwohnung Kruckenhaus in Breitenbach am Inn – vollausgestattet, komfortabel und mit herrlichem Bergblick. Galerie, Ausstattung und Details." />
+  <meta name="keywords" content="Ferienwohnung Kruckenhaus, Ausstattung, Galerie, Breitenbach am Inn, Tirol" />
+  <meta name="robots" content="index, follow" />
+
+  <meta property="og:title" content="Die Ferienwohnung – Kruckenhaus Tirol" />
+  <meta property="og:description" content="Rustikaler Charme trifft modernen Komfort. Unsere Ferienwohnung bietet alles für einen perfekten Urlaub in den Tiroler Alpen." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.kruckenhaus.at/ferienwohnung.html" />
+
+  <link rel="canonical" href="https://www.kruckenhaus.at/ferienwohnung.html" />
+  <title>Die Ferienwohnung – Kruckenhaus Tirol</title>
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header class="site-header scrolled" role="banner">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo" aria-label="Kruckenhaus – Zur Startseite">
+        Kruckenhaus
+        <span>Hof &amp; Ferienwohnung</span>
+      </a>
+      <nav class="nav-menu" role="navigation" aria-label="Hauptnavigation">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="ferienwohnung.html" class="nav-link active">Ferienwohnung</a>
+        <a href="lage.html" class="nav-link">Lage</a>
+        <a href="preise.html" class="nav-link">Preise</a>
+        <a href="kontakt.html" class="nav-link">Kontakt</a>
+        <!-- Alpakas-Link kommt später -->
+      </nav>
+      <button class="hamburger" aria-label="Menü öffnen" aria-expanded="false" aria-controls="nav-overlay">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <!-- Mobile Overlay -->
+  <nav class="nav-overlay" id="nav-overlay" role="navigation" aria-label="Mobile Navigation">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="ferienwohnung.html" class="nav-link active">Ferienwohnung</a>
+    <a href="lage.html" class="nav-link">Lage</a>
+    <a href="preise.html" class="nav-link">Preise</a>
+    <a href="kontakt.html" class="nav-link">Kontakt</a>
+    <div class="lang-switcher">🇩🇪 DE | 🇬🇧 EN</div>
+  </nav>
+
+  <main id="main-content">
+
+    <!-- PAGE HERO -->
+    <section class="page-hero" aria-label="Ferienwohnung">
+      <div class="page-hero-content container">
+        <nav class="breadcrumb" aria-label="Brotkrümelpfad">
+          <a href="index.html">Home</a>
+          <span class="breadcrumb-sep" aria-hidden="true">›</span>
+          <span aria-current="page">Ferienwohnung</span>
+        </nav>
+        <span class="section-label" style="color: var(--color-beige);">Ihre Unterkunft</span>
+        <h1>Die Ferienwohnung</h1>
+        <p>Rustikaler Tiroler Charme trifft modernen Wohnkomfort</p>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         FOTOGALERIE
+         ======================================================== -->
+    <section class="section" aria-label="Fotogalerie">
+      <div class="container">
+        <div class="section-header slide-up">
+          <span class="section-label">Bilder sagen mehr als Worte</span>
+          <h2>Galerie</h2>
+          <div class="divider"></div>
+          <p>Klicken Sie auf ein Foto für die Vollansicht</p>
+        </div>
+
+        <!-- Galerie Grid: 4×2 -->
+        <div class="gallery-grid" role="list" aria-label="Fotogalerie der Ferienwohnung">
+
+          <!-- Foto 1: Außenansicht -->
+          <div class="gallery-item slide-up delay-1"
+               role="listitem"
+               data-src="images/wohnung-aussen.jpg"
+               data-alt="Außenansicht des Hofs Kruckenhaus"
+               aria-label="Außenansicht öffnen">
+            <div class="img-placeholder" style="min-height: auto; height: 100%; background: linear-gradient(135deg, #a8c4a8, #6a9a6a);">
+              <span>🏡</span>
+              <small>Außenansicht<br><em>wohnung-aussen.jpg</em></small>
+            </div>
+            <div class="gallery-item-overlay">
+              <span class="gallery-zoom-icon" aria-hidden="true">🔍</span>
+            </div>
+          </div>
+
+          <!-- Foto 2: Wohnzimmer -->
+          <div class="gallery-item slide-up delay-2"
+               role="listitem"
+               data-src="images/wohnung-wohnzimmer.jpg"
+               data-alt="Gemütliches Wohnzimmer mit Bergblick"
+               aria-label="Wohnzimmer öffnen">
+            <div class="img-placeholder" style="min-height: auto; height: 100%; background: linear-gradient(135deg, #c8a87a, #8B5E3C);">
+              <span>🛋️</span>
+              <small>Wohnzimmer<br><em>wohnung-wohnzimmer.jpg</em></small>
+            </div>
+            <div class="gallery-item-overlay">
+              <span class="gallery-zoom-icon" aria-hidden="true">🔍</span>
+            </div>
+          </div>
+
+          <!-- Foto 3: Schlafzimmer -->
+          <div class="gallery-item slide-up delay-3"
+               role="listitem"
+               data-src="images/wohnung-schlafzimmer.jpg"
+               data-alt="Komfortables Schlafzimmer"
+               aria-label="Schlafzimmer öffnen">
+            <div class="img-placeholder" style="min-height: auto; height: 100%; background: linear-gradient(135deg, #d4b896, #a07848);">
+              <span>🛏️</span>
+              <small>Schlafzimmer<br><em>wohnung-schlafzimmer.jpg</em></small>
+            </div>
+            <div class="gallery-item-overlay">
+              <span class="gallery-zoom-icon" aria-hidden="true">🔍</span>
+            </div>
+          </div>
+
+          <!-- Foto 4: Küche -->
+          <div class="gallery-item slide-up delay-4"
+               role="listitem"
+               data-src="images/wohnung-kueche.jpg"
+               data-alt="Vollausgestattete Küche"
+               aria-label="Küche öffnen">
+            <div class="img-placeholder" style="min-height: auto; height: 100%; background: linear-gradient(135deg, #e0c8a8, #b89060);">
+              <span>🍳</span>
+              <small>Küche<br><em>wohnung-kueche.jpg</em></small>
+            </div>
+            <div class="gallery-item-overlay">
+              <span class="gallery-zoom-icon" aria-hidden="true">🔍</span>
+            </div>
+          </div>
+
+          <!-- Foto 5: Badezimmer -->
+          <div class="gallery-item slide-up delay-1"
+               role="listitem"
+               data-src="images/wohnung-bad.jpg"
+               data-alt="Modernes Badezimmer"
+               aria-label="Badezimmer öffnen">
+            <div class="img-placeholder" style="min-height: auto; height: 100%; background: linear-gradient(135deg, #a8c8d8, #5888a8);">
+              <span>🚿</span>
+              <small>Badezimmer<br><em>wohnung-bad.jpg</em></small>
+            </div>
+            <div class="gallery-item-overlay">
+              <span class="gallery-zoom-icon" aria-hidden="true">🔍</span>
+            </div>
+          </div>
+
+          <!-- Foto 6: Terrasse -->
+          <div class="gallery-item slide-up delay-2"
+               role="listitem"
+               data-src="images/wohnung-terrasse.jpg"
+               data-alt="Terrasse mit Bergblick"
+               aria-label="Terrasse öffnen">
+            <div class="img-placeholder" style="min-height: auto; height: 100%; background: linear-gradient(135deg, #98c898, #5C7A4E);">
+              <span>🌄</span>
+              <small>Terrasse<br><em>wohnung-terrasse.jpg</em></small>
+            </div>
+            <div class="gallery-item-overlay">
+              <span class="gallery-zoom-icon" aria-hidden="true">🔍</span>
+            </div>
+          </div>
+
+          <!-- Foto 7: Berge Umgebung -->
+          <div class="gallery-item slide-up delay-3"
+               role="listitem"
+               data-src="images/umgebung-berge.jpg"
+               data-alt="Tiroler Berglandschaft"
+               aria-label="Berglandschaft öffnen">
+            <div class="img-placeholder" style="min-height: auto; height: 100%; background: linear-gradient(135deg, #7aab7a, #2a5a2a);">
+              <span>⛰️</span>
+              <small>Berglandschaft<br><em>umgebung-berge.jpg</em></small>
+            </div>
+            <div class="gallery-item-overlay">
+              <span class="gallery-zoom-icon" aria-hidden="true">🔍</span>
+            </div>
+          </div>
+
+          <!-- Foto 8: Dorf -->
+          <div class="gallery-item slide-up delay-4"
+               role="listitem"
+               data-src="images/umgebung-dorf.jpg"
+               data-alt="Breitenbach am Inn"
+               aria-label="Ortschaft öffnen">
+            <div class="img-placeholder" style="min-height: auto; height: 100%; background: linear-gradient(135deg, #c8b090, #8a6040);">
+              <span>🏘️</span>
+              <small>Breitenbach am Inn<br><em>umgebung-dorf.jpg</em></small>
+            </div>
+            <div class="gallery-item-overlay">
+              <span class="gallery-zoom-icon" aria-hidden="true">🔍</span>
+            </div>
+          </div>
+
+        </div>
+        <!-- Ende Galerie Grid -->
+      </div>
+    </section>
+
+    <!-- Lightbox -->
+    <div class="lightbox" role="dialog" aria-modal="true" aria-label="Bildvorschau">
+      <button class="lightbox-close" aria-label="Schließen">&times;</button>
+      <img class="lightbox-img" src="" alt="" />
+      <div class="lightbox-caption"></div>
+    </div>
+
+    <!-- ========================================================
+         AUSSTATTUNG
+         ======================================================== -->
+    <section class="section section-alt" aria-label="Ausstattung">
+      <div class="container">
+        <div class="section-header slide-up">
+          <span class="section-label">Was Sie erwartet</span>
+          <h2>Ausstattung &amp; Details</h2>
+          <div class="divider"></div>
+        </div>
+
+        <div class="ausstattung-grid">
+
+          <!-- Links: Wohnungsdetails -->
+          <div class="ausstattung-details slide-left">
+            <h3>Die Wohnung</h3>
+            <ul class="detail-list">
+              <li>Wohnfläche: ca. 80 m²</li>
+              <li>Schlafzimmer: 2 (1 Doppelbett, 2 Einzelbetten)</li>
+              <li>Badezimmer: 1 (Dusche, WC, Waschbecken)</li>
+              <li>Separate Gästetoilette</li>
+              <li>Wohnzimmer mit Sitzecke und TV</li>
+              <li>Vollausgestattete Küche</li>
+              <li>Esstisch für 6 Personen</li>
+              <li>Terrasse mit Gartenmöbeln und Bergblick</li>
+              <li>Eigener Eingang</li>
+              <li>Parkplatz direkt am Haus (kostenlos)</li>
+              <li>Haustiere auf Anfrage erlaubt</li>
+              <li>Nichtraucherwohnung</li>
+            </ul>
+            <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--color-text); opacity: 0.8;">
+              <strong>Belegung:</strong> Max. 4–5 Personen<br>
+              <strong>Eignung:</strong> Paare, Familien, Gruppen
+            </p>
+          </div>
+
+          <!-- Rechts: Ausstattungs-Icons -->
+          <div class="slide-right">
+            <h3>Alles inklusive</h3>
+            <div class="equipment-grid">
+
+              <div class="equipment-item">
+                <span class="equipment-icon" aria-hidden="true">📶</span>
+                <span>Kostenloses WLAN</span>
+              </div>
+
+              <div class="equipment-item">
+                <span class="equipment-icon" aria-hidden="true">📺</span>
+                <span>Fernseher (Smart-TV)</span>
+              </div>
+
+              <div class="equipment-item">
+                <span class="equipment-icon" aria-hidden="true">🍳</span>
+                <span>Vollküche</span>
+              </div>
+
+              <div class="equipment-item">
+                <span class="equipment-icon" aria-hidden="true">☕</span>
+                <span>Kaffeemaschine</span>
+              </div>
+
+              <div class="equipment-item">
+                <span class="equipment-icon" aria-hidden="true">🧺</span>
+                <span>Waschmaschine</span>
+              </div>
+
+              <div class="equipment-item">
+                <span class="equipment-icon" aria-hidden="true">🅿️</span>
+                <span>Kostenloser Parkplatz</span>
+              </div>
+
+              <div class="equipment-item">
+                <span class="equipment-icon" aria-hidden="true">🏔️</span>
+                <span>Bergblick-Terrasse</span>
+              </div>
+
+              <div class="equipment-item">
+                <span class="equipment-icon" aria-hidden="true">🛁</span>
+                <span>Bad mit Dusche</span>
+              </div>
+
+              <div class="equipment-item">
+                <span class="equipment-icon" aria-hidden="true">🌡️</span>
+                <span>Zentralheizung</span>
+              </div>
+
+              <div class="equipment-item">
+                <span class="equipment-icon" aria-hidden="true">🧹</span>
+                <span>Reinigungsutensilien</span>
+              </div>
+
+              <div class="equipment-item">
+                <span class="equipment-icon" aria-hidden="true">🛌</span>
+                <span>Bettwäsche &amp; Handtücher</span>
+              </div>
+
+              <div class="equipment-item">
+                <span class="equipment-icon" aria-hidden="true">🎮</span>
+                <span>Gesellschaftsspiele</span>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         GRUNDRISS
+         ======================================================== -->
+    <section class="section" aria-label="Grundriss">
+      <div class="container">
+        <div class="section-header slide-up">
+          <span class="section-label">Raumaufteilung</span>
+          <h2>Grundriss</h2>
+          <div class="divider"></div>
+        </div>
+
+        <!-- Grundriss-Platzhalter: Bild images/grundriss.jpg einfügen -->
+        <div class="grundriss-placeholder slide-up">
+          <span style="font-size: 4rem;" aria-hidden="true">🗺️</span>
+          <h3>Grundriss der Ferienwohnung</h3>
+          <p style="margin: 0; color: var(--color-text);">
+            <strong>Tipp für die Einrichtung:</strong> Fügen Sie hier das Bild des Grundrisses ein.<br>
+            Datei: <code>images/grundriss.jpg</code>
+          </p>
+          <p style="margin: 0; font-size: 0.85rem; color: var(--color-text); opacity: 0.7;">
+            Empfohlene Bildgröße: 1200×800 px
+          </p>
+        </div>
+
+        <!-- Raum-Details -->
+        <div class="room-details" style="margin-top: 2rem;">
+
+          <div class="room-card slide-up delay-1">
+            <div class="room-icon" aria-hidden="true">🛋️</div>
+            <h4>Wohnzimmer</h4>
+            <p>ca. 25 m²<br>Sitzgruppe, Smart-TV, Kachelofen</p>
+          </div>
+
+          <div class="room-card slide-up delay-2">
+            <div class="room-icon" aria-hidden="true">🍽️</div>
+            <h4>Küche &amp; Esszimmer</h4>
+            <p>ca. 20 m²<br>Vollküche, Esstisch für 6 Pers.</p>
+          </div>
+
+          <div class="room-card slide-up delay-3">
+            <div class="room-icon" aria-hidden="true">🛏️</div>
+            <h4>Schlafzimmer 1</h4>
+            <p>ca. 18 m²<br>Doppelbett (180×200 cm)</p>
+          </div>
+
+          <div class="room-card slide-up delay-4">
+            <div class="room-icon" aria-hidden="true">🛏️</div>
+            <h4>Schlafzimmer 2</h4>
+            <p>ca. 15 m²<br>2 Einzelbetten (90×200 cm)</p>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================
+         HAUSORDNUNG
+         ======================================================== -->
+    <section class="section section-alt" aria-label="Hausordnung">
+      <div class="container">
+        <div class="section-header slide-up">
+          <span class="section-label">Wichtige Informationen</span>
+          <h2>Hausordnung &amp; Zeiten</h2>
+          <div class="divider"></div>
+        </div>
+
+        <div class="hausordnung-grid">
+
+          <!-- Check-in / Check-out -->
+          <div class="slide-left">
+            <div class="checkin-box" style="margin-bottom: 1rem;">
+              <h4>🔑 Check-in</h4>
+              <div class="checkin-time">Ab 15:00 Uhr</div>
+              <p style="margin: 0; font-size: 0.9rem;">Früherer Check-in nach Absprache möglich.</p>
+            </div>
+            <div class="checkin-box" style="border-left-color: var(--color-green);">
+              <h4>🚪 Check-out</h4>
+              <div class="checkin-time" style="color: var(--color-green);">Bis 10:00 Uhr</div>
+              <p style="margin: 0; font-size: 0.9rem;">Späterer Check-out nach Absprache möglich (gegen Aufpreis).</p>
+            </div>
+          </div>
+
+          <!-- Regeln -->
+          <div class="slide-right">
+            <h3>Unsere Bitte an Sie</h3>
+            <ul class="rules-list">
+              <li>
+                <span class="rule-icon" aria-hidden="true">🚬</span>
+                <span>Rauchen in der Wohnung ist nicht gestattet. Rauchen auf der Terrasse erlaubt.</span>
+              </li>
+              <li>
+                <span class="rule-icon" aria-hidden="true">🐾</span>
+                <span>Haustiere nach vorheriger Absprache und gegen eine Gebühr von €20/Aufenthalt willkommen.</span>
+              </li>
+              <li>
+                <span class="rule-icon" aria-hidden="true">🔇</span>
+                <span>Nachtruhe von 22:00 bis 07:00 Uhr. Bitte Rücksicht auf Nachbarn und Natur.</span>
+              </li>
+              <li>
+                <span class="rule-icon" aria-hidden="true">🧹</span>
+                <span>Die Wohnung ist besenrein zu hinterlassen. Die Endreinigung ist im Preis nicht inbegriffen.</span>
+              </li>
+              <li>
+                <span class="rule-icon" aria-hidden="true">♻️</span>
+                <span>Bitte trennen Sie Ihren Müll. Mülleimer und Anleitung finden Sie in der Küche.</span>
+              </li>
+              <li>
+                <span class="rule-icon" aria-hidden="true">👥</span>
+                <span>Die maximale Belegung beträgt 5 Personen. Nicht gemeldete Gäste sind nicht erlaubt.</span>
+              </li>
+            </ul>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="section text-center">
+      <div class="container slide-up">
+        <h2>Gefällt Ihnen die Wohnung?</h2>
+        <div class="divider"></div>
+        <p style="max-width: 550px; margin: 0 auto 1.5rem;">Prüfen Sie jetzt Ihre Wunschtermine und sichern Sie sich Ihren Traumurlaub in Tirol.</p>
+        <a href="preise.html" class="btn btn-primary" style="margin-right: 1rem;">Preise &amp; Verfügbarkeit</a>
+        <a href="kontakt.html" class="btn btn-green">Anfrage senden</a>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="footer-logo">Kruckenhaus<span>Hof &amp; Ferienwohnung</span></span>
+          <p class="footer-tagline">Ihre Tiroler Ferienwohnung in Breitenbach am Inn.</p>
+          <div class="social-links" style="margin-top: 1rem;">
+            <a href="#" class="social-link" aria-label="Facebook">📘</a>
+            <a href="#" class="social-link" aria-label="Instagram">📷</a>
+          </div>
+        </div>
+        <div class="footer-nav">
+          <h4>Navigation</h4>
+          <ul>
+            <li><a href="index.html">Startseite</a></li>
+            <li><a href="ferienwohnung.html">Ferienwohnung</a></li>
+            <li><a href="lage.html">Lage &amp; Umgebung</a></li>
+            <li><a href="preise.html">Preise &amp; Buchung</a></li>
+            <li><a href="kontakt.html">Kontakt</a></li>
+          </ul>
+        </div>
+        <div class="footer-nav">
+          <h4>Rechtliches</h4>
+          <ul>
+            <li><a href="datenschutz.html">Datenschutz</a></li>
+            <li><a href="impressum.html">Impressum</a></li>
+          </ul>
+        </div>
+        <div class="footer-contact">
+          <h4>Kontakt</h4>
+          <p>Florian &amp; Kathrin</p>
+          <p>Oberberg 70, 6252 Breitenbach am Inn</p>
+          <p><a href="mailto:info@kruckenhaus.at">info@kruckenhaus.at</a></p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 Hof Kruckenhaus – Florian &amp; Kathrin | Breitenbach am Inn, Tirol</p>
+        <div class="footer-links">
+          <a href="datenschutz.html">Datenschutzerklärung</a>
+          <a href="impressum.html">Impressum</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Cookie-Banner -->
+  <div class="cookie-banner" role="dialog" aria-label="Cookie-Hinweis" aria-live="polite">
+    <p>🍪 Diese Website verwendet Cookies. <a href="datenschutz.html">Mehr erfahren</a>.</p>
+    <div class="cookie-actions">
+      <button class="btn btn-primary cookie-accept">Akzeptieren</button>
+      <button class="btn btn-outline cookie-decline" style="color: var(--color-beige); border-color: rgba(253,250,247,0.4);">Ablehnen</button>
+    </div>
+  </div>
+
+  <button class="back-to-top" aria-label="Zurück nach oben">↑</button>
+  <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,354 @@
+/**
+ * KRUCKENHAUS – Haupt-JavaScript
+ * Ferienwohnung Breitenbach am Inn, Tirol
+ * Vanilla JS, kein Framework
+ */
+
+'use strict';
+
+/* ============================================================
+   1. DOM READY
+   ============================================================ */
+document.addEventListener('DOMContentLoaded', () => {
+  initHeader();
+  initHamburger();
+  initSmoothScroll();
+  initScrollAnimations();
+  initBackToTop();
+  initCookieBanner();
+  initLightbox();
+  setActiveNavLink();
+});
+
+/* ============================================================
+   2. HEADER – Scroll-Effekt
+   ============================================================ */
+function initHeader() {
+  const header = document.querySelector('.site-header');
+  if (!header) return;
+
+  const handleScroll = () => {
+    if (window.scrollY > 60) {
+      header.classList.add('scrolled');
+    } else {
+      header.classList.remove('scrolled');
+    }
+  };
+
+  window.addEventListener('scroll', handleScroll, { passive: true });
+  // Initialer Check (z. B. nach Page-Reload mit Scroll-Position)
+  handleScroll();
+}
+
+/* ============================================================
+   3. HAMBURGER MENU (Mobile)
+   ============================================================ */
+function initHamburger() {
+  const hamburger = document.querySelector('.hamburger');
+  const overlay   = document.querySelector('.nav-overlay');
+  const body      = document.body;
+
+  if (!hamburger || !overlay) return;
+
+  const toggleMenu = (open) => {
+    hamburger.classList.toggle('open', open);
+    overlay.classList.toggle('open', open);
+    body.style.overflow = open ? 'hidden' : '';
+    hamburger.setAttribute('aria-expanded', String(open));
+  };
+
+  hamburger.addEventListener('click', () => {
+    const isOpen = overlay.classList.contains('open');
+    toggleMenu(!isOpen);
+  });
+
+  // Schließen wenn ein Overlay-Link geklickt wird
+  overlay.querySelectorAll('.nav-link').forEach(link => {
+    link.addEventListener('click', () => toggleMenu(false));
+  });
+
+  // Schließen bei ESC
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && overlay.classList.contains('open')) {
+      toggleMenu(false);
+    }
+  });
+}
+
+/* ============================================================
+   4. SMOOTH SCROLL
+   ============================================================ */
+function initSmoothScroll() {
+  document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+    anchor.addEventListener('click', (e) => {
+      const targetId = anchor.getAttribute('href');
+      if (targetId === '#') return;
+
+      const target = document.querySelector(targetId);
+      if (!target) return;
+
+      e.preventDefault();
+      const headerHeight = parseInt(
+        getComputedStyle(document.documentElement)
+          .getPropertyValue('--header-height')
+      ) || 70;
+
+      window.scrollTo({
+        top: target.offsetTop - headerHeight,
+        behavior: 'smooth'
+      });
+    });
+  });
+}
+
+/* ============================================================
+   5. SCROLL-ANIMATIONEN (IntersectionObserver)
+   ============================================================ */
+function initScrollAnimations() {
+  // Unterstützung prüfen
+  if (!('IntersectionObserver' in window)) {
+    // Fallback: Alles sofort sichtbar
+    document.querySelectorAll('.fade-in, .slide-up, .slide-left, .slide-right')
+      .forEach(el => el.classList.add('animate'));
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate');
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    {
+      threshold: 0.12,
+      rootMargin: '0px 0px -40px 0px'
+    }
+  );
+
+  document.querySelectorAll('.fade-in, .slide-up, .slide-left, .slide-right')
+    .forEach(el => observer.observe(el));
+}
+
+/* ============================================================
+   6. BACK-TO-TOP BUTTON
+   ============================================================ */
+function initBackToTop() {
+  const btn = document.querySelector('.back-to-top');
+  if (!btn) return;
+
+  const THRESHOLD = 300;
+
+  window.addEventListener('scroll', () => {
+    btn.classList.toggle('visible', window.scrollY > THRESHOLD);
+  }, { passive: true });
+
+  btn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+}
+
+/* ============================================================
+   7. COOKIE-BANNER
+   ============================================================ */
+function initCookieBanner() {
+  const COOKIE_KEY = 'kruckenhaus_cookies_accepted';
+  const banner = document.querySelector('.cookie-banner');
+  const acceptBtn = document.querySelector('.cookie-accept');
+  const declineBtn = document.querySelector('.cookie-decline');
+
+  if (!banner) return;
+
+  // Bereits akzeptiert?
+  if (localStorage.getItem(COOKIE_KEY)) return;
+
+  // Banner nach kurzer Verzögerung einblenden
+  setTimeout(() => {
+    banner.classList.add('visible');
+  }, 1200);
+
+  if (acceptBtn) {
+    acceptBtn.addEventListener('click', () => {
+      localStorage.setItem(COOKIE_KEY, 'true');
+      hideBanner();
+    });
+  }
+
+  if (declineBtn) {
+    declineBtn.addEventListener('click', () => {
+      hideBanner();
+    });
+  }
+
+  function hideBanner() {
+    banner.classList.remove('visible');
+    setTimeout(() => {
+      banner.style.display = 'none';
+    }, 600);
+  }
+}
+
+/* ============================================================
+   8. LIGHTBOX (Galerie)
+   ============================================================ */
+function initLightbox() {
+  const lightbox    = document.querySelector('.lightbox');
+  const lightboxImg = document.querySelector('.lightbox-img');
+  const closeBtn    = document.querySelector('.lightbox-close');
+  const caption     = document.querySelector('.lightbox-caption');
+
+  if (!lightbox) return;
+
+  const galleryItems = document.querySelectorAll('.gallery-item[data-src]');
+
+  const openLightbox = (src, alt) => {
+    lightboxImg.src = src;
+    lightboxImg.alt = alt || '';
+    if (caption) caption.textContent = alt || '';
+    lightbox.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    closeBtn?.focus();
+  };
+
+  const closeLightbox = () => {
+    lightbox.classList.remove('open');
+    document.body.style.overflow = '';
+    lightboxImg.src = '';
+  };
+
+  galleryItems.forEach(item => {
+    item.addEventListener('click', () => {
+      const src = item.dataset.src;
+      const alt = item.dataset.alt || item.querySelector('img')?.alt || '';
+      openLightbox(src, alt);
+    });
+
+    // Tastatur-Zugänglichkeit
+    item.setAttribute('tabindex', '0');
+    item.setAttribute('role', 'button');
+    item.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        item.click();
+      }
+    });
+  });
+
+  if (closeBtn) {
+    closeBtn.addEventListener('click', closeLightbox);
+  }
+
+  // Klick außerhalb schließt Lightbox
+  lightbox.addEventListener('click', (e) => {
+    if (e.target === lightbox) closeLightbox();
+  });
+
+  // ESC schließt
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && lightbox.classList.contains('open')) {
+      closeLightbox();
+    }
+  });
+}
+
+/* ============================================================
+   9. AKTIVER NAV-LINK (aktuelle Seite)
+   ============================================================ */
+function setActiveNavLink() {
+  const path = window.location.pathname;
+  const filename = path.split('/').pop() || 'index.html';
+
+  document.querySelectorAll('.nav-link').forEach(link => {
+    const href = link.getAttribute('href');
+    if (!href) return;
+
+    const linkFile = href.split('/').pop();
+
+    if (
+      linkFile === filename ||
+      (filename === '' && linkFile === 'index.html') ||
+      (filename === 'index.html' && (linkFile === 'index.html' || linkFile === ''))
+    ) {
+      link.classList.add('active');
+    }
+  });
+}
+
+/* ============================================================
+   10. KONTAKTFORMULAR – Client-side Validierung
+   ============================================================ */
+const contactForm = document.querySelector('#contact-form');
+if (contactForm) {
+  contactForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+
+    const name    = contactForm.querySelector('#name')?.value.trim();
+    const email   = contactForm.querySelector('#email')?.value.trim();
+    const message = contactForm.querySelector('#message')?.value.trim();
+
+    if (!name || !email || !message) {
+      showFormMessage('Bitte füllen Sie alle Pflichtfelder aus.', 'error');
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      showFormMessage('Bitte geben Sie eine gültige E-Mail-Adresse ein.', 'error');
+      return;
+    }
+
+    // Netlify Forms / Backend-Integration wird hier eingebaut
+    // Vorerst: Erfolgsmeldung simulieren
+    showFormMessage(
+      'Vielen Dank für Ihre Nachricht! Wir melden uns innerhalb von 24 Stunden.',
+      'success'
+    );
+    contactForm.reset();
+  });
+}
+
+function isValidEmail(email) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+}
+
+function showFormMessage(text, type) {
+  const existing = document.querySelector('.form-message');
+  if (existing) existing.remove();
+
+  const msg = document.createElement('div');
+  msg.className = `form-message form-message--${type}`;
+  msg.textContent = text;
+  msg.style.cssText = `
+    padding: 0.85rem 1rem;
+    border-radius: 8px;
+    margin-top: 1rem;
+    font-weight: 700;
+    font-size: 0.9rem;
+    background-color: ${type === 'success' ? '#e8f5e9' : '#fdecea'};
+    color: ${type === 'success' ? '#2e7d32' : '#c62828'};
+    border-left: 4px solid ${type === 'success' ? '#4caf50' : '#ef5350'};
+  `;
+
+  contactForm.appendChild(msg);
+
+  setTimeout(() => msg.remove(), 6000);
+}
+
+/* ============================================================
+   11. SAISONALE BILDER – Vorbereitung
+   ============================================================ */
+/**
+ * Setzt die Jahreszeit-Klasse am Body.
+ * Aufruf: setSeason('winter') oder setSeason('summer')
+ * Standardmäßig wird die aktuelle Jahreszeit erkannt.
+ */
+function setSeason(override) {
+  const month  = new Date().getMonth(); // 0 = Jan
+  const season = override || (month >= 10 || month <= 2 ? 'winter' : 'summer');
+  document.body.classList.remove('season-winter', 'season-summer');
+  document.body.classList.add(`season-${season}`);
+}
+
+// Automatisch beim Laden die Saison setzen
+setSeason();
