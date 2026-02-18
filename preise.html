@@ -81,20 +81,20 @@
           <div class="preis-card featured slide-left">
             <div class="preis-header">
               <h3>Hauptsaison</h3>
-              <span class="preis-badge">Juli – August | Weihnachten | Ostern</span>
+              <span class="preis-badge" data-preis="hauptsaison-zeitraum">Juli – August | Weihnachten | Ostern</span>
             </div>
             <div class="preis-body">
               <div class="preis-amount">
-                <div class="amount">ab €150</div>
+                <div class="amount">ab <span data-preis="hauptsaison-nacht">€&thinsp;150</span></div>
                 <div class="unit">pro Nacht</div>
               </div>
               <ul class="preis-details">
-                <li>Mindestaufenthalt: <strong>7 Nächte</strong></li>
-                <li>Belegung: bis 4 Personen</li>
-                <li>5. Person: <strong>+€20/Nacht</strong></li>
+                <li>Mindestaufenthalt: <strong data-preis="hauptsaison-mindest">7 Nächte</strong></li>
+                <li>Belegung: bis <span data-preis="belegung-standard">4 Personen</span></li>
+                <li>5. Person: <strong>+<span data-preis="aufpreis-person">€&thinsp;20</span>/Nacht</strong></li>
                 <li>Bettwäsche &amp; Handtücher inklusive</li>
-                <li>Endreinigung: <strong>€80 (einmalig)</strong></li>
-                <li>Ortstaxe: <strong>€2,80/Person/Nacht</strong></li>
+                <li>Endreinigung: <strong><span data-preis="endreinigung">€&thinsp;80</span> (einmalig)</strong></li>
+                <li>Ortstaxe: <strong><span data-preis="ortstaxe">€&thinsp;2,80 / Person / Nacht</span></strong></li>
               </ul>
             </div>
           </div>
@@ -103,20 +103,20 @@
           <div class="preis-card nebensaison slide-right">
             <div class="preis-header">
               <h3>Nebensaison</h3>
-              <span class="preis-badge">September – Juni (außer Feiertage)</span>
+              <span class="preis-badge" data-preis="nebensaison-zeitraum">September – Juni (außer Feiertage)</span>
             </div>
             <div class="preis-body">
               <div class="preis-amount">
-                <div class="amount" style="color: var(--color-green);">ab €120</div>
+                <div class="amount" style="color: var(--color-green);">ab <span data-preis="nebensaison-nacht">€&thinsp;120</span></div>
                 <div class="unit">pro Nacht</div>
               </div>
               <ul class="preis-details">
-                <li>Mindestaufenthalt: <strong>3 Nächte</strong></li>
-                <li>Belegung: bis 4 Personen</li>
-                <li>5. Person: <strong>+€20/Nacht</strong></li>
+                <li>Mindestaufenthalt: <strong data-preis="nebensaison-mindest">3 Nächte</strong></li>
+                <li>Belegung: bis <span data-preis="belegung-standard">4 Personen</span></li>
+                <li>5. Person: <strong>+<span data-preis="aufpreis-person">€&thinsp;20</span>/Nacht</strong></li>
                 <li>Bettwäsche &amp; Handtücher inklusive</li>
-                <li>Endreinigung: <strong>€80 (einmalig)</strong></li>
-                <li>Ortstaxe: <strong>€2,80/Person/Nacht</strong></li>
+                <li>Endreinigung: <strong><span data-preis="endreinigung">€&thinsp;80</span> (einmalig)</strong></li>
+                <li>Ortstaxe: <strong><span data-preis="ortstaxe">€&thinsp;2,80 / Person / Nacht</span></strong></li>
               </ul>
             </div>
           </div>
@@ -138,27 +138,27 @@
               <tbody>
                 <tr>
                   <td>Endreinigung</td>
-                  <td><strong>€80</strong></td>
+                  <td><strong data-preis="endreinigung">€&thinsp;80</strong></td>
                   <td>Einmalig, obligatorisch</td>
                 </tr>
                 <tr>
                   <td>Ortstaxe (Kurtaxe)</td>
-                  <td><strong>€2,80</strong>/Person/Nacht</td>
+                  <td><strong><span data-preis="ortstaxe">€&thinsp;2,80 / Person / Nacht</span></strong></td>
                   <td>Gilt für Personen über 14 Jahre</td>
                 </tr>
                 <tr>
                   <td>Zusatzperson (5. Person)</td>
-                  <td><strong>€20</strong>/Nacht</td>
+                  <td><strong data-preis="aufpreis-person">€&thinsp;20</strong>/Nacht</td>
                   <td>Nach Absprache</td>
                 </tr>
                 <tr>
                   <td>Haustier</td>
-                  <td><strong>€20</strong>/Aufenthalt</td>
+                  <td><strong data-preis="haustier">€&thinsp;20</strong>/Aufenthalt</td>
                   <td>Nur nach Vorabgenehmigung</td>
                 </tr>
                 <tr>
                   <td>Kinderbett (Reisebett)</td>
-                  <td><strong>€10</strong>/Aufenthalt</td>
+                  <td><strong data-preis="kinderbett">€&thinsp;10</strong>/Aufenthalt</td>
                   <td>Bitte bei Buchung anfragen</td>
                 </tr>
                 <tr>
@@ -168,7 +168,7 @@
                 </tr>
                 <tr>
                   <td>Späterer Check-out (bis 14:00)</td>
-                  <td><strong>€30</strong></td>
+                  <td><strong data-preis="spaeter-checkout">€&thinsp;30</strong></td>
                   <td>Nach Verfügbarkeit</td>
                 </tr>
               </tbody>
@@ -320,7 +320,7 @@
             <span class="storno-icon" aria-hidden="true">✅</span>
             <div>
               <strong>Kostenlose Stornierung</strong>
-              <p>Bei Stornierung bis <strong>30 Tage vor Anreise</strong>: volle Rückerstattung der Anzahlung (abzgl. Bearbeitungsgebühr €15).</p>
+              <p>Bei Stornierung bis <strong><span data-preis="storno-kostenlos">30 Tage</span> vor Anreise</strong>: volle Rückerstattung der Anzahlung (abzgl. Bearbeitungsgebühr <span data-preis="storno-bearbeitungsgebuehr">€&thinsp;15</span>).</p>
             </div>
           </div>
 
@@ -328,7 +328,7 @@
             <span class="storno-icon" aria-hidden="true">⚠️</span>
             <div>
               <strong>Teilweise Rückerstattung</strong>
-              <p>Bei Stornierung <strong>15–29 Tage vor Anreise</strong>: 50% der Anzahlung werden erstattet.</p>
+              <p>Bei Stornierung <strong><span data-preis="storno-teilrueckerstattung">15–29 Tage</span> vor Anreise</strong>: 50% der Anzahlung werden erstattet.</p>
             </div>
           </div>
 
@@ -431,6 +431,8 @@
   </div>
 
   <button class="back-to-top" aria-label="Zurück nach oben">↑</button>
+  <!-- Preiskonfiguration wird VOR main.js geladen -->
+  <script src="js/preise-config.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>
