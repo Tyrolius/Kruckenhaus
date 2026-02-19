@@ -22,8 +22,14 @@
   <header class="site-header scrolled" role="banner">
     <div class="nav-container">
       <a href="index.html" class="nav-logo" aria-label="Kruckenhaus – Zur Startseite">
-        Kruckenhaus
-        <span>Hof &amp; Ferienwohnung</span>
+        <div class="logo-placeholder">
+          <img src="images/logo.png" alt="Kruckenhaus Logo" class="logo-img"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <div class="logo-fallback">
+            <span class="logo-text">Kruckenhaus</span>
+            <span class="logo-sub">Hof &amp; Ferienwohnung</span>
+          </div>
+        </div>
       </a>
       <nav class="nav-menu" role="navigation" aria-label="Hauptnavigation">
         <a href="index.html" class="nav-link">Home</a>
@@ -46,7 +52,7 @@
     <a href="lage.html" class="nav-link">Lage</a>
     <a href="preise.html" class="nav-link active">Preise</a>
     <a href="kontakt.html" class="nav-link">Kontakt</a>
-    <div class="lang-switcher">🇩🇪 DE | 🇬🇧 EN</div>
+    <div class="lang-switcher">DE | EN</div>
   </nav>
 
   <main id="main-content">
@@ -181,7 +187,7 @@
         <!-- Hinweis -->
         <div style="margin-top: 1.5rem; padding: 1rem 1.5rem; background: rgba(92,122,78,0.1); border-left: 4px solid var(--color-green); border-radius: var(--border-radius);" class="slide-up">
           <p style="margin: 0; font-size: 0.9rem;">
-            <strong>ℹ️ Bitte beachten:</strong> Alle angegebenen Preise sind Richtwerte und können saisonal variieren.
+            <strong>Bitte beachten:</strong> Alle angegebenen Preise sind Richtwerte und können saisonal variieren.
             Den verbindlichen Preis für Ihren Wunschzeitraum erhalten Sie auf Anfrage oder direkt über das Buchungssystem.
           </p>
         </div>
@@ -289,7 +295,7 @@
 
           <!-- ▼▼▼ SMOOBU-CODE HIER EINFÜGEN (Platzhalter ersetzen) ▼▼▼ -->
           <div class="booking-widget-placeholder" role="region" aria-label="Buchungskalender">
-            <span style="font-size: 2.5rem;" aria-hidden="true">📅</span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="48" height="48" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 012.25-2.25h13.5A2.25 2.25 0 0121 7.5v11.25m-18 0A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75m-18 0v-7.5A2.25 2.25 0 015.25 9h13.5A2.25 2.25 0 0121 11.25v7.5"/></svg>
             <h4 style="margin: 0.5rem 0;">Online-Buchungskalender</h4>
             <p style="margin: 0 0 0.5rem; font-size: 0.95rem; color: var(--color-text); font-weight: 700;">
               Das Smoobu-Buchungs-Widget wird hier nach Einrichtung angezeigt.
@@ -321,12 +327,12 @@
         </div>
 
         <div class="zahlung-box slide-up">
-          <h3 style="margin-bottom: 1rem;">💳 Wir akzeptieren folgende Zahlungsarten:</h3>
+          <h3 style="margin-bottom: 1rem;">Wir akzeptieren folgende Zahlungsarten:</h3>
 
           <div class="zahlung-grid">
 
             <div class="zahlung-item">
-              <span class="zahlung-icon" aria-hidden="true">💳</span>
+              <span class="zahlung-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg></span>
               <div>
                 <h4>Anzahlung (30%)</h4>
                 <p>Kreditkarte (Visa, Mastercard via Stripe), PayPal oder Banküberweisung. Fällig innerhalb von 7 Tagen nach Buchungsbestätigung.</p>
@@ -334,7 +340,7 @@
             </div>
 
             <div class="zahlung-item">
-              <span class="zahlung-icon" aria-hidden="true">💶</span>
+              <span class="zahlung-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"/></svg></span>
               <div>
                 <h4>Restzahlung (70%)</h4>
                 <p>Bar bei Anreise, Kreditkarte vor Ort oder Vorab-Überweisung (spätestens 14 Tage vor Anreise).</p>
@@ -342,7 +348,7 @@
             </div>
 
             <div class="zahlung-item">
-              <span class="zahlung-icon" aria-hidden="true">🏦</span>
+              <span class="zahlung-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg></span>
               <div>
                 <h4>Banküberweisung</h4>
                 <p>IBAN und BIC werden nach der Buchungsbestätigung mitgeteilt. Bitte Buchungsnummer als Verwendungszweck angeben.</p>
@@ -350,7 +356,7 @@
             </div>
 
             <div class="zahlung-item">
-              <span class="zahlung-icon" aria-hidden="true">📱</span>
+              <span class="zahlung-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 15h3"/></svg></span>
               <div>
                 <h4>PayPal</h4>
                 <p>Schnelle und sichere Zahlung über PayPal. Bitte Buchungsnummer im Betreff angeben.</p>
@@ -360,7 +366,7 @@
           </div>
 
           <div style="text-align: center; margin-top: 1.5rem;">
-            <span class="rabatt-badge">💰 3% Rabatt bei vollständiger Barzahlung bei Anreise!</span>
+            <span class="rabatt-badge">3% Rabatt bei vollständiger Barzahlung bei Anreise!</span>
           </div>
         </div>
       </div>
@@ -380,7 +386,7 @@
         <div class="storno-list slide-left">
 
           <div class="storno-item">
-            <span class="storno-icon" aria-hidden="true">✅</span>
+            <span class="storno-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
             <div>
               <strong>Kostenlose Stornierung</strong>
               <p>Bei Stornierung bis <strong><span data-preis="storno-kostenlos">30 Tage</span> vor Anreise</strong>: volle Rückerstattung der Anzahlung (abzgl. Bearbeitungsgebühr <span data-preis="storno-bearbeitungsgebuehr">€&thinsp;15</span>).</p>
@@ -388,7 +394,7 @@
           </div>
 
           <div class="storno-item">
-            <span class="storno-icon" aria-hidden="true">⚠️</span>
+            <span class="storno-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg></span>
             <div>
               <strong>Teilweise Rückerstattung</strong>
               <p>Bei Stornierung <strong><span data-preis="storno-teilrueckerstattung">15–29 Tage</span> vor Anreise</strong>: 50% der Anzahlung werden erstattet.</p>
@@ -396,7 +402,7 @@
           </div>
 
           <div class="storno-item">
-            <span class="storno-icon" aria-hidden="true">❌</span>
+            <span class="storno-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
             <div>
               <strong>Keine Rückerstattung</strong>
               <p>Bei Stornierung <strong>weniger als 14 Tage vor Anreise</strong>: Die Anzahlung verfällt. Bei vorzeitiger Abreise wird der vereinbarte Mietpreis vollständig fällig.</p>
@@ -404,7 +410,7 @@
           </div>
 
           <div class="storno-item">
-            <span class="storno-icon" aria-hidden="true">🛡️</span>
+            <span class="storno-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg></span>
             <div>
               <strong>Reiseversicherung empfohlen</strong>
               <p>Wir empfehlen den Abschluss einer Reiserücktrittsversicherung. Bei höherer Gewalt oder medizinischen Notfällen regeln wir individuelle Lösungen.</p>
@@ -447,8 +453,8 @@
           <span class="footer-logo">Kruckenhaus<span>Hof &amp; Ferienwohnung</span></span>
           <p class="footer-tagline">Ihre Tiroler Ferienwohnung in Breitenbach am Inn.</p>
           <div class="social-links" style="margin-top: 1rem;">
-            <a href="#" class="social-link" aria-label="Facebook">📘</a>
-            <a href="#" class="social-link" aria-label="Instagram">📷</a>
+            <a href="#" class="social-link" aria-label="Facebook"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
+            <a href="#" class="social-link" aria-label="Instagram"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></a>
           </div>
         </div>
         <div class="footer-nav">
@@ -486,7 +492,7 @@
   </footer>
 
   <div class="cookie-banner" role="dialog" aria-label="Cookie-Hinweis" aria-live="polite">
-    <p>🍪 Diese Website verwendet Cookies. <a href="datenschutz.html">Mehr erfahren</a>.</p>
+    <p>Diese Website verwendet Cookies. <a href="datenschutz.html">Mehr erfahren</a>.</p>
     <div class="cookie-actions">
       <button class="btn btn-primary cookie-accept">Akzeptieren</button>
       <button class="btn btn-outline cookie-decline" style="color: var(--color-beige); border-color: rgba(253,250,247,0.4);">Ablehnen</button>

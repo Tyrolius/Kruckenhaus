@@ -7,27 +7,27 @@
 /* ============================================================
    1. GOOGLE FONTS
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Lato:wght@300;400;700&family=Dancing+Script:wght@600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;600&display=swap');
 
 /* ============================================================
    2. CSS CUSTOM PROPERTIES
    ============================================================ */
 :root {
   /* Farben */
-  --color-primary:    #8B5E3C;  /* Holz-Braun */
-  --color-dark:       #5C3D2E;  /* Dunkel-Braun */
+  --color-primary:    #A87650;  /* Holz-Braun (aufgehellt) */
+  --color-dark:       #6B4C35;  /* Dunkel-Braun (aufgehellt) */
   --color-beige:      #F5E6D3;  /* Warm-Beige Hintergrund */
   --color-green:      #5C7A4E;  /* Alpin-Grün */
   --color-cream:      #FDFAF7;  /* Creme-Weiß für Cards */
   --color-text:       #4A4A4A;  /* Grau-Text */
   --color-white:      #FFFFFF;
   --color-black:      #1A1A1A;
-  --color-overlay:    rgba(92, 61, 46, 0.55);
+  --color-overlay:    rgba(107, 76, 53, 0.55);
 
   /* Typografie */
-  --font-heading:     'Playfair Display', Georgia, serif;
-  --font-body:        'Lato', Arial, sans-serif;
-  --font-accent:      'Dancing Script', cursive;
+  --font-heading:     'Cormorant Garamond', Georgia, serif;
+  --font-body:        'Source Sans 3', Helvetica, sans-serif;
+  --font-accent:      'Cormorant Garamond', Georgia, serif;
 
   /* Abstände */
   --spacing-xs:       0.5rem;
@@ -287,6 +287,43 @@ p {
 }
 
 .site-header.scrolled .nav-logo span {
+  color: var(--color-green);
+}
+
+/* Logo Bild + Fallback */
+.logo-placeholder {
+  display: flex;
+  align-items: center;
+}
+.logo-img {
+  height: 56px;
+  width: auto;
+  display: block;
+}
+.logo-fallback {
+  display: none;
+  flex-direction: column;
+  line-height: 1.2;
+}
+.logo-fallback .logo-text {
+  font-family: var(--font-heading);
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--color-white);
+  letter-spacing: 0.03em;
+  text-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.logo-fallback .logo-sub {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-size: 0.75rem;
+  color: var(--color-beige);
+}
+.site-header.scrolled .logo-fallback .logo-text {
+  color: var(--color-dark);
+  text-shadow: none;
+}
+.site-header.scrolled .logo-fallback .logo-sub {
   color: var(--color-green);
 }
 

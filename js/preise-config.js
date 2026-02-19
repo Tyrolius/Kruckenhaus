@@ -167,7 +167,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const badge = document.querySelector('.rabatt-badge');
   if (badge) {
     badge.textContent =
-      `💰 ${p.zahlung.barzahlungsrabatt} % Rabatt bei vollständiger Barzahlung bei Anreise!`;
+      `${p.zahlung.barzahlungsrabatt} % Rabatt bei vollständiger Barzahlung bei Anreise!`;
   }
 });
 

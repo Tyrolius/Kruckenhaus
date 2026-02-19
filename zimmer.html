@@ -225,8 +225,14 @@
   <header class="site-header scrolled" role="banner">
     <div class="nav-container">
       <a href="index.html" class="nav-logo" aria-label="Kruckenhaus – Zur Startseite">
-        Kruckenhaus
-        <span>Hof &amp; Ferienwohnung</span>
+        <div class="logo-placeholder">
+          <img src="images/logo.png" alt="Kruckenhaus Logo" class="logo-img"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <div class="logo-fallback">
+            <span class="logo-text">Kruckenhaus</span>
+            <span class="logo-sub">Hof &amp; Ferienwohnung</span>
+          </div>
+        </div>
       </a>
       <nav class="nav-menu" role="navigation" aria-label="Hauptnavigation">
         <a href="index.html" class="nav-link">Home</a>
