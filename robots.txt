@@ -1,0 +1,9 @@
+User-agent: *
+Allow: /
+
+# Sitemap
+Sitemap: https://www.kruckenhaus.at/sitemap.xml
+
+# Disallow dev/config files
+Disallow: /netlify.toml
+Disallow: /*.md

@@ -13,16 +13,17 @@
    2. CSS CUSTOM PROPERTIES
    ============================================================ */
 :root {
-  /* Farben */
-  --color-primary:    #A87650;  /* Holz-Braun (aufgehellt) */
-  --color-dark:       #6B4C35;  /* Dunkel-Braun (aufgehellt) */
-  --color-beige:      #F5E6D3;  /* Warm-Beige Hintergrund */
-  --color-green:      #5C7A4E;  /* Alpin-Grün */
-  --color-cream:      #FDFAF7;  /* Creme-Weiß für Cards */
-  --color-text:       #4A4A4A;  /* Grau-Text */
+  /* Farben – Kruckenhaus Farbpalette */
+  --color-primary:    #A0522D;  /* Rostrot/Ziegelrot – Buttons, CTAs */
+  --color-dark:       #3E2723;  /* Dunkelbraun – Texte, Überschriften */
+  --color-beige:      #FAF8F5;  /* Warmes Cremeweiß – Basis-Hintergrund */
+  --color-green:      #4A7C6F;  /* Seegrün – zweiter Akzent, Berglsteiner See */
+  --color-cream:      #E8EDEA;  /* Sanftes Salbeigrün – Sektionswechsel */
+  --color-gold:       #B8860B;  /* Gedämpftes Gold – Überschriften-Akzent */
+  --color-text:       #3E2723;  /* Dunkelbraun – Haupttext */
   --color-white:      #FFFFFF;
   --color-black:      #1A1A1A;
-  --color-overlay:    rgba(107, 76, 53, 0.55);
+  --color-overlay:    rgba(62, 39, 35, 0.55);
 
   /* Typografie */
   --font-heading:     'Cormorant Garamond', Georgia, serif;
@@ -42,9 +43,9 @@
   --border-radius-lg: 16px;
 
   /* Schatten */
-  --shadow-sm:        0 2px 8px rgba(139, 94, 60, 0.12);
-  --shadow-md:        0 4px 20px rgba(139, 94, 60, 0.18);
-  --shadow-lg:        0 8px 40px rgba(139, 94, 60, 0.22);
+  --shadow-sm:        0 2px 8px rgba(160, 82, 45, 0.12);
+  --shadow-md:        0 4px 20px rgba(160, 82, 45, 0.18);
+  --shadow-lg:        0 8px 40px rgba(160, 82, 45, 0.22);
 
   /* Übergänge */
   --transition-fast:  0.2s ease;
@@ -2014,6 +2015,627 @@ body.season-winter .winter-image { display: block; }
   }
 
   .room-details {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ============================================================
+   29. HERO SLIDER
+   ============================================================ */
+.hero-slider {
+  position: relative;
+  height: 100svh;
+  min-height: 550px;
+  overflow: hidden;
+  background-color: var(--color-dark);
+}
+
+.hero-slides {
+  display: flex;
+  height: 100%;
+  transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
+  will-change: transform;
+}
+
+.hero-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.hero-slide-bg {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  filter: sepia(15%) saturate(1.1) brightness(0.72);
+  transform: scale(1.04);
+  transition: transform 8s ease-in-out;
+}
+
+.hero-slide.active .hero-slide-bg {
+  transform: scale(1.08);
+}
+
+.hero-slide-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(62, 39, 35, 0.25) 0%,
+    rgba(62, 39, 35, 0.65) 100%
+  );
+}
+
+.hero-slide-content {
+  position: relative;
+  z-index: 2;
+  padding-inline: var(--spacing-sm);
+  max-width: 860px;
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.7s ease 0.3s, transform 0.7s ease 0.3s;
+}
+
+.hero-slide.active .hero-slide-content {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.hero-slide-label {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  color: var(--color-beige);
+  display: block;
+  margin-bottom: var(--spacing-xs);
+  letter-spacing: 0.06em;
+}
+
+.hero-slide-title {
+  font-family: var(--font-heading);
+  color: var(--color-white);
+  font-size: clamp(2rem, 5.5vw, 3.8rem);
+  text-shadow: 0 2px 16px rgba(0,0,0,0.35);
+  margin-bottom: var(--spacing-sm);
+  line-height: 1.2;
+}
+
+.hero-slide-cta {
+  display: flex;
+  gap: var(--spacing-sm);
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-top: var(--spacing-md);
+}
+
+/* Slider Controls */
+.slider-prev,
+.slider-next {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  background: rgba(255,255,255,0.2);
+  border: 2px solid rgba(255,255,255,0.6);
+  color: #fff;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+  backdrop-filter: blur(4px);
+}
+
+.slider-prev { left: 1.5rem; }
+.slider-next { right: 1.5rem; }
+
+.slider-prev:hover,
+.slider-next:hover {
+  background: rgba(255,255,255,0.4);
+  transform: translateY(-50%) scale(1.1);
+}
+
+/* Slider Dots */
+.slider-dots {
+  position: absolute;
+  bottom: 2rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  gap: 0.6rem;
+}
+
+.slider-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.5);
+  border: none;
+  cursor: pointer;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+  padding: 0;
+}
+
+.slider-dot.active {
+  background: var(--color-white);
+  transform: scale(1.3);
+}
+
+/* Placeholder slide backgrounds */
+.hero-slide-bg--hof      { background-color: #5a7a5a; background-image: url('../images/hero/hof-panorama.jpg'); }
+.hero-slide-bg--see      { background-color: #4a7c6f; background-image: url('../images/hero/berglsteiner-see.jpg'); }
+.hero-slide-bg--alpaka   { background-color: #7a6a5a; background-image: url('../images/hero/alpakas-weide.jpg'); }
+.hero-slide-bg--workation { background-color: #5a6a7a; background-image: url('../images/hero/workation-bergblick.jpg'); }
+
+/* ============================================================
+   30. USP KACHELN (4er-Grid)
+   ============================================================ */
+.usp-kacheln {
+  background-color: var(--color-beige);
+}
+
+.usp-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+}
+
+.usp-kachel {
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  transition: transform var(--transition-med), box-shadow var(--transition-med);
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.usp-kachel:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
+  color: inherit;
+}
+
+.usp-kachel-icon {
+  display: block;
+  background: linear-gradient(135deg, var(--color-cream), var(--color-beige));
+  padding: 2rem;
+  font-size: 3rem;
+  text-align: center;
+  line-height: 1;
+}
+
+.usp-kachel:nth-child(1) .usp-kachel-icon { background: linear-gradient(135deg, #dce8e5, #b8d4cf); }
+.usp-kachel:nth-child(2) .usp-kachel-icon { background: linear-gradient(135deg, #ede0d4, #d4b896); }
+.usp-kachel:nth-child(3) .usp-kachel-icon { background: linear-gradient(135deg, #e0e8e0, #c4d8c4); }
+.usp-kachel:nth-child(4) .usp-kachel-icon { background: linear-gradient(135deg, #dce0e8, #b8c8d8); }
+
+.usp-kachel-body {
+  padding: var(--spacing-md);
+}
+
+.usp-kachel-body h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.5rem;
+  color: var(--color-dark);
+}
+
+.usp-kachel-body p {
+  font-size: 0.95rem;
+  color: var(--color-text);
+  margin: 0;
+}
+
+.usp-kachel-link {
+  display: inline-block;
+  margin-top: 1rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-primary);
+}
+
+@media (min-width: 600px) {
+  .usp-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .usp-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ============================================================
+   31. WHATSAPP FLOATING BUTTON
+   ============================================================ */
+.whatsapp-btn {
+  position: fixed;
+  bottom: 5.5rem;
+  right: 1.5rem;
+  z-index: 900;
+  width: 56px;
+  height: 56px;
+  background-color: #25D366;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(37, 211, 102, 0.5);
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  text-decoration: none;
+}
+
+.whatsapp-btn:hover {
+  transform: scale(1.1);
+  box-shadow: 0 6px 24px rgba(37, 211, 102, 0.65);
+}
+
+.whatsapp-btn svg {
+  fill: #fff;
+  width: 28px;
+  height: 28px;
+}
+
+/* ============================================================
+   32. ALPBACHTAL CARD INFO-BOX
+   ============================================================ */
+.alpbachtal-card-box {
+  background: linear-gradient(135deg, var(--color-cream) 0%, #d0e4e0 100%);
+  border-left: 4px solid var(--color-green);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-md);
+  margin-block: var(--spacing-md);
+}
+
+.alpbachtal-card-box h3 {
+  color: var(--color-green);
+  margin-bottom: var(--spacing-xs);
+}
+
+.alpbachtal-card-features {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  margin-top: var(--spacing-sm);
+  list-style: none;
+  padding: 0;
+}
+
+.alpbachtal-card-features li {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
+}
+
+.alpbachtal-card-features li::before {
+  content: '✓';
+  color: var(--color-green);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+@media (min-width: 600px) {
+  .alpbachtal-card-features {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ============================================================
+   33. TAGESBEISPIEL WORKATION
+   ============================================================ */
+.tagesplan {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-block: var(--spacing-md);
+}
+
+.tagesplan-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--spacing-sm);
+  padding: var(--spacing-sm) var(--spacing-sm);
+  position: relative;
+}
+
+.tagesplan-item:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 2.35rem;
+  top: 3.5rem;
+  width: 2px;
+  height: calc(100% - 1.5rem);
+  background: linear-gradient(to bottom, var(--color-primary), var(--color-green));
+}
+
+.tagesplan-zeit {
+  font-family: var(--font-heading);
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--color-primary);
+  min-width: 4rem;
+  flex-shrink: 0;
+}
+
+.tagesplan-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  line-height: 1.6;
+}
+
+.tagesplan-text {
+  flex: 1;
+  padding-top: 0.1rem;
+}
+
+.tagesplan-text strong {
+  display: block;
+  color: var(--color-dark);
+}
+
+/* ============================================================
+   34. TIERSTECKBRIEF (Bauernhof)
+   ============================================================ */
+.tier-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md);
+}
+
+.tier-card {
+  background: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-sm);
+  transition: transform var(--transition-med), box-shadow var(--transition-med);
+}
+
+.tier-card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-md);
+}
+
+.tier-card-img {
+  height: 200px;
+  object-fit: cover;
+  width: 100%;
+  background: linear-gradient(135deg, #c8dac8, #a0c0a0);
+}
+
+.tier-card-body {
+  padding: var(--spacing-sm);
+}
+
+.tier-card-body h3 {
+  font-size: 1.2rem;
+  margin-bottom: 0.25rem;
+  color: var(--color-dark);
+}
+
+@media (min-width: 600px) {
+  .tier-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .tier-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .usp-kacheln .usp-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ============================================================
+   35. AKTIVITÄTEN TABS (Umgebung)
+   ============================================================ */
+.aktivitaet-tabs {
+  display: flex;
+  gap: var(--spacing-xs);
+  flex-wrap: wrap;
+  margin-bottom: var(--spacing-md);
+}
+
+.aktivitaet-tab {
+  padding: 0.6rem 1.4rem;
+  border: 2px solid var(--color-primary);
+  border-radius: 2rem;
+  background: transparent;
+  color: var(--color-primary);
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.aktivitaet-tab.active,
+.aktivitaet-tab:hover {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+.aktivitaet-content {
+  display: none;
+}
+
+.aktivitaet-content.active {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-sm);
+}
+
+@media (min-width: 768px) {
+  .aktivitaet-content.active {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (min-width: 1024px) {
+  .aktivitaet-content.active {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.aktivitaet-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: var(--spacing-sm);
+  background: var(--color-white);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-sm);
+}
+
+.aktivitaet-item-icon {
+  font-size: 1.8rem;
+  flex-shrink: 0;
+}
+
+/* ============================================================
+   36. SPEEDTEST BOX (Workation)
+   ============================================================ */
+.speedtest-box {
+  background: linear-gradient(135deg, #1a2a4a, #2a3a6a);
+  color: #fff;
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-md);
+  text-align: center;
+  margin-block: var(--spacing-md);
+}
+
+.speedtest-value {
+  font-family: var(--font-heading);
+  font-size: clamp(3rem, 8vw, 5rem);
+  font-weight: 700;
+  color: #60efb0;
+  line-height: 1;
+  display: block;
+}
+
+.speedtest-label {
+  font-size: 1rem;
+  opacity: 0.8;
+  margin-top: 0.5rem;
+}
+
+.speedtest-sub {
+  font-size: 0.85rem;
+  opacity: 0.6;
+  margin-top: 0.25rem;
+}
+
+/* ============================================================
+   37. SEE-LEGENDE BOX
+   ============================================================ */
+.legende-box {
+  background: linear-gradient(135deg, #e8f0ee, #d0e4e0);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-md);
+  margin-block: var(--spacing-md);
+  border-left: 4px solid var(--color-green);
+  font-style: italic;
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  line-height: 1.8;
+  color: var(--color-dark);
+}
+
+.legende-box cite {
+  display: block;
+  margin-top: var(--spacing-sm);
+  font-style: normal;
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  color: var(--color-green);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+/* ============================================================
+   38. DIREKT BUCHEN BANNER
+   ============================================================ */
+.direktbuchung-banner {
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-dark) 100%);
+  color: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
+  text-align: center;
+  margin-block: var(--spacing-md);
+}
+
+.direktbuchung-banner h3 {
+  font-size: 1.5rem;
+  color: var(--color-beige);
+  margin-bottom: 0.5rem;
+}
+
+.direktbuchung-banner p {
+  opacity: 0.9;
+  margin-bottom: var(--spacing-sm);
+}
+
+/* ============================================================
+   39. SAISON-PHOTOS STRIP (Berglsteiner See)
+   ============================================================ */
+.saison-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--spacing-sm);
+}
+
+.saison-item {
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  position: relative;
+  aspect-ratio: 4/3;
+}
+
+.saison-item-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  background: linear-gradient(135deg, #4a7c6f, #2a5a52);
+  transition: transform var(--transition-slow);
+}
+
+.saison-item:hover .saison-item-img {
+  transform: scale(1.05);
+}
+
+.saison-item-label {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(to top, rgba(0,0,0,0.7), transparent);
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+@media (min-width: 768px) {
+  .saison-grid {
     grid-template-columns: repeat(4, 1fr);
   }
 }

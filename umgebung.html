@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Ausflugsziele und Aktivitäten rund um Breitenbach am Inn im Alpbachtal – Sommer, Winter, Skigebiete, Wanderungen, Seen. Alpbachtal Card inklusive bei Kruckenhaus." />
+  <meta name="keywords" content="Ausflugsziele Breitenbach am Inn, Aktivitäten Alpbachtal, Skigebiet Alpbach, Wanderungen Breitenbach, Alpbachtal Card" />
+  <meta name="robots" content="index, follow" />
+  <meta property="og:title" content="Ausflugsziele und Aktivitäten rund um Breitenbach am Inn | Alpbachtal" />
+  <meta property="og:description" content="Sommer und Winter im Alpbachtal: Wanderungen, Seen, Skigebiete, Radwege und mehr – alles von der Ferienwohnung Kruckenhaus aus erreichbar." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.kruckenhaus.at/umgebung.html" />
+  <link rel="canonical" href="https://www.kruckenhaus.at/umgebung.html" />
+  <title>Ausflugsziele &amp; Aktivitäten rund um Breitenbach am Inn | Alpbachtal</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="site-header scrolled" role="banner">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo" aria-label="Kruckenhaus – Zur Startseite">
+        <div class="logo-placeholder">
+          <img src="images/logo.png" alt="Kruckenhaus Logo" class="logo-img"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <div class="logo-fallback">
+            <span class="logo-text">Kruckenhaus</span>
+            <span class="logo-sub">Hof &amp; Ferienwohnung</span>
+          </div>
+        </div>
+      </a>
+      <nav class="nav-menu" role="navigation" aria-label="Hauptnavigation">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
+        <a href="bauernhof.html" class="nav-link">Bauernhof</a>
+        <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
+        <a href="workation.html" class="nav-link">Workation</a>
+        <a href="umgebung.html" class="nav-link active">Umgebung</a>
+        <a href="kontakt.html" class="nav-link">Kontakt</a>
+      </nav>
+      <button class="hamburger" aria-label="Menue oeffnen" aria-expanded="false" aria-controls="nav-overlay">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="nav-overlay" id="nav-overlay" role="navigation" aria-label="Mobile Navigation">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
+    <a href="bauernhof.html" class="nav-link">Bauernhof</a>
+    <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
+    <a href="workation.html" class="nav-link">Workation</a>
+    <a href="umgebung.html" class="nav-link active">Umgebung</a>
+    <a href="kontakt.html" class="nav-link">Kontakt</a>
+  </nav>
+
+  <main id="main-content">
+
+    <section class="page-hero" aria-label="Umgebung und Ausflugsziele">
+      <!-- TODO: Foto Bergpanorama Alpbachtal (1920x600) -->
+      <div class="page-hero-content container">
+        <nav class="breadcrumb" aria-label="Brotkruemelpfad">
+          <a href="index.html">Home</a>
+          <span class="breadcrumb-sep" aria-hidden="true">›</span>
+          <span aria-current="page">Umgebung</span>
+        </nav>
+        <span class="section-label" style="color:var(--color-beige);">Ihr Urlaubsrevier</span>
+        <h1>Umgebung &amp; Ausflugsziele</h1>
+        <p>Alles, was Tirol zu bieten hat – von eurem Hof aus erreichbar</p>
+      </div>
+    </section>
+
+    <!-- ALPBACHTAL CARD -->
+    <section class="section" aria-label="Alpbachtal Card">
+      <div class="container">
+        <div class="alpbachtal-card-box slide-up">
+          <h3>&#127981; Alpbachtal Card – inklusive in eurem Aufenthalt</h3>
+          <p>Bei jedem Aufenthalt ist die Alpbachtal Card kostenlos dabei – euer Schlüssel zu den schönsten Erlebnissen der Region, ohne zusätzliche Kosten!</p>
+          <ul class="alpbachtal-card-features">
+            <li>Kostenlose Bergbahnen im Alpbachtal</li>
+            <li>Freier Eintritt in Freibäder und Hallenbäder</li>
+            <li>Kostenlose Nutzung des Busnetzes</li>
+            <li>Ermäßigungen bei Partnerbetrieben</li>
+            <li>Geführte Wanderungen inklusive</li>
+            <li>Minigolf und Tennisplätze frei</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <!-- AKTIVITÄTEN TABS -->
+    <section class="section section-alt" aria-label="Aktivitäten Sommer und Winter">
+      <div class="container">
+        <div class="section-header slide-up">
+          <span class="section-label">Sommer und Winter</span>
+          <h2>Aktivitäten rund um den Hof</h2>
+          <div class="divider"></div>
+        </div>
+
+        <div class="aktivitaet-tabs" role="tablist">
+          <button class="aktivitaet-tab active" role="tab" aria-selected="true" onclick="showTab('sommer', this)">&#9728; Sommer</button>
+          <button class="aktivitaet-tab" role="tab" aria-selected="false" onclick="showTab('winter', this)">&#10052; Winter</button>
+        </div>
+
+        <div id="tab-sommer" class="aktivitaet-content active">
+          <article class="aktivitaet-item">
+            <span class="aktivitaet-item-icon">&#127958;</span>
+            <div>
+              <h4>Berglsteiner See</h4>
+              <p>15 Min. zu Fuß – Baden, Wandern, Staunen im smaragdgrünen Bergsee</p>
+            </div>
+          </article>
+          <article class="aktivitaet-item">
+            <span class="aktivitaet-item-icon">&#127958;</span>
+            <div>
+              <h4>Reintalersee</h4>
+              <p>25 Min. zu Fuß – ein weiterer idyllischer Bergsee der Region</p>
+            </div>
+          </article>
+          <article class="aktivitaet-item">
+            <span class="aktivitaet-item-icon">&#127939;</span>
+            <div>
+              <h4>Wanderwege</h4>
+              <p>Starten direkt am Hof – von leichten Spaziergängen bis zu anspruchsvollen Bergtouren</p>
+            </div>
+          </article>
+          <article class="aktivitaet-item">
+            <span class="aktivitaet-item-icon">&#128690;</span>
+            <div>
+              <h4>Radfahren</h4>
+              <p>Das Inntal und Alpbachtal bieten erstklassige Radwege für alle Schwierigkeitsgrade</p>
+            </div>
+          </article>
+          <article class="aktivitaet-item">
+            <span class="aktivitaet-item-icon">&#129495;</span>
+            <div>
+              <h4>Klettern</h4>
+              <p>Mehrere Kletterrouten und Klettersteige in der näheren Umgebung</p>
+            </div>
+          </article>
+          <article class="aktivitaet-item">
+            <span class="aktivitaet-item-icon">&#127881;</span>
+            <div>
+              <h4>Alpbachtal Card Bergbahnen</h4>
+              <p>Kostenlose Bergbahnfahrten im Sommer – Bergrestaurants, Almhütten, Panoramawege</p>
+            </div>
+          </article>
+        </div>
+
+        <div id="tab-winter" class="aktivitaet-content">
+          <article class="aktivitaet-item">
+            <span class="aktivitaet-item-icon">&#9917;</span>
+            <div>
+              <h4>Skigebiet Alpbach</h4>
+              <p>20 Min. – Teil des Ski Juwel Alpbachtal Wildschönau mit 109 km Pisten</p>
+            </div>
+          </article>
+          <article class="aktivitaet-item">
+            <span class="aktivitaet-item-icon">&#9917;</span>
+            <div>
+              <h4>Wilder Kaiser / SkiWelt</h4>
+              <p>25 Min. – eines der größten Skigebiete Österreichs mit über 280 km Pisten</p>
+            </div>
+          </article>
+          <article class="aktivitaet-item">
+            <span class="aktivitaet-item-icon">&#9917;</span>
+            <div>
+              <h4>Zillertal Arena</h4>
+              <p>30 Min. – ein weiteres erstklassiges Skigebiet mit top Beschneiung</p>
+            </div>
+          </article>
+          <article class="aktivitaet-item">
+            <span class="aktivitaet-item-icon">&#127775;</span>
+            <div>
+              <h4>Rodeln</h4>
+              <p>Mehrere Rodelbahnen in der Region – Abendrodeln auf beleuchteten Strecken</p>
+            </div>
+          </article>
+          <article class="aktivitaet-item">
+            <span class="aktivitaet-item-icon">&#127939;</span>
+            <div>
+              <h4>Winterwandern</h4>
+              <p>Gut präparierte Winterwanderwege rund um Breitenbach am Inn</p>
+            </div>
+          </article>
+          <article class="aktivitaet-item">
+            <span class="aktivitaet-item-icon">&#10052;</span>
+            <div>
+              <h4>Schneeschuhwandern</h4>
+              <p>Geführte Schneeschuhwanderungen in unberührter Winterlandschaft</p>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- SKIGEBIETE TABELLE -->
+    <section class="section" aria-label="Skigebiete in der Nähe">
+      <div class="container">
+        <div class="section-header slide-up">
+          <span class="section-label">Wintersport-Paradies</span>
+          <h2>Skigebiete in der Nähe</h2>
+          <div class="divider"></div>
+        </div>
+        <div style="overflow-x:auto;" class="slide-up">
+          <table style="width:100%;border-collapse:collapse;background:var(--color-white);border-radius:12px;overflow:hidden;box-shadow:var(--shadow-sm);">
+            <thead>
+              <tr style="background:var(--color-dark);color:white;">
+                <th style="padding:1rem;text-align:left;">Skigebiet</th>
+                <th style="padding:1rem;text-align:center;">Entfernung</th>
+                <th style="padding:1rem;text-align:center;">Pistenkilometer</th>
+                <th style="padding:1rem;text-align:center;">Niveau</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr style="border-bottom:1px solid var(--color-cream);">
+                <td style="padding:1rem;font-weight:700;">Ski Juwel Alpbach</td>
+                <td style="padding:1rem;text-align:center;">20 Min.</td>
+                <td style="padding:1rem;text-align:center;">109 km</td>
+                <td style="padding:1rem;text-align:center;">Alle Niveaus</td>
+              </tr>
+              <tr style="border-bottom:1px solid var(--color-cream);background:var(--color-cream);">
+                <td style="padding:1rem;font-weight:700;">SkiWelt / Wilder Kaiser</td>
+                <td style="padding:1rem;text-align:center;">25 Min.</td>
+                <td style="padding:1rem;text-align:center;">280+ km</td>
+                <td style="padding:1rem;text-align:center;">Alle Niveaus</td>
+              </tr>
+              <tr>
+                <td style="padding:1rem;font-weight:700;">Zillertal Arena</td>
+                <td style="padding:1rem;text-align:center;">30 Min.</td>
+                <td style="padding:1rem;text-align:center;">144 km</td>
+                <td style="padding:1rem;text-align:center;">Alle Niveaus</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- AUSFLUGSZIELE -->
+    <section class="section section-alt" aria-label="Ausflugsziele">
+      <div class="container">
+        <div class="section-header slide-up">
+          <span class="section-label">Kultur und Natur</span>
+          <h2>Ausflugsziele in der Region</h2>
+          <div class="divider"></div>
+        </div>
+        <div class="sehenswuerdigkeiten-grid">
+          <article class="sehens-card slide-up delay-1">
+            <div class="sehens-img" style="background:linear-gradient(135deg,#8090a0,#5a6878);">
+              <!-- TODO: Foto Festung Kufstein einfügen -->
+            </div>
+            <div class="sehens-body">
+              <h3>Festung Kufstein</h3>
+              <p>Eine der mächtigsten Festungsanlagen Österreichs – 15 km entfernt.</p>
+              <small>Ca. 15 km · 15 Min. mit dem Auto</small>
+            </div>
+          </article>
+          <article class="sehens-card slide-up delay-2">
+            <div class="sehens-img" style="background:linear-gradient(135deg,#a0a060,#787840);">
+              <!-- TODO: Foto Rattenberg einfügen -->
+            </div>
+            <div class="sehens-body">
+              <h3>Rattenberg</h3>
+              <p>Kleinste Stadt Österreichs mit beeindruckendem Glashandwerk und mittelalterlichem Stadtbild.</p>
+              <small>Ca. 10 km · 10 Min. mit dem Auto</small>
+            </div>
+          </article>
+          <article class="sehens-card slide-up delay-3">
+            <div class="sehens-img" style="background:linear-gradient(135deg,#90a870,#607848);">
+              <!-- TODO: Foto Alpbach Dorf einfügen -->
+            </div>
+            <div class="sehens-body">
+              <h3>Dorf Alpbach</h3>
+              <p>Eines der schönsten Dörfer Österreichs – bekannt für seine Blumenpracht und Tiroler Architektur.</p>
+              <small>Ca. 20 km · 20 Min. mit dem Auto</small>
+            </div>
+          </article>
+          <article class="sehens-card slide-up delay-4">
+            <div class="sehens-img" style="background:linear-gradient(135deg,#6080a8,#3a5878);">
+              <!-- TODO: Foto Achensee einfügen -->
+            </div>
+            <div class="sehens-body">
+              <h3>Achensee</h3>
+              <p>Tirols größter See – ideal für Segeln, Surfen und Panoramaschifffahrten.</p>
+              <small>Ca. 25 km · 25 Min. mit dem Auto</small>
+            </div>
+          </article>
+          <article class="sehens-card slide-up delay-1">
+            <div class="sehens-img" style="background:linear-gradient(135deg,#a07850,#785230);">
+              <!-- TODO: Foto Kufstein Stadt einfügen -->
+            </div>
+            <div class="sehens-body">
+              <h3>Kufstein Stadt</h3>
+              <p>Einkaufen, Restaurants, Cafés und das kulturelle Zentrum des Tiroler Unterlandes.</p>
+              <small>Ca. 15 km · 15 Min. mit dem Auto</small>
+            </div>
+          </article>
+          <article class="sehens-card slide-up delay-2">
+            <div class="sehens-img" style="background:linear-gradient(135deg,#c0a840,#908020);">
+              <!-- TODO: Foto Innsbruck einfügen -->
+            </div>
+            <div class="sehens-body">
+              <h3>Innsbruck</h3>
+              <p>Die Tiroler Landeshauptstadt mit Goldenes Dachl, Hofburg und Bergisel-Skisprungschanze.</p>
+              <small>Ca. 40 km · 40 Min. mit dem Auto</small>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ANREISE -->
+    <section class="section" aria-label="Anreise und Lage">
+      <div class="container">
+        <div class="section-header slide-up">
+          <span class="section-label">Gut erreichbar</span>
+          <h2>Anreise zum Kruckenhaus</h2>
+          <div class="divider"></div>
+        </div>
+        <div class="intro-grid">
+          <div class="intro-text slide-left">
+            <h3>Mit dem Auto</h3>
+            <ul style="list-style:none;padding:0;margin-bottom:1.5rem;">
+              <li style="padding:0.5rem 0;border-bottom:1px solid var(--color-cream);">&#128664; München: ca. 1,5 Stunden (A8/A93)</li>
+              <li style="padding:0.5rem 0;border-bottom:1px solid var(--color-cream);">&#128664; Innsbruck: ca. 40 Minuten (A12)</li>
+              <li style="padding:0.5rem 0;border-bottom:1px solid var(--color-cream);">&#128664; Salzburg: ca. 1,5 Stunden (A1/A8/A93)</li>
+              <li style="padding:0.5rem 0;">&#128664; Kufstein: ca. 15 Minuten</li>
+            </ul>
+            <h3>Mit Bahn &amp; Bus</h3>
+            <ul style="list-style:none;padding:0;margin-bottom:1.5rem;">
+              <li style="padding:0.5rem 0;border-bottom:1px solid var(--color-cream);">&#128645; Bahnhof Brixlegg (5 Min. mit dem Auto)</li>
+              <li style="padding:0.5rem 0;border-bottom:1px solid var(--color-cream);">&#128645; Direktzug von Innsbruck, München, Salzburg</li>
+              <li style="padding:0.5rem 0;">&#128661; Buslinie vom Bahnhof Brixlegg nach Breitenbach</li>
+            </ul>
+            <h3>Flughafen</h3>
+            <ul style="list-style:none;padding:0;">
+              <li style="padding:0.5rem 0;border-bottom:1px solid var(--color-cream);">&#9992; Innsbruck: ca. 50 Min.</li>
+              <li style="padding:0.5rem 0;">&#9992; München: ca. 1,5 Std.</li>
+            </ul>
+          </div>
+          <div class="intro-image slide-right">
+            <div class="map-container">
+              <!-- OpenStreetMap Einbettung -->
+              <iframe
+                src="https://www.openstreetmap.org/export/embed.html?bbox=11.99%2C47.40%2C12.08%2C47.45&layer=mapnik&marker=47.4250%2C12.0410"
+                width="100%"
+                height="350"
+                frameborder="0"
+                scrolling="no"
+                marginheight="0"
+                marginwidth="0"
+                title="Karte: Hof Kruckenhaus, Breitenbach am Inn"
+                loading="lazy"
+                style="border-radius:12px;border:none;">
+              </iframe>
+              <p style="font-size:0.8rem;margin-top:0.5rem;text-align:center;">
+                <a href="https://www.openstreetmap.org/?mlat=47.4250&mlon=12.0410#map=14/47.4250/12.0410" target="_blank" rel="noopener">Größere Karte ansehen</a>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- CTA -->
+    <section class="section text-center section-alt" aria-label="Jetzt buchen">
+      <div class="container">
+        <div class="slide-up">
+          <span class="section-label">Bereit für euren Tiroler Urlaub?</span>
+          <h2>Jetzt anfragen</h2>
+          <div class="divider"></div>
+          <p style="max-width:600px;margin:0 auto var(--spacing-md);">Berglsteiner See, Skigebiete, Ausflugsziele – und immer das Alpbachtal Card dabei!</p>
+          <a href="ferienwohnung.html" class="btn btn-primary" style="margin-right:1rem;">Zur Ferienwohnung</a>
+          <a href="kontakt.html" class="btn btn-green">Anfrage senden</a>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="footer-logo">Kruckenhaus<span>Hof &amp; Ferienwohnung</span></span>
+          <p class="footer-tagline">Ferienwohnung Breitenbach am Inn, Alpbachtal Tirol.</p>
+        </div>
+        <div class="footer-nav">
+          <h4>Navigation</h4>
+          <ul>
+            <li><a href="index.html">Startseite</a></li>
+            <li><a href="ferienwohnung.html">Ferienwohnung</a></li>
+            <li><a href="bauernhof.html">Bauernhof &amp; Alpakas</a></li>
+            <li><a href="berglsteiner-see.html">Berglsteiner See</a></li>
+            <li><a href="workation.html">Workation</a></li>
+            <li><a href="umgebung.html">Umgebung</a></li>
+            <li><a href="kontakt.html">Kontakt</a></li>
+          </ul>
+        </div>
+        <div class="footer-nav">
+          <h4>Rechtliches</h4>
+          <ul>
+            <li><a href="datenschutz.html">Datenschutz</a></li>
+            <li><a href="impressum.html">Impressum</a></li>
+          </ul>
+        </div>
+        <div class="footer-contact">
+          <h4>Kontakt</h4>
+          <p>Katharina &amp; Florian Häusler</p>
+          <p>Oberberg 70<br>6252 Breitenbach am Inn<br>Tirol, Österreich</p>
+          <p><a href="mailto:kathi.haeusler@gmx.at">kathi.haeusler@gmx.at</a></p>
+          <p><a href="tel:+4366421661800">+43 664 2166180</a></p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2025 Hof Kruckenhaus – Katharina &amp; Florian Häusler | Breitenbach am Inn, Tirol</p>
+        <div class="footer-links">
+          <a href="datenschutz.html">Datenschutzerklärung</a>
+          <a href="impressum.html">Impressum</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <div class="cookie-banner" role="dialog" aria-label="Cookie-Hinweis" aria-live="polite">
+    <p>Diese Website verwendet keine Tracking-Cookies. <a href="datenschutz.html">Datenschutzerklärung</a></p>
+    <div class="cookie-actions">
+      <button class="btn btn-primary cookie-accept">Verstanden</button>
+      <button class="btn btn-outline cookie-decline" style="color:var(--color-beige);border-color:rgba(253,250,247,0.4);">Schließen</button>
+    </div>
+  </div>
+
+  <a href="https://wa.me/4366421661800?text=Hallo%2C%20ich%20interessiere%20mich%20f%C3%BCr%20die%20Ferienwohnung%20Kruckenhaus."
+     class="whatsapp-btn" aria-label="WhatsApp" title="WhatsApp" target="_blank" rel="noopener noreferrer">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+  </a>
+  <button class="back-to-top" aria-label="Zurueck nach oben" title="Zurueck nach oben">&#8593;</button>
+
+  <script src="js/main.js"></script>
+  <script>
+    function showTab(tabId, btn) {
+      document.querySelectorAll('.aktivitaet-content').forEach(c => c.classList.remove('active'));
+      document.querySelectorAll('.aktivitaet-tab').forEach(b => { b.classList.remove('active'); b.setAttribute('aria-selected','false'); });
+      document.getElementById('tab-' + tabId).classList.add('active');
+      btn.classList.add('active');
+      btn.setAttribute('aria-selected','true');
+    }
+  </script>
+</body>
+</html>

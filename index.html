@@ -3,35 +3,54 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Ferienwohnung Kruckenhaus in Breitenbach am Inn, Tirol – Ihr Urlaub in den Tiroler Alpen. Bergblick, modern ausgestattet, familienfreundlich. Jetzt buchen!" />
-  <meta name="keywords" content="Ferienwohnung Tirol, Breitenbach am Inn, Urlaub Tirol, Ferienwohnung Alpen, Kruckenhaus, Unterkunft Tirol" />
-  <meta name="author" content="Florian & Kathrin – Hof Kruckenhaus" />
+  <meta name="description" content="Ferienwohnung Kruckenhaus – Bergbauernhof in Breitenbach am Inn, Alpbachtal Tirol. 100 m², Alpakas, 15 Min. zum Berglsteiner See, Starlink 200+ Mbit/s, Alpbachtal Card inklusive." />
+  <meta name="keywords" content="Ferienwohnung Kruckenhaus, Ferienwohnung Breitenbach am Inn, Bauernhof Ferienwohnung Alpbachtal, Alpaka Tirol, Berglsteiner See, Workation Tirol" />
+  <meta name="author" content="Katharina &amp; Florian Häusler – Kruckenhaus" />
   <meta name="robots" content="index, follow" />
-
-  <!-- Open Graph -->
-  <meta property="og:title" content="Kruckenhaus – Ferienwohnung in Tirol" />
-  <meta property="og:description" content="Erleben Sie Tirol von seiner schönsten Seite. Unsere Ferienwohnung bietet Bergblick, moderne Ausstattung und herzliche Gastfreundschaft." />
+  <meta property="og:title" content="Ferienwohnung Kruckenhaus – Bergbauernhof in Breitenbach am Inn | Alpbachtal Tirol" />
+  <meta property="og:description" content="100 m² Ferienwohnung am Bergbauernhof mit Alpakas, 15 Min. zum Berglsteiner See und Starlink-Internet." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.kruckenhaus.at/" />
-  <meta property="og:image" content="https://www.kruckenhaus.at/images/hero-background.jpg" />
+  <meta property="og:image" content="https://www.kruckenhaus.at/images/hero/hof-panorama.jpg" />
   <meta property="og:locale" content="de_AT" />
-
-  <!-- Canonical -->
   <link rel="canonical" href="https://www.kruckenhaus.at/" />
-
-  <title>Kruckenhaus – Ferienwohnung in Breitenbach am Inn, Tirol</title>
-
-  <!-- Favicon Platzhalter -->
+  <link rel="alternate" hreflang="de" href="https://www.kruckenhaus.at/" />
+  <title>Ferienwohnung Kruckenhaus – Bergbauernhof in Breitenbach am Inn | Alpbachtal Tirol</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
-
-  <!-- Stylesheet -->
   <link rel="stylesheet" href="css/style.css" />
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "LodgingBusiness",
+    "name": "Ferienwohnung Kruckenhaus",
+    "description": "Bergbauernhof-Ferienwohnung mit Alpakas, 15 Min. zum Berglsteiner See, Starlink-Internet 200+ Mbit/s und Alpbachtal Card inklusive.",
+    "url": "https://www.kruckenhaus.at",
+    "address": {
+      "@type": "PostalAddress",
+      "streetAddress": "Oberberg 70",
+      "addressLocality": "Breitenbach am Inn",
+      "postalCode": "6252",
+      "addressRegion": "Tirol",
+      "addressCountry": "AT"
+    },
+    "telephone": "+4366421661800",
+    "email": "kathi.haeusler@gmx.at",
+    "priceRange": "ab 40 EUR/Person/Nacht",
+    "checkinTime": "17:00",
+    "checkoutTime": "09:30",
+    "amenityFeature": [
+      {"@type": "LocationFeatureSpecification", "name": "Starlink Internet 200+ Mbit/s"},
+      {"@type": "LocationFeatureSpecification", "name": "Alpbachtal Card inklusive"},
+      {"@type": "LocationFeatureSpecification", "name": "Kostenloser Parkplatz"},
+      {"@type": "LocationFeatureSpecification", "name": "Balkon mit Bergblick"},
+      {"@type": "LocationFeatureSpecification", "name": "Alpakas am Hof"},
+      {"@type": "LocationFeatureSpecification", "name": "15 Gehminuten zum Berglsteiner See"}
+    ]
+  }
+  </script>
 </head>
 <body>
 
-  <!-- ========================================================
-       HEADER / NAVIGATION
-       ======================================================== -->
   <header class="site-header" role="banner">
     <div class="nav-container">
       <a href="index.html" class="nav-logo" aria-label="Kruckenhaus – Zur Startseite">
@@ -44,212 +63,337 @@
           </div>
         </div>
       </a>
-
-      <!-- Desktop Navigation -->
       <nav class="nav-menu" role="navigation" aria-label="Hauptnavigation">
-        <a href="index.html" class="nav-link">Home</a>
+        <a href="index.html" class="nav-link active">Home</a>
         <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
-        <a href="zimmer.html" class="nav-link">Zimmer</a>
-        <a href="lage.html" class="nav-link">Lage</a>
-        <a href="preise.html" class="nav-link">Preise</a>
+        <a href="bauernhof.html" class="nav-link">Bauernhof</a>
+        <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
+        <a href="workation.html" class="nav-link">Workation</a>
+        <a href="umgebung.html" class="nav-link">Umgebung</a>
         <a href="kontakt.html" class="nav-link">Kontakt</a>
       </nav>
-
-      <!-- Sprachumschalter Platzhalter -->
-      <!-- <div class="lang-switcher">DE | EN</div> -->
-
-      <!-- Hamburger (Mobile) -->
-      <button class="hamburger" aria-label="Menü öffnen" aria-expanded="false" aria-controls="nav-overlay">
-        <span></span>
-        <span></span>
-        <span></span>
+      <button class="hamburger" aria-label="Menue oeffnen" aria-expanded="false" aria-controls="nav-overlay">
+        <span></span><span></span><span></span>
       </button>
     </div>
   </header>
 
-  <!-- Mobile Overlay Navigation -->
   <nav class="nav-overlay" id="nav-overlay" role="navigation" aria-label="Mobile Navigation">
-    <a href="index.html" class="nav-link">Home</a>
+    <a href="index.html" class="nav-link active">Home</a>
     <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
-    <a href="zimmer.html" class="nav-link">Zimmer</a>
-    <a href="lage.html" class="nav-link">Lage</a>
-    <a href="preise.html" class="nav-link">Preise</a>
+    <a href="bauernhof.html" class="nav-link">Bauernhof</a>
+    <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
+    <a href="workation.html" class="nav-link">Workation</a>
+    <a href="umgebung.html" class="nav-link">Umgebung</a>
     <a href="kontakt.html" class="nav-link">Kontakt</a>
-    <div class="lang-switcher">DE | EN</div>
   </nav>
 
   <main id="main-content">
 
-    <!-- ========================================================
-         HERO SECTION
-         ======================================================== -->
-    <section class="hero" aria-label="Willkommen">
-      <!-- Hintergrundbild: images/hero-background.jpg (1920×1080) -->
-      <div class="hero-bg" role="img" aria-label="Panoramablick auf die Tiroler Berglandschaft"></div>
-      <div class="hero-overlay"></div>
+    <!-- HERO SLIDER -->
+    <section class="hero-slider" aria-label="Willkommen am Kruckenhaus">
+      <div class="hero-slides" id="heroSlides">
 
-      <div class="hero-content">
-        <span class="hero-label">Willkommen in Tirol</span>
-        <h1 class="hero-title">Willkommen auf unserem<br>Hof Kruckenhaus</h1>
-        <p class="hero-subtitle">Ihre Tiroler Ferienwohnung in Breitenbach am Inn</p>
-        <div class="hero-cta">
-          <a href="preise.html" class="btn btn-primary">Jetzt verfügbare Termine ansehen</a>
-          <a href="ferienwohnung.html" class="btn btn-outline" style="margin-left: 1rem;">Zur Wohnung</a>
+        <div class="hero-slide active" aria-label="Slide 1: Urlaub am Bergbauernhof">
+          <!-- TODO: Drohnenaufnahme Hof mit Bergpanorama (1920x1080) -->
+          <div class="hero-slide-bg hero-slide-bg--hof" role="img" aria-label="Bergbauernhof Kruckenhaus mit Panoramablick auf das Rofangebirge"></div>
+          <div class="hero-slide-overlay"></div>
+          <div class="hero-slide-content">
+            <span class="hero-slide-label">Willkommen in Tirol</span>
+            <h1 class="hero-slide-title">Urlaub am<br>Bergbauernhof</h1>
+            <div class="hero-slide-cta">
+              <a href="ferienwohnung.html" class="btn btn-primary">Ferienwohnung entdecken</a>
+              <a href="kontakt.html" class="btn btn-outline">Jetzt buchen</a>
+            </div>
+          </div>
         </div>
+
+        <div class="hero-slide" aria-label="Slide 2: Berglsteiner See">
+          <!-- TODO: Berglsteiner See mit Bergspiegelung (1920x1080) -->
+          <div class="hero-slide-bg hero-slide-bg--see" role="img" aria-label="Smaragdgruener Berglsteiner See bei Breitenbach am Inn"></div>
+          <div class="hero-slide-overlay"></div>
+          <div class="hero-slide-content">
+            <span class="hero-slide-label">Naturjuwel Tirols</span>
+            <h2 class="hero-slide-title">15 Gehminuten<br>zum Bergsee</h2>
+            <div class="hero-slide-cta">
+              <a href="berglsteiner-see.html" class="btn btn-primary">Mehr erfahren</a>
+              <a href="kontakt.html" class="btn btn-outline">Verfuegbarkeit pruefen</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-slide" aria-label="Slide 3: Alpakas">
+          <!-- TODO: Alpakas auf Weide vor Bergkulisse (1920x1080) -->
+          <div class="hero-slide-bg hero-slide-bg--alpaka" role="img" aria-label="Alpakas auf der Weide am Kruckenhaus Bauernhof in Tirol"></div>
+          <div class="hero-slide-overlay"></div>
+          <div class="hero-slide-content">
+            <span class="hero-slide-label">Tiere hautnah erleben</span>
+            <h2 class="hero-slide-title">Bauernhof-Erlebnis<br>mit Alpakas</h2>
+            <div class="hero-slide-cta">
+              <a href="bauernhof.html" class="btn btn-primary">Unsere Tiere</a>
+              <a href="kontakt.html" class="btn btn-outline">Anfragen</a>
+            </div>
+          </div>
+        </div>
+
+        <div class="hero-slide" aria-label="Slide 4: Workation">
+          <!-- TODO: Laptop auf Terrasse mit Bergblick (1920x1080) -->
+          <div class="hero-slide-bg hero-slide-bg--workation" role="img" aria-label="Arbeitsplatz mit Bergblick – Workation am Kruckenhaus"></div>
+          <div class="hero-slide-overlay"></div>
+          <div class="hero-slide-content">
+            <span class="hero-slide-label">Arbeiten und Geniessen</span>
+            <h2 class="hero-slide-title">Workation mit<br>200 Mbit/s Starlink</h2>
+            <div class="hero-slide-cta">
+              <a href="workation.html" class="btn btn-primary">Workation-Angebot</a>
+              <a href="kontakt.html" class="btn btn-outline">Kontakt</a>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <button class="slider-prev" id="sliderPrev" aria-label="Vorheriger Slide">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" width="22" height="22" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5"/>
+        </svg>
+      </button>
+      <button class="slider-next" id="sliderNext" aria-label="Naechster Slide">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" width="22" height="22" aria-hidden="true">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M8.25 4.5l7.5 7.5-7.5 7.5"/>
+        </svg>
+      </button>
+
+      <div class="slider-dots" role="tablist" aria-label="Slider Navigation">
+        <button class="slider-dot active" role="tab" aria-selected="true" aria-label="Slide 1"></button>
+        <button class="slider-dot" role="tab" aria-selected="false" aria-label="Slide 2"></button>
+        <button class="slider-dot" role="tab" aria-selected="false" aria-label="Slide 3"></button>
+        <button class="slider-dot" role="tab" aria-selected="false" aria-label="Slide 4"></button>
       </div>
     </section>
 
-    <!-- Bergsilhouette Divider -->
     <div class="mountain-divider" aria-hidden="true">
-      <svg viewBox="0 0 1200 60" preserveAspectRatio="none" fill="#FDFAF7" xmlns="http://www.w3.org/2000/svg">
+      <svg viewBox="0 0 1200 60" preserveAspectRatio="none" fill="#FAF8F5" xmlns="http://www.w3.org/2000/svg">
         <path d="M0,60 L0,35 L80,15 L160,30 L240,8 L320,28 L420,5 L520,25 L600,10 L680,28 L760,12 L840,32 L920,15 L1000,35 L1080,18 L1160,38 L1200,25 L1200,60 Z"/>
       </svg>
     </div>
 
-    <!-- ========================================================
-         HIGHLIGHTS (3 Karten)
-         ======================================================== -->
-    <section class="section highlights" aria-label="Unsere Highlights">
-      <div class="container">
-        <div class="section-header slide-up">
-          <span class="section-label">Was uns besonders macht</span>
-          <h2>Ihr Urlaub auf dem Hof Kruckenhaus</h2>
-          <div class="divider"></div>
-        </div>
-
-        <div class="highlights-grid">
-          <article class="highlight-card slide-up delay-1">
-            <h3>Bergblick inklusive</h3>
-            <p>Genießen Sie jeden Morgen einen atemberaubenden Panoramablick auf die Tiroler Bergwelt – direkt von Ihrer Terrasse aus.</p>
-          </article>
-
-          <article class="highlight-card slide-up delay-2">
-            <h3>Modern ausgestattet</h3>
-            <p>Vollausgestattete Küche, schnelles WLAN, komfortable Betten – alles was Sie für einen entspannten Urlaub brauchen.</p>
-          </article>
-
-          <article class="highlight-card slide-up delay-3">
-            <span class="highlight-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="32" height="32" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg></span>
-            <h3>Familien willkommen</h3>
-            <p>Viel Platz, eine ruhige Lage und die Natur direkt vor der Tür – ideal für Familien mit Kindern jeden Alters.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- Bergsilhouette Divider -->
-    <div class="mountain-divider mountain-divider--top" aria-hidden="true">
-      <svg viewBox="0 0 1200 60" preserveAspectRatio="none" fill="#FDFAF7" xmlns="http://www.w3.org/2000/svg">
-        <path d="M0,60 L0,35 L80,15 L160,30 L240,8 L320,28 L420,5 L520,25 L600,10 L680,28 L760,12 L840,32 L920,15 L1000,35 L1080,18 L1160,38 L1200,25 L1200,60 Z"/>
-      </svg>
-    </div>
-
-    <!-- ========================================================
-         ÜBER UNS / INTRO
-         ======================================================== -->
-    <section class="section" aria-label="Über die Ferienwohnung">
+    <!-- INTRO -->
+    <section class="section" aria-label="Willkommen am Kruckenhaus">
       <div class="container">
         <div class="intro-grid">
           <div class="intro-image slide-left">
-            <!-- Foto: images/wohnung-aussen.jpg -->
+            <!-- TODO: Foto Außenansicht Hof mit Bergpanorama: bauernhof/hof-aussen.jpg -->
             <div class="img-placeholder">
               <strong>Hof Kruckenhaus</strong>
-              <small>Foto: wohnung-aussen.jpg einfügen</small>
+              <small>Foto: Außenansicht mit Bergpanorama einfügen</small>
             </div>
           </div>
-
           <div class="intro-text slide-right">
-            <span class="section-label">Unser Hof</span>
-            <h2>Urlaub mit Herz in Tirol</h2>
+            <span class="section-label">Unser Hof in Breitenbach am Inn</span>
+            <h2>Willkommen am Kruckenhaus</h2>
             <div class="divider" style="margin-left: 0;"></div>
-            <p>Herzlich willkommen auf dem Hof Kruckenhaus! Unser idyllisch gelegener Bauernhof in Breitenbach am Inn liegt mitten in der wunderschönen Tiroler Berglandschaft und bietet Ihnen die perfekte Ausgangsbasis für unvergessliche Urlaubserlebnisse.</p>
-            <p>Unsere liebevoll eingerichtete Ferienwohnung verbindet rustikalen Tiroler Charme mit modernem Wohnkomfort. Ob Sommer oder Winter – jede Jahreszeit hat hier ihren ganz besonderen Reiz.</p>
-            <p>Als Gastgeber, Florian und Kathrin, freuen wir uns, Sie auf unserem Hof begrüßen zu dürfen und Ihnen einen unvergesslichen Urlaub zu bereiten.</p>
-            <a href="ferienwohnung.html" class="btn btn-primary">Mehr zur Wohnung</a>
+            <p>Willkommen am Kruckenhaus – eurem Zuhause auf Zeit inmitten der Tiroler Berge. Unser Bergbauernhof liegt am sonnigen Oberberg in Breitenbach am Inn, umgeben von Wiesen, Wäldern und dem Blick auf das Rofangebirge.</p>
+            <p>In nur 15 Gehminuten erreicht ihr den Berglsteiner See – eines der schönsten Naturjuwele Tirols. Auf unserem Hof leben Alpakas, Schafe, Hühner und Rinder. Im Hofladen findet ihr frische Eier, hausgemachte Nudeln und Marmeladen.</p>
+            <p>Eure großzügige 100-m²-Ferienwohnung mit Balkon und Bergblick bietet Platz zum Ankommen, Durchatmen und Genießen – Katharina und Florian Häusler freuen sich auf euren Besuch!</p>
+            <ul style="list-style:none;padding:0;margin:1.5rem 0;display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;">
+              <li style="display:flex;align-items:center;gap:0.5rem;font-size:0.95rem;"><span style="color:var(--color-primary);">✓</span> 100 m² Ferienwohnung</li>
+              <li style="display:flex;align-items:center;gap:0.5rem;font-size:0.95rem;"><span style="color:var(--color-primary);">✓</span> Alpakas am Hof</li>
+              <li style="display:flex;align-items:center;gap:0.5rem;font-size:0.95rem;"><span style="color:var(--color-primary);">✓</span> 15 Min. zum Bergsee</li>
+              <li style="display:flex;align-items:center;gap:0.5rem;font-size:0.95rem;"><span style="color:var(--color-primary);">✓</span> 200+ Mbit/s Starlink</li>
+              <li style="display:flex;align-items:center;gap:0.5rem;font-size:0.95rem;"><span style="color:var(--color-primary);">✓</span> Alpbachtal Card inkl.</li>
+              <li style="display:flex;align-items:center;gap:0.5rem;font-size:0.95rem;"><span style="color:var(--color-primary);">✓</span> ab 40 €/Person/Nacht</li>
+            </ul>
+            <a href="ferienwohnung.html" class="btn btn-primary">Zur Ferienwohnung</a>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ========================================================
-         WARUM KRUCKENHAUS
-         ======================================================== -->
-    <section class="section section-alt" aria-label="Warum Kruckenhaus">
+    <div class="mountain-divider mountain-divider--top" aria-hidden="true">
+      <svg viewBox="0 0 1200 60" preserveAspectRatio="none" fill="#E8EDEA" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,60 L0,35 L80,15 L160,30 L240,8 L320,28 L420,5 L520,25 L600,10 L680,28 L760,12 L840,32 L920,15 L1000,35 L1080,18 L1160,38 L1200,25 L1200,60 Z"/>
+      </svg>
+    </div>
+
+    <!-- 4er USP KACHELN -->
+    <section class="section section-alt usp-kacheln" aria-label="Unsere Highlights">
       <div class="container">
         <div class="section-header slide-up">
-          <span class="section-label">Ihre Vorteile</span>
-          <h2>Warum Kruckenhaus?</h2>
+          <span class="section-label">Was den Kruckenhaus besonders macht</span>
+          <h2>Vier Gründe, die ihr lieben werdet</h2>
           <div class="divider"></div>
-          <p>Was unsere Ferienwohnung zu einem besonderen Ort macht</p>
         </div>
-
-        <div class="features-list">
-          <article class="feature-item slide-up delay-1">
-            <div>
-              <h4>Traumhafte Lage</h4>
-              <p>Direkt in den Tiroler Alpen, umgeben von Wiesen und Wäldern. Wanderwege beginnen direkt vor der Haustür.</p>
+        <div class="usp-grid">
+          <a href="berglsteiner-see.html" class="usp-kachel slide-up delay-1">
+            <span class="usp-kachel-icon" aria-hidden="true">🏔️</span>
+            <div class="usp-kachel-body">
+              <h3>Berglsteiner See</h3>
+              <p>In nur 15 Gehminuten erreicht ihr dieses smaragdgrüne Naturjuwel – perfekt zum Baden, Entspannen und Staunen.</p>
+              <span class="usp-kachel-link">Mehr erfahren →</span>
             </div>
-          </article>
-
-          <article class="feature-item slide-up delay-2">
-            <span class="feature-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="32" height="32" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z"/></svg></span>
-            <div>
-              <h4>Ruhe &amp; Erholung</h4>
-              <p>Abseits vom Trubel, aber dennoch nah zu Supermärkte, Restaurants und Aktivitäten – die perfekte Balance.</p>
+          </a>
+          <a href="bauernhof.html" class="usp-kachel slide-up delay-2">
+            <span class="usp-kachel-icon" aria-hidden="true">🦙</span>
+            <div class="usp-kachel-body">
+              <h3>Alpakas &amp; Bauernhof</h3>
+              <p>Drei Alpaka-Stuten, Jungtiere ab April 2026, 500 Legehennen, Schafe und Rinder – ein Erlebnis für die ganze Familie.</p>
+              <span class="usp-kachel-link">Zum Bauernhof →</span>
             </div>
-          </article>
-
-          <article class="feature-item slide-up delay-3">
-            <span class="feature-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="32" height="32" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/></svg></span>
-            <div>
-              <h4>Sommer &amp; Winter</h4>
-              <p>Wandern, Radfahren und Baden im Sommer; Skifahren, Rodeln und Winterwandern in den schönsten Skigebieten Tirols im Winter.</p>
+          </a>
+          <a href="workation.html" class="usp-kachel slide-up delay-3">
+            <span class="usp-kachel-icon" aria-hidden="true">💻</span>
+            <div class="usp-kachel-body">
+              <h3>Workation</h3>
+              <p>200+ Mbit/s Starlink-Internet – stabil für Videokonferenzen und Cloud-Arbeit. Einzigartig in der Region!</p>
+              <span class="usp-kachel-link">Workation-Angebot →</span>
             </div>
-          </article>
-
-          <article class="feature-item slide-up delay-4">
-            <span class="feature-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="32" height="32" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z"/></svg></span>
-            <div>
-              <h4>Persönliche Betreuung</h4>
-              <p>Wir sind immer für Sie da – mit Tipps für die Region, Empfehlungen für Restaurants und allem was Ihren Aufenthalt perfekt macht.</p>
+          </a>
+          <a href="ferienwohnung.html" class="usp-kachel slide-up delay-4">
+            <span class="usp-kachel-icon" aria-hidden="true">🏠</span>
+            <div class="usp-kachel-body">
+              <h3>Die Ferienwohnung</h3>
+              <p>100 m² mit Balkon und Bergblick, für 2–6 Personen. Alpbachtal Card inklusive – kostenlose Bergbahnen und Schwimmbäder.</p>
+              <span class="usp-kachel-link">Details &amp; Preise →</span>
             </div>
-          </article>
-
-          <article class="feature-item slide-up delay-1">
-            <span class="feature-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="32" height="32" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/></svg></span>
-            <div>
-              <h4>Naturnahes Erlebnis</h4>
-              <p>Frische Bergluft, klare Bäche und echte Tiroler Natur – tanken Sie neue Energie für den Alltag.</p>
-            </div>
-          </article>
-
-          <article class="feature-item slide-up delay-2">
-            <span class="feature-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="32" height="32" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 011.04 0l2.125 5.111a.563.563 0 00.475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 00-.182.557l1.285 5.385a.562.562 0 01-.84.61l-4.725-2.885a.563.563 0 00-.586 0L6.982 20.54a.562.562 0 01-.84-.61l1.285-5.386a.562.562 0 00-.182-.557l-4.204-3.602a.563.563 0 01.321-.988l5.518-.442a.563.563 0 00.475-.345L11.48 3.5z"/></svg></span>
-            <div>
-              <h4>Beste Skigebiete in der Nähe</h4>
-              <p>Alpbachtal Seibensee und Wildschönau sind nur wenige Minuten entfernt – Ski-Spaß für die ganze Familie.</p>
-            </div>
-          </article>
+          </a>
         </div>
       </div>
     </section>
 
-    <!-- ========================================================
-         GÄSTEBEWERTUNGEN
-         ======================================================== -->
-    <section class="section testimonials" aria-label="Gästebewertungen">
+    <div class="mountain-divider" aria-hidden="true">
+      <svg viewBox="0 0 1200 60" preserveAspectRatio="none" fill="#FAF8F5" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,60 L0,35 L80,15 L160,30 L240,8 L320,28 L420,5 L520,25 L600,10 L680,28 L760,12 L840,32 L920,15 L1000,35 L1080,18 L1160,38 L1200,25 L1200,60 Z"/>
+      </svg>
+    </div>
+
+    <!-- FOTO-GALERIE -->
+    <section class="section" aria-label="Galerie">
       <div class="container">
         <div class="section-header slide-up">
-          <span class="section-label" style="color: var(--color-primary);">Unsere Gäste sagen</span>
-          <h2>Was unsere Gäste erleben</h2>
+          <span class="section-label">Eindrücke</span>
+          <h2>Bilder vom Hof &amp; der Umgebung</h2>
+          <div class="divider"></div>
+          <p>Klickt auf ein Foto für die Vollansicht</p>
+        </div>
+        <div class="gallery-grid" role="list" aria-label="Foto-Galerie Kruckenhaus">
+
+          <div class="gallery-item slide-up delay-1" role="listitem"
+               data-src="images/bauernhof/alpakas-weide.jpg"
+               data-alt="Alpakas auf der Weide am Kruckenhaus, Breitenbach am Inn"
+               aria-label="Alpakas auf der Weide">
+            <!-- TODO: alpaka-weide-kruckenhaus.jpg -->
+            <div class="img-placeholder" style="min-height:auto;height:100%;background:linear-gradient(135deg,#b8c8a8,#7a9a6a);">
+              <small>Alpakas auf der Weide</small>
+            </div>
+            <div class="gallery-item-overlay"><span class="gallery-zoom-icon" aria-hidden="true">&#128269;</span></div>
+          </div>
+
+          <div class="gallery-item slide-up delay-2" role="listitem"
+               data-src="images/see/berglsteiner-see-sommer.jpg"
+               data-alt="Berglsteiner See im Sommer – smaragdgrünes Wasser zwischen Bergwäldern"
+               aria-label="Berglsteiner See Sommer">
+            <!-- TODO: berglsteiner-see-sommer.jpg -->
+            <div class="img-placeholder" style="min-height:auto;height:100%;background:linear-gradient(135deg,#4a9a8a,#2a6a62);">
+              <small>Berglsteiner See Sommer</small>
+            </div>
+            <div class="gallery-item-overlay"><span class="gallery-zoom-icon" aria-hidden="true">&#128269;</span></div>
+          </div>
+
+          <div class="gallery-item slide-up delay-3" role="listitem"
+               data-src="images/wohnung/ferienwohnung-wohnzimmer.jpg"
+               data-alt="Wohnzimmer der Ferienwohnung Kruckenhaus mit Bergblick"
+               aria-label="Ferienwohnung Wohnzimmer">
+            <!-- TODO: ferienwohnung-wohnzimmer.jpg -->
+            <div class="img-placeholder" style="min-height:auto;height:100%;background:linear-gradient(135deg,#d4c4b0,#b09880);">
+              <small>Wohnzimmer</small>
+            </div>
+            <div class="gallery-item-overlay"><span class="gallery-zoom-icon" aria-hidden="true">&#128269;</span></div>
+          </div>
+
+          <div class="gallery-item slide-up delay-4" role="listitem"
+               data-src="images/hero/hof-panorama.jpg"
+               data-alt="Hof Kruckenhaus mit Panoramablick auf das Rofangebirge"
+               aria-label="Hof mit Bergpanorama">
+            <!-- TODO: hof-panorama-rofangebirge.jpg -->
+            <div class="img-placeholder" style="min-height:auto;height:100%;background:linear-gradient(135deg,#8aa870,#5a7a50);">
+              <small>Hof mit Bergpanorama</small>
+            </div>
+            <div class="gallery-item-overlay"><span class="gallery-zoom-icon" aria-hidden="true">&#128269;</span></div>
+          </div>
+
+          <div class="gallery-item slide-up delay-1" role="listitem"
+               data-src="images/wohnung/ferienwohnung-balkon.jpg"
+               data-alt="Balkon der Ferienwohnung Kruckenhaus mit Bergblick"
+               aria-label="Balkon mit Bergblick">
+            <!-- TODO: ferienwohnung-balkon-bergblick.jpg -->
+            <div class="img-placeholder" style="min-height:auto;height:100%;background:linear-gradient(135deg,#c0d4e0,#8aa8c0);">
+              <small>Balkon mit Bergblick</small>
+            </div>
+            <div class="gallery-item-overlay"><span class="gallery-zoom-icon" aria-hidden="true">&#128269;</span></div>
+          </div>
+
+          <div class="gallery-item slide-up delay-2" role="listitem"
+               data-src="images/bauernhof/hofladen-produkte.jpg"
+               data-alt="Hofladen am Kruckenhaus: frische Eier, Nudeln, Liköre und Marmeladen"
+               aria-label="Hofladen Produkte">
+            <!-- TODO: hofladen-produkte-kruckenhaus.jpg -->
+            <div class="img-placeholder" style="min-height:auto;height:100%;background:linear-gradient(135deg,#e0c890,#c0a060);">
+              <small>Hofladen</small>
+            </div>
+            <div class="gallery-item-overlay"><span class="gallery-zoom-icon" aria-hidden="true">&#128269;</span></div>
+          </div>
+
+          <div class="gallery-item slide-up delay-3" role="listitem"
+               data-src="images/see/berglsteiner-see-herbst.jpg"
+               data-alt="Berglsteiner See im Herbst – leuchtende Laubspiegelung im Wasser"
+               aria-label="Berglsteiner See Herbst">
+            <!-- TODO: berglsteiner-see-herbst-spiegelung.jpg -->
+            <div class="img-placeholder" style="min-height:auto;height:100%;background:linear-gradient(135deg,#c09050,#8a6030);">
+              <small>Berglsteiner See Herbst</small>
+            </div>
+            <div class="gallery-item-overlay"><span class="gallery-zoom-icon" aria-hidden="true">&#128269;</span></div>
+          </div>
+
+          <div class="gallery-item slide-up delay-4" role="listitem"
+               data-src="images/workation/workation-schreibtisch.jpg"
+               data-alt="Arbeitsplatz mit Bergblick in der Ferienwohnung Kruckenhaus – Workation Tirol"
+               aria-label="Workation Arbeitsplatz">
+            <!-- TODO: workation-schreibtisch-bergblick.jpg -->
+            <div class="img-placeholder" style="min-height:auto;height:100%;background:linear-gradient(135deg,#a0a8c0,#6878a0);">
+              <small>Workation Arbeitsplatz</small>
+            </div>
+            <div class="gallery-item-overlay"><span class="gallery-zoom-icon" aria-hidden="true">&#128269;</span></div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+    <div class="lightbox" role="dialog" aria-modal="true" aria-label="Bildvorschau">
+      <button class="lightbox-close" aria-label="Schliessen">&times;</button>
+      <img src="" alt="" class="lightbox-img" />
+      <p class="lightbox-caption"></p>
+    </div>
+
+    <div class="mountain-divider mountain-divider--top" aria-hidden="true">
+      <svg viewBox="0 0 1200 60" preserveAspectRatio="none" fill="#3E2723" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,60 L0,35 L80,15 L160,30 L240,8 L320,28 L420,5 L520,25 L600,10 L680,28 L760,12 L840,32 L920,15 L1000,35 L1080,18 L1160,38 L1200,25 L1200,60 Z"/>
+      </svg>
+    </div>
+
+    <!-- GÄSTEBEWERTUNGEN -->
+    <section class="section testimonials" aria-label="Gaestebewertungen">
+      <div class="container">
+        <div class="section-header slide-up">
+          <span class="section-label" style="color: var(--color-primary);">Was unsere Gäste sagen</span>
+          <h2>Echte Stimmen, echte Erlebnisse</h2>
           <div class="divider"></div>
         </div>
-
         <div class="testimonials-grid">
 
           <article class="testimonial-card fade-in delay-1">
-            <div class="stars" aria-label="5 von 5 Sternen">★★★★★</div>
-            <p class="testimonial-text">„Eine absolute Traumunterkunft! Die Wohnung ist wunderschön eingerichtet, der Ausblick ist atemberaubend und die Gastgeber sind herzlich und hilfsbereit. Wir kommen definitiv wieder!"</p>
+            <div class="stars" aria-label="5 von 5 Sternen">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="testimonial-text">„Eine absolute Traumunterkunft! Die Wohnung ist wunderschön eingerichtet, der Ausblick auf die Berge ist atemberaubend und der Berglsteiner See wirklich nur einen kurzen Spaziergang entfernt. Kathi und Florian sind herzliche Gastgeber. Wir kommen definitiv wieder!"</p>
             <div>
               <div class="testimonial-author">Familie Müller</div>
               <div class="testimonial-origin">München, Deutschland</div>
@@ -257,8 +401,8 @@
           </article>
 
           <article class="testimonial-card fade-in delay-2">
-            <div class="stars" aria-label="5 von 5 Sternen">★★★★★</div>
-            <p class="testimonial-text">„Perfekte Lage für Wandertouren. Direkt von der Unterkunft aus auf wunderschöne Wege. Die Wohnung ist top ausgestattet – nichts fehlt. Florian und Kathrin sind tolle Gastgeber!"</p>
+            <div class="stars" aria-label="5 von 5 Sternen">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="testimonial-text">„Die Alpakas haben unsere Kinder begeistert! Jeden Morgen frische Eier aus dem Hofladen, nachmittags am See – so soll Urlaub sein. Das Starlink-Internet hat sogar für meinen Zoom-Call problemlos funktioniert."</p>
             <div>
               <div class="testimonial-author">Thomas &amp; Maria S.</div>
               <div class="testimonial-origin">Salzburg, Österreich</div>
@@ -266,81 +410,78 @@
           </article>
 
           <article class="testimonial-card fade-in delay-3">
-            <div class="stars" aria-label="5 von 5 Sternen">★★★★★</div>
-            <p class="testimonial-text">„Wir haben eine Woche im Winter verbracht – Skifahren tagsüber, abends gemütlich in der Wohnung entspannen. Die Kinder waren begeistert! Absolute Empfehlung für Familien."</p>
-            <div>
-              <div class="testimonial-author">Familie Bauer</div>
-              <div class="testimonial-origin">Zürich, Schweiz</div>
-            </div>
-          </article>
-
-          <article class="testimonial-card fade-in delay-4">
-            <div class="stars" aria-label="5 von 5 Sternen">★★★★★</div>
-            <p class="testimonial-text">„Einfach wunderbar! Die Ruhe, die Natur, die saubere und liebevoll gestaltete Wohnung – wir haben uns von der ersten Minute an wie zu Hause gefühlt."</p>
+            <div class="stars" aria-label="5 von 5 Sternen">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="testimonial-text">„Perfekt für unsere Workation! Schnelles Internet, ruhige Atmosphäre, und in der Mittagspause am Berglsteiner See schwimmen. Der See im Herbst ist einfach magisch – diese Farbenspiegelung im Wasser!"</p>
             <div>
               <div class="testimonial-author">Claudia W.</div>
               <div class="testimonial-origin">Stuttgart, Deutschland</div>
             </div>
           </article>
 
+          <article class="testimonial-card fade-in delay-4">
+            <div class="stars" aria-label="5 von 5 Sternen">&#9733;&#9733;&#9733;&#9733;&#9733;</div>
+            <p class="testimonial-text">„Wunderbar! Die Ferienwohnung ist großzügig und liebevoll eingerichtet. Mit der Alpbachtal Card konnten wir kostenlos ins Freibad und die Bergbahnen nutzen – ein unschlagbares Preis-Leistungs-Verhältnis."</p>
+            <div>
+              <div class="testimonial-author">Familie Bauer</div>
+              <div class="testimonial-origin">Zürich, Schweiz</div>
+            </div>
+          </article>
+
         </div>
       </div>
     </section>
 
-    <!-- ========================================================
-         CALL TO ACTION
-         ======================================================== -->
+    <div class="mountain-divider" aria-hidden="true">
+      <svg viewBox="0 0 1200 60" preserveAspectRatio="none" fill="#FAF8F5" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0,60 L0,35 L80,15 L160,30 L240,8 L320,28 L420,5 L520,25 L600,10 L680,28 L760,12 L840,32 L920,15 L1000,35 L1080,18 L1160,38 L1200,25 L1200,60 Z"/>
+      </svg>
+    </div>
+
+    <!-- CTA BANNER -->
     <section class="section text-center" aria-label="Jetzt buchen">
       <div class="container">
-        <div class="slide-up">
-          <span class="section-label">Bereit für Ihren Urlaub?</span>
-          <h2>Sichern Sie sich Ihren Wunschtermin</h2>
-          <div class="divider"></div>
-          <p style="max-width: 600px; margin: 0 auto var(--spacing-md);">
-            Wir freuen uns auf Ihren Besuch! Schauen Sie sich unsere Verfügbarkeit an oder kontaktieren Sie uns direkt für ein unverbindliches Angebot.
-          </p>
-          <a href="preise.html" class="btn btn-primary" style="margin-right: 1rem;">Preise &amp; Verfügbarkeit</a>
-          <a href="kontakt.html" class="btn btn-green">Kontakt aufnehmen</a>
+        <div class="direktbuchung-banner slide-up">
+          <h3>Direkt buchen &amp; sparen</h3>
+          <p>Keine Portalgebühren – bucht direkt bei uns und spart die Plattformgebühren.<br>
+             Ab 40 €/Person/Nacht · Alpbachtal Card inklusive · 2–6 Personen</p>
+          <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:1rem;">
+            <a href="ferienwohnung.html#buchung" class="btn btn-outline">Verfügbarkeit prüfen</a>
+            <a href="kontakt.html" class="btn btn-outline">Anfrage senden</a>
+          </div>
         </div>
       </div>
     </section>
 
   </main>
 
-  <!-- ========================================================
-       FOOTER
-       ======================================================== -->
+  <!-- FOOTER -->
   <footer class="site-footer" role="contentinfo">
     <div class="container">
       <div class="footer-grid">
-
         <div class="footer-brand">
-          <span class="footer-logo">
-            Kruckenhaus
-            <span>Hof &amp; Ferienwohnung</span>
-          </span>
-          <p class="footer-tagline">
-            Ihre Tiroler Ferienwohnung in Breitenbach am Inn.<br>
-            Mitten in den Alpen, nah am Herzen.
-          </p>
+          <span class="footer-logo">Kruckenhaus<span>Hof &amp; Ferienwohnung</span></span>
+          <p class="footer-tagline">Ferienwohnung Breitenbach am Inn, Alpbachtal Tirol.<br>Bergbauernhof mit Alpakas, 15 Min. zum Berglsteiner See.</p>
           <div class="social-links" style="margin-top: 1rem;">
-            <!-- Platzhalter Social Media Links -->
-            <a href="#" class="social-link" aria-label="Facebook" title="Facebook"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
-            <a href="#" class="social-link" aria-label="Instagram" title="Instagram"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></a>
+            <a href="#" class="social-link" aria-label="Facebook" title="Facebook">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+            </a>
+            <a href="#" class="social-link" aria-label="Instagram" title="Instagram">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+            </a>
           </div>
         </div>
-
         <div class="footer-nav">
           <h4>Navigation</h4>
           <ul>
             <li><a href="index.html">Startseite</a></li>
             <li><a href="ferienwohnung.html">Ferienwohnung</a></li>
-            <li><a href="lage.html">Lage &amp; Umgebung</a></li>
-            <li><a href="preise.html">Preise &amp; Buchung</a></li>
+            <li><a href="bauernhof.html">Bauernhof &amp; Alpakas</a></li>
+            <li><a href="berglsteiner-see.html">Berglsteiner See</a></li>
+            <li><a href="workation.html">Workation</a></li>
+            <li><a href="umgebung.html">Umgebung</a></li>
             <li><a href="kontakt.html">Kontakt</a></li>
           </ul>
         </div>
-
         <div class="footer-nav">
           <h4>Rechtliches</h4>
           <ul>
@@ -348,19 +489,17 @@
             <li><a href="impressum.html">Impressum</a></li>
           </ul>
         </div>
-
         <div class="footer-contact">
           <h4>Kontakt</h4>
-          <p>Florian &amp; Kathrin</p>
+          <p>Katharina &amp; Florian Häusler</p>
           <p>Oberberg 70<br>6252 Breitenbach am Inn<br>Tirol, Österreich</p>
-          <p><a href="mailto:info@kruckenhaus.at">info@kruckenhaus.at</a></p>
-          <p><a href="tel:+43000000000">+43 ... (Platzhalter)</a></p>
+          <p><a href="mailto:kathi.haeusler@gmx.at">kathi.haeusler@gmx.at</a></p>
+          <p><a href="tel:+4366421661800">+43 664 2166180</a></p>
+          <p><a href="https://wa.me/4366421661800" style="color:var(--color-green);font-weight:700;">&#128172; WhatsApp</a></p>
         </div>
-
       </div>
-
       <div class="footer-bottom">
-        <p>&copy; 2025 Hof Kruckenhaus – Florian &amp; Kathrin | Breitenbach am Inn, Tirol</p>
+        <p>&copy; 2025 Hof Kruckenhaus – Katharina &amp; Florian Häusler | Breitenbach am Inn, Tirol</p>
         <div class="footer-links">
           <a href="datenschutz.html">Datenschutzerklärung</a>
           <a href="impressum.html">Impressum</a>
@@ -369,23 +508,28 @@
     </div>
   </footer>
 
-  <!-- ========================================================
-       COOKIE-BANNER (DSGVO)
-       ======================================================== -->
+  <!-- COOKIE-BANNER -->
   <div class="cookie-banner" role="dialog" aria-label="Cookie-Hinweis" aria-live="polite">
-    <p>
-      Diese Website verwendet Cookies, um Ihnen die bestmögliche Erfahrung zu bieten.
-      Weitere Informationen finden Sie in unserer <a href="datenschutz.html">Datenschutzerklärung</a>.
-    </p>
+    <p>Diese Website verwendet keine Tracking-Cookies. Für die Funktion setzen wir ausschließlich technisch notwendige Cookies. <a href="datenschutz.html">Datenschutzerklärung</a></p>
     <div class="cookie-actions">
-      <button class="btn btn-primary cookie-accept">Akzeptieren</button>
-      <button class="btn btn-outline" style="color: var(--color-beige); border-color: rgba(253,250,247,0.4);" class="cookie-decline">Ablehnen</button>
+      <button class="btn btn-primary cookie-accept">Verstanden</button>
+      <button class="btn btn-outline cookie-decline" style="color:var(--color-beige);border-color:rgba(253,250,247,0.4);">Schließen</button>
     </div>
   </div>
 
-  <!-- Back-to-Top Button -->
-  <button class="back-to-top" aria-label="Zurück nach oben" title="Zurück nach oben">↑</button>
+  <!-- WhatsApp Floating Button -->
+  <a href="https://wa.me/4366421661800?text=Hallo%2C%20ich%20interessiere%20mich%20f%C3%BCr%20die%20Ferienwohnung%20Kruckenhaus."
+     class="whatsapp-btn" aria-label="Jetzt per WhatsApp kontaktieren" title="WhatsApp"
+     target="_blank" rel="noopener noreferrer">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+  </a>
+
+  <!-- Back-to-Top -->
+  <button class="back-to-top" aria-label="Zurueck nach oben" title="Zurueck nach oben">&#8593;</button>
 
   <script src="js/main.js"></script>
+  <script src="js/slider.js"></script>
 </body>
 </html>
