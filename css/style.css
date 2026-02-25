@@ -2639,3 +2639,155 @@ body.season-winter .winter-image { display: block; }
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/* ============================================================
+   ZIMMER-SEITE
+   ============================================================ */
+
+/* Zimmer-Karte (Berglstein / Reintal) */
+.zimmer-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  background: var(--color-white);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 3rem;
+}
+
+@media (min-width: 900px) {
+  .zimmer-card {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.zimmer-card-images {
+  display: grid;
+  grid-template-rows: 1fr auto;
+  gap: 0.5rem;
+  min-height: 300px;
+  background: var(--color-cream);
+}
+
+.zimmer-img-main {
+  min-height: 260px !important;
+}
+
+.zimmer-img-thumbs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  height: 100px;
+}
+
+.zimmer-card-info {
+  padding: 2rem;
+}
+
+.zimmer-card-info h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.6rem;
+}
+
+.zimmer-subtitle {
+  color: var(--color-green);
+  font-weight: 600;
+  font-size: 0.95rem;
+  margin: 0 0 1rem;
+}
+
+/* Ausstattungsliste */
+.zimmer-ausstattung {
+  list-style: none;
+  padding: 0;
+  margin: 1.25rem 0;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+.zimmer-ausstattung li {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  font-size: 0.95rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--color-cream);
+}
+
+.zimmer-ausstattung li:last-child {
+  border-bottom: none;
+}
+
+/* Preisbox */
+.zimmer-price-box {
+  background: var(--color-cream);
+  border-radius: 10px;
+  padding: 1.25rem;
+  margin: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.zimmer-price {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.zimmer-price-value {
+  font-size: 1.8rem;
+  font-weight: 800;
+  font-family: var(--font-heading);
+  color: var(--color-primary);
+}
+
+.zimmer-price-unit {
+  font-size: 0.9rem;
+  color: var(--color-text);
+}
+
+/* Vergleichs-Grid */
+.vergleich-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-top: 2rem;
+}
+
+@media (min-width: 640px) {
+  .vergleich-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.vergleich-card {
+  background: var(--color-white);
+  border-radius: 16px;
+  padding: 2rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.vergleich-card h3 {
+  margin: 0 0 0.25rem;
+  font-size: 1.25rem;
+}
+
+.vergleich-ideal {
+  color: var(--color-green);
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: 0 0 1rem;
+}
+
+.vergleich-card--highlight {
+  background: var(--color-dark);
+  color: var(--color-beige);
+}
+
+.vergleich-card--highlight h3,
+.vergleich-card--highlight .vergleich-ideal {
+  color: var(--color-primary);
+}
