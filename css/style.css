@@ -14,16 +14,16 @@
    ============================================================ */
 :root {
   /* Farben – Kruckenhaus Farbpalette */
-  --color-primary:    #A0522D;  /* Rostrot/Ziegelrot – Buttons, CTAs */
-  --color-dark:       #3E2723;  /* Dunkelbraun – Texte, Überschriften */
-  --color-beige:      #FAF8F5;  /* Warmes Cremeweiß – Basis-Hintergrund */
-  --color-green:      #4A7C6F;  /* Seegrün – zweiter Akzent, Berglsteiner See */
-  --color-cream:      #E8EDEA;  /* Sanftes Salbeigrün – Sektionswechsel */
-  --color-gold:       #B8860B;  /* Gedämpftes Gold – Überschriften-Akzent */
-  --color-text:       #3E2723;  /* Dunkelbraun – Haupttext */
+  --color-primary:    #C17747;  /* Warmes Kupfer – Buttons, CTAs */
+  --color-dark:       #5C4A3A;  /* Warmes Mittelbraun – Texte, Überschriften */
+  --color-beige:      #FDFBF7;  /* Warmes Cremeweiß – Basis-Hintergrund */
+  --color-green:      #6B9E8A;  /* Helleres Salbeigrün – zweiter Akzent, Berglsteiner See */
+  --color-cream:      #F2F0EB;  /* Warmes Hellbeige – Sektionswechsel */
+  --color-gold:       #D4A54A;  /* Helles Honiggold – Überschriften-Akzent */
+  --color-text:       #4A3B30;  /* Aufgehellter Textton – Haupttext */
   --color-white:      #FFFFFF;
-  --color-black:      #1A1A1A;
-  --color-overlay:    rgba(62, 39, 35, 0.55);
+  --color-black:      #2C2420;  /* Wärmeres Dunkel – Footer */
+  --color-overlay:    rgba(74, 59, 48, 0.45);
 
   /* Typografie */
   --font-heading:     'Cormorant Garamond', Georgia, serif;
@@ -43,9 +43,9 @@
   --border-radius-lg: 16px;
 
   /* Schatten */
-  --shadow-sm:        0 2px 8px rgba(160, 82, 45, 0.12);
-  --shadow-md:        0 4px 20px rgba(160, 82, 45, 0.18);
-  --shadow-lg:        0 8px 40px rgba(160, 82, 45, 0.22);
+  --shadow-sm:        0 2px 8px rgba(180, 120, 75, 0.12);
+  --shadow-md:        0 4px 20px rgba(180, 120, 75, 0.18);
+  --shadow-lg:        0 8px 40px rgba(180, 120, 75, 0.22);
 
   /* Übergänge */
   --transition-fast:  0.2s ease;
@@ -489,8 +489,8 @@ p {
   inset: 0;
   background: linear-gradient(
     to bottom,
-    rgba(92, 61, 46, 0.3) 0%,
-    rgba(92, 61, 46, 0.6) 100%
+    rgba(115, 82, 62, 0.25) 0%,
+    rgba(115, 82, 62, 0.50) 100%
   );
 }
 
@@ -592,8 +592,8 @@ p {
 }
 
 .btn-green:hover {
-  background-color: #4a6840;
-  border-color: #4a6840;
+  background-color: #5a8070;
+  border-color: #5a8070;
   color: var(--color-white);
 }
 
@@ -822,7 +822,7 @@ p {
 .gallery-item-overlay {
   position: absolute;
   inset: 0;
-  background-color: rgba(92, 61, 46, 0);
+  background-color: rgba(115, 82, 62, 0);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -830,7 +830,7 @@ p {
 }
 
 .gallery-item:hover .gallery-item-overlay {
-  background-color: rgba(92, 61, 46, 0.3);
+  background-color: rgba(115, 82, 62, 0.25);
 }
 
 .gallery-zoom-icon {
@@ -1819,7 +1819,7 @@ p {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(92,61,46,0.65), rgba(92,61,46,0.8));
+  background: linear-gradient(to bottom, rgba(115,82,62,0.55), rgba(115,82,62,0.70));
 }
 
 .page-hero-content {
@@ -2083,8 +2083,8 @@ body.season-winter .winter-image { display: block; }
   inset: 0;
   background: linear-gradient(
     to bottom,
-    rgba(62, 39, 35, 0.25) 0%,
-    rgba(62, 39, 35, 0.65) 100%
+    rgba(74, 59, 48, 0.20) 0%,
+    rgba(74, 59, 48, 0.55) 100%
   );
 }
 
@@ -2189,7 +2189,7 @@ body.season-winter .winter-image { display: block; }
 
 /* Placeholder slide backgrounds */
 .hero-slide-bg--hof      { background-color: #5a7a5a; background-image: url('../images/hero/hof-panorama.jpg'); }
-.hero-slide-bg--see      { background-color: #4a7c6f; background-image: url('../images/hero/berglsteiner-see.jpg'); }
+.hero-slide-bg--see      { background-color: #6b9e8a; background-image: url('../images/hero/berglsteiner-see.jpg'); }
 .hero-slide-bg--alpaka   { background-color: #7a6a5a; background-image: url('../images/hero/alpakas-weide.jpg'); }
 .hero-slide-bg--workation { background-color: #5a6a7a; background-image: url('../images/hero/workation-bergblick.jpg'); }
 
@@ -2627,7 +2627,7 @@ body.season-winter .winter-image { display: block; }
   width: 100%;
   height: 100%;
   object-fit: cover;
-  background: linear-gradient(135deg, #4a7c6f, #2a5a52);
+  background: linear-gradient(135deg, #6b9e8a, #4a7e74);
   transition: transform var(--transition-slow);
 }
 
