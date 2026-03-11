@@ -7,27 +7,29 @@
 /* ============================================================
    1. GOOGLE FONTS
    ============================================================ */
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&family=Source+Sans+3:wght@300;400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Lato:wght@300;400;700&family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400&display=swap');
 
 /* ============================================================
    2. CSS CUSTOM PROPERTIES
    ============================================================ */
 :root {
-  /* Farben – Kruckenhaus Farbpalette */
-  --color-primary:    #C17747;  /* Warmes Kupfer – Buttons, CTAs */
-  --color-dark:       #5C4A3A;  /* Warmes Mittelbraun – Texte, Überschriften */
-  --color-beige:      #FDFBF7;  /* Warmes Cremeweiß – Basis-Hintergrund */
-  --color-green:      #6B9E8A;  /* Helleres Salbeigrün – zweiter Akzent, Berglsteiner See */
-  --color-cream:      #F2F0EB;  /* Warmes Hellbeige – Sektionswechsel */
-  --color-gold:       #D4A54A;  /* Helles Honiggold – Überschriften-Akzent */
-  --color-text:       #4A3B30;  /* Aufgehellter Textton – Haupttext */
+  /* Farben – Destillierte Natur */
+  --color-primary:    #2F5848;  /* Deep Forest – Navigation, CTA-Buttons, Hover */
+  --color-dark:       #464646;  /* Alpine Slate – Überschriften, Navigation */
+  --color-beige:      #F0E6DD;  /* Cloud Dancer – Basis-Hintergrund */
+  --color-green:      #79C0BC;  /* Alpbachtal Teal – See-Bereiche, frische Akzente */
+  --color-cream:      #F5F0EB;  /* Section Alt – leicht dunkleres Cloud Dancer */
+  --color-terracotta: #964F33;  /* Terracotta – aktive Links, Icons, Heritage */
+  --color-text:       #464646;  /* Alpine Slate – Haupttext */
+  --color-text-light: #7A7067;  /* Sekundärer Text, Bildunterschriften */
   --color-white:      #FFFFFF;
-  --color-black:      #2C2420;  /* Wärmeres Dunkel – Footer */
-  --color-overlay:    rgba(74, 59, 48, 0.45);
+  --color-black:      #2C2420;  /* Footer */
+  --color-border:     #D4CBC3;  /* Subtile Trennlinien */
+  --color-overlay:    rgba(47, 88, 72, 0.50);
 
-  /* Typografie */
-  --font-heading:     'Cormorant Garamond', Georgia, serif;
-  --font-body:        'Source Sans 3', Helvetica, sans-serif;
+  /* Typografie – Destillierte Natur */
+  --font-heading:     'Playfair Display', 'Libre Baskerville', Georgia, serif;
+  --font-body:        'Lato', 'Open Sans', Helvetica, sans-serif;
   --font-accent:      'Cormorant Garamond', Georgia, serif;
 
   /* Abstände */
@@ -43,9 +45,9 @@
   --border-radius-lg: 16px;
 
   /* Schatten */
-  --shadow-sm:        0 2px 8px rgba(180, 120, 75, 0.12);
-  --shadow-md:        0 4px 20px rgba(180, 120, 75, 0.18);
-  --shadow-lg:        0 8px 40px rgba(180, 120, 75, 0.22);
+  --shadow-sm:        0 2px 8px rgba(47, 88, 72, 0.10);
+  --shadow-md:        0 4px 20px rgba(47, 88, 72, 0.15);
+  --shadow-lg:        0 8px 40px rgba(47, 88, 72, 0.20);
 
   /* Übergänge */
   --transition-fast:  0.2s ease;
@@ -136,7 +138,7 @@ p {
 
 .section-label {
   font-family: var(--font-accent);
-  color: var(--color-green);
+  color: var(--color-terracotta);
   font-size: 1.1rem;
   display: block;
   margin-bottom: 0.5rem;
@@ -159,6 +161,13 @@ p {
 
 .section-alt {
   background-color: var(--color-cream);
+}
+
+/* Mobile padding for Bottom Tab Bar */
+@media (max-width: 767px) {
+  body {
+    padding-bottom: 70px;
+  }
 }
 
 .section-dark {
@@ -569,8 +578,8 @@ p {
 }
 
 .btn-primary:hover {
-  background-color: var(--color-dark);
-  border-color: var(--color-dark);
+  background-color: var(--color-terracotta);
+  border-color: var(--color-terracotta);
   color: var(--color-white);
 }
 
@@ -582,18 +591,18 @@ p {
 
 .btn-outline:hover {
   background-color: var(--color-white);
-  color: var(--color-dark);
+  color: var(--color-primary);
 }
 
 .btn-green {
-  background-color: var(--color-green);
+  background-color: var(--color-terracotta);
   color: var(--color-white);
-  border-color: var(--color-green);
+  border-color: var(--color-terracotta);
 }
 
 .btn-green:hover {
-  background-color: #5a8070;
-  border-color: #5a8070;
+  background-color: #7a3d24;
+  border-color: #7a3d24;
   color: var(--color-white);
 }
 
@@ -778,7 +787,7 @@ p {
 .testimonial-author {
   font-weight: 700;
   font-size: 0.9rem;
-  color: var(--color-primary);
+  color: var(--color-green);
 }
 
 .testimonial-origin {
@@ -1859,6 +1868,99 @@ p {
 .breadcrumb-sep { opacity: 0.5; }
 
 /* ============================================================
+   GENERATIONEN-ZEITLEISTE (Timeline)
+   ============================================================ */
+.timeline-section {
+  background-color: var(--color-section-alt, var(--color-cream));
+  padding-block: var(--spacing-lg);
+}
+
+.timeline {
+  position: relative;
+  max-width: 700px;
+  margin: var(--spacing-md) auto 0;
+  padding-left: 2rem;
+}
+
+.timeline::before {
+  content: '';
+  position: absolute;
+  left: 0.5rem;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--color-primary), var(--color-terracotta));
+  border-radius: 2px;
+}
+
+.timeline-item {
+  position: relative;
+  padding: 0 0 var(--spacing-md) var(--spacing-md);
+  opacity: 0;
+  transform: translateX(-20px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.timeline-item.animate {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -1.6rem;
+  top: 0.5rem;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  border: 3px solid var(--color-white);
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+.timeline-year {
+  font-family: var(--font-accent);
+  font-size: 1.3rem;
+  color: var(--color-primary);
+  font-weight: 700;
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.timeline-item h3 {
+  font-size: 1.1rem;
+  margin-bottom: 0.4rem;
+  color: var(--color-dark);
+}
+
+.timeline-item p {
+  font-size: 0.95rem;
+  color: var(--color-text-light);
+  margin: 0;
+}
+
+@media (min-width: 768px) {
+  .timeline {
+    padding-left: 3rem;
+  }
+
+  .timeline::before {
+    left: 1rem;
+  }
+
+  .timeline-item::before {
+    left: -2.1rem;
+    width: 16px;
+    height: 16px;
+  }
+
+  .timeline-item {
+    padding-left: var(--spacing-lg);
+  }
+}
+
+/* ============================================================
    26. VORBEREITUNG FÜR ALPAKA-SEKTION
    ============================================================ */
 /* Alpaka-Section: Wird in einer späteren Version aktiviert */
@@ -2260,7 +2362,7 @@ body.season-winter .winter-image { display: block; }
   font-size: 0.85rem;
   text-transform: uppercase;
   letter-spacing: 0.06em;
-  color: var(--color-primary);
+  color: var(--color-terracotta);
 }
 
 @media (min-width: 600px) {
@@ -2272,6 +2374,116 @@ body.season-winter .winter-image { display: block; }
 @media (min-width: 1024px) {
   .usp-grid {
     grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+/* ============================================================
+   BOTTOM TAB BAR (Mobile only, < 768px)
+   ============================================================ */
+.bottom-tab-bar {
+  display: none;
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 64px;
+  background-color: var(--color-white);
+  border-top: 1px solid var(--color-border);
+  z-index: 950;
+  box-shadow: 0 -2px 16px rgba(47, 88, 72, 0.12);
+  transform: translateY(0);
+  transition: transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.bottom-tab-bar.hidden {
+  transform: translateY(100%);
+}
+
+.bottom-tab-bar-inner {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  height: 100%;
+}
+
+.bottom-tab-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  text-decoration: none;
+  color: var(--color-text-light);
+  font-family: var(--font-body);
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 0.4rem;
+  transition: color var(--transition-fast);
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.bottom-tab-item.active,
+.bottom-tab-item:hover {
+  color: var(--color-primary);
+}
+
+.bottom-tab-item svg {
+  width: 22px;
+  height: 22px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+@media (max-width: 767px) {
+  .bottom-tab-bar {
+    display: block;
+  }
+}
+
+/* ============================================================
+   FLOATING ACTION BUTTON – "Jetzt buchen"
+   ============================================================ */
+.fab-book {
+  display: none;
+  position: fixed;
+  bottom: 76px; /* über Bottom Tab Bar */
+  right: 1rem;
+  z-index: 940;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-decoration: none;
+  padding: 0.75rem 1.25rem;
+  border-radius: 50px;
+  box-shadow: 0 4px 18px rgba(47, 88, 72, 0.40);
+  transition: transform var(--transition-fast),
+              box-shadow var(--transition-fast),
+              background-color var(--transition-fast);
+  white-space: nowrap;
+}
+
+.fab-book:hover {
+  transform: scale(1.05) translateY(-2px);
+  box-shadow: 0 6px 24px rgba(47, 88, 72, 0.55);
+  background-color: var(--color-terracotta);
+  color: var(--color-white);
+}
+
+@media (max-width: 767px) {
+  .fab-book {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
   }
 }
 

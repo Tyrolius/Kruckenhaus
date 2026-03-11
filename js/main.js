@@ -18,6 +18,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initCookieBanner();
   initLightbox();
   setActiveNavLink();
+  initBottomTabBar();
+  initTimeline();
 });
 
 /* ============================================================
@@ -336,7 +338,73 @@ function showFormMessage(text, type) {
 }
 
 /* ============================================================
-   11. SAISONALE BILDER – Vorbereitung
+   11. BOTTOM TAB BAR (Mobile, hide on scroll down, show on scroll up)
+   ============================================================ */
+function initBottomTabBar() {
+  const tabBar = document.getElementById('bottomTabBar');
+  if (!tabBar) return;
+
+  let lastScrollY = window.scrollY;
+  let ticking = false;
+
+  const updateTabBar = () => {
+    const currentScrollY = window.scrollY;
+    if (currentScrollY > lastScrollY && currentScrollY > 100) {
+      tabBar.classList.add('hidden');
+    } else {
+      tabBar.classList.remove('hidden');
+    }
+    lastScrollY = currentScrollY;
+    ticking = false;
+  };
+
+  window.addEventListener('scroll', () => {
+    if (!ticking) {
+      requestAnimationFrame(updateTabBar);
+      ticking = true;
+    }
+  }, { passive: true });
+
+  // Set active tab based on current page
+  const path = window.location.pathname;
+  const filename = path.split('/').pop() || 'index.html';
+  tabBar.querySelectorAll('.bottom-tab-item').forEach(item => {
+    const href = item.getAttribute('href');
+    if (href && href.split('/').pop() === filename) {
+      item.classList.add('active');
+    }
+  });
+}
+
+/* ============================================================
+   12. TIMELINE – Scroll-triggered Animation
+   ============================================================ */
+function initTimeline() {
+  const items = document.querySelectorAll('.timeline-item');
+  if (!items.length) return;
+
+  if (!('IntersectionObserver' in window)) {
+    items.forEach(item => item.classList.add('animate'));
+    return;
+  }
+
+  const observer = new IntersectionObserver(
+    (entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add('animate');
+          observer.unobserve(entry.target);
+        }
+      });
+    },
+    { threshold: 0.15, rootMargin: '0px 0px -30px 0px' }
+  );
+
+  items.forEach(item => observer.observe(item));
+}
+
+/* ============================================================
+   13. SAISONALE BILDER – Vorbereitung
    ============================================================ */
 /**
  * Setzt die Jahreszeit-Klasse am Body.
