@@ -283,7 +283,7 @@ function setActiveNavLink() {
    ============================================================ */
 const contactForm = document.querySelector('#contact-form');
 if (contactForm) {
-  contactForm.addEventListener('submit', (e) => {
+  contactForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const name    = contactForm.querySelector('#name')?.value.trim();
@@ -300,13 +300,38 @@ if (contactForm) {
       return;
     }
 
-    // Netlify Forms / Backend-Integration wird hier eingebaut
-    // Vorerst: Erfolgsmeldung simulieren
-    showFormMessage(
-      'Vielen Dank für Ihre Nachricht! Wir melden uns innerhalb von 24 Stunden.',
-      'success'
-    );
-    contactForm.reset();
+    // Übertragung an Netlify Forms (AJAX, damit die Seite nicht neu lädt)
+    const submitBtn = contactForm.querySelector('button[type="submit"]');
+    const btnText = submitBtn ? submitBtn.textContent : '';
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Wird gesendet …';
+    }
+
+    try {
+      const response = await fetch('/', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams(new FormData(contactForm)).toString(),
+      });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      showFormMessage(
+        'Vielen Dank für Ihre Nachricht! Wir melden uns innerhalb von 24 Stunden.',
+        'success'
+      );
+      contactForm.reset();
+    } catch (err) {
+      showFormMessage(
+        'Die Nachricht konnte nicht gesendet werden. Bitte versuchen Sie es erneut oder schreiben Sie uns direkt an info@kruckenhaus.at.',
+        'error'
+      );
+    } finally {
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = btnText;
+      }
+    }
   });
 }
 

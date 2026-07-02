@@ -202,10 +202,17 @@ Das Kontaktformular in `kontakt.html` ist bereits für **Netlify Forms** vorbere
 - `data-netlify="true"` Attribut ist gesetzt
 - Spam-Schutz (Honeypot) ist integriert
 
-Nach dem ersten Deployment in Netlify:
-1. Gehen Sie zu **Forms** im Netlify-Dashboard
-2. Formulareinsendungen erscheinen dort automatisch
-3. Richten Sie E-Mail-Benachrichtigungen ein: **Forms → Form name → Form notifications**
+Nach dem ersten Deployment in Netlify (einmalig):
+1. **Forms aktivieren:** Netlify-Dashboard → **Forms → Enable form detection**,
+   danach einmal neu deployen, damit das Formular „kontakt" erkannt wird
+2. Formulareinsendungen erscheinen dann unter **Forms** im Dashboard
+3. **E-Mail-Benachrichtigung einrichten:** Site configuration → **Notifications →
+   Form submission notifications → Add notification → Email notification** →
+   als Empfänger `info@kruckenhaus.at` eintragen
+4. Testanfrage über die Website senden und prüfen, ob die E-Mail ankommt
+
+Hinweis: Der kostenlose Netlify-Plan umfasst 100 Formular-Einsendungen pro
+Monat – für Buchungsanfragen mehr als ausreichend.
 
 ---
 
