@@ -227,7 +227,6 @@ Abruf von Google-Servern statt – bitte bei künftigen Design-Änderungen beibe
 
 **Vor dem Livegang prüfen (keine Rechtsberatung durch diese Vorlage!):**
 - Texte einmal von der WKO Tirol / einem Anwalt gegenlesen lassen
-- Falls UID-Nummer vorhanden oder gewerbliche Vermietung: Impressum ergänzen
 - Aktuellen Ortstaxe-Satz bei der Gemeinde Breitenbach bestätigen
 
 **Mindestangaben für das Impressum (§ 5 ECG Österreich):**
