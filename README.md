@@ -1,10 +1,201 @@
 # Kruckenhaus – Ferienwohnung Website
 
-Offizielle Website der Ferienwohnung **Hof Kruckenhaus** in Breitenbach am Inn, Tirol, Österreich.
+Offizielle Website der Ferienwohnung **Hof Kruckenhaus** in Breitenbach am Inn, Tirol.
 
-**Domain:** [kruckenhaus.at](https://www.kruckenhaus.at)
-**Hosting:** Netlify (statische Website)
-**Stack:** Vanilla HTML5, CSS3, JavaScript (kein Framework)
+**Domain:** kruckenhaus.at (registriert bei world4you)
+**Hosting:** Netlify (kostenlos)
+**Technik:** HTML, CSS, JavaScript – kein Baukasten, kein Framework
+
+---
+
+## Wie das Ganze zusammenspielt (kurz erklärt)
+
+Drei Dienste arbeiten zusammen – alle drei braucht ihr nur einmal einzurichten:
+
+| Dienst | Aufgabe | Kosten |
+|---|---|---|
+| **GitHub** (github.com/Tyrolius/Kruckenhaus) | Hier liegen die Website-Dateien. Jede Änderung wird hier gespeichert. | kostenlos |
+| **Netlify** (netlify.com) | Der eigentliche „Server": zeigt die Website an, verschickt das Kontaktformular, holt den Airbnb-Kalender. | kostenlos |
+| **world4you** | Verwaltet nur die Domain `kruckenhaus.at` (und ggf. eure E-Mail-Postfächer). | euer bestehender Vertrag |
+
+> **Warum nicht alles bei world4you?** Das Kontaktformular und der
+> Airbnb-Verfügbarkeitskalender laufen über Netlify-Funktionen, die es auf
+> klassischem world4you-Webspace nicht gibt. Domain bei world4you + Hosting bei
+> Netlify ist eine ganz übliche Kombination – ihr zahlt dadurch nichts extra.
+
+**Der Ablauf im Überblick:** Ihr ändert etwas an den Dateien (z. B. über
+claude.ai/code oder direkt auf github.com) → GitHub speichert es → Netlify
+veröffentlicht es automatisch nach 1–2 Minuten. FTP-Uploads wie früher braucht
+es nicht.
+
+---
+
+## Schritt 1: Website auf Netlify veröffentlichen (ca. 10 Min.)
+
+1. Auf [netlify.com](https://www.netlify.com) gehen → **Sign up** → mit dem
+   **GitHub-Konto** anmelden (Button „GitHub"). So sind beide Dienste gleich verbunden.
+2. Im Netlify-Dashboard: **Add new site → Import an existing project → GitHub**
+3. Das Repository **`Tyrolius/Kruckenhaus`** auswählen
+4. Einstellungen im Formular:
+   - **Branch to deploy:** `main`
+   - **Build command:** leer lassen
+   - **Publish directory:** `.` (nur ein Punkt)
+5. **Deploy site** klicken
+
+Nach 1–2 Minuten ist die Website unter einer Adresse wie
+`https://zufallsname-123.netlify.app` erreichbar. Diese Adresse gleich testen –
+das ist schon eure echte Website, nur noch ohne eigene Domain.
+
+**Tipp:** Unter **Site configuration → Site details → Change site name** könnt
+ihr den Zufallsnamen in z. B. `kruckenhaus` ändern.
+
+---
+
+## Schritt 2: Kontaktformular scharf schalten (ca. 5 Min.)
+
+Ohne diesen Schritt landen Anfragen nirgends!
+
+1. Netlify-Dashboard → **Forms** (linkes Menü) → **Enable form detection**
+2. Einmal neu veröffentlichen: **Deploys → Trigger deploy → Deploy site**
+   (nötig, damit Netlify das Formular „kontakt" erkennt)
+3. E-Mail-Benachrichtigung einrichten:
+   **Site configuration → Notifications → Form submission notifications →
+   Add notification → Email notification** → E-Mail: **info@kruckenhaus.at**
+4. **Testen:** Auf der Website selbst eine Testanfrage über das Kontaktformular
+   schicken und prüfen, ob sie per E-Mail ankommt (auch im Spam-Ordner nachsehen).
+
+Alle Einsendungen sind zusätzlich jederzeit im Netlify-Dashboard unter
+**Forms** nachlesbar. Der Gratis-Plan erlaubt 100 Einsendungen pro Monat.
+
+---
+
+## Schritt 3: Airbnb-Kalender verbinden (ca. 5 Min.)
+
+Damit zeigt die Website automatisch an, wann die Wohnung belegt ist.
+
+1. Bei **Airbnb** einloggen → Kalender der Ferienwohnung öffnen →
+   **Verfügbarkeit → Kalender verknüpfen → Kalender exportieren** →
+   den angezeigten Link kopieren (endet auf `.ics?s=…`)
+   ⚠️ Dieser Link ist geheim – nirgends veröffentlichen!
+2. In Netlify: **Site configuration → Environment variables → Add a variable**
+   - **Key:** `AIRBNB_ICAL_URL`
+   - **Value:** der kopierte Link
+3. **Deploys → Trigger deploy → Deploy site**
+4. **Testen:** Auf der Website unter „Ferienwohnung → Verfügbarkeit & Buchung"
+   müssen die in Airbnb belegten Tage durchgestrichen erscheinen
+   (Aktualisierung kann bis zu 1 Stunde + Airbnb-Verzögerung dauern).
+
+**Wichtig im Alltag:** Der Abgleich läuft nur in eine Richtung
+(Airbnb → Website). Wenn ihr eine Anfrage über die Website bestätigt, müsst
+ihr die Tage **selbst im Airbnb-Kalender blockieren**. Kommt später
+Booking.com dazu: dessen iCal-Link einfach per Komma an die Variable anhängen.
+
+---
+
+## Schritt 4: Domain kruckenhaus.at verbinden (ca. 15 Min. + Wartezeit)
+
+### 4a. Domain in Netlify eintragen
+
+1. Netlify: **Domain management → Add a domain** → `kruckenhaus.at` eingeben
+2. Netlify zeigt an, welche DNS-Einträge nötig sind (sollten den unten genannten entsprechen)
+
+### 4b. DNS-Einträge bei world4you setzen
+
+1. Im [world4you-Kundencenter](https://my.world4you.com) einloggen
+2. **Meine Domains → kruckenhaus.at → DNS-Verwaltung** (bzw. „Nameserver-Einträge bearbeiten")
+3. Zwei Einträge setzen bzw. ändern:
+
+| Typ | Name/Host | Wert |
+|---|---|---|
+| **A** | `@` (bzw. leer = kruckenhaus.at) | `75.2.60.5` |
+| **CNAME** | `www` | `IHRSITENAME.netlify.app` (eure Netlify-Adresse aus Schritt 1) |
+
+> ⚠️ **E-Mail nicht kaputt machen:** Falls eure Postfächer (info@kruckenhaus.at)
+> bei world4you liegen, die **MX-Einträge unverändert lassen** und nur die
+> A-/CNAME-Einträge für die Website ändern. Im Zweifel vorher einen Screenshot
+> der bestehenden Einträge machen oder den world4you-Support fragen.
+
+4. Warten: DNS-Änderungen brauchen zwischen einigen Minuten und ein paar
+   Stunden (selten bis 24 h).
+
+### 4c. HTTPS aktivieren
+
+Sobald die Domain auf Netlify zeigt, stellt Netlify unter
+**Domain management → HTTPS** automatisch ein kostenloses SSL-Zertifikat aus
+(Let's Encrypt). Prüfen: `https://www.kruckenhaus.at` muss mit Schloss-Symbol laden.
+
+---
+
+## Schritt 5: Fotos einfügen (der wichtigste Schritt!)
+
+Die Website zeigt aktuell überall farbige Platzhalter. **Für eine
+Ferienunterkunft sind echte Fotos das wichtigste Verkaufsargument** – bitte vor
+dem Livegang erledigen. Die wichtigsten Motive:
+
+| Priorität | Motiv | Verwendung |
+|---|---|---|
+| ★★★ | Hof-Panorama mit Bergen | Startseite (groß), Vorschaubild beim Teilen |
+| ★★★ | Wohnzimmer, Schlafzimmer, Küche, Bad, Balkon | Ferienwohnungs-Galerie |
+| ★★★ | Alpakas auf der Weide | Startseite, Bauernhof-Seite |
+| ★★ | Berglsteiner See (Sommer & Herbst) | See-Seite, Galerie |
+| ★★ | Hofladen / Selbstbedienungs-Kühlschrank | Bauernhof-Seite |
+| ★★ | Arbeitsplatz mit Bergblick + Speedtest-Screenshot | Workation-Seite |
+| ★ | Logo als `images/logo.png`, Favicon als `favicon.ico` | Kopfzeile, Browser-Tab |
+| ★ | Kurzes Hof-Video als `hero.mp4` + Standbild `hero-poster.jpg` | Startseiten-Video (optional – ohne Video einfach ein Foto verwenden) |
+
+**Praktische Umsetzung als Website-Neuling:** Fotos zuerst verkleinern
+(z. B. auf [squoosh.app](https://squoosh.app), Ziel: unter 300 KB pro Bild,
+Querformat ca. 1600 px breit). Dann die Bilder in den Ordner `images/`
+hochladen (auf github.com: Ordner öffnen → **Add file → Upload files**) und
+anschließend in einer **claude.ai/code-Sitzung** den Auftrag geben:
+*„Ersetze die Foto-Platzhalter durch die hochgeladenen Bilder in images/"* –
+die Platzhalter sind im Code als `TODO:`-Kommentare markiert, inklusive
+gewünschtem Motiv und Bildgröße.
+
+---
+
+## Schritt 6: Checkliste vor dem Livegang
+
+- [ ] Testanfrage über das Kontaktformular kommt per E-Mail an (Schritt 2)
+- [ ] Belegungskalender zeigt die Airbnb-Buchungen (Schritt 3)
+- [ ] `https://www.kruckenhaus.at` lädt mit Schloss-Symbol (Schritt 4)
+- [ ] Fotos eingefügt (Schritt 5)
+- [ ] Website einmal komplett am **Handy** durchklicken
+- [ ] **Gästestimmen ersetzen:** Die vier Bewertungen auf der Startseite sind
+      Platzhalter-Texte. Vor dem Livegang durch echte Zitate (z. B. aus euren
+      Airbnb-Bewertungen, mit Einverständnis) ersetzen oder entfernen –
+      erfundene Bewertungen sind wettbewerbsrechtlich heikel.
+- [ ] **Alpaka-Namen eintragen:** Auf der Bauernhof-Seite stehen noch
+      „Alpaka-Stute 1/2/3" – echte Namen (Noblesse, Bellissima, Marée) einsetzen
+- [ ] Social-Media-Links im Footer der Startseite führen noch auf `#` –
+      echte Profile verlinken oder Icons entfernen
+- [ ] Ortstaxe-Satz (derzeit 2,80 €) bei der Gemeinde Breitenbach bestätigen
+- [ ] Impressum & Datenschutz einmal von WKO Tirol / Anwalt gegenlesen lassen
+      (Texte sind ausgearbeitet, aber das ist keine Rechtsberatung)
+
+---
+
+## Nach dem Livegang: Änderungen machen
+
+Jede gespeicherte Änderung im GitHub-Repository geht **automatisch** nach 1–2
+Minuten online. Drei Wege, vom einfachsten zum flexibelsten:
+
+1. **claude.ai/code:** Auftrag in normalem Deutsch geben („Ändere den
+   Nebensaison-Preis auf 130 €") – so wie diese Website entstanden ist.
+2. **GitHub-Web-Editor:** Auf github.com die Datei öffnen → Stift-Symbol →
+   ändern → **Commit changes**. Gut für kleine Textänderungen.
+3. **Lokal am Computer:** Repository klonen, ändern, `git push`.
+
+### Häufige Anpassungen – wo finde ich was?
+
+| Was ändern? | Wo? |
+|---|---|
+| **Preise, Mindestaufenthalt, Storno-Fristen** | `js/preise-config.js` – alle Werte zentral mit Kommentaren erklärt |
+| Texte einer Seite | jeweilige `.html`-Datei (z. B. `bauernhof.html`) |
+| Telefon/E-Mail | in allen `.html`-Dateien (Suchen & Ersetzen) |
+| Farben & Schriften | `css/style.css`, Abschnitt `:root { --color-… }` |
+| Copyright-Jahr | Footer aller `.html`-Dateien (`© 2025`) |
+| Airbnb-/Booking-Kalenderlinks | Netlify-Umgebungsvariable `AIRBNB_ICAL_URL` |
 
 ---
 
@@ -12,274 +203,43 @@ Offizielle Website der Ferienwohnung **Hof Kruckenhaus** in Breitenbach am Inn, 
 
 ```
 /
-├── index.html              → Startseite
-├── ferienwohnung.html      → Die Wohnung (Galerie, Ausstattung)
-├── lage.html               → Lage & Umgebung, Aktivitäten
-├── preise.html             → Preise & Buchung
-├── kontakt.html            → Kontaktformular
-├── datenschutz.html        → Datenschutzerklärung (noch zu erstellen)
-├── impressum.html          → Impressum (noch zu erstellen)
-├── netlify.toml            → Netlify-Konfiguration
-├── css/
-│   └── style.css           → Globales Stylesheet
-├── js/
-│   └── main.js             → JavaScript (Navigation, Animationen etc.)
-├── images/
-│   └── .gitkeep            → Platzhalter (Fotos hier einfügen)
-└── README.md               → Diese Anleitung
+├── index.html               → Startseite
+├── ferienwohnung.html       → Wohnung, Galerie, Verfügbarkeitskalender
+├── preise.html              → Preise, Zahlungsarten, Storno, Kalender
+├── bauernhof.html           → Hof, Alpakas, Hofladen
+├── berglsteiner-see.html    → Der See, Wanderroute
+├── workation.html           → Arbeiten mit Starlink-Internet
+├── umgebung.html / lage.html→ Ausflugsziele, Anfahrt
+├── kontakt.html             → Kontaktformular (Netlify Forms)
+├── impressum.html           → Impressum (§ 5 ECG, § 25 MedienG, UID)
+├── datenschutz.html         → Datenschutzerklärung (DSGVO)
+├── netlify.toml             → Netlify-Konfiguration (nicht löschen!)
+├── sitemap.xml / robots.txt → Für Google & Co.
+├── css/style.css            → Design (Farben, Schriften, Layout)
+├── js/main.js               → Navigation, Formular, Animationen
+├── js/verfuegbarkeit.js     → Belegungskalender (Anzeige)
+├── js/preise-config.js      → ALLE Preise zentral
+├── netlify/functions/availability.js → Holt den Airbnb-Kalender (Server)
+├── fonts/                   → Lokal gehostete Schriften (DSGVO – nicht löschen!)
+└── images/                  → Fotos (siehe Schritt 5)
 ```
 
 ---
 
-## 1. Fotos einfügen
+## Technische Hinweise
 
-Alle Fotos kommen in den Ordner **`images/`**. Folgende Dateinamen werden erwartet:
-
-| Dateiname                   | Beschreibung                        | Empfohlene Größe |
-|-----------------------------|-------------------------------------|------------------|
-| `hero-background.jpg`       | Startseite-Hero-Bild (Panorama)     | 1920 × 1080 px   |
-| `wohnung-aussen.jpg`        | Außenansicht des Hofs               | 1200 × 800 px    |
-| `wohnung-wohnzimmer.jpg`    | Wohnzimmer                          | 1200 × 800 px    |
-| `wohnung-schlafzimmer.jpg`  | Schlafzimmer                        | 1200 × 800 px    |
-| `wohnung-kueche.jpg`        | Küche                               | 1200 × 800 px    |
-| `wohnung-bad.jpg`           | Badezimmer                          | 1200 × 800 px    |
-| `wohnung-terrasse.jpg`      | Terrasse mit Bergblick              | 1200 × 800 px    |
-| `umgebung-berge.jpg`        | Tiroler Berglandschaft              | 1200 × 800 px    |
-| `umgebung-dorf.jpg`         | Breitenbach am Inn / Umgebung       | 1200 × 800 px    |
-| `grundriss.jpg`             | Grundriss der Ferienwohnung         | 1200 × 800 px    |
-
-**Tipps zur Bildoptimierung:**
-- Bilder vor dem Upload komprimieren (z. B. [Squoosh](https://squoosh.app) oder [TinyPNG](https://tinypng.com))
-- Zielgröße: < 300 KB pro Bild für schnelle Ladezeiten
-- Format: JPEG für Fotos, WebP für beste Performance (optional)
-- Das Hero-Hintergrundbild wird auch auf Unterseiten als Page-Hero verwendet
+- **Schriften bleiben lokal:** Die Schriftarten liegen bewusst im Ordner
+  `/fonts/` statt bei Google (DSGVO). Bei Design-Änderungen beibehalten.
+- **Kein Tracking:** Es ist absichtlich kein Google Analytics o. Ä. eingebaut.
+  Besucherzahlen DSGVO-freundlich nachrüsten: Netlify Analytics (kostenpflichtig)
+  oder z. B. Plausible/Fathom.
+- **Lokal testen** (optional): Im Projektordner `python3 -m http.server 8080`
+  ausführen und `http://localhost:8080` öffnen. Formular und Kalender
+  funktionieren nur auf Netlify, nicht lokal.
+- **Buchungssystem-Upgrade:** Bei mehr Buchungsvolumen kann ein Channel Manager
+  (Smoobu, DiBooq, Feratel) den Kalender ersetzen – dessen Widget kommt dann in
+  den `<div id="booking-widget">` auf `ferienwohnung.html` und `preise.html`.
 
 ---
 
-## 2. Verfügbarkeitskalender (Airbnb-Sync) aktivieren
-
-Auf `ferienwohnung.html#buchung` zeigt ein Kalender die belegten Zeiträume an.
-Die Daten kommen automatisch aus dem Airbnb-Kalender (iCal-Export) über die
-Netlify Function `netlify/functions/availability.js`. Solange keine iCal-URL
-hinterlegt ist, zeigt die Seite einen freundlichen Hinweis statt des Kalenders.
-
-**Einrichtung (einmalig, ca. 5 Minuten):**
-
-1. Airbnb-iCal-Link holen: Bei Airbnb einloggen →
-   **Kalender → Verfügbarkeit → Kalender verknüpfen → Kalender exportieren**
-   → den angezeigten Link kopieren (endet auf `.ics?s=…`).
-   ⚠️ Dieser Link enthält ein Geheimnis – nicht öffentlich teilen, nicht in
-   den Code schreiben.
-2. In Netlify: **Site configuration → Environment variables → Add a variable**
-   - Key: `AIRBNB_ICAL_URL`
-   - Value: der kopierte Link (mehrere Kalender mit Komma trennen)
-3. Site neu deployen (**Deploys → Trigger deploy**), damit die Variable greift.
-
-**Hinweise:**
-- Airbnb aktualisiert den iCal-Export mit Verzögerung (bis zu einigen Stunden);
-  zusätzlich cached die Function das Ergebnis 1 Stunde.
-- Direktbuchungen über die Website müssen weiterhin **manuell im
-  Airbnb-Kalender geblockt** werden (der Sync läuft nur Airbnb → Website).
-- Später ist ein Umstieg auf einen Channel Manager mit echter Online-Buchung
-  und Zwei-Wege-Sync möglich (z. B. Smoobu, DiBooq, Feratel); dessen Widget
-  ersetzt dann den Inhalt von `<div id="booking-widget">` in
-  `ferienwohnung.html`.
-
----
-
-## 3. Texte anpassen
-
-### Kontaktdaten aktualisieren
-Suchen und ersetzen Sie in **allen HTML-Dateien** folgende Platzhalter:
-
-| Platzhalter                    | Ersetzen durch                         |
-|--------------------------------|----------------------------------------|
-| `[Nachname]`                   | Ihren echten Nachnamen                 |
-| `info@kruckenhaus.at`          | Ihre echte E-Mail-Adresse              |
-| `+43 ... (Platzhalter)`        | Ihre echte Telefonnummer               |
-| `https://wa.me/43000000000`    | Ihre WhatsApp-Nummer                   |
-
-### Preise anpassen
-In `preise.html` finden Sie die Preistabelle. Passen Sie folgende Werte an:
-- `ab €150` → Ihre Hauptsaison-Preise
-- `ab €120` → Ihre Nebensaison-Preise
-- `€80` → Ihre Endreinigungsgebühr
-- `€2,80` → Aktuelle Ortstaxe Breitenbach am Inn (bei Gemeinde erfragen)
-
-### Social Media Links
-In allen Footern (index.html, ferienwohnung.html, lage.html, preise.html, kontakt.html):
-```html
-<a href="#" class="social-link" aria-label="Facebook">📘</a>
-<a href="#" class="social-link" aria-label="Instagram">📷</a>
-```
-Ersetzen Sie `#` durch Ihre echten Social-Media-URLs.
-
----
-
-## 4. Google Maps einbinden
-
-In `lage.html` und `kontakt.html` finden Sie Karten-Platzhalter. So binden Sie die echte Karte ein:
-
-1. Gehen Sie zu [Google Maps](https://maps.google.com)
-2. Suchen Sie nach `Oberberg 70, 6252 Breitenbach am Inn`
-3. Klicken Sie auf **Teilen → Karte einbetten**
-4. Kopieren Sie den `<iframe>`-Code
-5. Ersetzen Sie den `<div class="map-placeholder">...</div>` durch den iFrame
-
-**Hinweis (DSGVO):** Für die DSGVO-konforme Einbindung empfehlen wir ein Consent-Tool oder eine 2-Klick-Lösung. Alternativ: OpenStreetMap über [OpenStreetMap.org](https://www.openstreetmap.org) (keine Google-Daten).
-
----
-
-## 5. Alpaka-Seite später hinzufügen
-
-Die Website ist für die spätere Erweiterung vorbereitet. So gehen Sie vor:
-
-### Schritt 1: Neue Seite erstellen
-Erstellen Sie eine Datei `alpakas.html` analog zu den bestehenden Unterseiten.
-Kopieren Sie die Struktur aus `ferienwohnung.html` als Vorlage.
-
-### Schritt 2: Navigation erweitern
-Suchen Sie in **allen HTML-Dateien** den Kommentar:
-```html
-<!-- Alpakas-Link kommt später -->
-```
-Ersetzen Sie ihn durch:
-```html
-<a href="alpakas.html" class="nav-link">Alpakas</a>
-```
-
-### Schritt 3: CSS-Klasse aktivieren
-In `css/style.css` ist die Klasse `.alpaka-section` bereits definiert:
-```css
-.alpaka-section {
-  display: none; /* Auf 'block' oder 'flex' setzen zum Aktivieren */
-}
-```
-Ändern Sie `display: none` zu `display: block`.
-
-### Schritt 4: Bilder hinzufügen
-Fügen Sie Alpaka-Fotos in `images/` ein, z. B. `alpaka-wiese.jpg`, `alpaka-portrait.jpg` etc.
-
----
-
-## 6. Deployment zu Netlify
-
-### Ersteinrichtung
-
-1. **GitHub Repository erstellen** (bereits erledigt: `Tyrolius/Kruckenhaus`)
-2. Gehen Sie zu [netlify.com](https://www.netlify.com) und melden Sie sich an
-3. Klicken Sie auf **"Add new site" → "Import an existing project"**
-4. Verbinden Sie Ihr GitHub-Konto und wählen Sie das Repository `Tyrolius/Kruckenhaus`
-5. Build-Einstellungen:
-   - **Branch:** `main` (oder `master`)
-   - **Build command:** *(leer lassen)*
-   - **Publish directory:** `.`
-6. Klicken Sie auf **"Deploy site"**
-
-### Eigene Domain verbinden
-
-1. In Netlify: **Site settings → Domain management → Add custom domain**
-2. Geben Sie `kruckenhaus.at` ein
-3. Folgen Sie den DNS-Anweisungen (CNAME oder A-Record bei Ihrem Domain-Anbieter)
-4. Netlify erstellt automatisch ein kostenloses SSL-Zertifikat (Let's Encrypt)
-
-### Automatische Deployments
-
-Nach der Einrichtung: Jeder `git push` auf den `main`-Branch löst automatisch ein neues Deployment aus!
-
-```bash
-# Änderungen deployen
-git add .
-git commit -m "Beschreibung der Änderung"
-git push origin main
-```
-
----
-
-## 7. Netlify Forms (Kontaktformular)
-
-Das Kontaktformular in `kontakt.html` ist bereits für **Netlify Forms** vorbereitet:
-- `data-netlify="true"` Attribut ist gesetzt
-- Spam-Schutz (Honeypot) ist integriert
-
-Nach dem ersten Deployment in Netlify (einmalig):
-1. **Forms aktivieren:** Netlify-Dashboard → **Forms → Enable form detection**,
-   danach einmal neu deployen, damit das Formular „kontakt" erkannt wird
-2. Formulareinsendungen erscheinen dann unter **Forms** im Dashboard
-3. **E-Mail-Benachrichtigung einrichten:** Site configuration → **Notifications →
-   Form submission notifications → Add notification → Email notification** →
-   als Empfänger `info@kruckenhaus.at` eintragen
-4. Testanfrage über die Website senden und prüfen, ob die E-Mail ankommt
-
-Hinweis: Der kostenlose Netlify-Plan umfasst 100 Formular-Einsendungen pro
-Monat – für Buchungsanfragen mehr als ausreichend.
-
----
-
-## 8. Datenschutz & Impressum
-
-Beide Seiten sind vorhanden und inhaltlich ausgearbeitet (Stand Juli 2026):
-- `impressum.html` – § 5 ECG, Offenlegung § 25 MedienG, Verbraucherstreitbeilegung
-- `datenschutz.html` – DSGVO/DSG inkl. Netlify, WhatsApp, Gästemeldung, OpenStreetMap
-
-Die Schriftarten werden **lokal gehostet** (Ordner `/fonts/`), es findet kein
-Abruf von Google-Servern statt – bitte bei künftigen Design-Änderungen beibehalten.
-
-**Vor dem Livegang prüfen (keine Rechtsberatung durch diese Vorlage!):**
-- Texte einmal von der WKO Tirol / einem Anwalt gegenlesen lassen
-- Aktuellen Ortstaxe-Satz bei der Gemeinde Breitenbach bestätigen
-
-**Mindestangaben für das Impressum (§ 5 ECG Österreich):**
-- Name und Anschrift
-- E-Mail-Adresse
-- Umsatzsteuer-Identifikationsnummer (falls vorhanden)
-- Gewerbebehörde (falls gewerblich)
-
----
-
-## 9. Lokale Entwicklung
-
-Um die Website lokal zu testen:
-
-```bash
-# Option 1: Python (meist vorinstalliert)
-python3 -m http.server 8080
-
-# Option 2: Node.js (npx)
-npx serve .
-
-# Option 3: VS Code Live Server Extension
-# Installieren und mit Rechtsklick → "Open with Live Server" starten
-```
-
-Dann im Browser öffnen: `http://localhost:8080`
-
----
-
-## 10. Häufige Anpassungen (Schnellreferenz)
-
-| Was ändern?          | Wo?                              | Suchen nach                   |
-|----------------------|----------------------------------|-------------------------------|
-| Preise               | `preise.html`                    | `ab €120`, `ab €150`          |
-| Telefonnummer        | Alle HTML-Dateien                | `+43 ...`                     |
-| E-Mail               | Alle HTML-Dateien                | `info@kruckenhaus.at`         |
-| Nachnamen            | Alle HTML-Dateien                | `Florian & Kathrin`           |
-| Farbschema           | `css/style.css`                  | `:root { --color-...`         |
-| Hauptbild (Hero)     | `images/hero-background.jpg`     | Datei ersetzen                |
-| Copyright-Jahr       | Footer aller HTML-Dateien        | `© 2025`                      |
-| Navigation erweitern | Alle HTML-Dateien                | `<!-- Alpakas-Link kommt...`  |
-
----
-
-## Technische Details
-
-- **Browser-Kompatibilität:** Chrome 80+, Firefox 75+, Safari 13+, Edge 80+
-- **Performance:** Keine externen JS-Abhängigkeiten, minimales CSS
-- **SEO:** Meta-Tags, Open Graph, Schema.org auf Kontaktseite
-- **Accessibility:** ARIA-Labels, semantisches HTML, Tastaturnavigation
-- **DSGVO:** Cookie-Banner, Datenschutzhinweis im Formular, kein Tracking standardmäßig
-
----
-
-*Hof Kruckenhaus – Breitenbach am Inn, Tirol, Österreich*
-*Website erstellt mit Vanilla HTML/CSS/JS | Hosting: Netlify*
+*Hof Kruckenhaus – Kathrin & Florian Häusler, Oberberg 70, 6252 Breitenbach am Inn*
