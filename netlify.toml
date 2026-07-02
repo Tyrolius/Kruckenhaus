@@ -5,6 +5,17 @@
 [build]
   publish = "."
 
+# Serverless Functions (Verfügbarkeitskalender – Airbnb-iCal-Sync)
+[functions]
+  directory = "netlify/functions"
+
+# API-Route für den Verfügbarkeitskalender.
+# Muss VOR der Catch-All-Regel stehen (erste passende Regel gewinnt).
+[[redirects]]
+  from = "/api/availability"
+  to   = "/.netlify/functions/availability"
+  status = 200
+
 # Weiterleitungen für Single-Page-App-Kompatibilität
 [[redirects]]
   from = "/*"

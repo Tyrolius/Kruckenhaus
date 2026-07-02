@@ -56,27 +56,34 @@ Alle Fotos kommen in den Ordner **`images/`**. Folgende Dateinamen werden erwart
 
 ---
 
-## 2. Smoobu Buchungs-Widget einbinden
+## 2. Verfügbarkeitskalender (Airbnb-Sync) aktivieren
 
-Das Booking-Widget wird auf der Seite `preise.html` eingebunden.
+Auf `ferienwohnung.html#buchung` zeigt ein Kalender die belegten Zeiträume an.
+Die Daten kommen automatisch aus dem Airbnb-Kalender (iCal-Export) über die
+Netlify Function `netlify/functions/availability.js`. Solange keine iCal-URL
+hinterlegt ist, zeigt die Seite einen freundlichen Hinweis statt des Kalenders.
 
-**Schritte:**
+**Einrichtung (einmalig, ca. 5 Minuten):**
 
-1. Loggen Sie sich in Ihr [Smoobu-Konto](https://www.smoobu.com) ein
-2. Navigieren Sie zu **Einstellungen → Buchungs-Widget**
-3. Konfigurieren Sie das Widget (Farben, Sprache etc.)
-4. Kopieren Sie den generierten `<script>`- oder `<iframe>`-Code
-5. Öffnen Sie `preise.html` in einem Texteditor
-6. Suchen Sie den Kommentar:
-   ```html
-   <!-- Smoobu Booking Widget wird hier eingefügt -->
-   ```
-7. Ersetzen Sie den `<div class="booking-widget-placeholder">...</div>` Block durch den Smoobu-Code
+1. Airbnb-iCal-Link holen: Bei Airbnb einloggen →
+   **Kalender → Verfügbarkeit → Kalender verknüpfen → Kalender exportieren**
+   → den angezeigten Link kopieren (endet auf `.ics?s=…`).
+   ⚠️ Dieser Link enthält ein Geheimnis – nicht öffentlich teilen, nicht in
+   den Code schreiben.
+2. In Netlify: **Site configuration → Environment variables → Add a variable**
+   - Key: `AIRBNB_ICAL_URL`
+   - Value: der kopierte Link (mehrere Kalender mit Komma trennen)
+3. Site neu deployen (**Deploys → Trigger deploy**), damit die Variable greift.
 
-**Alternativen zu Smoobu:**
-- **Airbnb/Booking.com Widget:** Direkte Einbettung über deren Partner-Tools
-- **Feratel:** Österreichisches Buchungssystem für Tiroler Unterkünfte
-- **Einfaches Kontaktformular:** Bereits vorhanden auf kontakt.html (Netlify Forms)
+**Hinweise:**
+- Airbnb aktualisiert den iCal-Export mit Verzögerung (bis zu einigen Stunden);
+  zusätzlich cached die Function das Ergebnis 1 Stunde.
+- Direktbuchungen über die Website müssen weiterhin **manuell im
+  Airbnb-Kalender geblockt** werden (der Sync läuft nur Airbnb → Website).
+- Später ist ein Umstieg auf einen Channel Manager mit echter Online-Buchung
+  und Zwei-Wege-Sync möglich (z. B. Smoobu, DiBooq, Feratel); dessen Widget
+  ersetzt dann den Inhalt von `<div id="booking-widget">` in
+  `ferienwohnung.html`.
 
 ---
 

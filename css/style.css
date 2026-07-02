@@ -3018,3 +3018,147 @@ body.season-winter .winter-image { display: block; }
 .vergleich-card--highlight .vergleich-ideal {
   color: var(--color-primary);
 }
+
+/* ============================================================
+   VERFÜGBARKEITSKALENDER (Airbnb-iCal-Sync)
+   ============================================================ */
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.cal-nav-label {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  color: var(--color-dark);
+}
+
+.cal-nav-btn {
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--color-border);
+  border-radius: 50%;
+  background: var(--color-white);
+  color: var(--color-primary);
+  font-size: 1.4rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.cal-nav-btn:hover:not(:disabled) {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+.cal-nav-btn:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.cal-months {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+}
+
+@media (min-width: 640px) {
+  .cal-months {
+    grid-template-columns: 1fr 1fr;
+    gap: 2rem;
+  }
+}
+
+.cal-month-title {
+  font-family: var(--font-heading);
+  font-size: 1.05rem;
+  color: var(--color-dark);
+  text-align: center;
+  margin-bottom: 0.6rem;
+}
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+
+.cal-grid--head {
+  margin-bottom: 3px;
+}
+
+.cal-weekday {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-light);
+  text-align: center;
+  padding: 0.2rem 0;
+}
+
+.cal-day {
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  border-radius: 6px;
+}
+
+.cal-day--free {
+  background: rgba(121, 192, 188, 0.18);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.cal-day--booked {
+  background: var(--color-cream);
+  color: var(--color-text-light);
+  text-decoration: line-through;
+}
+
+.cal-day--past {
+  color: var(--color-border);
+}
+
+.cal-legend {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-top: 1.25rem;
+}
+
+.cal-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+
+.cal-dot {
+  width: 14px;
+  height: 14px;
+  border-radius: 4px;
+  display: inline-block;
+}
+
+.cal-dot--free   { background: rgba(121, 192, 188, 0.45); }
+.cal-dot--booked { background: var(--color-cream); border: 1px solid var(--color-border); }
+
+.cal-hint {
+  font-size: 0.8rem;
+  color: var(--color-text-light);
+  text-align: center;
+  margin: 0.75rem auto 0;
+  max-width: 560px;
+}
+
+.cal-fallback {
+  text-align: center;
+  color: var(--color-text);
+  margin: 0;
+}
