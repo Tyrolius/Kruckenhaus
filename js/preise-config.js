@@ -84,22 +84,6 @@ const PREISE = {
   },
 
   // ----------------------------------------------------------
-  // ZIMMERPREISE (Bergstein & Reintal) – pro Zimmer/Nacht
-  // ----------------------------------------------------------
-  zimmer: {
-    preisProNacht: {
-      hauptsaison: 75,    // € pro Zimmer/Nacht (Hauptsaison)
-      nebensaison:  60,   // € pro Zimmer/Nacht (Nebensaison)
-    },
-    mindestaufenthalt: {
-      hauptsaison: 3,     // Nächte
-      nebensaison:  2,    // Nächte
-    },
-    endreinigung: 25,     // € pro Zimmer (einmalig)
-    haustier:     15,     // € pro Zimmer/Aufenthalt
-  },
-
-  // ----------------------------------------------------------
   // STORNOBEDINGUNGEN (in Tagen vor Anreise)
   // ----------------------------------------------------------
   storno: {
@@ -155,13 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
   setze('[data-preis="storno-kostenlos"]',       `${p.storno.kostenlosBis} Tage`);
   setze('[data-preis="storno-teilrueckerstattung"]', `${p.storno.teilrueckerstattung}–${p.storno.kostenlosBis - 1} Tage`);
   setze('[data-preis="storno-bearbeitungsgebuehr"]', fmtEur(p.storno.bearbeitungsgebuehr));
-
-  // Zimmer
-  setze('[data-preis="zimmer-hauptsaison-nacht"]',  fmtEur(p.zimmer.preisProNacht.hauptsaison));
-  setze('[data-preis="zimmer-nebensaison-nacht"]',   fmtEur(p.zimmer.preisProNacht.nebensaison));
-  setze('[data-preis="zimmer-hauptsaison-mindest"]', `${p.zimmer.mindestaufenthalt.hauptsaison} Nächte`);
-  setze('[data-preis="zimmer-nebensaison-mindest"]', `${p.zimmer.mindestaufenthalt.nebensaison} Nächte`);
-  setze('[data-preis="zimmer-endreinigung"]',        fmtEur(p.zimmer.endreinigung));
 
   // Dynamisch: Rabatt-Badge im Zahlungsbereich
   const badge = document.querySelector('.rabatt-badge');
