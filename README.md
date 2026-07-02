@@ -218,13 +218,17 @@ Monat – für Buchungsanfragen mehr als ausreichend.
 
 ## 8. Datenschutz & Impressum
 
-**Noch zu erstellen:**
-- `datenschutz.html` – Datenschutzerklärung (DSGVO-konform für Österreich)
-- `impressum.html` – Impressum (österreichisches Recht)
+Beide Seiten sind vorhanden und inhaltlich ausgearbeitet (Stand Juli 2026):
+- `impressum.html` – § 5 ECG, Offenlegung § 25 MedienG, Verbraucherstreitbeilegung
+- `datenschutz.html` – DSGVO/DSG inkl. Netlify, WhatsApp, Gästemeldung, OpenStreetMap
 
-**Empfehlung:** Nutzen Sie einen österreichischen Datenschutz-Generator, z. B.:
-- [Datenschutz.at Generator](https://www.datenschutz.at)
-- [WKO Rechtstexte](https://www.wko.at)
+Die Schriftarten werden **lokal gehostet** (Ordner `/fonts/`), es findet kein
+Abruf von Google-Servern statt – bitte bei künftigen Design-Änderungen beibehalten.
+
+**Vor dem Livegang prüfen (keine Rechtsberatung durch diese Vorlage!):**
+- Texte einmal von der WKO Tirol / einem Anwalt gegenlesen lassen
+- Falls UID-Nummer vorhanden oder gewerbliche Vermietung: Impressum ergänzen
+- Aktuellen Ortstaxe-Satz bei der Gemeinde Breitenbach bestätigen
 
 **Mindestangaben für das Impressum (§ 5 ECG Österreich):**
 - Name und Anschrift
