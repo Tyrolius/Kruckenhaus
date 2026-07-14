@@ -180,6 +180,8 @@ function initCookieBanner() {
 
   if (declineBtn) {
     declineBtn.addEventListener('click', () => {
+      // Auch beim Schließen merken, damit das Banner nicht auf jeder Seite erneut erscheint
+      localStorage.setItem(COOKIE_KEY, 'dismissed');
       hideBanner();
     });
   }
@@ -289,6 +291,8 @@ if (contactForm) {
     const name    = contactForm.querySelector('#name')?.value.trim();
     const email   = contactForm.querySelector('#email')?.value.trim();
     const message = contactForm.querySelector('#message')?.value.trim();
+    const anreise = contactForm.querySelector('#anreise')?.value;
+    const abreise = contactForm.querySelector('#abreise')?.value;
 
     if (!name || !email || !message) {
       showFormMessage('Bitte füllen Sie alle Pflichtfelder aus.', 'error');
@@ -300,13 +304,49 @@ if (contactForm) {
       return;
     }
 
-    // Netlify Forms / Backend-Integration wird hier eingebaut
-    // Vorerst: Erfolgsmeldung simulieren
-    showFormMessage(
-      'Vielen Dank für Ihre Nachricht! Wir melden uns innerhalb von 24 Stunden.',
-      'success'
-    );
-    contactForm.reset();
+    if (message.length < 10) {
+      showFormMessage('Bitte beschreiben Sie Ihr Anliegen etwas ausführlicher (mind. 10 Zeichen).', 'error');
+      return;
+    }
+
+    if (anreise && abreise && abreise <= anreise) {
+      showFormMessage('Die Abreise muss nach der Anreise liegen.', 'error');
+      return;
+    }
+
+    const submitBtn = contactForm.querySelector('button[type="submit"]');
+    const originalLabel = submitBtn?.textContent;
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Wird gesendet …';
+    }
+
+    // Anfrage an Netlify Forms senden (AJAX, ohne Seiten-Reload)
+    fetch('/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams(new FormData(contactForm)).toString()
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error('Netzwerkfehler');
+        showFormMessage(
+          'Vielen Dank für Ihre Nachricht! Wir melden uns innerhalb von 24 Stunden.',
+          'success'
+        );
+        contactForm.reset();
+      })
+      .catch(() => {
+        showFormMessage(
+          'Das Senden hat leider nicht funktioniert. Bitte schreiben Sie uns direkt an info@kruckenhaus.at oder rufen Sie an.',
+          'error'
+        );
+      })
+      .finally(() => {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = originalLabel;
+        }
+      });
   });
 }
 
