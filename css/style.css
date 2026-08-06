@@ -1790,6 +1790,19 @@ p {
     .delay-3 { animation-range: entry 22% entry 66%; }
     .delay-4 { animation-range: entry 26% entry 70%; }
     .delay-5 { animation-range: entry 30% entry 74%; }
+
+    /* Auf schmalen Screens (einspaltig) den Stagger flach ziehen: Alle
+       Elemente teilen sich die Basis-Range, damit gestapelte Reihen nicht
+       nacheinander einploppen, sondern gemeinsam ruhig erscheinen. */
+    @media (max-width: 640px) {
+      .delay-1,
+      .delay-2,
+      .delay-3,
+      .delay-4,
+      .delay-5 {
+        animation-range: entry 10% entry 55%;
+      }
+    }
   }
 }
 
@@ -1799,17 +1812,17 @@ p {
 }
 
 @keyframes revealUp {
-  from { opacity: 0; transform: translateY(30px); }
+  from { opacity: 0; transform: translateY(20px); }
   to   { opacity: 1; transform: none; }
 }
 
 @keyframes revealLeft {
-  from { opacity: 0; transform: translateX(-30px); }
+  from { opacity: 0; transform: translateX(-20px); }
   to   { opacity: 1; transform: none; }
 }
 
 @keyframes revealRight {
-  from { opacity: 0; transform: translateX(30px); }
+  from { opacity: 0; transform: translateX(20px); }
   to   { opacity: 1; transform: none; }
 }
 
