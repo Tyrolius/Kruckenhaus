@@ -5,10 +5,20 @@
 [build]
   publish = "."
 
+# Serverless Functions (Verfügbarkeitskalender – Airbnb-iCal-Sync)
+[functions]
+  directory = "netlify/functions"
+
+# API-Route für den Verfügbarkeitskalender.
+[[redirects]]
+  from = "/api/availability"
+  to   = "/.netlify/functions/availability"
+  status = 200
+
 # Diese Website besteht aus mehreren echten HTML-Seiten (keine Single-Page-App).
-# Ein Catch-all-Rewrite auf index.html würde Tippfehler-URLs als "Soft-404"
-# mit Status 200 ausliefern (schlecht für SEO). Stattdessen zeigt Netlify bei
-# unbekannten Pfaden automatisch die 404.html mit korrektem Status 404.
+# Bewusst KEIN Catch-all-Rewrite auf index.html: Der würde Tippfehler-URLs als
+# "Soft-404" mit Status 200 ausliefern (schlecht für SEO). Stattdessen zeigt
+# Netlify bei unbekannten Pfaden automatisch die 404.html mit korrektem 404.
 
 # HTTP-Sicherheits-Header
 [[headers]]
@@ -37,3 +47,8 @@
   for = "/images/*"
   [headers.values]
     Cache-Control = "public, max-age=604800"
+
+[[headers]]
+  for = "/fonts/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

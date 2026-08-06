@@ -260,7 +260,7 @@ function setActiveNavLink() {
    ============================================================ */
 const contactForm = document.querySelector('#contact-form');
 if (contactForm) {
-  contactForm.addEventListener('submit', (e) => {
+  contactForm.addEventListener('submit', async (e) => {
     e.preventDefault();
 
     const name    = contactForm.querySelector('#name')?.value.trim();
