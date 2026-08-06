@@ -5,11 +5,10 @@
 [build]
   publish = "."
 
-# Weiterleitungen für Single-Page-App-Kompatibilität
-[[redirects]]
-  from = "/*"
-  to   = "/index.html"
-  status = 200
+# Diese Website besteht aus mehreren echten HTML-Seiten (keine Single-Page-App).
+# Ein Catch-all-Rewrite auf index.html würde Tippfehler-URLs als "Soft-404"
+# mit Status 200 ausliefern (schlecht für SEO). Stattdessen zeigt Netlify bei
+# unbekannten Pfaden automatisch die 404.html mit korrektem Status 404.
 
 # HTTP-Sicherheits-Header
 [[headers]]
@@ -25,12 +24,14 @@
 [[headers]]
   for = "/css/*"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=86400, must-revalidate"
 
+# JS wird ohne Datei-Fingerprint ausgeliefert – daher nur kurz cachen,
+# damit z. B. Preisänderungen in preise-config.js zeitnah bei allen Gästen ankommen.
 [[headers]]
   for = "/js/*"
   [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
+    Cache-Control = "public, max-age=3600, must-revalidate"
 
 [[headers]]
   for = "/images/*"

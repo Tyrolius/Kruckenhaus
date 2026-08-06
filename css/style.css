@@ -340,21 +340,22 @@ p {
 /* Desktop Navigation */
 .nav-menu {
   display: none;
-  gap: var(--spacing-md);
+  gap: 1.4rem;
   align-items: center;
 }
 
 .nav-link {
   font-family: var(--font-body);
-  font-size: 0.95rem;
+  font-size: 0.86rem;
   font-weight: 700;
   color: var(--color-white);
-  letter-spacing: 0.05em;
+  letter-spacing: 0.03em;
   text-transform: uppercase;
   text-shadow: 0 1px 3px rgba(0,0,0,0.25);
   position: relative;
   transition: color var(--transition-fast);
   padding-bottom: 2px;
+  white-space: nowrap;
 }
 
 .nav-link::after {
@@ -2110,15 +2111,18 @@ body.season-winter .winter-image { display: block; }
 /* ============================================================
    28. DESKTOP: >= 1024px
    ============================================================ */
-@media (min-width: 1024px) {
+/* Horizontale Hauptnavigation erst ab 1200px – darunter das Hamburger-Menü,
+   damit die 9 Navigationspunkte nicht mit dem Logo kollidieren oder umbrechen. */
+@media (min-width: 1200px) {
   .hamburger {
     display: none;
   }
-
   .nav-menu {
     display: flex;
   }
+}
 
+@media (min-width: 1024px) {
   .container {
     padding-inline: var(--spacing-md);
   }
@@ -2571,6 +2575,24 @@ body.season-winter .winter-image { display: block; }
   fill: #fff;
   width: 28px;
   height: 28px;
+}
+
+/* Mobile: Floating-Buttons kollisionsfrei über der Bottom-Tab-Bar (64px) anordnen.
+   WhatsApp links, "Jetzt buchen" rechts; Back-to-Top würde hinter der Tab-Bar
+   verschwinden und wird daher auf Mobil ausgeblendet. */
+@media (max-width: 767px) {
+  .whatsapp-btn {
+    bottom: 5rem;
+    left: 1rem;
+    right: auto;
+  }
+  .fab-book {
+    bottom: 5rem;
+    right: 1rem;
+  }
+  .back-to-top {
+    display: none;
+  }
 }
 
 /* ============================================================
