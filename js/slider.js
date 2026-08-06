@@ -22,6 +22,10 @@
   let timer   = null;
   let touchStartX = 0;
 
+  // Automatisches Weiterschalten respektiert prefers-reduced-motion.
+  // Manuelle Steuerung (Pfeile, Dots, Swipe, Tastatur) bleibt erhalten.
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
   function goTo(index) {
     slides[current].classList.remove('active');
     dots[current]?.classList.remove('active');
@@ -41,6 +45,7 @@
 
   function startTimer() {
     stopTimer();
+    if (reduceMotion) return;
     timer = setInterval(next, INTERVAL);
   }
 

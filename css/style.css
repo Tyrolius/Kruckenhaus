@@ -1755,43 +1755,63 @@ p {
 /* ============================================================
    24. ANIMATIONEN (Scroll-triggered)
    ============================================================ */
-.fade-in {
-  opacity: 0;
-  transition: opacity 0.7s ease, transform 0.7s ease;
-}
-
-.slide-up {
-  opacity: 0;
-  transform: translateY(30px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
-}
-
-.slide-left {
-  opacity: 0;
-  transform: translateX(-30px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
-}
-
+/* Scroll-Reveal – JS-frei über CSS Scroll-driven Animations.
+   Standard: sichtbar. Ohne Timeline-Support (z. B. Firefox stabil) oder bei
+   reduzierter Bewegung bleibt der Inhalt einfach sofort da – kein kaputter
+   Zustand, nur weniger Effekt. Animiert werden ausschließlich transform und
+   opacity (laufen auf dem Compositor-Thread, kein Re-Layout). */
+.fade-in,
+.slide-up,
+.slide-left,
 .slide-right {
-  opacity: 0;
-  transform: translateX(30px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
-}
-
-.fade-in.animate,
-.slide-up.animate,
-.slide-left.animate,
-.slide-right.animate {
   opacity: 1;
-  transform: none;
 }
 
-/* Delay-Klassen */
-.delay-1 { transition-delay: 0.1s; }
-.delay-2 { transition-delay: 0.2s; }
-.delay-3 { transition-delay: 0.3s; }
-.delay-4 { transition-delay: 0.4s; }
-.delay-5 { transition-delay: 0.5s; }
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .fade-in,
+    .slide-up,
+    .slide-left,
+    .slide-right {
+      animation: linear both;
+      animation-timeline: view();
+      animation-range: entry 10% entry 55%;
+    }
+
+    .fade-in     { animation-name: revealFade; }
+    .slide-up    { animation-name: revealUp; }
+    .slide-left  { animation-name: revealLeft; }
+    .slide-right { animation-name: revealRight; }
+
+    /* Sanfter Versatz gestaffelter Elemente – der Stagger entsteht hier
+       über die Scroll-Range statt über transition-delay. */
+    .delay-1 { animation-range: entry 14% entry 58%; }
+    .delay-2 { animation-range: entry 18% entry 62%; }
+    .delay-3 { animation-range: entry 22% entry 66%; }
+    .delay-4 { animation-range: entry 26% entry 70%; }
+    .delay-5 { animation-range: entry 30% entry 74%; }
+  }
+}
+
+@keyframes revealFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes revealUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes revealLeft {
+  from { opacity: 0; transform: translateX(-30px); }
+  to   { opacity: 1; transform: none; }
+}
+
+@keyframes revealRight {
+  from { opacity: 0; transform: translateX(30px); }
+  to   { opacity: 1; transform: none; }
+}
 
 @keyframes slideUp {
   from {
@@ -2176,8 +2196,30 @@ body.season-winter .winter-image { display: block; }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* Hero-Video ausblenden, Standbild als Ersatz */
   .hero-video { display: none; }
   .hero-slide:first-child { background: #5a7a5a url('../images/hero/hof-panorama.jpg') center/cover no-repeat; }
+
+  /* Seiten-Fade beim Laden abschalten – Inhalt sofort sichtbar,
+     damit die Seite ohne Animation nicht unsichtbar bleibt. */
+  body { animation: none; opacity: 1; }
+
+  /* Langsamer Ken-Burns-Zoom auf dem Hero-Bild stoppen */
+  .hero-bg { animation: none; transform: none; }
+
+  /* Hover-Zoom auf Galerie- und Saison-Bildern stoppen
+     (die dezenten Filter-/Overlay-Wechsel bleiben erhalten). */
+  .gallery-item:hover img,
+  .saison-item:hover .saison-item-img {
+    transform: none;
+  }
+
+  /* Timeline (JS-Reveal) ohne Bewegung sofort sichtbar */
+  .timeline-item {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
 }
 
 .hero-slide-overlay {

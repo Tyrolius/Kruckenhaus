@@ -13,7 +13,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initHeader();
   initHamburger();
   initSmoothScroll();
-  initScrollAnimations();
   initBackToTop();
   initCookieBanner();
   initLightbox();
@@ -104,35 +103,11 @@ function initSmoothScroll() {
 }
 
 /* ============================================================
-   5. SCROLL-ANIMATIONEN (IntersectionObserver)
+   5. SCROLL-ANIMATIONEN
+   Reveal läuft jetzt JS-frei über CSS Scroll-driven Animations
+   (animation-timeline: view()) in css/style.css. Kein IntersectionObserver
+   mehr nötig; Browser ohne Support zeigen den Inhalt einfach sofort.
    ============================================================ */
-function initScrollAnimations() {
-  // Unterstützung prüfen
-  if (!('IntersectionObserver' in window)) {
-    // Fallback: Alles sofort sichtbar
-    document.querySelectorAll('.fade-in, .slide-up, .slide-left, .slide-right')
-      .forEach(el => el.classList.add('animate'));
-    return;
-  }
-
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach(entry => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('animate');
-          observer.unobserve(entry.target);
-        }
-      });
-    },
-    {
-      threshold: 0.12,
-      rootMargin: '0px 0px -40px 0px'
-    }
-  );
-
-  document.querySelectorAll('.fade-in, .slide-up, .slide-left, .slide-right')
-    .forEach(el => observer.observe(el));
-}
 
 /* ============================================================
    6. BACK-TO-TOP BUTTON
