@@ -68,10 +68,11 @@ const PREISE = {
   },
 
   // ----------------------------------------------------------
-  // ORTSTAXE (Kurtaxe) – bei Gemeinde Breitenbach erfragen
+  // AUFENTHALTSABGABE (Tiroler Aufenthaltsabgabegesetz, umgangs-
+  // sprachlich "Ortstaxe") – Satz bei Änderung hier anpassen
   // ----------------------------------------------------------
   ortstaxe: {
-    betrag:          2.80,   // € pro Person/Nacht
+    betrag:          3.50,   // € pro Person/Nacht
     ab_alter:        14,     // gilt ab diesem Alter
   },
 

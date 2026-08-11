@@ -212,7 +212,9 @@ gewünschtem Motiv und Bildgröße.
       „Alpaka-Stute 1/2/3" – echte Namen (Noblesse, Bellissima, Marée) einsetzen
 - [ ] Social-Media-Links im Footer der Startseite führen noch auf `#` –
       echte Profile verlinken oder Icons entfernen
-- [ ] Ortstaxe-Satz (derzeit 2,80 €) bei der Gemeinde Breitenbach bestätigen
+- [x] Aufenthaltsabgabe (3,50 € p. P./Nacht) und die steuerliche Einordnung als
+      Vermietung und Verpachtung mit 10 % USt sind steuerlich abgeklärt.
+      Satz bei künftigen Änderungen in `js/preise-config.js` anpassen.
 - [ ] Impressum & Datenschutz einmal von WKO Tirol / Anwalt gegenlesen lassen
       (Texte sind ausgearbeitet, aber das ist keine Rechtsberatung)
 
