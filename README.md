@@ -297,6 +297,12 @@ Aktuell hinterlegte Einheiten in `einheiten`:
 | 2 | Zimmer Berglstein | 2 | 60 € |
 | 3 | Zimmer Reintal | 2 | 60 € |
 
+> **Zu den beiden Zimmern:** Sie werden auf der Website bewusst nicht beworben –
+> dort geht es nur um die Ferienwohnung. Vermietet werden sie noch bis
+> einschließlich **Wintersaison 2026**, danach ist voraussichtlich Eigenbedarf
+> geplant. Die Einträge sind also **kein Altbestand** und sollten vorerst
+> **nicht gelöscht** werden.
+
 > Wer daraus später ein echtes Buchungssystem bauen will, könnte Verfügbarkeit und
 > Preise aus D1 statt aus `preise-config.js`/Airbnb speisen. Bis dahin kann das
 > Modell unverändert liegen bleiben – es stört den Website-Betrieb nicht.
