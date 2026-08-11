@@ -1,7 +1,7 @@
 /* ============================================================
  * VERFÜGBARKEITSKALENDER – Ferienwohnung Kruckenhaus
  * ============================================================
- * Lädt die belegten Zeiträume von der Netlify Function
+ * Lädt die belegten Zeiträume von der Cloudflare Pages Function
  * (/api/availability, gespeist aus dem Airbnb-iCal-Export) und
  * rendert einen Monatskalender: belegte Nächte grau, freie grün.
  *

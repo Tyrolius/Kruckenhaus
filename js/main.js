@@ -296,14 +296,15 @@ if (contactForm) {
       submitBtn.textContent = 'Wird gesendet …';
     }
 
-    // Anfrage an Netlify Forms senden (AJAX, ohne Seiten-Reload)
-    fetch('/', {
+    // Anfrage an die Cloudflare Pages Function senden (AJAX, ohne Seiten-Reload)
+    fetch('/api/kontakt', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-      body: new URLSearchParams(new FormData(contactForm)).toString()
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.fromEntries(new FormData(contactForm).entries()))
     })
-      .then((response) => {
-        if (!response.ok) throw new Error('Netzwerkfehler');
+      .then(async (response) => {
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.ok) throw new Error(data.error || 'Netzwerkfehler');
         showFormMessage(
           'Vielen Dank für Ihre Nachricht! Wir melden uns innerhalb von 24 Stunden.',
           'success'

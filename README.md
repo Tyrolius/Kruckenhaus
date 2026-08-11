@@ -3,69 +3,97 @@
 Offizielle Website der Ferienwohnung **Hof Kruckenhaus** in Breitenbach am Inn, Tirol.
 
 **Domain:** kruckenhaus.at (registriert bei world4you)
-**Hosting:** Netlify (kostenlos)
+**Hosting:** Cloudflare Pages (kostenlos)
 **Technik:** HTML, CSS, JavaScript – kein Baukasten, kein Framework
 
 ---
 
 ## Wie das Ganze zusammenspielt (kurz erklärt)
 
-Drei Dienste arbeiten zusammen – alle drei braucht ihr nur einmal einzurichten:
+Ein paar Dienste arbeiten zusammen – die meisten richtet ihr nur einmal ein:
 
 | Dienst | Aufgabe | Kosten |
 |---|---|---|
 | **GitHub** (github.com/Tyrolius/Kruckenhaus) | Hier liegen die Website-Dateien. Jede Änderung wird hier gespeichert. | kostenlos |
-| **Netlify** (netlify.com) | Der eigentliche „Server": zeigt die Website an, verschickt das Kontaktformular, holt den Airbnb-Kalender. | kostenlos |
-| **world4you** | Verwaltet nur die Domain `kruckenhaus.at` (und ggf. eure E-Mail-Postfächer). | euer bestehender Vertrag |
+| **Cloudflare Pages** (dash.cloudflare.com) | Der eigentliche „Server": zeigt die Website an, verarbeitet das Kontaktformular, holt den Airbnb-Kalender. | kostenlos |
+| **Cloudflare D1** | Datenbank, in der die Kontaktanfragen gespeichert werden (Tabelle `anfragen`). | kostenlos |
+| **Resend** (resend.com) | Verschickt die Benachrichtigungs-E-Mail bei neuen Anfragen an info@kruckenhaus.at. | kostenlos (bis 3.000 E-Mails/Monat) |
+| **world4you** | Registrar der Domain `kruckenhaus.at` (und ggf. eure E-Mail-Postfächer). | euer bestehender Vertrag |
 
-> **Warum nicht alles bei world4you?** Das Kontaktformular und der
-> Airbnb-Verfügbarkeitskalender laufen über Netlify-Funktionen, die es auf
-> klassischem world4you-Webspace nicht gibt. Domain bei world4you + Hosting bei
-> Netlify ist eine ganz übliche Kombination – ihr zahlt dadurch nichts extra.
+> **Warum Cloudflare?** Das Kontaktformular und der Airbnb-Verfügbarkeitskalender
+> laufen über serverseitige Funktionen (Cloudflare Pages Functions), die es auf
+> klassischem world4you-Webspace nicht gibt. Hosting + Datenbank + DNS aus einer
+> Hand bei Cloudflare ist unkompliziert und für diese Website komplett kostenlos.
 
 **Der Ablauf im Überblick:** Ihr ändert etwas an den Dateien (z. B. über
-claude.ai/code oder direkt auf github.com) → GitHub speichert es → Netlify
-veröffentlicht es automatisch nach 1–2 Minuten. FTP-Uploads wie früher braucht
-es nicht.
+claude.ai/code oder direkt auf github.com) → GitHub speichert es → Cloudflare
+Pages veröffentlicht es automatisch nach 1–2 Minuten. FTP-Uploads wie früher
+braucht es nicht.
 
 ---
 
-## Schritt 1: Website auf Netlify veröffentlichen (ca. 10 Min.)
+## Schritt 1: Website auf Cloudflare Pages veröffentlichen (ca. 10 Min.)
 
-1. Auf [netlify.com](https://www.netlify.com) gehen → **Sign up** → mit dem
-   **GitHub-Konto** anmelden (Button „GitHub"). So sind beide Dienste gleich verbunden.
-2. Im Netlify-Dashboard: **Add new site → Import an existing project → GitHub**
-3. Das Repository **`Tyrolius/Kruckenhaus`** auswählen
-4. Einstellungen im Formular:
-   - **Branch to deploy:** `main`
+1. Auf [dash.cloudflare.com](https://dash.cloudflare.com) ein (kostenloses) Konto
+   anlegen bzw. einloggen.
+2. Links im Menü **Workers & Pages → Create → Pages → Connect to Git**
+3. Das **GitHub-Konto verbinden** und das Repository **`Tyrolius/Kruckenhaus`** auswählen.
+4. Build-Einstellungen:
+   - **Framework preset:** `None`
    - **Build command:** leer lassen
-   - **Publish directory:** `.` (nur ein Punkt)
-5. **Deploy site** klicken
+   - **Build output directory:** `/`
+   - **Production branch:** `master`
+5. **Save and Deploy** klicken.
 
 Nach 1–2 Minuten ist die Website unter einer Adresse wie
-`https://zufallsname-123.netlify.app` erreichbar. Diese Adresse gleich testen –
+`https://kruckenhaus.pages.dev` erreichbar. Diese Adresse gleich testen –
 das ist schon eure echte Website, nur noch ohne eigene Domain.
 
-**Tipp:** Unter **Site configuration → Site details → Change site name** könnt
-ihr den Zufallsnamen in z. B. `kruckenhaus` ändern.
+> Die Datei `wrangler.toml` im Projekt enthält bereits die Grundkonfiguration
+> inklusive der D1-Datenbank-Anbindung – Cloudflare liest sie beim Deploy
+> automatisch aus.
 
 ---
 
-## Schritt 2: Kontaktformular scharf schalten (ca. 5 Min.)
+## Schritt 2: Kontaktformular scharf schalten (ca. 10 Min.)
 
-Ohne diesen Schritt landen Anfragen nirgends!
+Ohne diesen Schritt landen Anfragen nirgends! Das Formular speichert jede Anfrage
+in der Datenbank (Cloudflare D1) **und** schickt euch eine E-Mail (über Resend).
 
-1. Netlify-Dashboard → **Forms** (linkes Menü) → **Enable form detection**
-2. Einmal neu veröffentlichen: **Deploys → Trigger deploy → Deploy site**
-   (nötig, damit Netlify das Formular „kontakt" erkennt)
-3. E-Mail-Benachrichtigung einrichten:
-   **Site configuration → Notifications → Form submission notifications →
-   Add notification → Email notification** → E-Mail: **info@kruckenhaus.at**
-4. **Testen:** Auf der Website selbst eine Testanfrage über das Kontaktformular
-   schicken und prüfen, ob sie per E-Mail ankommt (auch im Spam-Ordner nachsehen).
+### 2a. Datenbank-Anbindung prüfen
 
-Alle Einsendungen sind zusätzlich jederzeit im Netlify-Dashboard unter
-**Forms** nachlesbar. Der Gratis-Plan erlaubt 100 Einsendungen pro Monat.
+Die D1-Datenbank `kruckenhaus` und die Tabelle `anfragen` sind bereits angelegt.
+In Cloudflare Pages muss die Datenbank nur mit der Website verbunden sein:
+
+- **Workers & Pages → kruckenhaus → Settings → Bindings → D1 database bindings**
+- Falls noch nicht vorhanden: Binding mit **Variable name `DB`** → Datenbank
+  **`kruckenhaus`** hinzufügen. (Über `wrangler.toml` ist das i. d. R. schon gesetzt.)
+
+### 2b. E-Mail-Versand über Resend einrichten
+
+1. Auf [resend.com](https://resend.com) ein kostenloses Konto anlegen.
+2. **Domains → Add Domain** → `kruckenhaus.at` eintragen. Resend zeigt einige
+   DNS-Einträge (SPF/DKIM) an – diese kommen in Cloudflare (siehe Schritt 4).
+3. Sobald die Domain „Verified" ist: **API Keys → Create API Key** → Key kopieren.
+4. In Cloudflare: **Workers & Pages → kruckenhaus → Settings → Variables and
+   Secrets** → als **Secret** hinzufügen:
+   - **Name:** `RESEND_API_KEY` — **Value:** der kopierte Resend-Key
+5. Danach einmal neu veröffentlichen: **Deployments → … → Retry deployment**.
+6. **Testen:** Auf der Website eine Testanfrage über das Kontaktformular schicken
+   und prüfen, ob sie per E-Mail bei info@kruckenhaus.at ankommt (auch Spam-Ordner).
+
+> **Ohne `RESEND_API_KEY`** funktioniert das Formular trotzdem – die Anfrage
+> wird dann nur in der Datenbank gespeichert, aber es geht keine E-Mail raus.
+
+### 2c. Anfragen in der Datenbank nachsehen
+
+Alle Einsendungen liegen zusätzlich in der D1-Datenbank. Nachsehen z. B. im
+Cloudflare-Dashboard unter **Storage & Databases → D1 → kruckenhaus → Console**:
+
+```sql
+SELECT erstellt_am, name, email, telefon, anreise, abreise, personen, nachricht
+FROM anfragen ORDER BY erstellt_am DESC;
+```
 
 ---
 
@@ -77,12 +105,12 @@ Damit zeigt die Website automatisch an, wann die Wohnung belegt ist.
    **Verfügbarkeit → Kalender verknüpfen → Kalender exportieren** →
    den angezeigten Link kopieren (endet auf `.ics?s=…`)
    ⚠️ Dieser Link ist geheim – nirgends veröffentlichen!
-2. In Netlify: **Site configuration → Environment variables → Add a variable**
-   - **Key:** `AIRBNB_ICAL_URL`
-   - **Value:** der kopierte Link
-3. **Deploys → Trigger deploy → Deploy site**
+2. In Cloudflare: **Workers & Pages → kruckenhaus → Settings → Variables and
+   Secrets** → als **Secret** hinzufügen:
+   - **Name:** `AIRBNB_ICAL_URL` — **Value:** der kopierte Link
+3. Neu veröffentlichen: **Deployments → … → Retry deployment**.
 4. **Testen:** Auf der Website unter „Ferienwohnung → Verfügbarkeit & Buchung"
-   müssen die in Airbnb belegten Tage durchgestrichen erscheinen
+   müssen die in Airbnb belegten Tage als belegt erscheinen
    (Aktualisierung kann bis zu 1 Stunde + Airbnb-Verzögerung dauern).
 
 **Wichtig im Alltag:** Der Abgleich läuft nur in eine Richtung
@@ -92,37 +120,51 @@ Booking.com dazu: dessen iCal-Link einfach per Komma an die Variable anhängen.
 
 ---
 
-## Schritt 4: Domain kruckenhaus.at verbinden (ca. 15 Min. + Wartezeit)
+## Schritt 4: Domain kruckenhaus.at zu Cloudflare umziehen (ca. 20 Min. + Wartezeit)
 
-### 4a. Domain in Netlify eintragen
+Für Cloudflare Pages verwaltet ihr die Domain am einfachsten direkt bei Cloudflare
+(DNS + Proxy). Der Registrar bleibt world4you – es wechseln nur die Nameserver.
 
-1. Netlify: **Domain management → Add a domain** → `kruckenhaus.at` eingeben
-2. Netlify zeigt an, welche DNS-Einträge nötig sind (sollten den unten genannten entsprechen)
+### 4a. Domain in Cloudflare aufnehmen
 
-### 4b. DNS-Einträge bei world4you setzen
+1. Cloudflare-Dashboard → **Add a domain** (oben) → `kruckenhaus.at` eingeben →
+   **kostenlosen Free-Plan** wählen.
+2. Cloudflare scannt die bestehenden DNS-Einträge. **Prüft die Liste genau** und
+   ergänzt fehlende Einträge – besonders wichtig:
+   - die **MX-Einträge** eurer E-Mail-Postfächer (info@kruckenhaus.at),
+   - zugehörige **SPF/DKIM-TXT-Einträge**,
+   - die **Resend-Einträge** aus Schritt 2b.
+3. Cloudflare zeigt euch **zwei Nameserver** an (z. B. `xxx.ns.cloudflare.com`).
 
-1. Im [world4you-Kundencenter](https://my.world4you.com) einloggen
-2. **Meine Domains → kruckenhaus.at → DNS-Verwaltung** (bzw. „Nameserver-Einträge bearbeiten")
-3. Zwei Einträge setzen bzw. ändern:
+> ⚠️ **E-Mail nicht kaputt machen:** Wenn eure Postfächer bei world4you liegen,
+> müssen die MX- und Mail-TXT-Einträge **1:1 in Cloudflare übernommen** werden,
+> bevor ihr die Nameserver umstellt. Im Zweifel vorher einen Screenshot aller
+> world4you-Einträge machen.
 
-| Typ | Name/Host | Wert |
-|---|---|---|
-| **A** | `@` (bzw. leer = kruckenhaus.at) | `75.2.60.5` |
-| **CNAME** | `www` | `IHRSITENAME.netlify.app` (eure Netlify-Adresse aus Schritt 1) |
+### 4b. Nameserver bei world4you umstellen
 
-> ⚠️ **E-Mail nicht kaputt machen:** Falls eure Postfächer (info@kruckenhaus.at)
-> bei world4you liegen, die **MX-Einträge unverändert lassen** und nur die
-> A-/CNAME-Einträge für die Website ändern. Im Zweifel vorher einen Screenshot
-> der bestehenden Einträge machen oder den world4you-Support fragen.
+1. Im [world4you-Kundencenter](https://my.world4you.com) einloggen.
+2. **Meine Domains → kruckenhaus.at → Nameserver bearbeiten**.
+3. Die world4you-Nameserver durch die **zwei Cloudflare-Nameserver** aus 4a ersetzen.
+4. Speichern. Die Umstellung dauert meist wenige Stunden (selten bis 24 h);
+   Cloudflare schickt eine E-Mail, sobald die Domain „Active" ist.
 
-4. Warten: DNS-Änderungen brauchen zwischen einigen Minuten und ein paar
-   Stunden (selten bis 24 h).
+### 4c. Website-Einträge auf Cloudflare Pages zeigen lassen
 
-### 4c. HTTPS aktivieren
+1. Cloudflare-Dashboard → **Workers & Pages → kruckenhaus → Custom domains →
+   Set up a custom domain** → `kruckenhaus.at` und `www.kruckenhaus.at` hinzufügen.
+2. Cloudflare legt die nötigen DNS-Einträge (CNAME auf `kruckenhaus.pages.dev`)
+   automatisch an.
 
-Sobald die Domain auf Netlify zeigt, stellt Netlify unter
-**Domain management → HTTPS** automatisch ein kostenloses SSL-Zertifikat aus
-(Let's Encrypt). Prüfen: `https://www.kruckenhaus.at` muss mit Schloss-Symbol laden.
+### 4d. HTTPS
+
+Cloudflare stellt automatisch ein kostenloses SSL-Zertifikat aus. Prüfen:
+`https://www.kruckenhaus.at` muss mit Schloss-Symbol laden.
+
+> **Alternative ohne Nameserver-Umzug:** Wollt ihr die DNS-Verwaltung bei
+> world4you belassen, könnt ihr die Domain auch nur per CNAME/A-Eintrag auf die
+> `pages.dev`-Adresse zeigen lassen. Der Nameserver-Umzug zu Cloudflare ist aber
+> die empfohlene, wartungsärmere Variante (schnelleres CDN, einfache Verwaltung).
 
 ---
 
@@ -159,6 +201,7 @@ gewünschtem Motiv und Bildgröße.
 - [ ] Testanfrage über das Kontaktformular kommt per E-Mail an (Schritt 2)
 - [ ] Belegungskalender zeigt die Airbnb-Buchungen (Schritt 3)
 - [ ] `https://www.kruckenhaus.at` lädt mit Schloss-Symbol (Schritt 4)
+- [ ] E-Mail-Empfang (info@kruckenhaus.at) funktioniert nach dem DNS-Umzug noch
 - [ ] Fotos eingefügt (Schritt 5)
 - [ ] Website einmal komplett am **Handy** durchklicken
 - [ ] **Gästestimmen ersetzen:** Die vier Bewertungen auf der Startseite sind
@@ -169,7 +212,9 @@ gewünschtem Motiv und Bildgröße.
       „Alpaka-Stute 1/2/3" – echte Namen (Noblesse, Bellissima, Marée) einsetzen
 - [ ] Social-Media-Links im Footer der Startseite führen noch auf `#` –
       echte Profile verlinken oder Icons entfernen
-- [ ] Ortstaxe-Satz (derzeit 2,80 €) bei der Gemeinde Breitenbach bestätigen
+- [x] Aufenthaltsabgabe (3,50 € p. P./Nacht) und die steuerliche Einordnung als
+      Vermietung und Verpachtung mit 10 % USt sind steuerlich abgeklärt.
+      Satz bei künftigen Änderungen in `js/preise-config.js` anpassen.
 - [ ] Impressum & Datenschutz einmal von WKO Tirol / Anwalt gegenlesen lassen
       (Texte sind ausgearbeitet, aber das ist keine Rechtsberatung)
 
@@ -195,7 +240,8 @@ Minuten online. Drei Wege, vom einfachsten zum flexibelsten:
 | Telefon/E-Mail | in allen `.html`-Dateien (Suchen & Ersetzen) |
 | Farben & Schriften | `css/style.css`, Abschnitt `:root { --color-… }` |
 | Copyright-Jahr | Footer aller `.html`-Dateien (`© 2025`) |
-| Airbnb-/Booking-Kalenderlinks | Netlify-Umgebungsvariable `AIRBNB_ICAL_URL` |
+| Airbnb-/Booking-Kalenderlinks | Cloudflare-Secret `AIRBNB_ICAL_URL` |
+| Empfänger-/Absender-E-Mail des Formulars | Cloudflare-Variablen `CONTACT_TO` / `CONTACT_FROM` |
 
 ---
 
@@ -210,19 +256,58 @@ Minuten online. Drei Wege, vom einfachsten zum flexibelsten:
 ├── berglsteiner-see.html    → Der See, Wanderroute
 ├── workation.html           → Arbeiten mit Starlink-Internet
 ├── umgebung.html / lage.html→ Ausflugsziele, Anfahrt
-├── kontakt.html             → Kontaktformular (Netlify Forms)
+├── kontakt.html             → Kontaktformular
 ├── impressum.html           → Impressum (§ 5 ECG, § 25 MedienG, UID)
 ├── datenschutz.html         → Datenschutzerklärung (DSGVO)
-├── netlify.toml             → Netlify-Konfiguration (nicht löschen!)
+├── wrangler.toml            → Cloudflare-Pages-Konfiguration (nicht löschen!)
+├── schema.sql               → D1-Datenbankschema (Tabelle „anfragen")
+├── _headers                 → HTTP-Header & Cache-Regeln (Cloudflare Pages)
 ├── sitemap.xml / robots.txt → Für Google & Co.
 ├── css/style.css            → Design (Farben, Schriften, Layout)
 ├── js/main.js               → Navigation, Formular, Animationen
 ├── js/verfuegbarkeit.js     → Belegungskalender (Anzeige)
 ├── js/preise-config.js      → ALLE Preise zentral
-├── netlify/functions/availability.js → Holt den Airbnb-Kalender (Server)
+├── functions/api/availability.js → Holt den Airbnb-Kalender (Server)
+├── functions/api/kontakt.js      → Nimmt Formularanfragen entgegen (D1 + E-Mail)
 ├── fonts/                   → Lokal gehostete Schriften (DSGVO – nicht löschen!)
 └── images/                  → Fotos (siehe Schritt 5)
 ```
+
+---
+
+## Datenbank: Buchungsmodell (Grundlage, noch nicht mit der Website verbunden)
+
+Die D1-Datenbank `kruckenhaus` enthält – **unabhängig vom Kontaktformular** –
+bereits ein Datenmodell für ein mögliches eigenes Buchungs-/Preissystem. Es ist
+aktuell **nicht mit der Website verknüpft**: Preise kommen weiterhin aus
+`js/preise-config.js`, die Verfügbarkeit aus dem Airbnb-iCal-Abgleich. Das Modell
+ist eine Vorbereitung für später und wird von der laufenden Website nicht benötigt.
+
+| Tabelle | Zweck | Stand |
+|---|---|---|
+| `einheiten` | Vermietbare Einheiten (Name, Betten, Basispreis) | **3 Einträge** |
+| `preisperioden` | Saison-/Zeitraumpreise je Einheit inkl. Mindestnächte | leer |
+| `buchungen` | Bestätigte Buchungen (Zeitraum, Gast, Quelle, Preis, Status) | leer |
+| `naechte` | Einzelne belegte Nächte je Buchung (für schnelle Verfügbarkeitsabfragen) | leer |
+| `anfragen` | Kontaktanfragen aus dem Formular (aus dieser Migration) | leer |
+
+Aktuell hinterlegte Einheiten in `einheiten`:
+
+| id | name | betten | basispreis |
+|---|---|---|---|
+| 1 | Ferienwohnung | 4 | 130 € |
+| 2 | Zimmer Berglstein | 2 | 60 € |
+| 3 | Zimmer Reintal | 2 | 60 € |
+
+> **Zu den beiden Zimmern:** Sie werden auf der Website bewusst nicht beworben –
+> dort geht es nur um die Ferienwohnung. Vermietet werden sie noch bis
+> einschließlich **Wintersaison 2026**, danach ist voraussichtlich Eigenbedarf
+> geplant. Die Einträge sind also **kein Altbestand** und sollten vorerst
+> **nicht gelöscht** werden.
+
+> Wer daraus später ein echtes Buchungssystem bauen will, könnte Verfügbarkeit und
+> Preise aus D1 statt aus `preise-config.js`/Airbnb speisen. Bis dahin kann das
+> Modell unverändert liegen bleiben – es stört den Website-Betrieb nicht.
 
 ---
 
@@ -231,11 +316,14 @@ Minuten online. Drei Wege, vom einfachsten zum flexibelsten:
 - **Schriften bleiben lokal:** Die Schriftarten liegen bewusst im Ordner
   `/fonts/` statt bei Google (DSGVO). Bei Design-Änderungen beibehalten.
 - **Kein Tracking:** Es ist absichtlich kein Google Analytics o. Ä. eingebaut.
-  Besucherzahlen DSGVO-freundlich nachrüsten: Netlify Analytics (kostenpflichtig)
-  oder z. B. Plausible/Fathom.
-- **Lokal testen** (optional): Im Projektordner `python3 -m http.server 8080`
-  ausführen und `http://localhost:8080` öffnen. Formular und Kalender
-  funktionieren nur auf Netlify, nicht lokal.
+  Besucherzahlen DSGVO-freundlich nachrüsten: **Cloudflare Web Analytics**
+  (kostenlos, cookielos) oder z. B. Plausible/Fathom.
+- **Lokal testen** (optional): Mit installiertem Node.js im Projektordner
+  `npx wrangler pages dev .` ausführen – damit laufen auch die Functions
+  (Formular, Kalender) lokal. Ein reiner Datei-Server (`python3 -m http.server`)
+  zeigt nur die Seiten ohne serverseitige Funktionen.
+- **D1-Schema ändern:** Anpassungen in `schema.sql` vornehmen und mit
+  `npx wrangler d1 execute kruckenhaus --remote --file=./schema.sql` einspielen.
 - **Buchungssystem-Upgrade:** Bei mehr Buchungsvolumen kann ein Channel Manager
   (Smoobu, DiBooq, Feratel) den Kalender ersetzen – dessen Widget kommt dann in
   den `<div id="booking-widget">` auf `ferienwohnung.html` und `preise.html`.

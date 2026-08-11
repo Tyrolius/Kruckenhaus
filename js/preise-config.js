@@ -10,7 +10,7 @@
  *   1. Öffnen Sie diese Datei in einem Texteditor
  *   2. Ändern Sie die gewünschten Werte
  *   3. Speichern – die Änderungen erscheinen sofort auf der Website
- *   4. Datei per Git committen und zu Netlify pushen
+ *   4. Datei per Git committen und pushen (Cloudflare Pages deployt automatisch)
  *
  * ============================================================
  */
@@ -68,10 +68,11 @@ const PREISE = {
   },
 
   // ----------------------------------------------------------
-  // ORTSTAXE (Kurtaxe) – bei Gemeinde Breitenbach erfragen
+  // AUFENTHALTSABGABE (Tiroler Aufenthaltsabgabegesetz, umgangs-
+  // sprachlich "Ortstaxe") – Satz bei Änderung hier anpassen
   // ----------------------------------------------------------
   ortstaxe: {
-    betrag:          2.80,   // € pro Person/Nacht
+    betrag:          3.50,   // € pro Person/Nacht
     ab_alter:        14,     // gilt ab diesem Alter
   },
 

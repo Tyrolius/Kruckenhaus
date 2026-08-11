@@ -1,0 +1,26 @@
+# ============================================================
+# CLOUDFLARE PAGES – HTTP-Header (ersetzt netlify.toml [[headers]])
+# ============================================================
+
+# HTTP-Sicherheits-Header für alle Seiten
+/*
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# Cache-Optimierung für statische Assets
+/css/*
+  Cache-Control: public, max-age=86400, must-revalidate
+
+# JS ohne Datei-Fingerprint – daher nur kurz cachen, damit z. B.
+# Preisänderungen in preise-config.js zeitnah bei allen Gästen ankommen.
+/js/*
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/images/*
+  Cache-Control: public, max-age=604800
+
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
