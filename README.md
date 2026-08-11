@@ -273,6 +273,36 @@ Minuten online. Drei Wege, vom einfachsten zum flexibelsten:
 
 ---
 
+## Datenbank: Buchungsmodell (Grundlage, noch nicht mit der Website verbunden)
+
+Die D1-Datenbank `kruckenhaus` enthält – **unabhängig vom Kontaktformular** –
+bereits ein Datenmodell für ein mögliches eigenes Buchungs-/Preissystem. Es ist
+aktuell **nicht mit der Website verknüpft**: Preise kommen weiterhin aus
+`js/preise-config.js`, die Verfügbarkeit aus dem Airbnb-iCal-Abgleich. Das Modell
+ist eine Vorbereitung für später und wird von der laufenden Website nicht benötigt.
+
+| Tabelle | Zweck | Stand |
+|---|---|---|
+| `einheiten` | Vermietbare Einheiten (Name, Betten, Basispreis) | **3 Einträge** |
+| `preisperioden` | Saison-/Zeitraumpreise je Einheit inkl. Mindestnächte | leer |
+| `buchungen` | Bestätigte Buchungen (Zeitraum, Gast, Quelle, Preis, Status) | leer |
+| `naechte` | Einzelne belegte Nächte je Buchung (für schnelle Verfügbarkeitsabfragen) | leer |
+| `anfragen` | Kontaktanfragen aus dem Formular (aus dieser Migration) | leer |
+
+Aktuell hinterlegte Einheiten in `einheiten`:
+
+| id | name | betten | basispreis |
+|---|---|---|---|
+| 1 | Ferienwohnung | 4 | 130 € |
+| 2 | Zimmer Berglstein | 2 | 60 € |
+| 3 | Zimmer Reintal | 2 | 60 € |
+
+> Wer daraus später ein echtes Buchungssystem bauen will, könnte Verfügbarkeit und
+> Preise aus D1 statt aus `preise-config.js`/Airbnb speisen. Bis dahin kann das
+> Modell unverändert liegen bleiben – es stört den Website-Betrieb nicht.
+
+---
+
 ## Technische Hinweise
 
 - **Schriften bleiben lokal:** Die Schriftarten liegen bewusst im Ordner

@@ -6,6 +6,11 @@
 --
 -- Anlegen/aktualisieren:
 --   wrangler d1 execute kruckenhaus --remote --file=./schema.sql
+--
+-- HINWEIS: Diese Datei deckt nur die Tabelle "anfragen" ab. Die Datenbank
+-- enthält zusätzlich ein (noch nicht mit der Website verbundenes) Buchungs-
+-- modell: einheiten, preisperioden, buchungen, naechte. Siehe README.md,
+-- Abschnitt "Datenbank: Buchungsmodell".
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS anfragen (
