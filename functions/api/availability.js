@@ -1,15 +1,18 @@
 /* ============================================================
- * NETLIFY FUNCTION – Verfügbarkeit aus Airbnb-iCal
+ * CLOUDFLARE PAGES FUNCTION – Verfügbarkeit aus Airbnb-iCal
  * ============================================================
+ * Erreichbar unter  /api/availability  (Pages routet automatisch
+ * über den Dateipfad functions/api/availability.js).
+ *
  * Ruft den/die Airbnb-Kalender (iCal-Export) ab und liefert die
  * belegten Zeiträume als JSON an das Frontend (js/verfuegbarkeit.js).
  *
- * Konfiguration (Netlify → Site settings → Environment variables):
+ * Konfiguration (Cloudflare → Pages → Settings → Variables and Secrets):
  *   AIRBNB_ICAL_URL = https://www.airbnb.at/calendar/ical/XXXX.ics?s=...
  *   Mehrere Kalender: URLs mit Komma trennen.
  *
  * Die iCal-URL enthält ein Geheimnis und gehört deshalb NICHT in den
- * Code, sondern nur in die Netlify-Umgebungsvariable.
+ * Code, sondern nur in die Cloudflare-Umgebungsvariable (als Secret).
  * ============================================================ */
 
 /**
@@ -70,8 +73,8 @@ function parseBusyRanges(ics) {
   return ranges;
 }
 
-exports.handler = async () => {
-  const urls = (process.env.AIRBNB_ICAL_URL || '')
+export async function onRequestGet({ env }) {
+  const urls = (env.AIRBNB_ICAL_URL || '')
     .split(',')
     .map((u) => u.trim())
     .filter(Boolean);
@@ -83,11 +86,10 @@ exports.handler = async () => {
   };
 
   if (urls.length === 0) {
-    return {
-      statusCode: 200,
-      headers: jsonHeaders,
-      body: JSON.stringify({ configured: false, busy: [] }),
-    };
+    return new Response(
+      JSON.stringify({ configured: false, busy: [] }),
+      { status: 200, headers: jsonHeaders }
+    );
   }
 
   try {
@@ -99,20 +101,17 @@ exports.handler = async () => {
     }
     busy.sort((a, b) => a.start.localeCompare(b.start));
 
-    return {
-      statusCode: 200,
-      headers: jsonHeaders,
-      body: JSON.stringify({ configured: true, updatedAt: new Date().toISOString(), busy }),
-    };
+    return new Response(
+      JSON.stringify({ configured: true, updatedAt: new Date().toISOString(), busy }),
+      { status: 200, headers: jsonHeaders }
+    );
   } catch (err) {
-    return {
-      statusCode: 502,
-      headers: { ...jsonHeaders, 'Cache-Control': 'no-store' },
-      body: JSON.stringify({ configured: true, error: 'Kalender derzeit nicht abrufbar' }),
-    };
+    return new Response(
+      JSON.stringify({ configured: true, error: 'Kalender derzeit nicht abrufbar' }),
+      { status: 502, headers: { ...jsonHeaders, 'Cache-Control': 'no-store' } }
+    );
   }
-};
+}
 
-// Für lokale Tests (node netlify/functions/availability.js wird nicht
-// direkt ausgeführt, aber die Parser sind so testbar):
-exports._internal = { parseBusyRanges, parseIcsDate, unfoldLines };
+// Für lokale Tests exportierbar (Parser sind reine Funktionen):
+export const _internal = { parseBusyRanges, parseIcsDate, unfoldLines };

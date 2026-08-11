@@ -118,14 +118,12 @@
 
             <form class="contact-form" id="contact-form" novalidate
                   method="POST"
-                  data-netlify="true"
-                  name="kontakt"
-                  netlify-honeypot="bot-field">
-              <!-- Netlify Spam-Schutz -->
-              <p style="display: none;">
-                <label>Nicht ausfüllen: <input name="bot-field" /></label>
+                  action="/api/kontakt"
+                  name="kontakt">
+              <!-- Spam-Schutz: Bots füllen dieses versteckte Feld aus -->
+              <p style="display: none;" aria-hidden="true">
+                <label>Nicht ausfüllen: <input name="bot-field" tabindex="-1" autocomplete="off" /></label>
               </p>
-              <input type="hidden" name="form-name" value="kontakt" />
 
               <div class="form-group">
                 <label for="name">Vollständiger Name <span aria-label="Pflichtfeld" style="color: var(--color-primary);">*</span></label>

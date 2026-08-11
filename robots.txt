@@ -5,5 +5,6 @@ Allow: /
 Sitemap: https://www.kruckenhaus.at/sitemap.xml
 
 # Disallow dev/config files
-Disallow: /netlify.toml
+Disallow: /wrangler.toml
+Disallow: /schema.sql
 Disallow: /*.md

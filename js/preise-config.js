@@ -10,7 +10,7 @@
  *   1. Öffnen Sie diese Datei in einem Texteditor
  *   2. Ändern Sie die gewünschten Werte
  *   3. Speichern – die Änderungen erscheinen sofort auf der Website
- *   4. Datei per Git committen und zu Netlify pushen
+ *   4. Datei per Git committen und pushen (Cloudflare Pages deployt automatisch)
  *
  * ============================================================
  */
