@@ -194,6 +194,13 @@ anschließend in einer **claude.ai/code-Sitzung** den Auftrag geben:
 die Platzhalter sind im Code als `TODO:`-Kommentare markiert, inklusive
 gewünschtem Motiv und Bildgröße.
 
+> **Wichtig für die Ladezeit:** Die eingefügten Galeriebilder brauchen
+> `loading="lazy"` und `decoding="async"`, damit sie erst beim Scrollen geladen
+> werden. Ausgenommen ist das große Startseiten-Bild „above the fold". Wer die
+> Fotos per claude.ai/code einsetzen lässt, bekommt das automatisch mit erledigt.
+> Ebenso sollte dann `images/hero/hof-panorama.jpg` existieren – darauf zeigt
+> bereits das `og:image` der Startseite (Vorschaubild beim Teilen).
+
 ---
 
 ## Schritt 6: Checkliste vor dem Livegang
@@ -241,6 +248,8 @@ Minuten online. Drei Wege, vom einfachsten zum flexibelsten:
 | Farben & Schriften | `css/style.css`, Abschnitt `:root { --color-… }` |
 | Copyright-Jahr | Footer aller `.html`-Dateien (`© 2025`) |
 | Airbnb-/Booking-Kalenderlinks | Cloudflare-Secret `AIRBNB_ICAL_URL` |
+| **Preise für Google & KI-Systeme** | nach einer Preisänderung auch `llms.txt` und den `makesOffer`-Block in `index.html` anpassen |
+| FAQ-Texte | `kontakt.html` – die Fragen stehen dort **zweimal**: sichtbar als `<details>` und im FAQ-Markup im `<head>`. Beide gleich halten. |
 | Empfänger-/Absender-E-Mail des Formulars | Cloudflare-Variablen `CONTACT_TO` / `CONTACT_FROM` |
 
 ---
@@ -263,6 +272,7 @@ Minuten online. Drei Wege, vom einfachsten zum flexibelsten:
 ├── schema.sql               → D1-Datenbankschema (Tabelle „anfragen")
 ├── _headers                 → HTTP-Header & Cache-Regeln (Cloudflare Pages)
 ├── sitemap.xml / robots.txt → Für Google & Co.
+├── llms.txt                 → Angebotsübersicht für KI-Systeme (ChatGPT, Claude …)
 ├── css/style.css            → Design (Farben, Schriften, Layout)
 ├── js/main.js               → Navigation, Formular, Animationen
 ├── js/verfuegbarkeit.js     → Belegungskalender (Anzeige)
@@ -315,9 +325,17 @@ Aktuell hinterlegte Einheiten in `einheiten`:
 
 - **Schriften bleiben lokal:** Die Schriftarten liegen bewusst im Ordner
   `/fonts/` statt bei Google (DSGVO). Bei Design-Änderungen beibehalten.
-- **Kein Tracking:** Es ist absichtlich kein Google Analytics o. Ä. eingebaut.
-  Besucherzahlen DSGVO-freundlich nachrüsten: **Cloudflare Web Analytics**
-  (kostenlos, cookielos) oder z. B. Plausible/Fathom.
+- **Kein Tracking im Code:** Es ist absichtlich kein Google Analytics o. Ä.
+  eingebaut, und es werden keine Cookies gesetzt (nur ein `localStorage`-Eintrag
+  für den Hinweis-Banner).
+- **Besucherzahlen aktivieren (empfohlen):** Sobald die Domain über Cloudflare
+  läuft (Schritt 4), lässt sich **Cloudflare Web Analytics** ohne jede
+  Code-Änderung einschalten: **Dashboard → Analytics & Logs → Web Analytics →
+  Add a site** → `kruckenhaus.at` → *Automatic setup*. Cloudflare fügt das
+  Messskript selbst ein. Kostenlos, cookielos, DSGVO-freundlich – und es braucht
+  dafür **keinen** Cookie-Banner.
+  (Solange die Seite nur unter `*.pages.dev` läuft, ginge nur der manuelle Weg
+  mit einem Skript-Schnipsel im `<head>` – dafür einfach Bescheid geben.)
 - **Lokal testen** (optional): Mit installiertem Node.js im Projektordner
   `npx wrangler pages dev .` ausführen – damit laufen auch die Functions
   (Formular, Kalender) lokal. Ein reiner Datei-Server (`python3 -m http.server`)

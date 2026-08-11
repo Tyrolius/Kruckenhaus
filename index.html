@@ -35,16 +35,52 @@
     },
     "telephone": "+436642166180",
     "email": "info@kruckenhaus.at",
-    "priceRange": "ab 40 EUR/Person/Nacht",
+    "priceRange": "120-150 EUR",
+    "currenciesAccepted": "EUR",
     "checkinTime": "17:00",
     "checkoutTime": "09:30",
+    "numberOfRooms": 1,
+    "petsAllowed": true,
+    "inLanguage": "de-AT",
+    "geo": {
+      "@type": "GeoCoordinates",
+      "latitude": "47.445",
+      "longitude": "11.908"
+    },
     "amenityFeature": [
-      {"@type": "LocationFeatureSpecification", "name": "Starlink Internet 200+ Mbit/s"},
-      {"@type": "LocationFeatureSpecification", "name": "Alpbachtal Card inklusive"},
-      {"@type": "LocationFeatureSpecification", "name": "Kostenloser Parkplatz"},
-      {"@type": "LocationFeatureSpecification", "name": "Balkon mit Bergblick"},
-      {"@type": "LocationFeatureSpecification", "name": "Alpakas am Hof"},
-      {"@type": "LocationFeatureSpecification", "name": "15 Gehminuten zum Berglsteiner See"}
+      {"@type": "LocationFeatureSpecification", "name": "Starlink Internet 200+ Mbit/s", "value": true},
+      {"@type": "LocationFeatureSpecification", "name": "Alpbachtal Card inklusive", "value": true},
+      {"@type": "LocationFeatureSpecification", "name": "Kostenloser Parkplatz", "value": true},
+      {"@type": "LocationFeatureSpecification", "name": "Balkon mit Bergblick", "value": true},
+      {"@type": "LocationFeatureSpecification", "name": "Alpakas am Hof", "value": true},
+      {"@type": "LocationFeatureSpecification", "name": "15 Gehminuten zum Berglsteiner See", "value": true},
+      {"@type": "LocationFeatureSpecification", "name": "Bettwäsche und Handtücher inklusive", "value": true}
+    ],
+    "makesOffer": [
+      {
+        "@type": "Offer",
+        "name": "Ferienwohnung – Nebensaison",
+        "description": "September bis Juni (außer Feiertage), Mindestaufenthalt 3 Nächte",
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
+          "price": "120.00",
+          "priceCurrency": "EUR",
+          "unitCode": "DAY",
+          "valueAddedTaxIncluded": true
+        }
+      },
+      {
+        "@type": "Offer",
+        "name": "Ferienwohnung – Hauptsaison",
+        "description": "Juli und August, Weihnachten, Ostern, Silvester; Mindestaufenthalt 7 Nächte",
+        "priceSpecification": {
+          "@type": "UnitPriceSpecification",
+          "price": "150.00",
+          "priceCurrency": "EUR",
+          "unitCode": "DAY",
+          "valueAddedTaxIncluded": true
+        }
+      }
     ]
   }
   </script>
@@ -99,7 +135,10 @@
       <div class="hero-slides" id="heroSlides">
 
         <div class="hero-slide active" aria-label="Slide 1: Urlaub am Bergbauernhof">
-          <video class="hero-video" autoplay muted loop playsinline preload="auto" poster="hero-poster.jpg" aria-hidden="true">
+          <!-- preload="metadata": Das Poster erscheint sofort, die ~8 MB Video werden
+               erst bei Bedarf geladen. Mit preload="auto" zog jeder Seitenaufruf das
+               ganze Video – am Handy im Mobilfunknetz spürbar langsam. -->
+          <video class="hero-video" autoplay muted loop playsinline preload="metadata" poster="hero-poster.jpg" aria-hidden="true">
             <source src="hero.webm" type="video/webm">
             <source src="hero.mp4" type="video/mp4">
           </video>
