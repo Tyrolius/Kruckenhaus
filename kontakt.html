@@ -40,6 +40,51 @@
     }
   }
   </script>
+
+  <!-- FAQ-Markup: bildet exakt die weiter unten sichtbaren Fragen ab.
+       Wird der FAQ-Abschnitt geändert, muss dieser Block mitgepflegt werden –
+       Google verlangt, dass strukturierte Daten dem sichtbaren Inhalt entsprechen. -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "inLanguage": "de-AT",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Wie läuft die Buchung ab?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Senden Sie uns eine Anfrage mit Ihrem Wunschzeitraum über das Formular oder per E-Mail. Wir bestätigen die Verfügbarkeit und senden Ihnen eine Buchungsbestätigung mit allen Details. Eine Anzahlung von 30 % sichert Ihre Reservierung."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Ist die Wohnung auch für lange Aufenthalte buchbar?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Ja. Für Langzeit-Aufenthalte ab vier Wochen bieten wir gerne Sonderkonditionen an. Kontaktieren Sie uns für ein individuelles Angebot."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Sind Haustiere erlaubt?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Haustiere sind nach vorheriger Absprache willkommen. Es wird eine Haustierpauschale von 20 € pro Aufenthalt berechnet. Bitte geben Sie bei der Buchungsanfrage an, welches Tier Sie mitbringen."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Gibt es Einkaufsmöglichkeiten in der Nähe?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Ja. Im Ortskern von Breitenbach am Inn gibt es einen Supermarkt, eine Bäckerei und weitere Geschäfte. Kufstein (ca. 15 km) bietet ein breites Einkaufsangebot inklusive großer Supermärkte."
+        }
+      }
+    ]
+  }
+  </script>
 </head>
 <body>
 
@@ -164,8 +209,6 @@
                   <option value="2">2 Personen</option>
                   <option value="3">3 Personen</option>
                   <option value="4">4 Personen</option>
-                  <option value="5">5 Personen</option>
-                  <option value="6">6 Personen</option>
                 </select>
               </div>
 

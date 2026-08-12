@@ -50,10 +50,11 @@ const PREISE = {
   // ----------------------------------------------------------
   // MAX. BELEGUNG
   // ----------------------------------------------------------
+  // Maximal 4 Gäste – 2 Schlafzimmer mit je einem Doppelbett.
+  // Diese Zahl muss mit der Hausregel im Airbnb-Inserat übereinstimmen.
   belegung: {
     standard:        4,   // Personen (Standardpreis)
-    max:             5,   // Personen (maximal)
-    aufpreisPerson:  20,  // € pro zusätzliche Person/Nacht
+    max:             4,   // Personen (maximal)
   },
 
   // ----------------------------------------------------------
@@ -62,7 +63,7 @@ const PREISE = {
   zusatz: {
     endreinigung:        80,    // €
     haustier:            20,    // €
-    kinderbett:          10,    // €
+    babybett:            0,     // € (kostenlos, steht in Schlafzimmer 1)
     hochstuhl:           0,     // € (kostenlos)
     spaeterCheckout:     30,    // €
   },
@@ -73,7 +74,7 @@ const PREISE = {
   // ----------------------------------------------------------
   ortstaxe: {
     betrag:          3.50,   // € pro Person/Nacht
-    ab_alter:        14,     // gilt ab diesem Alter
+    ab_alter:        15,     // gilt ab diesem Alter
   },
 
   // ----------------------------------------------------------
@@ -120,12 +121,10 @@ document.addEventListener('DOMContentLoaded', () => {
   // Gemeinsam (Belegung)
   setze('[data-preis="belegung-standard"]',     `${p.belegung.standard} Personen`);
   setze('[data-preis="belegung-max"]',          `${p.belegung.max} Personen`);
-  setze('[data-preis="aufpreis-person"]',       fmtEur(p.belegung.aufpreisPerson));
 
   // Zusatzkosten
   setze('[data-preis="endreinigung"]',          fmtEur(p.zusatz.endreinigung));
   setze('[data-preis="haustier"]',              fmtEur(p.zusatz.haustier));
-  setze('[data-preis="kinderbett"]',            fmtEur(p.zusatz.kinderbett));
   setze('[data-preis="spaeter-checkout"]',      fmtEur(p.zusatz.spaeterCheckout));
 
   // Ortstaxe
