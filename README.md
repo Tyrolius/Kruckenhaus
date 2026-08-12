@@ -185,14 +185,24 @@ dem Livegang erledigen. Die wichtigsten Motive:
 | ★ | Logo als `images/logo.png`, Favicon als `favicon.ico` | Kopfzeile, Browser-Tab |
 | ★ | Kurzes Hof-Video als `hero.mp4` + Standbild `hero-poster.jpg` | Startseiten-Video (optional – ohne Video einfach ein Foto verwenden) |
 
-**Praktische Umsetzung als Website-Neuling:** Fotos zuerst verkleinern
-(z. B. auf [squoosh.app](https://squoosh.app), Ziel: unter 300 KB pro Bild,
-Querformat ca. 1600 px breit). Dann die Bilder in den Ordner `images/`
-hochladen (auf github.com: Ordner öffnen → **Add file → Upload files**) und
-anschließend in einer **claude.ai/code-Sitzung** den Auftrag geben:
-*„Ersetze die Foto-Platzhalter durch die hochgeladenen Bilder in images/"* –
-die Platzhalter sind im Code als `TODO:`-Kommentare markiert, inklusive
-gewünschtem Motiv und Bildgröße.
+**Praktische Umsetzung als Website-Neuling:** Die Bilder einfach in den
+Ordner `images/` hochladen (auf github.com: Ordner öffnen → **Add file →
+Upload files**) – auch direkt vom Handy, ganz ohne Vorbearbeitung. Ein
+GitHub Action (`.github/workflows/optimize-images.yml`) verkleinert und
+komprimiert jedes Foto danach automatisch auf Web-taugliche Maße (siehe
+Kasten unten). Anschließend in einer **claude.ai/code-Sitzung** den Auftrag
+geben: *„Ersetze die Foto-Platzhalter durch die hochgeladenen Bilder in
+images/"* – die Platzhalter sind im Code als `TODO:`-Kommentare markiert,
+inklusive gewünschtem Motiv.
+
+> **Automatische Foto-Optimierung:** Jedes Bild unter `images/` (auch in
+> Unterordnern) wird bei jedem Push automatisch auf max. 1600 px Breite und
+> ca. 300 KB gebracht – ihr müsst nichts mehr manuell verkleinern. Bilder,
+> die diese Werte schon einhalten, fasst der Workflow nicht an, damit
+> wiederholtes Komprimieren nicht unnötig an Qualität kostet. Ausgenommen
+> ist `images/logo.png` (Markenbild, feste Maße). Ergebnis in wenigen
+> Minuten im Reiter **Actions** des Repositories nachvollziehbar; das
+> optimierte Bild landet als eigener Commit im selben Branch.
 
 > **Wichtig für die Ladezeit:** Die eingefügten Galeriebilder brauchen
 > `loading="lazy"` und `decoding="async"`, damit sie erst beim Scrollen geladen
@@ -279,6 +289,8 @@ Minuten online. Drei Wege, vom einfachsten zum flexibelsten:
 ├── js/preise-config.js      → ALLE Preise zentral
 ├── functions/api/availability.js → Holt den Airbnb-Kalender (Server)
 ├── functions/api/kontakt.js      → Nimmt Formularanfragen entgegen (D1 + E-Mail)
+├── .github/workflows/optimize-images.yml → Verkleinert hochgeladene Fotos automatisch
+├── .github/scripts/optimize-images.js    → Das zugehörige Skript (sharp)
 ├── fonts/                   → Lokal gehostete Schriften (DSGVO – nicht löschen!)
 └── images/                  → Fotos (siehe Schritt 5)
 ```

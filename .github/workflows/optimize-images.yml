@@ -1,0 +1,60 @@
+name: Fotos automatisch optimieren
+
+# Verkleinert und komprimiert Fotos, die in images/ hochgeladen werden,
+# automatisch auf Web-taugliche Maße (siehe README, Schritt 5: max. ca.
+# 1600 px Breite, unter 300 KB). Läuft bei jedem Push, der Dateien unter
+# images/ ändert – egal auf welchem Branch, damit die Optimierung schon im
+# Pull Request sichtbar ist, bevor gemergt wird.
+#
+# Kein Endlos-Loop: Commits, die dieser Workflow selbst mit dem
+# eingebauten GITHUB_TOKEN pusht, lösen laut GitHub keinen neuen
+# Workflow-Lauf aus. Zusätzlich rührt das Skript Bilder, die die Zielwerte
+# schon einhalten, gar nicht erst an – wiederholte Läufe verändern also
+# nichts mehr, sobald einmal optimiert wurde.
+
+on:
+  push:
+    paths:
+      - "images/**"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: optimize-images-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  optimize:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Code auschecken
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Node.js einrichten
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: sharp installieren (isoliert in /tmp, landet nicht im Repo)
+        run: npm install --prefix /tmp/image-tools sharp
+
+      - name: Bilder verkleinern & komprimieren
+        env:
+          NODE_PATH: /tmp/image-tools/node_modules
+        run: node .github/scripts/optimize-images.js
+
+      - name: Änderungen committen
+        run: |
+          if git diff --quiet -- images/; then
+            echo "Alle Bilder sind bereits web-tauglich – nichts zu tun."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add images/
+          git commit -m "chore: Fotos in images/ automatisch optimiert"
+          git push origin "HEAD:${{ github.ref_name }}"
