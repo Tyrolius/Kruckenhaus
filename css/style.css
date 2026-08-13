@@ -1874,49 +1874,6 @@ p {
 }
 
 /* ============================================================
-   22. COOKIE-BANNER
-   ============================================================ */
-.cookie-banner {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background-color: var(--color-dark);
-  color: var(--color-beige);
-  padding: var(--spacing-sm) var(--spacing-md);
-  z-index: 3000;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-sm);
-  box-shadow: 0 -4px 20px rgba(0,0,0,0.3);
-  transform: translateY(100%);
-  transition: transform 0.5s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.cookie-banner.visible {
-  transform: translateY(0);
-}
-
-.cookie-banner p {
-  margin: 0;
-  font-size: 0.9rem;
-  text-align: center;
-  line-height: 1.5;
-}
-
-.cookie-banner p a {
-  color: var(--color-primary);
-}
-
-.cookie-actions {
-  display: flex;
-  gap: var(--spacing-sm);
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-/* ============================================================
    23. BACK-TO-TOP
    ============================================================ */
 .back-to-top {
@@ -2290,15 +2247,6 @@ body.season-winter .winter-image { display: block; }
   .footer-bottom {
     flex-direction: row;
     justify-content: space-between;
-    text-align: left;
-  }
-
-  .cookie-banner {
-    flex-direction: row;
-    justify-content: center;
-  }
-
-  .cookie-banner p {
     text-align: left;
   }
 
