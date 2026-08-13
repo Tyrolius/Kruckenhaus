@@ -14,7 +14,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initHamburger();
   initSmoothScroll();
   initBackToTop();
-  initCookieBanner();
   initLightbox();
   setActiveNavLink();
   initBottomTabBar();
@@ -128,49 +127,7 @@ function initBackToTop() {
 }
 
 /* ============================================================
-   7. COOKIE-BANNER
-   ============================================================ */
-function initCookieBanner() {
-  const COOKIE_KEY = 'kruckenhaus_cookies_accepted';
-  const banner = document.querySelector('.cookie-banner');
-  const acceptBtn = document.querySelector('.cookie-accept');
-  const declineBtn = document.querySelector('.cookie-decline');
-
-  if (!banner) return;
-
-  // Bereits akzeptiert?
-  if (localStorage.getItem(COOKIE_KEY)) return;
-
-  // Banner nach kurzer Verzögerung einblenden
-  setTimeout(() => {
-    banner.classList.add('visible');
-  }, 1200);
-
-  if (acceptBtn) {
-    acceptBtn.addEventListener('click', () => {
-      localStorage.setItem(COOKIE_KEY, 'true');
-      hideBanner();
-    });
-  }
-
-  if (declineBtn) {
-    declineBtn.addEventListener('click', () => {
-      // Auch beim Schließen merken, damit das Banner nicht auf jeder Seite erneut erscheint
-      localStorage.setItem(COOKIE_KEY, 'dismissed');
-      hideBanner();
-    });
-  }
-
-  function hideBanner() {
-    banner.classList.remove('visible');
-    setTimeout(() => {
-      banner.style.display = 'none';
-    }, 600);
-  }
-}
-
-/* ============================================================
-   8. LIGHTBOX (Galerie)
+   7. LIGHTBOX (Galerie)
    ============================================================ */
 function initLightbox() {
   const lightbox    = document.querySelector('.lightbox');
@@ -233,7 +190,7 @@ function initLightbox() {
 }
 
 /* ============================================================
-   9. AKTIVER NAV-LINK (aktuelle Seite)
+   8. AKTIVER NAV-LINK (aktuelle Seite)
    ============================================================ */
 function setActiveNavLink() {
   const path = window.location.pathname;
@@ -256,7 +213,7 @@ function setActiveNavLink() {
 }
 
 /* ============================================================
-   10. KONTAKTFORMULAR – Client-side Validierung
+   9. KONTAKTFORMULAR – Client-side Validierung
    ============================================================ */
 const contactForm = document.querySelector('#contact-form');
 if (contactForm) {
@@ -354,7 +311,7 @@ function showFormMessage(text, type) {
 }
 
 /* ============================================================
-   11. BOTTOM TAB BAR (Mobile, hide on scroll down, show on scroll up)
+   10. BOTTOM TAB BAR (Mobile, hide on scroll down, show on scroll up)
    ============================================================ */
 function initBottomTabBar() {
   const tabBar = document.getElementById('bottomTabBar');
@@ -393,7 +350,7 @@ function initBottomTabBar() {
 }
 
 /* ============================================================
-   12. TIMELINE – Scroll-triggered Animation
+   11. TIMELINE – Scroll-triggered Animation
    ============================================================ */
 function initTimeline() {
   const items = document.querySelectorAll('.timeline-item');
@@ -420,7 +377,7 @@ function initTimeline() {
 }
 
 /* ============================================================
-   13. SAISONALE BILDER – Vorbereitung
+   12. SAISONALE BILDER – Vorbereitung
    ============================================================ */
 /**
  * Setzt die Jahreszeit-Klasse am Body.

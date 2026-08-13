@@ -237,6 +237,56 @@ inklusive gewünschtem Motiv.
 
 ---
 
+## Besucherzahlen & SEO im Blick behalten (empfohlen, ca. 15 Min.)
+
+Zwei kostenlose Tools reichen aus, um zu sehen, wie die Website läuft und
+woher Besucher kommen (z. B. später vom Instagram-Kanal) – **ganz ohne
+Cookies oder Einwilligungs-Banner**. Beide brauchen die fertig auf Cloudflare
+laufende Domain (Schritt 4), machen also erst danach Sinn.
+
+### 1. Google Search Console – zeigt, wie ihr bei Google ankommt
+
+Beantwortet: Mit welchen Suchbegriffen finden Leute die Seite? Wie oft
+erscheint sie in den Ergebnissen, wie oft wird tatsächlich draufgeklickt?
+Gibt es Seiten, die Google nicht richtig anzeigt?
+
+1. Auf [search.google.com/search-console](https://search.google.com/search-console)
+   mit einem Google-Konto anmelden → **Property hinzufügen** → **Domain**
+   (nicht „URL-Präfix") → `kruckenhaus.at` eingeben.
+2. Google zeigt einen **DNS-TXT-Eintrag** zur Bestätigung an. Diesen bei
+   **Cloudflare → DNS → Records → Add record** (Typ `TXT`, Name `@`, Inhalt
+   wie von Google angezeigt) eintragen und in der Search Console auf
+   **Bestätigen** klicken.
+3. Danach: **Sitemaps** (linkes Menü) → `sitemap.xml` eintragen und senden
+   (die Datei liegt schon fertig im Projekt).
+4. Nach ein paar Tagen füllen sich **Leistung** (Suchbegriffe, Klicks) und
+   **Abdeckung** (Indexierungsstatus) mit echten Daten.
+
+### 2. Cloudflare Web Analytics – zeigt, wer die Website besucht
+
+Beantwortet: Wie viele Seitenaufrufe gibt es, welche Seiten werden am
+häufigsten angeschaut, aus welchem Land kommen Besucher, und – besonders
+relevant für einen späteren Instagram-Kanal – **von welcher Seite kommen
+Besucher** (Google, direkt eingetippt, oder eben ein Link aus der
+Instagram-Bio).
+
+1. **Cloudflare-Dashboard → Analytics & Logs → Web Analytics → Add a site**
+   → `kruckenhaus.at` → *Automatic setup*. Cloudflare fügt das Messskript
+   selbst ein, keine Code-Änderung nötig.
+2. Im Reiter **Referrer** seht ihr später automatisch `instagram.com` (oder
+   `l.instagram.com`) auftauchen, sobald der Website-Link in der
+   Instagram-Bio steht und geklickt wird – ganz ohne weitere Einrichtung.
+
+> **Warum kein Google Analytics oder Meta-Pixel?** Diese Tools würden echte
+> Werbe-Erfolgsmessung (z. B. „diese Google-Ads-Anzeige hat zu einer Buchung
+> geführt") ermöglichen, setzen dafür aber Tracking-Cookies – was den gerade
+> entfernten Cookie-Banner wieder nötig machen würde. Da aktuell keine
+> bezahlte Werbung geplant ist, lohnt sich dieser Tausch nicht. Falls sich
+> das ändert: einfach Bescheid geben, dann wird das sauber nachgerüstet
+> (inkl. Consent-Banner nur für diesen Fall).
+
+---
+
 ## Nach dem Livegang: Änderungen machen
 
 Jede gespeicherte Änderung im GitHub-Repository geht **automatisch** nach 1–2
@@ -338,16 +388,10 @@ Aktuell hinterlegte Einheiten in `einheiten`:
 - **Schriften bleiben lokal:** Die Schriftarten liegen bewusst im Ordner
   `/fonts/` statt bei Google (DSGVO). Bei Design-Änderungen beibehalten.
 - **Kein Tracking im Code:** Es ist absichtlich kein Google Analytics o. Ä.
-  eingebaut, und es werden keine Cookies gesetzt (nur ein `localStorage`-Eintrag
-  für den Hinweis-Banner).
-- **Besucherzahlen aktivieren (empfohlen):** Sobald die Domain über Cloudflare
-  läuft (Schritt 4), lässt sich **Cloudflare Web Analytics** ohne jede
-  Code-Änderung einschalten: **Dashboard → Analytics & Logs → Web Analytics →
-  Add a site** → `kruckenhaus.at` → *Automatic setup*. Cloudflare fügt das
-  Messskript selbst ein. Kostenlos, cookielos, DSGVO-freundlich – und es braucht
-  dafür **keinen** Cookie-Banner.
-  (Solange die Seite nur unter `*.pages.dev` läuft, ginge nur der manuelle Weg
-  mit einem Skript-Schnipsel im `<head>` – dafür einfach Bescheid geben.)
+  eingebaut. Die Website setzt keine Cookies und verwendet keinerlei lokale
+  Speicherung im Browser – daher gibt es auch keinen Cookie-Banner.
+  Besucherzahlen und SEO-Daten: siehe Abschnitt
+  „Besucherzahlen & SEO im Blick behalten" oben.
 - **Lokal testen** (optional): Mit installiertem Node.js im Projektordner
   `npx wrangler pages dev .` ausführen – damit laufen auch die Functions
   (Formular, Kalender) lokal. Ein reiner Datei-Server (`python3 -m http.server`)
