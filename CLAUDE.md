@@ -10,6 +10,10 @@ Nach jeder Änderung: `grep` über alle HTML-Dateien, ob die Änderung wirklich
 
 ## Arbeitsweise
 
+Der Umsetzungsplan steht in `UMSETZUNGSPLAN.md` – dort steht, was ansteht und
+was schon erledigt ist. Nach jeder abgeschlossenen Sitzung den Stand dort
+nachziehen.
+
 Eine Sitzung = ein Thema = ein Commit. Themen nicht vermischen – wenn eine
 Änderung schiefgeht, soll der Rückschritt klein bleiben.
 
