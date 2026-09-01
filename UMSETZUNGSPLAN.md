@@ -19,7 +19,7 @@ python3 -m http.server 8080  # reicht zum reinen Anschauen
 | Sitzung | Thema | Stand |
 |---|---|---|
 | 1 | Navigation vereinheitlichen | **erledigt** |
-| 2 | Lage und Umgebung entflechten | offen |
+| 2 | Lage und Umgebung entflechten | **erledigt** |
 | 3 | Schnelle Korrekturen | teilweise – Koordinaten erledigt |
 | 4 | Hero vereinfachen | offen |
 | 5 | Icons und Typografie | offen |
@@ -45,7 +45,23 @@ einer einheitlichen ersetzt. Falls sie gewollt waren, zurückholen.
 
 ---
 
-## Sitzung 2 – Lage und Umgebung entflechten
+## Sitzung 2 – Lage und Umgebung entflechten ✅
+
+Erledigt nach Variante B. `lage.html` = Anfahrt, Entfernungen, Karte;
+`umgebung.html` = Ausflugsziele, Aktivitäten, Skigebiete, Seen. Kein Satz
+steht mehr auf beiden Seiten, beide verweisen aufeinander.
+
+**Offene Frage aus dieser Sitzung:** Die beiden Seiten widersprachen sich beim
+nächsten Bahnhof – `lage.html` nannte Breitenbach am Inn (3 km, Abholservice),
+`umgebung.html` nannte Brixlegg (5 Min. mit dem Auto, Buslinie). Beim Trennen
+ist die Brixlegg-Variante entfallen. **Bitte prüfen, welche Angabe stimmt**,
+und die Bahn-Beschreibung in `lage.html` entsprechend korrigieren.
+
+Check-in und Parkplatz stehen weiterhin auf `ferienwohnung.html`; `lage.html`
+verlinkt dorthin, statt sie ein drittes Mal zu führen.
+
+<details>
+<summary>Ursprüngliche Aufgabenstellung</summary>
 
 Warum: Beide Seiten behandeln dasselbe Thema und konkurrieren bei Google
 gegeneinander.
@@ -69,6 +85,8 @@ Prompt:
 Fertig, wenn: kein Absatz mehr auf beiden Seiten steht und die Titles
 unterschiedliche Suchanlässe abdecken.
 
+</details>
+
 ---
 
 ## Sitzung 3 – Schnelle Korrekturen
@@ -86,6 +104,8 @@ Offen sind noch vier Punkte:
 > 3. Ergänze in allen Seiten `<meta name="twitter:card" content="summary_large_image">`
 >    sowie og:title/og:description, wo sie fehlen.
 > 4. Entferne das veraltete `<meta name="keywords">`.
+> 5. Sieben Seiten verweisen auf `/favicon.ico`, die Datei existiert nicht.
+>    Entweder anlegen oder die Verweise entfernen.
 
 ---
 
