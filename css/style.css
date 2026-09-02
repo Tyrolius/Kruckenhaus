@@ -3390,3 +3390,66 @@ body.season-winter .winter-image { display: block; }
   color: var(--color-text);
   margin: 0;
 }
+
+/* ============================================================
+   PREISSEITE – vier Saisonkarten und Gesamtpreis-Beispiele
+   (ergänzt 09/2026 mit dem neuen Preismodell)
+   ============================================================ */
+.preise-grid--vier .preis-card { margin: 0; }
+
+.beispiel-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-sm);
+}
+
+.beispiel-card {
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  padding: 1.25rem 1.5rem;
+  border-top: 4px solid var(--color-green);
+}
+
+.beispiel-card h4 {
+  margin-bottom: 0.75rem;
+  font-size: 1rem;
+}
+
+.beispiel-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.beispiel-table td {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--color-beige);
+  vertical-align: top;
+}
+
+.beispiel-table td.num {
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  padding-left: 1rem;
+}
+
+.beispiel-table tr.summe td {
+  border-bottom: none;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--color-primary);
+  padding-top: 0.6rem;
+}
+
+.beispiel-card .bsp-pro-nacht {
+  margin: 0.6rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-text-light);
+}
+
+@media (min-width: 768px) {
+  .preise-grid--vier { grid-template-columns: 1fr 1fr; }
+  .beispiel-grid     { grid-template-columns: 1fr 1fr; }
+}

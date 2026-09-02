@@ -7,6 +7,9 @@ Arbeitsweise: **eine Sitzung = ein Thema = ein Commit.** Nach jeder Sitzung
 Die Grundregeln für jede Sitzung stehen in `CLAUDE.md` und werden von Claude
 Code automatisch gelesen – sie müssen nicht mehr mitgegeben werden.
 
+Strategie (Direktbuchungen, Preise, Rechtsprüfung, Rückfragen) steht in
+`docs/OPTIMIERUNGSPLAN.md`; dieser Plan hier ist die Arbeitsliste je Sitzung.
+
 ## Lokal ansehen
 
 ```
@@ -20,12 +23,12 @@ python3 -m http.server 8080  # reicht zum reinen Anschauen
 |---|---|---|
 | 1 | Navigation vereinheitlichen | **erledigt** |
 | 2 | Lage und Umgebung entflechten | **erledigt** |
-| 3 | Schnelle Korrekturen | teilweise – Koordinaten erledigt |
+| 3 | Schnelle Korrekturen | teilweise – Koordinaten, Social-Links, og:image erledigt |
 | 4 | Hero vereinfachen | offen |
 | 5 | Icons und Typografie | offen |
 | 6 | Fotos einbauen | wartet auf Fotos |
 | 7 | Inline-Styles konsolidieren | offen |
-| 8 | Preise an einer Stelle pflegen | offen |
+| 8 | Preise an einer Stelle pflegen | teilweise – neues Preismodell in `preise-config.js`, Sync-Skript offen |
 | 9 | Ton der Texte | offen |
 | 10–14 | Englische Fassung unter `/en/` | offen, **erst nach Sitzung 6** |
 
@@ -51,11 +54,8 @@ Erledigt nach Variante B. `lage.html` = Anfahrt, Entfernungen, Karte;
 `umgebung.html` = Ausflugsziele, Aktivitäten, Skigebiete, Seen. Kein Satz
 steht mehr auf beiden Seiten, beide verweisen aufeinander.
 
-**Offene Frage aus dieser Sitzung:** Die beiden Seiten widersprachen sich beim
-nächsten Bahnhof – `lage.html` nannte Breitenbach am Inn (3 km, Abholservice),
-`umgebung.html` nannte Brixlegg (5 Min. mit dem Auto, Buslinie). Beim Trennen
-ist die Brixlegg-Variante entfallen. **Bitte prüfen, welche Angabe stimmt**,
-und die Bahn-Beschreibung in `lage.html` entsprechend korrigieren.
+**Geklärt (Florian, 2. 9. 2026):** Die nächsten Bahnhöfe sind Brixlegg und
+Kundl, beide ca. 6 km entfernt. `lage.html` ist entsprechend korrigiert.
 
 Check-in und Parkplatz stehen weiterhin auf `ferienwohnung.html`; `lage.html`
 verlinkt dorthin, statt sie ein drittes Mal zu führen.
@@ -92,15 +92,16 @@ unterschiedliche Suchanlässe abdecken.
 ## Sitzung 3 – Schnelle Korrekturen
 
 Koordinaten sind erledigt (`47.47582 / 11.92516`, plus `hasMap` und `sameAs`).
-Offen sind noch vier Punkte:
+Mit dem Merge vom 2. 9. 2026 (Branch `website-optimization-direct-bookings`)
+zusätzlich erledigt: Social-Links entfernt, Footer in allen zwölf Dateien
+identisch (nur noch Telefon …181), `og:image` zeigt auf allen Seiten auf das
+vorhandene `hero-poster.jpg`, dazu rund zwanzig inhaltliche Widersprüche
+(Terrasse statt Balkon, Belegung 4, Alpbachtal-Card-Leistungen, Zeitleiste,
+Bahnhöfe) und die Rechtspunkte aus `docs/OPTIMIERUNGSPLAN.md`, Abschnitt 5.
+Offen sind noch drei Punkte:
 
-> 1. Die Social-Links im Footer zeigen auf `#`. Entferne die beiden Links
->    (Facebook, Instagram) samt umgebendem `div.social-links` aus allen
->    HTML-Dateien.
-> 2. In `index.html` steht `og:image` auf `images/hero/hof-panorama.jpg` – die
->    Datei existiert noch nicht. Lege in der README einen klar sichtbaren
->    Hinweis an, dass dieses Bild vor dem Livegang existieren muss, und ergänze
->    `og:image:width`, `og:image:height` und `og:image:alt`.
+> 2. Sobald ein echtes Panoramafoto vorliegt: `og:image` darauf umstellen und
+>    `og:image:width`, `og:image:height` und `og:image:alt` ergänzen.
 > 3. Ergänze in allen Seiten `<meta name="twitter:card" content="summary_large_image">`
 >    sowie og:title/og:description, wo sie fehlen.
 > 4. Entferne das veraltete `<meta name="keywords">`.
@@ -191,7 +192,11 @@ Gelegenheit mitkorrigieren.
 ## Sitzung 8 – Preise an einer Stelle pflegen
 
 Preise stehen in `js/preise-config.js`, im JSON-LD von `index.html` und in
-`llms.txt`.
+`llms.txt`. Seit 2. 9. 2026 gilt das neue Preismodell aus
+`docs/OPTIMIERUNGSPLAN.md` (vier Saisonstufen mit Datumsbereichen,
+Pauschalpreis bis 4 Personen, Langzeitrabatt); `preise.html` und
+`workation.html` lesen alle Werte aus der Config, inklusive zweier
+Gesamtpreis-Beispiele. Alle drei Stellen sind aktuell von Hand synchron.
 
 > Schreib mir ein Node-Skript `scripts/preise-sync.js`, das
 > `js/preise-config.js` als einzige Quelle liest und daraus die Preisangaben im

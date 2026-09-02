@@ -234,6 +234,12 @@ inklusive gewünschtem Motiv.
       Satz bei künftigen Änderungen in `js/preise-config.js` anpassen.
 - [ ] `node scripts/sitemap-lastmod.js` laufen lassen, damit die Änderungsdaten
       in `sitemap.xml` zum Stand der Seiten passen
+      (Die Abgabenübersicht des Landes Tirol nennt für den TVB Alpbachtal ab
+      1. 5. 2026 einen Satz von 4,00 € – beim TVB gegenprüfen.)
+- [ ] **Airbnb-Preise angleichen:** Die Website verspricht „Bestpreis“ (nie
+      teurer als auf Portalen). Die Saisonpreise in `js/preise-config.js` sind
+      ein Vorschlag aus `docs/OPTIMIERUNGSPLAN.md` – vor dem Livegang mit den
+      Airbnb-Preisen abstimmen, sodass Airbnb nie günstiger ist.
 - [ ] Impressum & Datenschutz einmal von WKO Tirol / Anwalt gegenlesen lassen
       (Texte sind ausgearbeitet, aber das ist keine Rechtsberatung)
 
@@ -304,14 +310,15 @@ Minuten online. Drei Wege, vom einfachsten zum flexibelsten:
 
 | Was ändern? | Wo? |
 |---|---|
-| **Preise, Mindestaufenthalt, Storno-Fristen** | `js/preise-config.js` – alle Werte zentral mit Kommentaren erklärt |
+| **Preise, Saisonzeiten, Mindestaufenthalt, Rabatte, Storno-Fristen** | `js/preise-config.js` – vier Saisonstufen mit Datumsbereichen, alle Werte zentral mit Kommentaren erklärt. Preisseite und Workation-Seite lesen daraus. |
 | Texte einer Seite | jeweilige `.html`-Datei (z. B. `bauernhof.html`) |
 | Telefon/E-Mail | in allen `.html`-Dateien (Suchen & Ersetzen) |
 | Farben & Schriften | `css/style.css`, Abschnitt `:root { --color-… }` |
 | Copyright-Jahr | Footer aller `.html`-Dateien (`© 2025`) |
 | Airbnb-/Booking-Kalenderlinks | Cloudflare-Secret `AIRBNB_ICAL_URL` |
-| **Preise für Google & KI-Systeme** | nach einer Preisänderung auch `llms.txt` und den `makesOffer`-Block in `index.html` anpassen |
+| **Preise für Google & KI-Systeme** | nach einer Preisänderung auch `llms.txt`, den `makesOffer`-Block in `index.html` und die „ab 125 €“-Angaben auf Start-, Ferienwohnungs- und Workation-Seite anpassen |
 | Änderungsdatum in der Sitemap | `node scripts/sitemap-lastmod.js` ausführen – trägt die Daten automatisch nach |
+| **Optimierungsplan, Preisstrategie, Rechtsprüfung** | `docs/OPTIMIERUNGSPLAN.md` (intern; `_redirects` verhindert den öffentlichen Abruf) |
 | FAQ-Texte | `kontakt.html` – die Fragen stehen dort **zweimal**: sichtbar als `<details>` und im FAQ-Markup im `<head>`. Beide gleich halten. |
 | Empfänger-/Absender-E-Mail des Formulars | Cloudflare-Variablen `CONTACT_TO` / `CONTACT_FROM` |
 
@@ -363,6 +370,8 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ├── wrangler.toml            → Cloudflare-Pages-Konfiguration (nicht löschen!)
 ├── schema.sql               → D1-Datenbankschema (Tabelle „anfragen")
 ├── _headers                 → HTTP-Header & Cache-Regeln (Cloudflare Pages)
+├── _redirects               → Weiterleitungen; sperrt docs/ für Besucher
+├── docs/OPTIMIERUNGSPLAN.md → Interner Plan: Direktbuchungen, Preise, Rechtsprüfung
 ├── sitemap.xml / robots.txt → Für Google & Co.
 ├── llms.txt                 → Angebotsübersicht für KI-Systeme (ChatGPT, Claude …)
 ├── css/style.css            → Design (Farben, Schriften, Layout)
@@ -404,11 +413,10 @@ Aktuell hinterlegte Einheiten in `einheiten`:
 | 2 | Zimmer Berglstein | 2 | 60 € |
 | 3 | Zimmer Reintal | 2 | 60 € |
 
-> **Zu den beiden Zimmern:** Sie werden auf der Website bewusst nicht beworben –
-> dort geht es nur um die Ferienwohnung. Vermietet werden sie noch bis
-> einschließlich **Wintersaison 2026**, danach ist voraussichtlich Eigenbedarf
-> geplant. Die Einträge sind also **kein Altbestand** und sollten vorerst
-> **nicht gelöscht** werden.
+> **Zu den beiden Zimmern:** Sie werden seit September 2026 nicht mehr vermietet
+> (Eigenbedarf) und kommen auf der Website nicht vor. Die beiden Einträge in
+> `einheiten` können gelöscht werden, sobald das Inserat auf alpbachtal.at
+> (dort stehen sie noch mit 40 €/Person) entfernt ist.
 
 > Wer daraus später ein echtes Buchungssystem bauen will, könnte Verfügbarkeit und
 > Preise aus D1 statt aus `preise-config.js`/Airbnb speisen. Bis dahin kann das

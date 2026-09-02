@@ -1,0 +1,8 @@
+# ============================================================
+# CLOUDFLARE PAGES – Weiterleitungen
+# ============================================================
+# Interne Unterlagen (docs/) liegen im Repository, sollen aber nicht
+# öffentlich unter kruckenhaus.at/docs/... abrufbar sein. Cloudflare
+# Pages wendet Redirects vor statischen Dateien an, daher greift die
+# Regel auch, wenn die Datei existiert.
+/docs/* / 301
