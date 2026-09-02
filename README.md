@@ -232,6 +232,8 @@ inklusive gewünschtem Motiv.
 - [x] Aufenthaltsabgabe (3,50 € p. P./Nacht) und die steuerliche Einordnung als
       Vermietung und Verpachtung mit 10 % USt sind steuerlich abgeklärt.
       Satz bei künftigen Änderungen in `js/preise-config.js` anpassen.
+- [ ] `node scripts/sitemap-lastmod.js` laufen lassen, damit die Änderungsdaten
+      in `sitemap.xml` zum Stand der Seiten passen
 - [ ] Impressum & Datenschutz einmal von WKO Tirol / Anwalt gegenlesen lassen
       (Texte sind ausgearbeitet, aber das ist keine Rechtsberatung)
 
@@ -309,8 +311,38 @@ Minuten online. Drei Wege, vom einfachsten zum flexibelsten:
 | Copyright-Jahr | Footer aller `.html`-Dateien (`© 2025`) |
 | Airbnb-/Booking-Kalenderlinks | Cloudflare-Secret `AIRBNB_ICAL_URL` |
 | **Preise für Google & KI-Systeme** | nach einer Preisänderung auch `llms.txt` und den `makesOffer`-Block in `index.html` anpassen |
+| Änderungsdatum in der Sitemap | `node scripts/sitemap-lastmod.js` ausführen – trägt die Daten automatisch nach |
 | FAQ-Texte | `kontakt.html` – die Fragen stehen dort **zweimal**: sichtbar als `<details>` und im FAQ-Markup im `<head>`. Beide gleich halten. |
 | Empfänger-/Absender-E-Mail des Formulars | Cloudflare-Variablen `CONTACT_TO` / `CONTACT_FROM` |
+
+---
+
+### Sitemap aktuell halten (nach Textänderungen)
+
+In `sitemap.xml` steht bei jeder Seite ein Datum (`<lastmod>`), das Google
+verrät, wann sie zuletzt geändert wurde. Von Hand geht das erfahrungsgemäß
+schief – und ein falsches Datum ist schlechter als keines, weil Google die
+Angabe dann komplett ignoriert.
+
+Deshalb gibt es ein kleines Skript. Einmal im Repo-Ordner aufrufen:
+
+```
+node scripts/sitemap-lastmod.js
+```
+
+Es liest für jede Seite das echte Änderungsdatum aus der Git-Historie und
+trägt es ein. Seiten mit noch nicht gespeicherten Änderungen bekommen das
+heutige Datum. Ausgegeben wird, was sich geändert hat – danach wie gewohnt
+`git add -A`, `git commit`, `git push`.
+
+Nur nachsehen, ohne etwas zu ändern:
+
+```
+node scripts/sitemap-lastmod.js --check
+```
+
+Am besten kurz vor dem Commit laufen lassen, wenn ihr Seitentexte geändert
+habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 
 ---
 
@@ -341,6 +373,7 @@ Minuten online. Drei Wege, vom einfachsten zum flexibelsten:
 ├── functions/api/kontakt.js      → Nimmt Formularanfragen entgegen (D1 + E-Mail)
 ├── .github/workflows/optimize-images.yml → Verkleinert hochgeladene Fotos automatisch
 ├── .github/scripts/optimize-images.js    → Das zugehörige Skript (sharp)
+├── scripts/sitemap-lastmod.js → Trägt die Änderungsdaten in sitemap.xml nach
 ├── fonts/                   → Lokal gehostete Schriften (DSGVO – nicht löschen!)
 └── images/                  → Fotos (siehe Schritt 5)
 ```
