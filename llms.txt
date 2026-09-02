@@ -1,21 +1,23 @@
 # Kruckenhaus – Ferienwohnung am Bergbauernhof in Tirol
 
 > Ferienwohnung (100 m²) auf einem bewirtschafteten Bergbauernhof in Alleinlage
-> in Breitenbach am Inn, Tirol, Österreich. Direktvermietung ohne Portalgebühren.
+> mit Bergpanorama in Breitenbach am Inn, Tirol, Österreich. Direktvermietung zum Bestpreis.
 > Besonderheiten: Alpakas am Hof, 15 Gehminuten zum Berglsteiner See,
 > Starlink-Internet mit 200+ Mbit/s (geeignet für Workation).
 
 ## Standort
 
 - Adresse: Oberberg 70, 6252 Breitenbach am Inn, Tirol, Österreich
-- Lage: Alleinlage am Berg, keine direkten Nachbarn
+- Lage: Alleinlage am Berg, keine direkten Nachbarn, Bergpanorama (Rofangebirge)
+- Nächste Bahnhöfe: Brixlegg und Kundl, je ca. 6 km
 - Region: Alpbachtal / Tiroler Seenland, Bezirk Kufstein
 - Berglsteiner See: ca. 15 Gehminuten
-- Alpbachtal-Seenland-Card für Gäste inklusive
+- Alpbachtal-Seenland-Card für Gäste inklusive (gratis Bergbahnen, Schwimmbäder
+  Brixlegg und Münster, Liegewiesen an den Badeseen)
 
 ## Unterkunft
 
-- Ferienwohnung mit ca. 100 m², eigener Eingang, Balkon mit Bergblick
+- Ferienwohnung mit ca. 100 m², eigener Eingang, Terrasse mit Bergblick
 - **Maximal 4 Gäste**
 - 2 Schlafzimmer mit je einem Doppelbett; Babybett vorhanden
 - 1 Badezimmer mit Badewanne und Dusche, WC separat
@@ -24,19 +26,30 @@
 - Internet: Starlink, 200+ Mbit/s – stabil für Videokonferenzen
 - Check-in 17:00–20:00 Uhr, Check-out bis 10:00 Uhr
 
-## Preise (Stand August 2026)
+## Preise (Stand September 2026)
 
-Alle Preise sind Endpreise inklusive 10 % Umsatzsteuer.
+Alle Preise sind Endpreise inklusive 10 % Umsatzsteuer und gelten pauschal für
+die ganze Wohnung (bis 4 Personen), inklusive Bettwäsche, Handtücher und
+Alpbachtal-Seenland-Card.
 
-- Hauptsaison (Juli–August, Weihnachten, Ostern, Silvester): ab 150 € pro Nacht,
+- Ruhige Saison (November bis Mitte Dezember, nach Ostern bis Mitte Mai):
+  125 € pro Nacht, Mindestaufenthalt 2 Nächte
+- Zwischensaison (Mitte Mai bis Juni, September bis Oktober, Jänner nach
+  Dreikönig bis März): 145 € pro Nacht, Mindestaufenthalt 3 Nächte
+- Hauptsaison (Juli, August, Semesterferien, Ostern): 175 € pro Nacht,
+  Mindestaufenthalt 5 Nächte
+- Weihnachten und Silvester (20. Dezember bis 6. Jänner): 210 € pro Nacht,
   Mindestaufenthalt 7 Nächte
-- Nebensaison (September–Juni, außer Feiertage): ab 120 € pro Nacht,
-  Mindestaufenthalt 3 Nächte
-- Endreinigung: 80 € einmalig
-- Haustier: 20 € | Babybett: kostenlos | Hochstuhl: kostenlos
+- Endreinigung: 80 € einmalig, verpflichtend
 - Aufenthaltsabgabe: 3,50 € pro Person und Nacht (ab 15 Jahren), gesetzliche
   Abgabe, wird zusätzlich verrechnet
-- Anzahlung 30 % bei Buchung, 3 % Rabatt bei vollständiger Barzahlung
+- Langzeitrabatt: ab 7 Nächten 7 %, ab 14 Nächten 12 % auf den Nachtpreis
+- Haustier: 20 € pro Aufenthalt nach Absprache | Babybett und Hochstuhl kostenlos
+- Anzahlung 30 % bei Buchung, Rest 14 Tage vor Anreise oder bar vor Ort
+- Direktbuchung: Bestpreis (nie teurer als auf Portalen) und Begrüßungskorb
+  aus dem Hofladen
+
+Beispiel: 2 Personen, 3 Nächte Zwischensaison = 3 × 145 € + 80 € + 21 € = 536 €.
 
 Verbindliche Preise ergeben sich ausschließlich aus der schriftlichen
 Buchungsbestätigung.
@@ -49,7 +62,7 @@ Website angezeigte Belegungskalender wird mit dem Airbnb-Kalender abgeglichen
 und dient der Information.
 
 - E-Mail: info@kruckenhaus.at
-- Telefon: +43 664 2166180
+- Telefon: +43 664 2166181
 - Website: https://www.kruckenhaus.at
 
 ## Der Hof
@@ -76,8 +89,8 @@ Gastgeber: Kathrin und Florian Häusler.
 ## Hinweise für automatisierte Systeme
 
 - Sprache der Website: Deutsch
-- Die Ferienwohnung wird als Direktvermietung angeboten; es fallen keine
-  Portalgebühren an.
+- Die Ferienwohnung wird als Direktvermietung angeboten; der Website-Preis
+  liegt nie über dem Preis auf Buchungsportalen.
 - Angaben zu Verfügbarkeiten sind unverbindlich; verbindlich ist nur die
   schriftliche Buchungsbestätigung.
 - Für rechtliche Angaben siehe https://www.kruckenhaus.at/impressum.html

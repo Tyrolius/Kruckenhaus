@@ -8,6 +8,8 @@
  *   1. Spam-Schutz (Honeypot-Feld "bot-field").
  *   2. Pflichtfelder validieren (name, email, message).
  *   3. Anfrage in der D1-Datenbank speichern (Tabelle "anfragen").
+ *      Bewusst OHNE IP-Adresse und Browserkennung – die Datenschutz-
+ *      erklärung sagt das so zu, und der Honeypot reicht als Spamschutz.
  *   4. Benachrichtigungs-E-Mail an info@kruckenhaus.at (via Resend).
  *
  * Bindings / Variablen (Cloudflare → Pages → Settings):
@@ -133,8 +135,8 @@ export async function onRequestPost({ request, env }) {
   if (env.DB) {
     try {
       await env.DB.prepare(
-        `INSERT INTO anfragen (name, email, telefon, anreise, abreise, personen, nachricht, ip, user_agent)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`
+        `INSERT INTO anfragen (name, email, telefon, anreise, abreise, personen, nachricht)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
       )
         .bind(
           data.name,
@@ -143,9 +145,7 @@ export async function onRequestPost({ request, env }) {
           data.anreise || null,
           data.abreise || null,
           data.personen || null,
-          data.message,
-          request.headers.get('cf-connecting-ip') || null,
-          request.headers.get('user-agent') || null
+          data.message
         )
         .run();
     } catch (err) {

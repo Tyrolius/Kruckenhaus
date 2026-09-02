@@ -11,7 +11,7 @@
   <meta property="og:description" content="100 m² Ferienwohnung am Bergbauernhof mit Alpakas, 15 Min. zum Berglsteiner See und Starlink-Internet." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.kruckenhaus.at/" />
-  <meta property="og:image" content="https://www.kruckenhaus.at/images/hero/hof-panorama.jpg" />
+  <meta property="og:image" content="https://www.kruckenhaus.at/hero-poster.jpg" />
   <meta property="og:locale" content="de_AT" />
   <link rel="canonical" href="https://www.kruckenhaus.at/" />
   <link rel="alternate" hreflang="de" href="https://www.kruckenhaus.at/" />
@@ -33,9 +33,10 @@
       "addressRegion": "Tirol",
       "addressCountry": "AT"
     },
-    "telephone": "+436642166180",
+    "telephone": "+436642166181",
     "email": "info@kruckenhaus.at",
-    "priceRange": "120-150 EUR",
+    "priceRange": "125-210 EUR",
+    "image": "https://www.kruckenhaus.at/hero-poster.jpg",
     "currenciesAccepted": "EUR",
     "checkinTime": "17:00",
     "checkoutTime": "10:00",
@@ -45,18 +46,22 @@
       "maxValue": 4,
       "unitText": "Gäste"
     },
-    "petsAllowed": true,
+    "petsAllowed": "Nach Absprache, 20 € pro Aufenthalt",
     "inLanguage": "de-AT",
     "geo": {
       "@type": "GeoCoordinates",
-      "latitude": "47.445",
-      "longitude": "11.908"
+      "latitude": "47.47582",
+      "longitude": "11.92516"
     },
+    "hasMap": "https://maps.app.goo.gl/cjSYu9b2YApbr1Vt8",
+    "sameAs": [
+      "https://maps.app.goo.gl/cjSYu9b2YApbr1Vt8"
+    ],
     "amenityFeature": [
       {"@type": "LocationFeatureSpecification", "name": "Starlink Internet 200+ Mbit/s", "value": true},
       {"@type": "LocationFeatureSpecification", "name": "Alpbachtal-Seenland-Card inklusive", "value": true},
       {"@type": "LocationFeatureSpecification", "name": "Kostenloser Parkplatz", "value": true},
-      {"@type": "LocationFeatureSpecification", "name": "Balkon mit Bergblick", "value": true},
+      {"@type": "LocationFeatureSpecification", "name": "Terrasse mit Bergblick", "value": true},
       {"@type": "LocationFeatureSpecification", "name": "Alpakas am Hof", "value": true},
       {"@type": "LocationFeatureSpecification", "name": "15 Gehminuten zum Berglsteiner See", "value": true},
       {"@type": "LocationFeatureSpecification", "name": "Bettwäsche und Handtücher inklusive", "value": true}
@@ -64,27 +69,27 @@
     "makesOffer": [
       {
         "@type": "Offer",
-        "name": "Ferienwohnung – Nebensaison",
-        "description": "September bis Juni (außer Feiertage), Mindestaufenthalt 3 Nächte",
-        "priceSpecification": {
-          "@type": "UnitPriceSpecification",
-          "price": "120.00",
-          "priceCurrency": "EUR",
-          "unitCode": "DAY",
-          "valueAddedTaxIncluded": true
-        }
+        "name": "Ferienwohnung – Ruhige Saison",
+        "description": "November bis Mitte Dezember, nach Ostern bis Mitte Mai; bis 4 Personen, Mindestaufenthalt 2 Nächte; zzgl. 80 € Endreinigung",
+        "priceSpecification": {"@type": "UnitPriceSpecification", "price": "125.00", "priceCurrency": "EUR", "unitCode": "DAY", "valueAddedTaxIncluded": true}
+      },
+      {
+        "@type": "Offer",
+        "name": "Ferienwohnung – Zwischensaison",
+        "description": "Mitte Mai bis Juni, September bis Oktober, Jänner (nach Dreikönig) bis März; bis 4 Personen, Mindestaufenthalt 3 Nächte; zzgl. 80 € Endreinigung",
+        "priceSpecification": {"@type": "UnitPriceSpecification", "price": "145.00", "priceCurrency": "EUR", "unitCode": "DAY", "valueAddedTaxIncluded": true}
       },
       {
         "@type": "Offer",
         "name": "Ferienwohnung – Hauptsaison",
-        "description": "Juli und August, Weihnachten, Ostern, Silvester; Mindestaufenthalt 7 Nächte",
-        "priceSpecification": {
-          "@type": "UnitPriceSpecification",
-          "price": "150.00",
-          "priceCurrency": "EUR",
-          "unitCode": "DAY",
-          "valueAddedTaxIncluded": true
-        }
+        "description": "Juli, August, Semesterferien, Ostern; bis 4 Personen, Mindestaufenthalt 5 Nächte; zzgl. 80 € Endreinigung",
+        "priceSpecification": {"@type": "UnitPriceSpecification", "price": "175.00", "priceCurrency": "EUR", "unitCode": "DAY", "valueAddedTaxIncluded": true}
+      },
+      {
+        "@type": "Offer",
+        "name": "Ferienwohnung – Weihnachten & Silvester",
+        "description": "20. Dezember bis 6. Jänner; bis 4 Personen, Mindestaufenthalt 7 Nächte; zzgl. 80 € Endreinigung",
+        "priceSpecification": {"@type": "UnitPriceSpecification", "price": "210.00", "priceCurrency": "EUR", "unitCode": "DAY", "valueAddedTaxIncluded": true}
       }
     ]
   }
@@ -105,29 +110,31 @@
         </div>
       </a>
       <nav class="nav-menu" role="navigation" aria-label="Hauptnavigation">
-        <a href="index.html" class="nav-link active">Home</a>
+        <a href="index.html" class="nav-link active" aria-current="page">Home</a>
         <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
         <a href="preise.html" class="nav-link">Preise</a>
         <a href="bauernhof.html" class="nav-link">Bauernhof</a>
         <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
         <a href="workation.html" class="nav-link">Workation</a>
         <a href="umgebung.html" class="nav-link">Umgebung</a>
+        <a href="lage.html" class="nav-link">Lage</a>
         <a href="kontakt.html" class="nav-link">Kontakt</a>
       </nav>
-      <button class="hamburger" aria-label="Menue oeffnen" aria-expanded="false" aria-controls="nav-overlay">
+      <button class="hamburger" aria-label="Menü öffnen" aria-expanded="false" aria-controls="nav-overlay">
         <span></span><span></span><span></span>
       </button>
     </div>
   </header>
 
   <nav class="nav-overlay" id="nav-overlay" role="navigation" aria-label="Mobile Navigation">
-    <a href="index.html" class="nav-link active">Home</a>
+    <a href="index.html" class="nav-link active" aria-current="page">Home</a>
     <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
     <a href="preise.html" class="nav-link">Preise</a>
     <a href="bauernhof.html" class="nav-link">Bauernhof</a>
     <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
     <a href="workation.html" class="nav-link">Workation</a>
     <a href="umgebung.html" class="nav-link">Umgebung</a>
+    <a href="lage.html" class="nav-link">Lage</a>
     <a href="kontakt.html" class="nav-link">Kontakt</a>
   </nav>
 
@@ -242,14 +249,14 @@
             <div class="divider" style="margin-left: 0;"></div>
             <p>Willkommen am Kruckenhaus – eurem Zuhause auf Zeit inmitten der Tiroler Berge. Unser Bergbauernhof liegt in Alleinlage am sonnigen Oberberg in Breitenbach am Inn: keine Nachbarn, kein Durchgangsverkehr, nur Wiesen, Wälder und der Blick auf das Rofangebirge.</p>
             <p>Hier hört man die Alpakas auf der Weide, das Summen der Bienen und das Rauschen des Windes – aber keinen Lärm. In nur 15 Gehminuten erreicht ihr den Berglsteiner See. Im Hofladen warten frische Eier, hausgemachte Nudeln und Marmeladen.</p>
-            <p>In unserer großzügigen 100-m²-Ferienwohnung finden Paare, Freunde und kleine Gruppen ihr Zuhause auf Zeit – mit eigenem Eingang, Balkon und Bergblick. Kathrin und Florian Häusler freuen sich auf euren Besuch!</p>
+            <p>In unserer großzügigen 100-m²-Ferienwohnung finden Paare, Freunde und kleine Gruppen ihr Zuhause auf Zeit – mit eigenem Eingang, Terrasse und Bergblick. Kathrin und Florian Häusler freuen sich auf euren Besuch!</p>
             <ul style="list-style:none;padding:0;margin:1.5rem 0;display:grid;grid-template-columns:1fr 1fr;gap:0.6rem;">
               <li style="display:flex;align-items:center;gap:0.5rem;font-size:0.95rem;"><span style="color:var(--color-primary);">✓</span> 100 m² Ferienwohnung</li>
               <li style="display:flex;align-items:center;gap:0.5rem;font-size:0.95rem;"><span style="color:var(--color-primary);">✓</span> Starlink 200+ Mbit/s</li>
               <li style="display:flex;align-items:center;gap:0.5rem;font-size:0.95rem;"><span style="color:var(--color-primary);">✓</span> 15 Min. zum Bergsee</li>
               <li style="display:flex;align-items:center;gap:0.5rem;font-size:0.95rem;"><span style="color:var(--color-primary);">✓</span> Alpakas am Hof</li>
               <li style="display:flex;align-items:center;gap:0.5rem;font-size:0.95rem;"><span style="color:var(--color-primary);">✓</span> Alpbachtal-Seenland-Card inkl.</li>
-              <li style="display:flex;align-items:center;gap:0.5rem;font-size:0.95rem;"><span style="color:var(--color-primary);">✓</span> ab 120 €/Nacht</li>
+              <li style="display:flex;align-items:center;gap:0.5rem;font-size:0.95rem;"><span style="color:var(--color-primary);">✓</span> ab 125 €/Nacht zzgl. 80 € Endreinigung</li>
             </ul>
             <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
               <a href="ferienwohnung.html" class="btn btn-primary">Zur Ferienwohnung</a>
@@ -287,14 +294,14 @@
             <p>Über Jahrzehnte bewirtschaftet die Familie den Hof mit Rindern, Schafen und Hühnern. Die Verbundenheit zur Natur und das Handwerk des Bergbauern werden von Generation zu Generation weitergegeben.</p>
           </div>
           <div class="timeline-item delay-3">
-            <span class="timeline-year">2026</span>
-            <h3>Die Alpakas kommen</h3>
-            <p>Seit März 2026 leben drei Alpaka-Stuten am Hof. Die neugierigen Tiere sind schnell zum Herzstück des Bauernhofs geworden. Jungtiere werden im April und Juni 2026 erwartet.</p>
+            <span class="timeline-year">Seit 2017</span>
+            <h3>Die Ferienwohnung</h3>
+            <p>Seit 2017 empfangen wir Gäste in der 100-m²-Ferienwohnung – heute mit Starlink-Internet (200+ Mbit/s) auch für Workation-Gäste. 4,98 von 5 Sternen bei 53 Bewertungen und Superhost-Status seit 9 Jahren sagen uns, dass die Alleinlage und der Bergblick ankommen.</p>
           </div>
           <div class="timeline-item delay-4">
-            <span class="timeline-year">Zukunft</span>
-            <h3>Starlink & Ferienwohnung</h3>
-            <p>Tradition trifft Konnektivität: Mit Starlink-Internet (200+ Mbit/s) und der liebevoll eingerichteten 100-m²-Ferienwohnung öffnet der Kruckenhaus seine Türen für Urlauber und Workation-Gäste aus aller Welt.</p>
+            <span class="timeline-year">2026</span>
+            <h3>Die Alpakas kommen</h3>
+            <p>Seit März 2026 leben drei Alpaka-Stuten am Hof. Die neugierigen Tiere sind schnell zum Herzstück des Bauernhofs geworden – zu beobachten direkt von der Terrasse der Ferienwohnung.</p>
           </div>
         </div>
       </div>
@@ -335,7 +342,7 @@
             <span class="usp-kachel-icon" aria-hidden="true">💻</span>
             <div class="usp-kachel-body">
               <h3>Workation</h3>
-              <p>200+ Mbit/s Starlink-Internet – stabil für Videokonferenzen und Cloud-Arbeit. Einzigartig in der Region!</p>
+              <p>200+ Mbit/s Starlink-Internet – stabil für Videokonferenzen und Cloud-Arbeit. Stabil auch für Videokonferenzen.</p>
               <span class="usp-kachel-link">Workation-Angebot →</span>
             </div>
           </a>
@@ -414,11 +421,11 @@
 
           <div class="gallery-item slide-up delay-1" role="listitem"
                data-src="images/wohnung/ferienwohnung-balkon.jpg"
-               data-alt="Balkon der Ferienwohnung Kruckenhaus mit Bergblick"
-               aria-label="Balkon mit Bergblick">
+               data-alt="Terrasse der Ferienwohnung Kruckenhaus mit Bergblick"
+               aria-label="Terrasse mit Bergblick">
             <!-- TODO: ferienwohnung-balkon-bergblick.jpg -->
             <div class="img-placeholder" style="min-height:auto;height:100%;background:linear-gradient(135deg,#c0d4e0,#8aa8c0);">
-              <small>Balkon mit Bergblick</small>
+              <small>Terrasse mit Bergblick</small>
             </div>
             <div class="gallery-item-overlay"><span class="gallery-zoom-icon" aria-hidden="true">&#128269;</span></div>
           </div>
@@ -537,8 +544,8 @@
       <div class="container">
         <div class="direktbuchung-banner slide-up">
           <h3>Direkt buchen &amp; sparen</h3>
-          <p>Keine Portalgebühren – bucht direkt bei uns und spart die Plattformgebühren.<br>
-             Ab 120 €/Nacht · Alpbachtal-Seenland-Card inklusive · 2–4 Personen</p>
+          <p>Bestpreis bei Direktbuchung, persönlicher Kontakt und ein Begrüßungskorb aus dem Hofladen.<br>
+             Ab 125 €/Nacht zzgl. 80 € Endreinigung · Alpbachtal-Seenland-Card inklusive · 2–4 Personen</p>
           <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;margin-top:1rem;">
             <a href="ferienwohnung.html#buchung" class="btn btn-outline">Verfügbarkeit prüfen</a>
             <a href="kontakt.html" class="btn btn-outline">Anfrage senden</a>
@@ -555,25 +562,19 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <span class="footer-logo">Kruckenhaus<span>Hof &amp; Ferienwohnung</span></span>
-          <p class="footer-tagline">Ferienwohnung Breitenbach am Inn, Alpbachtal Tirol.<br>Bergbauernhof mit Alpakas, 15 Min. zum Berglsteiner See.</p>
-          <div class="social-links" style="margin-top: 1rem;">
-            <a href="#" class="social-link" aria-label="Facebook" title="Facebook">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-            </a>
-            <a href="#" class="social-link" aria-label="Instagram" title="Instagram">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
-            </a>
-          </div>
+          <p class="footer-tagline">Ferienwohnung in Alleinlage mit Bergpanorama.<br>Breitenbach am Inn, Alpbachtal Tirol.</p>
         </div>
         <div class="footer-nav">
           <h4>Navigation</h4>
           <ul>
             <li><a href="index.html">Startseite</a></li>
             <li><a href="ferienwohnung.html">Ferienwohnung</a></li>
+            <li><a href="preise.html">Preise &amp; Buchung</a></li>
             <li><a href="bauernhof.html">Bauernhof &amp; Alpakas</a></li>
             <li><a href="berglsteiner-see.html">Berglsteiner See</a></li>
             <li><a href="workation.html">Workation</a></li>
             <li><a href="umgebung.html">Umgebung</a></li>
+            <li><a href="lage.html">Lage &amp; Anfahrt</a></li>
             <li><a href="kontakt.html">Kontakt</a></li>
           </ul>
         </div>
@@ -589,7 +590,6 @@
           <p>Kathrin &amp; Florian Häusler</p>
           <p>Oberberg 70<br>6252 Breitenbach am Inn<br>Tirol, Österreich</p>
           <p><a href="mailto:info@kruckenhaus.at">info@kruckenhaus.at</a></p>
-          <p><a href="tel:+436642166180">+43 664 2166180</a></p>
           <p><a href="tel:+436642166181">+43 664 2166181</a></p>
           <p><a href="https://wa.me/436642166181" style="color:var(--color-green);font-weight:700;">&#128172; WhatsApp</a></p>
         </div>
@@ -633,11 +633,11 @@
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 7.756a4.5 4.5 0 100 8.488M7.5 10.5h5.25m-5.25 3h5.25M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
         Preise
       </a>
-      <a href="bauernhof.html" class="bottom-tab-item" aria-label="Bauernhof & Alpakas">
+      <a href="bauernhof.html" class="bottom-tab-item" aria-label="Bauernhof &amp; Alpakas">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
         Hof
       </a>
-      <a href="lage.html" class="bottom-tab-item" aria-label="Lage & Umgebung">
+      <a href="lage.html" class="bottom-tab-item" aria-label="Lage &amp; Umgebung">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         Lage
       </a>

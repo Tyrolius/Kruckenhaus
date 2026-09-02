@@ -8,9 +8,10 @@
   <meta name="robots" content="index, follow" />
 
   <meta property="og:title" content="Preise &amp; Buchung – Kruckenhaus Tirol" />
-  <meta property="og:description" content="Transparente Preise, faire Bedingungen. Buchen Sie Ihren Traumurlaub in Tirol ab €120/Nacht." />
+  <meta property="og:description" content="Transparente Preise, faire Bedingungen. Ferienwohnung in Alleinlage ab 125 €/Nacht zzgl. Endreinigung, bis 4 Personen." />
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://www.kruckenhaus.at/preise.html" />
+  <meta property="og:image" content="https://www.kruckenhaus.at/hero-poster.jpg" />
 
   <link rel="canonical" href="https://www.kruckenhaus.at/preise.html" />
   <title>Preise &amp; Buchung – Kruckenhaus Tirol</title>
@@ -35,14 +36,15 @@
       <nav class="nav-menu" role="navigation" aria-label="Hauptnavigation">
         <a href="index.html" class="nav-link">Home</a>
         <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
-        <a href="preise.html" class="nav-link active">Preise</a>
+        <a href="preise.html" class="nav-link active" aria-current="page">Preise</a>
         <a href="bauernhof.html" class="nav-link">Bauernhof</a>
         <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
         <a href="workation.html" class="nav-link">Workation</a>
         <a href="umgebung.html" class="nav-link">Umgebung</a>
+        <a href="lage.html" class="nav-link">Lage</a>
         <a href="kontakt.html" class="nav-link">Kontakt</a>
       </nav>
-      <button class="hamburger" aria-label="Menue oeffnen" aria-expanded="false" aria-controls="nav-overlay">
+      <button class="hamburger" aria-label="Menü öffnen" aria-expanded="false" aria-controls="nav-overlay">
         <span></span><span></span><span></span>
       </button>
     </div>
@@ -51,11 +53,12 @@
   <nav class="nav-overlay" id="nav-overlay" role="navigation" aria-label="Mobile Navigation">
     <a href="index.html" class="nav-link">Home</a>
     <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
-    <a href="preise.html" class="nav-link active">Preise</a>
+    <a href="preise.html" class="nav-link active" aria-current="page">Preise</a>
     <a href="bauernhof.html" class="nav-link">Bauernhof</a>
     <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
     <a href="workation.html" class="nav-link">Workation</a>
     <a href="umgebung.html" class="nav-link">Umgebung</a>
+    <a href="lage.html" class="nav-link">Lage</a>
     <a href="kontakt.html" class="nav-link">Kontakt</a>
   </nav>
 
@@ -71,12 +74,12 @@
         </nav>
         <span class="section-label" style="color: var(--color-beige);">Transparente Konditionen</span>
         <h1>Preise &amp; Buchung</h1>
-        <p>Faire Preise, keine versteckten Kosten</p>
+        <p>Ein Preis für die ganze Wohnung – Endreinigung und Abgabe stehen gleich dabei</p>
       </div>
     </section>
 
     <!-- ========================================================
-         PREISTABELLE
+         PREISTABELLE – Werte kommen aus js/preise-config.js
          ======================================================== -->
     <section class="section" aria-label="Mietpreise">
       <div class="container">
@@ -84,57 +87,132 @@
           <span class="section-label">Unsere Tarife</span>
           <h2>Mietpreise</h2>
           <div class="divider"></div>
-          <p>Alle Preise in Euro inkl. 10&thinsp;% USt., inklusive Bettwäsche und Handtücher</p>
+          <p>Ein Preis für die ganze Wohnung, bis 4 Personen. Alle Preise in Euro inkl. 10&thinsp;% USt.,
+             inklusive Bettwäsche, Handtücher und Alpbachtal-Seenland-Card.</p>
         </div>
 
-        <div class="preise-grid">
-
-          <!-- Hauptsaison -->
-          <div class="preis-card featured slide-left">
+        <div class="preise-grid preise-grid--vier">
+          <div class="preis-card slide-up">
+            <div class="preis-header">
+              <h3>Ruhige Saison</h3>
+              <span class="preis-badge" data-preis="saison-ruhig-zeitraum"></span>
+            </div>
+            <div class="preis-body">
+              <div class="preis-amount">
+                <div class="amount"><span data-preis="saison-ruhig-preis"></span></div>
+                <div class="unit">pro Nacht · ganze Wohnung · bis <span data-preis="belegung-max">4 Personen</span></div>
+              </div>
+              <ul class="preis-details">
+                <li>Mindestaufenthalt: <strong data-preis="saison-ruhig-mindest"></strong></li>
+                <li>Bettwäsche &amp; Handtücher inklusive</li>
+                <li>Alpbachtal-Seenland-Card inklusive</li>
+                <li>zzgl. Endreinigung <strong data-preis="endreinigung">€ 80</strong> einmalig</li>
+                <li>zzgl. Aufenthaltsabgabe <strong data-preis="ortstaxe">3,50 € / Person / Nacht</strong></li>
+              </ul>
+            </div>
+          </div>
+          <div class="preis-card slide-up">
+            <div class="preis-header">
+              <h3>Zwischensaison</h3>
+              <span class="preis-badge" data-preis="saison-mittel-zeitraum"></span>
+            </div>
+            <div class="preis-body">
+              <div class="preis-amount">
+                <div class="amount"><span data-preis="saison-mittel-preis"></span></div>
+                <div class="unit">pro Nacht · ganze Wohnung · bis <span data-preis="belegung-max">4 Personen</span></div>
+              </div>
+              <ul class="preis-details">
+                <li>Mindestaufenthalt: <strong data-preis="saison-mittel-mindest"></strong></li>
+                <li>Bettwäsche &amp; Handtücher inklusive</li>
+                <li>Alpbachtal-Seenland-Card inklusive</li>
+                <li>zzgl. Endreinigung <strong data-preis="endreinigung">€ 80</strong> einmalig</li>
+                <li>zzgl. Aufenthaltsabgabe <strong data-preis="ortstaxe">3,50 € / Person / Nacht</strong></li>
+              </ul>
+            </div>
+          </div>
+          <div class="preis-card featured slide-up">
             <div class="preis-header">
               <h3>Hauptsaison</h3>
-              <span class="preis-badge" data-preis="hauptsaison-zeitraum">Juli – August | Weihnachten | Ostern</span>
+              <span class="preis-badge" data-preis="saison-hoch-zeitraum"></span>
             </div>
             <div class="preis-body">
               <div class="preis-amount">
-                <div class="amount">ab <span data-preis="hauptsaison-nacht">€&thinsp;150</span></div>
-                <div class="unit">pro Nacht</div>
+                <div class="amount"><span data-preis="saison-hoch-preis"></span></div>
+                <div class="unit">pro Nacht · ganze Wohnung · bis <span data-preis="belegung-max">4 Personen</span></div>
               </div>
               <ul class="preis-details">
-                <li>Mindestaufenthalt: <strong data-preis="hauptsaison-mindest">7 Nächte</strong></li>
-                <li>Belegung: bis <span data-preis="belegung-standard">4 Personen</span> (2 Schlafzimmer)</li>
+                <li>Mindestaufenthalt: <strong data-preis="saison-hoch-mindest"></strong></li>
                 <li>Bettwäsche &amp; Handtücher inklusive</li>
-                <li>Endreinigung: <strong><span data-preis="endreinigung">€&thinsp;80</span> (einmalig)</strong></li>
-                <li>Aufenthaltsabgabe: <strong><span data-preis="ortstaxe">€&thinsp;3,50 / Person / Nacht</span></strong></li>
+                <li>Alpbachtal-Seenland-Card inklusive</li>
+                <li>zzgl. Endreinigung <strong data-preis="endreinigung">€ 80</strong> einmalig</li>
+                <li>zzgl. Aufenthaltsabgabe <strong data-preis="ortstaxe">3,50 € / Person / Nacht</strong></li>
               </ul>
             </div>
           </div>
-
-          <!-- Nebensaison -->
-          <div class="preis-card nebensaison slide-right">
+          <div class="preis-card slide-up">
             <div class="preis-header">
-              <h3>Nebensaison</h3>
-              <span class="preis-badge" data-preis="nebensaison-zeitraum">September – Juni (außer Feiertage)</span>
+              <h3>Weihnachten &amp; Silvester</h3>
+              <span class="preis-badge" data-preis="saison-spitze-zeitraum"></span>
             </div>
             <div class="preis-body">
               <div class="preis-amount">
-                <div class="amount" style="color: var(--color-green);">ab <span data-preis="nebensaison-nacht">€&thinsp;120</span></div>
-                <div class="unit">pro Nacht</div>
+                <div class="amount"><span data-preis="saison-spitze-preis"></span></div>
+                <div class="unit">pro Nacht · ganze Wohnung · bis <span data-preis="belegung-max">4 Personen</span></div>
               </div>
               <ul class="preis-details">
-                <li>Mindestaufenthalt: <strong data-preis="nebensaison-mindest">3 Nächte</strong></li>
-                <li>Belegung: bis <span data-preis="belegung-standard">4 Personen</span> (2 Schlafzimmer)</li>
+                <li>Mindestaufenthalt: <strong data-preis="saison-spitze-mindest"></strong></li>
                 <li>Bettwäsche &amp; Handtücher inklusive</li>
-                <li>Endreinigung: <strong><span data-preis="endreinigung">€&thinsp;80</span> (einmalig)</strong></li>
-                <li>Aufenthaltsabgabe: <strong><span data-preis="ortstaxe">€&thinsp;3,50 / Person / Nacht</span></strong></li>
+                <li>Alpbachtal-Seenland-Card inklusive</li>
+                <li>zzgl. Endreinigung <strong data-preis="endreinigung">€ 80</strong> einmalig</li>
+                <li>zzgl. Aufenthaltsabgabe <strong data-preis="ortstaxe">3,50 € / Person / Nacht</strong></li>
               </ul>
             </div>
           </div>
+        </div>
 
+        <!-- Gesamtpreis-Beispiele: verpflichtende Nebenkosten gehören sichtbar zum Preis
+             (Preisauszeichnung). Werte werden aus preise-config.js gerechnet. -->
+        <div class="slide-up" style="margin-top: 2.5rem;">
+          <h3 style="margin-bottom: 0.5rem;">Was kostet der Aufenthalt insgesamt?</h3>
+          <p style="margin-bottom: 1rem;">Zwei Rechenbeispiele – so seht ihr den Endpreis, bevor ihr anfragt. Für euren Wunschzeitraum nennen wir euch den Gesamtpreis in der Antwort auf eure Anfrage.</p>
+          <div class="beispiel-grid">
+          <div class="beispiel-card" data-beispiel="mittel:3:2">
+            <h4 class="bsp-titel"></h4>
+            <table class="beispiel-table" aria-label="Gesamtpreis-Rechnung">
+              <tbody>
+                <tr><td>Nächte <span class="bsp-naechte"></span></td><td class="num bsp-naechte-summe"></td></tr>
+                <tr><td>Endreinigung (einmalig)</td><td class="num bsp-reinigung"></td></tr>
+                <tr><td>Aufenthaltsabgabe <span class="bsp-abgabe"></span></td><td class="num bsp-abgabe-summe"></td></tr>
+                <tr class="summe"><td>Gesamtpreis</td><td class="num bsp-summe"></td></tr>
+              </tbody>
+            </table>
+            <p class="bsp-pro-nacht"></p>
+          </div>
+          <div class="beispiel-card" data-beispiel="hoch:7:4">
+            <h4 class="bsp-titel"></h4>
+            <table class="beispiel-table" aria-label="Gesamtpreis-Rechnung">
+              <tbody>
+                <tr><td>Nächte <span class="bsp-naechte"></span></td><td class="num bsp-naechte-summe"></td></tr>
+                <tr><td>Endreinigung (einmalig)</td><td class="num bsp-reinigung"></td></tr>
+                <tr><td>Aufenthaltsabgabe <span class="bsp-abgabe"></span></td><td class="num bsp-abgabe-summe"></td></tr>
+                <tr class="summe"><td>Gesamtpreis</td><td class="num bsp-summe"></td></tr>
+              </tbody>
+            </table>
+            <p class="bsp-pro-nacht"></p>
+          </div>
+          </div>
+        </div>
+
+        <!-- Direktbucher-Vorteil -->
+        <div class="direktbuchung-banner slide-up" style="margin-top: 2.5rem;">
+          <h3>Direkt buchen lohnt sich</h3>
+          <p><strong>Bestpreis:</strong> Bei uns bucht ihr nie teurer als auf Buchungsportalen.<br>
+             <strong>Begrüßungskorb:</strong> Frische Eier, Marmelade und Nudeln aus dem Hofladen warten bei der Ankunft.<br>
+             <strong>Persönlich:</strong> Ihr schreibt direkt mit Kathrin – Sonderwünsche, Anreisezeit und Fragen klären wir unkompliziert.</p>
         </div>
 
         <!-- Zusatzkosten Tabelle -->
-        <div class="slide-up" style="margin-top: 2rem;">
+        <div class="slide-up" style="margin-top: 2.5rem;">
           <h3 style="margin-bottom: 1rem;">Zusatzleistungen &amp; Gebühren</h3>
           <div style="overflow-x: auto;">
             <table class="zusatz-table" aria-label="Tabelle der Zusatzleistungen und Gebühren">
@@ -148,17 +226,22 @@
               <tbody>
                 <tr>
                   <td>Endreinigung</td>
-                  <td><strong data-preis="endreinigung">€&thinsp;80</strong></td>
-                  <td>Einmalig, obligatorisch</td>
+                  <td><strong data-preis="endreinigung">€ 80</strong></td>
+                  <td>Einmalig pro Aufenthalt, verpflichtend</td>
                 </tr>
                 <tr>
                   <td>Aufenthaltsabgabe (Ortstaxe)</td>
-                  <td><strong><span data-preis="ortstaxe">€&thinsp;3,50 / Person / Nacht</span></strong></td>
-                  <td>Gilt für Personen ab 15 Jahren</td>
+                  <td><strong data-preis="ortstaxe">3,50 € / Person / Nacht</strong></td>
+                  <td>Gesetzliche Abgabe des Landes Tirol, <span data-preis="ortstaxe-ab-alter">ab 15 Jahren</span></td>
+                </tr>
+                <tr>
+                  <td>Langzeitrabatt</td>
+                  <td><strong><span data-preis="langzeit-7">7 %</span> / <span data-preis="langzeit-14">12 %</span></strong></td>
+                  <td>Ab 7 bzw. 14 Nächten auf den Nachtpreis; ab 28 Nächten Monatspreis auf Anfrage</td>
                 </tr>
                 <tr>
                   <td>Haustier</td>
-                  <td><strong data-preis="haustier">€&thinsp;20</strong>/Aufenthalt</td>
+                  <td><strong data-preis="haustier">€ 20</strong> / Aufenthalt</td>
                   <td>Nur nach Vorabgenehmigung</td>
                 </tr>
                 <tr>
@@ -173,7 +256,7 @@
                 </tr>
                 <tr>
                   <td>Späterer Check-out (bis 14:00)</td>
-                  <td><strong data-preis="spaeter-checkout">€&thinsp;30</strong></td>
+                  <td><strong data-preis="spaeter-checkout">€ 30</strong></td>
                   <td>Nach Verfügbarkeit</td>
                 </tr>
               </tbody>
@@ -184,10 +267,10 @@
         <!-- Hinweis -->
         <div style="margin-top: 1.5rem; padding: 1rem 1.5rem; background: rgba(92,122,78,0.1); border-left: 4px solid var(--color-green); border-radius: var(--border-radius);" class="slide-up">
           <p style="margin: 0; font-size: 0.9rem;">
-            <strong>Bitte beachten:</strong> Alle angegebenen Preise verstehen sich inklusive 10&thinsp;% Umsatzsteuer.
-            Die Aufenthaltsabgabe ist eine gesetzliche Abgabe und wird zusätzlich verrechnet.
-            Preise sind Richtwerte und können saisonal variieren – den verbindlichen Preis für Ihren
-            Wunschzeitraum erhalten Sie auf Anfrage.
+            <strong>Bitte beachten:</strong> Alle Preise verstehen sich inklusive 10&thinsp;% Umsatzsteuer.
+            Die Aufenthaltsabgabe ist eine gesetzliche Abgabe, die wir für das Land Tirol einheben.
+            Ostern und die Semesterferien zählen zur Hauptsaison; den verbindlichen Gesamtpreis für
+            euren Zeitraum nennen wir in der Buchungsbestätigung.
           </p>
         </div>
       </div>
@@ -202,7 +285,7 @@
           <span class="section-label">Direkt buchen &amp; sparen</span>
           <h2>Verfügbarkeit &amp; Buchung</h2>
           <div class="divider"></div>
-          <p>Bucht direkt bei uns – keine Portalgebühren, persönlicher Kontakt</p>
+          <p>Bucht direkt bei uns – Bestpreis, persönlicher Kontakt, Begrüßungskorb aus dem Hofladen</p>
         </div>
         <div style="background:var(--color-white);border-radius:16px;padding:2rem;box-shadow:var(--shadow-md);" class="slide-up">
           <div id="verfuegbarkeits-kalender" aria-label="Belegungskalender der Ferienwohnung" aria-live="polite"></div>
@@ -228,23 +311,23 @@
         </div>
 
         <div class="zahlung-box slide-up">
-          <h3 style="margin-bottom: 1rem;">Wir akzeptieren folgende Zahlungsarten:</h3>
+          <h3 style="margin-bottom: 1rem;">So läuft die Bezahlung ab:</h3>
 
           <div class="zahlung-grid">
 
             <div class="zahlung-item">
               <span class="zahlung-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z"/></svg></span>
               <div>
-                <h4>Anzahlung (30%)</h4>
-                <p>Kreditkarte (Visa, Mastercard via Stripe), PayPal oder Banküberweisung. Fällig innerhalb von 7 Tagen nach Buchungsbestätigung.</p>
+                <h4>Anzahlung (<span data-preis="anzahlung-prozent">30 %</span>)</h4>
+                <p>Per Banküberweisung oder PayPal, fällig innerhalb von 7 Tagen nach der Buchungsbestätigung. Damit ist euer Termin fix reserviert.</p>
               </div>
             </div>
 
             <div class="zahlung-item">
               <span class="zahlung-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 18.75a60.07 60.07 0 0115.797 2.101c.727.198 1.453-.342 1.453-1.096V18.75M3.75 4.5v.75A.75.75 0 013 6h-.75m0 0v-.375c0-.621.504-1.125 1.125-1.125H20.25M2.25 6v9m18-10.5v.75c0 .414.336.75.75.75h.75m-1.5-1.5h.375c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-.375m1.5-1.5H21a.75.75 0 00-.75.75v.75m0 0H3.75m0 0h-.375a1.125 1.125 0 01-1.125-1.125V15m1.5 1.5v-.75A.75.75 0 003 15h-.75M15 10.5a3 3 0 11-6 0 3 3 0 016 0zm3 0h.008v.008H18V10.5zm-12 0h.008v.008H6V10.5z"/></svg></span>
               <div>
-                <h4>Restzahlung (70%)</h4>
-                <p>Bar bei Anreise, Kreditkarte vor Ort oder Vorab-Überweisung (spätestens 14 Tage vor Anreise).</p>
+                <h4>Restzahlung (<span data-preis="restzahlung-prozent">70 %</span>)</h4>
+                <p>Per Überweisung spätestens <span data-preis="restzahlung-tage">14 Tage</span> vor der Anreise oder bar bei der Ankunft – ihr erhaltet in jedem Fall eine Rechnung.</p>
               </div>
             </div>
 
@@ -252,7 +335,7 @@
               <span class="zahlung-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 21h16.5M4.5 3h15M5.25 3v18m13.5-18v18M9 6.75h1.5m-1.5 3h1.5m-1.5 3h1.5m3-6H15m-1.5 3H15m-1.5 3H15M9 21v-3.375c0-.621.504-1.125 1.125-1.125h3.75c.621 0 1.125.504 1.125 1.125V21"/></svg></span>
               <div>
                 <h4>Banküberweisung</h4>
-                <p>IBAN und BIC werden nach der Buchungsbestätigung mitgeteilt. Bitte Buchungsnummer als Verwendungszweck angeben.</p>
+                <p>IBAN und BIC stehen in der Buchungsbestätigung. Bitte die Buchungsnummer als Verwendungszweck angeben.</p>
               </div>
             </div>
 
@@ -260,14 +343,10 @@
               <span class="zahlung-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M10.5 1.5H8.25A2.25 2.25 0 006 3.75v16.5a2.25 2.25 0 002.25 2.25h7.5A2.25 2.25 0 0018 20.25V3.75a2.25 2.25 0 00-2.25-2.25H13.5m-3 0V3h3V1.5m-3 0h3m-3 15h3"/></svg></span>
               <div>
                 <h4>PayPal</h4>
-                <p>Schnelle und sichere Zahlung über PayPal. Bitte Buchungsnummer im Betreff angeben.</p>
+                <p>Schnelle Zahlung der Anzahlung über PayPal. Bitte die Buchungsnummer im Betreff angeben.</p>
               </div>
             </div>
 
-          </div>
-
-          <div style="text-align: center; margin-top: 1.5rem;">
-            <span class="rabatt-badge">3% Rabatt bei vollständiger Barzahlung bei Anreise!</span>
           </div>
         </div>
       </div>
@@ -289,24 +368,24 @@
           <div class="storno-item">
             <span class="storno-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
             <div>
-              <strong>Kostenlose Stornierung</strong>
-              <p>Bei Stornierung bis <strong><span data-preis="storno-kostenlos">30 Tage</span> vor Anreise</strong>: volle Rückerstattung der Anzahlung (abzgl. Bearbeitungsgebühr <span data-preis="storno-bearbeitungsgebuehr">€&thinsp;15</span>).</p>
+              <strong>Stornierung bis <span data-preis="storno-kostenlos">30 Tage</span> vor Anreise</strong>
+              <p>Ihr erhaltet die Anzahlung zurück, abzüglich einer Bearbeitungsgebühr von <span data-preis="storno-bearbeitungsgebuehr">€ 15</span>.</p>
             </div>
           </div>
 
           <div class="storno-item">
             <span class="storno-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126zM12 15.75h.007v.008H12v-.008z"/></svg></span>
             <div>
-              <strong>Teilweise Rückerstattung</strong>
-              <p>Bei Stornierung <strong><span data-preis="storno-teilrueckerstattung">15–29 Tage</span> vor Anreise</strong>: 50% der Anzahlung werden erstattet.</p>
+              <strong>Stornierung <span data-preis="storno-teil">14–29 Tage</span> vor Anreise</strong>
+              <p>50 % der Anzahlung werden erstattet.</p>
             </div>
           </div>
 
           <div class="storno-item">
             <span class="storno-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></span>
             <div>
-              <strong>Keine Rückerstattung</strong>
-              <p>Bei Stornierung <strong>weniger als 14 Tage vor Anreise</strong>: Die Anzahlung verfällt. Bei vorzeitiger Abreise wird der vereinbarte Mietpreis vollständig fällig.</p>
+              <strong>Stornierung weniger als <span data-preis="storno-verfall">14 Tagen</span> vor Anreise</strong>
+              <p>Die Anzahlung verfällt. Bei vorzeitiger Abreise wird der vereinbarte Mietpreis fällig; was wir uns dadurch ersparen oder durch eine anderweitige Vermietung einnehmen, rechnen wir an.</p>
             </div>
           </div>
 
@@ -314,7 +393,7 @@
             <span class="storno-icon" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" width="24" height="24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z"/></svg></span>
             <div>
               <strong>Reiseversicherung empfohlen</strong>
-              <p>Wir empfehlen den Abschluss einer Reiserücktrittsversicherung. Bei höherer Gewalt oder medizinischen Notfällen regeln wir individuelle Lösungen.</p>
+              <p>Wir empfehlen den Abschluss einer Reiserücktrittsversicherung. Bei höherer Gewalt oder medizinischen Notfällen finden wir gemeinsam eine Lösung.</p>
             </div>
           </div>
 
@@ -322,9 +401,9 @@
 
         <div style="margin-top: 2rem; padding: 1rem 1.5rem; background: rgba(139,94,60,0.08); border-radius: var(--border-radius); border-left: 4px solid var(--color-primary);" class="slide-up">
           <p style="margin: 0; font-size: 0.9rem;">
-            <strong>Hinweis:</strong> Alle Stornierungen müssen schriftlich per E-Mail an
-            <a href="mailto:info@kruckenhaus.at">info@kruckenhaus.at</a> mitgeteilt werden.
-            Maßgeblich ist das Eingangsdatum der Stornierungsanfrage.
+            <strong>Hinweis:</strong> Stornierungen bitte schriftlich per E-Mail an
+            <a href="mailto:info@kruckenhaus.at">info@kruckenhaus.at</a>.
+            Maßgeblich ist das Eingangsdatum der Stornierung.
           </p>
         </div>
       </div>
@@ -352,11 +431,7 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <span class="footer-logo">Kruckenhaus<span>Hof &amp; Ferienwohnung</span></span>
-          <p class="footer-tagline">Ferienwohnung Breitenbach am Inn, Alpbachtal Tirol.<br>Bergbauernhof mit Alpakas, 15 Min. zum Berglsteiner See.</p>
-          <div class="social-links" style="margin-top: 1rem;">
-            <a href="#" class="social-link" aria-label="Facebook"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg></a>
-            <a href="#" class="social-link" aria-label="Instagram"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 24 24" width="24" height="24" aria-hidden="true"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg></a>
-          </div>
+          <p class="footer-tagline">Ferienwohnung in Alleinlage mit Bergpanorama.<br>Breitenbach am Inn, Alpbachtal Tirol.</p>
         </div>
         <div class="footer-nav">
           <h4>Navigation</h4>
@@ -368,6 +443,7 @@
             <li><a href="berglsteiner-see.html">Berglsteiner See</a></li>
             <li><a href="workation.html">Workation</a></li>
             <li><a href="umgebung.html">Umgebung</a></li>
+            <li><a href="lage.html">Lage &amp; Anfahrt</a></li>
             <li><a href="kontakt.html">Kontakt</a></li>
           </ul>
         </div>
@@ -384,6 +460,7 @@
           <p>Oberberg 70<br>6252 Breitenbach am Inn<br>Tirol, Österreich</p>
           <p><a href="mailto:info@kruckenhaus.at">info@kruckenhaus.at</a></p>
           <p><a href="tel:+436642166181">+43 664 2166181</a></p>
+          <p><a href="https://wa.me/436642166181" style="color:var(--color-green);font-weight:700;">&#128172; WhatsApp</a></p>
         </div>
       </div>
       <div class="footer-bottom">
