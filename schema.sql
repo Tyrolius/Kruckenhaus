@@ -23,8 +23,8 @@ CREATE TABLE IF NOT EXISTS anfragen (
   abreise     TEXT,
   personen    TEXT,
   nachricht   TEXT NOT NULL,
-  ip          TEXT,
-  user_agent  TEXT
+  ip          TEXT,   -- wird seit 09/2026 nicht mehr befüllt (Datenschutz)
+  user_agent  TEXT    -- wird seit 09/2026 nicht mehr befüllt (Datenschutz)
 );
 
 CREATE INDEX IF NOT EXISTS idx_anfragen_erstellt_am ON anfragen (erstellt_am);

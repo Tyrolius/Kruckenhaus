@@ -14,6 +14,37 @@ Aufenthaltsabgabe und Rechtslage (Österreich).
 
 ---
 
+## Umsetzungsstand (2. September 2026)
+
+Nach den Antworten von Florian umgesetzt (Branch
+`claude/website-optimization-direct-bookings-os6sqe`):
+
+- **Schritt 0 erledigt:** Terrasse statt Balkon, Belegung 4 statt 6, Nachbarn-
+  Satz, Zeitleiste (Ferienwohnung seit 2017), Jungtier-Hinweise entfernt,
+  Alpaka-Zahl, Alpbachtal Card auf die drei bestätigten Leistungen reduziert,
+  Bahnhöfe Brixlegg/Kundl (je ca. 6 km), Skigebiets-Angaben vereinheitlicht,
+  Umgebungs-Karte auf dieselben Koordinaten wie Kontakt/Lage gesetzt, Lage-Seite
+  mit vollständiger Navigation, ein Footer für alle Seiten (Telefon …181, keine
+  leeren Social-Links), Vorschaubild (`og:image`) auf `hero-poster.jpg`,
+  Gästezimmer aus dem Impressum entfernt, Cookie-Rest und Speicherdauer in der
+  Datenschutzerklärung bereinigt, Formular speichert keine IP-Adresse mehr,
+  vergleichende Werbeaussagen auf der Workation-Seite ersetzt, „Freilandeier“
+  neutral formuliert, Sitemap-Daten aktualisiert.
+- **Schritt 3 umgesetzt:** `js/preise-config.js` mit vier Saisonstufen
+  (125 / 145 / 175 / 210 €), Pauschalpreis bis 4 Personen, Endreinigung separat,
+  Langzeitrabatt 7 % / 12 %, Barzahlungsrabatt gestrichen, Storno-Lücke am
+  14. Tag geschlossen, „Preise sind Richtwerte“ und „kostenlose Stornierung“
+  entfernt. Preisseite zeigt zwei Gesamtpreis-Beispiele und den
+  Direktbucher-Vorteil (Bestpreis + Begrüßungskorb). Alle „ab“-Preise nennen
+  die Endreinigung. `llms.txt`, strukturierte Daten und README nachgezogen.
+- **Offen, weil aus dieser Umgebung nicht abrufbar:** Airbnb-Preise
+  (Bestpreis-Zusage nur haltbar, wenn Airbnb nie günstiger ist), Fotos aus dem
+  Airbnb-Inserat, exakte Koordinaten aus dem Google-Unternehmensprofil.
+  Aufenthaltsabgabe bleibt laut Familie Häusler bei 3,50 €; der Hinweis auf
+  4,00 € steht als Kommentar in der Preiskonfiguration.
+
+---
+
 ## 1. Ausgangslage (was ich vorgefunden habe)
 
 **Stärken**
