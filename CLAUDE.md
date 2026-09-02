@@ -1,59 +1,176 @@
-# Kruckenhaus – Arbeitsregeln
+# CLAUDE.md – Arbeitsanleitung für dieses Repository
 
-## Grundregeln
+Diese Datei richtet sich an Claude Code. Sie beschreibt, wie dieses Projekt
+aufgebaut ist und worauf bei Änderungen zu achten ist.
+Ausführliche Betriebs- und Einrichtungsanleitungen stehen in `README.md` –
+diese Datei ergänzt sie um das, was beim Programmieren wichtig ist.
 
-Du arbeitest an einer statischen Website ohne Build-Schritt. Header und Footer
-sind in allen HTML-Dateien dupliziert – Änderungen daran müssen in allen Dateien
-identisch gemacht werden. Kein Framework, kein npm, keine neuen Abhängigkeiten.
-Nach jeder Änderung: `grep` über alle HTML-Dateien, ob die Änderung wirklich
-überall angekommen ist. Erkläre mir am Ende in zwei Sätzen, was du geändert hast.
+## Sprache
 
-## Arbeitsweise
+- **Antworten, Commit-Messages und PR-Titel: Deutsch.**
+- Alle sichtbaren Website-Texte sind Deutsch (`lang="de"`, Region `de-AT`,
+  österreichische Schreibweise: „Ferienwohnung", „Anreise", „Ortstaxe").
+- Code-Kommentare sind ebenfalls Deutsch – das bitte beibehalten.
 
-Der Umsetzungsplan steht in `UMSETZUNGSPLAN.md` – dort steht, was ansteht und
-was schon erledigt ist. Nach jeder abgeschlossenen Sitzung den Stand dort
-nachziehen.
+## Was das Projekt ist
 
-Eine Sitzung = ein Thema = ein Commit. Themen nicht vermischen – wenn eine
-Änderung schiefgeht, soll der Rückschritt klein bleiben.
+Website der Ferienwohnung **Hof Kruckenhaus**, Oberberg 70, 6252 Breitenbach
+am Inn, Tirol. Zweck: Direktbuchungen ohne Portalgebühren.
 
-## Lokal ansehen
+- **Statisches HTML/CSS/JS, kein Framework, kein Build-Schritt.** Es gibt
+  keine `package.json` im Projektstamm, kein npm-Install, kein Bundling.
+  Was im Repository liegt, ist exakt das, was ausgeliefert wird.
+- **Hosting: Cloudflare Pages**, Production-Branch `master`,
+  Build-Output-Verzeichnis `.` (siehe `wrangler.toml`).
+  Jeder Push auf `master` ist nach 1–2 Minuten live.
+- **Serverseitig** laufen nur zwei Cloudflare Pages Functions unter
+  `functions/api/` (Kontaktformular, Airbnb-Kalender).
+- **Datenbank:** Cloudflare D1 (`kruckenhaus`), Binding `DB`.
+
+Wichtig: **Kein Framework einführen, keine Build-Pipeline, keine
+npm-Abhängigkeiten fürs Frontend hinzufügen**, ohne ausdrücklichen Auftrag.
+Das ist eine bewusste Entscheidung (Wartbarkeit durch Nicht-Entwickler).
+
+## Aufbau
 
 ```
-npx wrangler pages dev .     # mit Functions (/api/kontakt, /api/availability)
-python3 -m http.server 8080  # reicht zum reinen Anschauen
+*.html                     12 eigenständige Seiten, jede vollständig
+                           (Head, Navigation, Footer dupliziert – kein Include)
+css/style.css              gesamtes Design, ~3400 Zeilen, nummerierte Abschnitte
+js/main.js                 Navigation, Lightbox, Scroll-Effekte, Formular
+js/preise-config.js        ALLE Preise zentral (Objekt PREISE)
+js/verfuegbarkeit.js       Belegungskalender-Anzeige (ruft /api/availability)
+js/slider.js               Hero-Slider (nur index.html)
+functions/api/kontakt.js      POST /api/kontakt → D1 + E-Mail via Resend
+functions/api/availability.js GET /api/availability → Airbnb-iCal parsen
+schema.sql                 D1-Schema (Tabelle „anfragen")
+_headers                   Security- und Cache-Header
+wrangler.toml              Pages-Konfiguration inkl. D1-Binding (nicht löschen!)
+sitemap.xml robots.txt llms.txt   SEO / KI-Auffindbarkeit
+fonts/                     lokal gehostete Schriften (DSGVO – nicht auslagern!)
+images/                    Fotos; werden per GitHub Action auto-optimiert
+.github/workflows/optimize-images.yml + .github/scripts/optimize-images.js
 ```
 
-## Was wo liegt
+## Harte Regeln (nicht ohne Rückfrage brechen)
 
-| Thema | Datei |
+1. **Keine Cookies, kein Tracking, keine externen Ressourcen.**
+   Kein Google Analytics, kein Meta-Pixel, keine Google Fonts vom
+   Google-Server, keine CDN-Skripte. Deshalb gibt es bewusst keinen
+   Cookie-Banner. Schriften bleiben in `fonts/`, Karten werden nicht als
+   Google-Maps-iFrame eingebettet.
+2. **Geheimnisse gehören nie in den Code.** `AIRBNB_ICAL_URL` und
+   `RESEND_API_KEY` sind Cloudflare-Secrets. Die iCal-URL ist ein Geheimnis
+   und darf auch nicht in Kommentaren, Beispielen oder Commits auftauchen.
+3. **Rechtstexte** (`impressum.html`, `datenschutz.html`) inhaltlich nur auf
+   ausdrücklichen Auftrag ändern. Formulierungen dort sind abgestimmt.
+4. **Keine erfundenen Gästebewertungen, Fotos oder Fakten.** Platzhalter
+   bleiben als Platzhalter erkennbar, bis echte Inhalte geliefert werden.
+5. **`wrangler.toml`, `_headers`, `fonts/` nicht löschen oder umbenennen.**
+6. **Bilder nicht manuell verkleinern** – die GitHub Action erledigt das
+   (max. ~1600 px, ~300 KB; `images/logo.png` ist ausgenommen).
+
+## Änderungen, die mehrere Dateien betreffen
+
+Weil die Seiten eigenständig sind, ziehen viele Änderungen Folgeänderungen
+nach sich. Vor dem Abschließen jeweils prüfen:
+
+| Änderung | Überall anpassen |
 |---|---|
-| Alle Preise (einzige Quelle) | `js/preise-config.js` |
-| Design, Farben, Schriften | `css/style.css` |
-| Navigation, Formular, Animationen | `js/main.js` |
-| Belegungskalender | `js/verfuegbarkeit.js`, `functions/api/availability.js` |
-| Kontaktformular (D1 + E-Mail) | `functions/api/kontakt.js` |
-| Angebotsübersicht für KI-Systeme | `llms.txt` |
+| **Preis** | `js/preise-config.js` (Quelle der Wahrheit) **und** die hartkodierten „ab 120 €"-Stellen in `index.html` (Text, `priceRange`, `makesOffer`-JSON-LD), `ferienwohnung.html`, `preise.html` (og:description), `workation.html` (og:description) **und** `llms.txt` |
+| **Telefon / E-Mail** | alle `.html` (E-Mail steht in 11 Dateien) und `js/main.js` |
+| **Navigationspunkt** | in *jeder* `.html` zweimal: `.nav-menu` (Desktop) und `.nav-overlay` (Mobile); ggf. zusätzlich `.bottom-tab-bar`; dazu `sitemap.xml` |
+| **FAQ-Text** | `kontakt.html` **zweimal**: sichtbar als `<details>` und im FAQPage-JSON-LD im `<head>` – beide identisch halten |
+| **Footer / Copyright-Jahr** | alle `.html` |
+| **Neue Seite** | Datei anlegen, Navigation in allen Seiten ergänzen, `sitemap.xml`, ggf. `llms.txt`, Canonical/OG-Tags im `<head>` setzen |
 
-## Stolperfallen
+Für solche Durchgänge ruhig `grep -rn` über alle `*.html` laufen lassen und
+danach gegenprüfen, dass keine Fundstelle übrig blieb.
 
-- **Preise stehen an drei Stellen**: `js/preise-config.js`, der `makesOffer`-Block
-  im JSON-LD von `index.html` und `llms.txt`. Bei Preisänderungen alle drei
-  anfassen.
-- **FAQ steht zweimal in `kontakt.html`**: sichtbar als `<details>` und im
-  FAQ-Markup im `<head>`. Google verlangt, dass beide übereinstimmen.
-- **`impressum.html`, `datenschutz.html` und `404.html` sind `noindex`** und
-  gehören deshalb nicht in `sitemap.xml` – eine Sitemap, die auf noindex-Seiten
-  zeigt, sendet widersprüchliche Signale.
-- **Bilder nicht vorab komprimieren** – das erledigt der GitHub-Workflow
-  `.github/workflows/optimize-images.yml` automatisch.
-- **Schriften liegen lokal in `/fonts/`** (DSGVO). Keine Google-Fonts-CDN
-  einbinden.
+## Konventionen
 
-## Nach Textänderungen an Seiten
+**HTML**
+- 2 Leerzeichen Einrückung, Attribute in doppelten Anführungszeichen,
+  selbstschließende Void-Elemente im `<head>` mit ` />`.
+- Jede Seite hat im `<head>`: `description`, `keywords`, `author`, `robots`,
+  Open-Graph-Tags, `canonical`, `hreflang`, `title`. Bei neuen Seiten dieses
+  Muster von einer bestehenden Seite übernehmen.
+- Strukturierte Daten (JSON-LD) gehören in den `<head>`; `index.html` trägt
+  `LodgingBusiness`, `kontakt.html` die `FAQPage`.
+- Barrierefreiheit: `role`/`aria-label` an Navigationen, `aria-hidden="true"`
+  an dekorativen SVGs, `aria-current="page"` im Breadcrumb – so weiterführen.
+- Bilder: `loading="lazy"` und `decoding="async"`, **außer** beim
+  Above-the-fold-Bild der Startseite. Immer sinnvolles `alt` setzen.
+- Fehlende Fotos sind als Kommentar markiert, inklusive Wunschmotiv:
+  `<!-- TODO: Alpakas auf Weide vor Bergkulisse (1920x1080) -->`.
+  Dieses Format beibehalten, wenn neue Platzhalter nötig sind.
 
-```
-node scripts/sitemap-lastmod.js
-```
+**CSS**
+- Alles in `css/style.css`, **mobile-first**, Breakpoints 768 px und 1024 px.
+- Nummerierte Abschnitte mit Banner-Kommentar
+  (`/* ===== 19. PREISE & BUCHUNG ===== */`). Neue Blöcke am Ende ergänzen
+  und mit passendem Banner versehen; die Nummerierung fortführen.
+- Farben, Schriften, Abstände, Schatten, Übergänge **nur** über die Custom
+  Properties aus `:root` (Abschnitt 2) verwenden – keine neuen Hex-Werte
+  streuen. Palette: `--color-primary` #2F5848, `--color-terracotta` #964F33,
+  `--color-green` #79C0BC, `--color-beige` #F0E6DD.
+- Klassennamen sind deutsch/beschreibend und in Kebab-Case
+  (`.tiersteckbrief`, `.direkt-buchen-banner`).
 
-Trägt die Änderungsdaten in `sitemap.xml` nach. Mit `--check` nur prüfen.
+**JavaScript**
+- Vanilla ES2020+, `'use strict';`, keine Abhängigkeiten.
+- Aufbau wie `js/main.js`: `init…()`-Funktionen, die im
+  `DOMContentLoaded`-Handler registriert werden; nummerierte
+  Abschnittskommentare.
+- Defensiv gegen fehlende Elemente prüfen (`if (!el) return;`), weil dasselbe
+  Skript auf allen Seiten läuft.
+- **Kein `localStorage`, `sessionStorage` oder Cookie-Setzen** (siehe Regel 1).
+
+**Cloudflare Functions**
+- Datei-Pfad = Route (`functions/api/kontakt.js` → `/api/kontakt`).
+- Kopfkommentar mit Route, Ablauf und benötigten Bindings/Secrets pflegen.
+- Fehlende Secrets dürfen nicht zum harten Fehler führen: fehlt
+  `RESEND_API_KEY`, wird die Anfrage trotzdem in D1 gespeichert. Dieses
+  „graceful degradation"-Muster beibehalten.
+- Nutzereingaben vor dem Einsetzen in E-Mail-HTML escapen
+  (`escapeHtml`), D1-Zugriffe nur über gebundene Prepared Statements.
+
+## Testen
+
+Es gibt keine automatisierten Tests und keinen Linter.
+
+- **Mit Functions:** `npx wrangler pages dev .` (Node nötig) – nur so laufen
+  Kontaktformular und Kalender lokal.
+- **Nur Seiten:** `python3 -m http.server` genügt für reine Text-/CSS-Änderungen.
+- Nach jeder sichtbaren Änderung mindestens gedanklich, besser im Browser
+  gegen **Mobil (375 px)** und Desktop prüfen – der Hauptteil der Gäste kommt
+  vom Handy.
+- HTML-Änderungen selbst gegenlesen: schließende Tags, valides JSON-LD
+  (JSON-Syntax!), keine kaputten relativen Links.
+
+## D1
+
+- Schemaänderung: `schema.sql` anpassen, dann
+  `npx wrangler d1 execute kruckenhaus --remote --file=./schema.sql`.
+- Die Datenbank enthält neben `anfragen` ein vorbereitetes, **noch nicht
+  angebundenes** Buchungsmodell (`einheiten`, `preisperioden`, `buchungen`,
+  `naechte`). Nicht löschen, nicht „aufräumen" – Details im README.
+
+## Git
+
+- Entwicklung **immer auf dem zugewiesenen Feature-Branch**, nie direkt auf
+  `master` (Push auf `master` geht sofort live).
+- Commit-Messages auf Deutsch, im Imperativ, eine Zeile Betreff, bei Bedarf
+  Fließtext darunter. Keine Modell- oder Werkzeugnamen in Commits, PR-Titeln
+  oder Code-Kommentaren.
+- Pull Request nur anlegen, wenn ausdrücklich gewünscht.
+
+## Offene Punkte (Stand der Checkliste im README)
+
+- Echte Fotos fehlen; überall `TODO:`-Platzhalter.
+- Gästestimmen auf der Startseite sind teils Platzhalter.
+- Social-Media-Links im Footer zeigen auf `#`.
+- Alpaka-Namen (Noblesse, Bellissima, Marée) sind noch nicht eingesetzt.
+
+Wenn eine Anfrage einen dieser Punkte berührt, das gleich miterledigen bzw.
+kurz darauf hinweisen.
