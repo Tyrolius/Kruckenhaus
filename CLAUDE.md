@@ -23,8 +23,8 @@ am Inn, Tirol. Zweck: Direktbuchungen ohne Portalgebühren.
 - **Hosting: Cloudflare Pages**, Production-Branch `master`,
   Build-Output-Verzeichnis `.` (siehe `wrangler.toml`).
   Jeder Push auf `master` ist nach 1–2 Minuten live.
-- **Serverseitig** laufen nur zwei Cloudflare Pages Functions unter
-  `functions/api/` (Kontaktformular, Airbnb-Kalender).
+- **Serverseitig** laufen Cloudflare Pages Functions unter `functions/api/`
+  (Kontaktformular, Airbnb-Kalender, Hofladen-Verwaltung).
 - **Datenbank:** Cloudflare D1 (`kruckenhaus`), Binding `DB`.
 
 Wichtig: **Kein Framework einführen, keine Build-Pipeline, keine
@@ -47,8 +47,11 @@ schema.sql                 D1-Schema (Tabelle „anfragen")
 schema-hofladen.sql        D1-Schema der Hofladen-Vorbestellung (im Aufbau)
 hofladen-produkte.sql      Produktkatalog der Hofladen-Vorbestellung (Erstbefüllung)
 functions/_lib/hofladen.js gemeinsame Helfer der Hofladen-Functions (keine Route)
-verwaltung/                Hofladen-Verwaltung (derzeit Entwurf mit Beispieldaten)
-scripts/test-hofladen-db.mjs  Test für Schema und Helfer (node, ohne echte D1)
+functions/_lib/zugang.js   Prüfung der Cloudflare-Access-Anmeldung
+functions/api/verwaltung/  Schnittstelle der Verwaltung (_middleware.js = Zugang)
+verwaltung/                Hofladen-Verwaltung; ?entwurf = Beispielmodus
+scripts/test-hofladen-*.mjs   Tests für Schema/Helfer, Schnittstelle, Zugang
+                              (node, ohne echte D1)
 _headers                   Security- und Cache-Header
 wrangler.toml              Pages-Konfiguration inkl. D1-Binding (nicht löschen!)
 sitemap.xml robots.txt llms.txt   SEO / KI-Auffindbarkeit
@@ -162,7 +165,12 @@ Es gibt keine automatisierten Tests und keinen Linter.
   `naechte`). Nicht löschen, nicht „aufräumen" – Details im README.
 - Hofladen-Vorbestellung: eigenes Schema `schema-hofladen.sql` (mehrfach
   ausführbar), Plan in `docs/HOFLADEN-VORBESTELLUNG.md`. Nach Änderungen an
-  Schema oder `functions/_lib/hofladen.js`: `node scripts/test-hofladen-db.mjs`.
+  Schema, `functions/_lib/` oder `functions/api/verwaltung/`:
+  `node scripts/test-hofladen-db.mjs`, `…-api.mjs`, `…-zugang.mjs`.
+- Die Verwaltung ist durch Cloudflare Access **und** die eigene Prüfung in
+  `functions/_lib/zugang.js` geschützt. Diese Prüfung nie abschwächen; ohne
+  `ACCESS_TEAM_DOMAIN`, `ACCESS_AUD`, `VERWALTUNG_EMAILS` bleibt sie zu
+  (bewusst kein „graceful degradation"). E-Mail-Adressen nicht ins Repository.
   Kontingent nur über `bestellungAnlegen`/`bestellungNachruecken` ändern
   (Transaktion, verhindert Überbuchung).
 

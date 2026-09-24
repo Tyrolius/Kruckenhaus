@@ -15,6 +15,8 @@
  * Variablen und Geheimnisse, jeweils als „Geheimnis"/Secret):
  *   ACCESS_TEAM_DOMAIN   z. B. kruckenhaus.cloudflareaccess.com
  *   ACCESS_AUD           „Application Audience (AUD) Tag" der Access-App
+ *                        (mehrere durch Komma getrennt, z. B. zusätzlich die
+ *                        Access-App der Vorschau-Adressen *.pages.dev)
  *   VERWALTUNG_EMAILS    freigegebene Adressen, durch Komma getrennt
  *
  * Fehlt eine davon, bleibt die Verwaltung gesperrt (bewusst KEIN
@@ -82,9 +84,9 @@ export async function zugangPruefen(request, env, holen = fetch) {
   }
 
   const domain = String(env.ACCESS_TEAM_DOMAIN || '').replace(/^https?:\/\//, '').replace(/\/+$/, '');
-  const aud = String(env.ACCESS_AUD || '').trim();
+  const audErlaubt = String(env.ACCESS_AUD || '').split(/[,;\s]+/).map((a) => a.trim()).filter(Boolean);
   const emails = erlaubteEmails(env);
-  if (!domain || !aud || !emails.length) {
+  if (!domain || !audErlaubt.length || !emails.length) {
     return { ok: false, status: 503, fehler: 'Die Verwaltung ist noch nicht eingerichtet (Zugangsschutz fehlt).' };
   }
 
@@ -113,7 +115,7 @@ export async function zugangPruefen(request, env, holen = fetch) {
     if (inhalt.nbf && inhalt.nbf > jetzt + 60) throw new Error('Token noch nicht gültig');
     if (inhalt.iss !== `https://${domain}`) throw new Error('Falscher Aussteller');
     const audListe = Array.isArray(inhalt.aud) ? inhalt.aud : [inhalt.aud];
-    if (!audListe.includes(aud)) throw new Error('Falsche Anwendung');
+    if (!audListe.some((a) => audErlaubt.includes(a))) throw new Error('Falsche Anwendung');
 
     const email = String(inhalt.email || '').toLowerCase();
     if (!emails.includes(email)) {

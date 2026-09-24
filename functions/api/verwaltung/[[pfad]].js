@@ -6,7 +6,9 @@
  *
  *   GET  /api/verwaltung/stand                    alles, was die Oberfläche braucht
  *   POST /api/verwaltung/bestellung               Bestellung erfassen
- *   POST /api/verwaltung/bestellung/<id>          Bestellung ändern ({ aktion, … })
+ *   POST /api/verwaltung/bestellung/<id>          Bestellung ändern ({ aktion, … }):
+ *        uebergeben, bezahlt, zahlart, termin, kontakt, notiz, stornieren,
+ *        nachruecken, gewicht
  *   POST /api/verwaltung/charge                   Charge anlegen
  *   POST /api/verwaltung/charge/<id>              Charge bearbeiten
  *   POST /api/verwaltung/voranmeldung             Voranmeldung erfassen
@@ -246,6 +248,17 @@ async function bestellungAendern(db, bestellungId, e) {
          WHERE id = ? AND EXISTS (SELECT 1 FROM termine t WHERE t.id = ? AND t.charge_id = bestellungen.charge_id)`
       ).bind(tid, bid, tid).run();
       if (!r.meta.changes) throw new EingabeFehler('Termin gehört nicht zu dieser Charge.');
+      break;
+    }
+    case 'kontakt': {
+      // Kontaktdaten des Kunden ergänzen (z. B. beim Bestätigen einer
+      // übernommenen Voranmeldung) und Lieferadresse der Bestellung setzen
+      const b = await db.prepare('SELECT kunde_id FROM bestellungen WHERE id = ?').bind(bid).first();
+      if (!b) throw new EingabeFehler('Bestellung nicht gefunden.');
+      await kundeSichern(db, b.kunde_id, e);
+      const k = await db.prepare('SELECT strasse, plz, ort FROM kunden WHERE id = ?').bind(b.kunde_id).first();
+      const adresse = k.strasse && k.ort ? `${k.strasse}, ${`${k.plz || ''} ${k.ort}`.trim()}` : null;
+      r = await aenderung('lieferadresse = COALESCE(?, lieferadresse)', adresse);
       break;
     }
     case 'notiz':

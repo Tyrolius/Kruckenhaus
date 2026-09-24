@@ -48,7 +48,9 @@ assert.deepEqual(erg, { ok: true, email: 'a@example.at' });
 erg = await zugangPruefen(anfrage(await token({ email: 'b@example.at' })), env, holen);
 assert.equal(erg.ok, true, 'Groß-/Kleinschreibung der Liste egal');
 assert.equal(abrufe, 1, 'Schlüssel werden zwischengespeichert');
-console.log('✓ Gültige Anmeldung, Schlüssel zwischengespeichert');
+erg = await zugangPruefen(anfrage(await token({ aud: ['vorschau-aud'] })), { ...env, ACCESS_AUD: `${AUD}, vorschau-aud` }, holen);
+assert.equal(erg.ok, true, 'mehrere Anwendungen erlaubt');
+console.log('✓ Gültige Anmeldung, mehrere Anwendungen, Schlüssel zwischengespeichert');
 
 erg = await zugangPruefen(anfrage(await token({ email: 'fremd@example.at' })), env, holen);
 assert.deepEqual([erg.ok, erg.status], [false, 403]);

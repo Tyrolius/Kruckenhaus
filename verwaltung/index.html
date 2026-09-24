@@ -3,18 +3,18 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="description" content="Entwurf der Hofladen-Verwaltung für Vorbestellungen (nur intern)." />
+  <meta name="description" content="Hofladen-Verwaltung für Vorbestellungen (nur intern)." />
   <meta name="robots" content="noindex, nofollow" />
   <meta name="theme-color" content="#2F5848" />
-  <title>Hofladen-Verwaltung – Entwurf</title>
+  <title>Hofladen-Verwaltung</title>
   <link rel="stylesheet" href="../css/style.css" />
 </head>
 <body class="vw-body">
 
-  <!-- ENTWURF: Beispieldaten, noch ohne Datenbank und ohne E-Mail-Versand.
-       Siehe docs/HOFLADEN-VORBESTELLUNG.md -->
-  <div class="vw-entwurf-hinweis" role="note">
-    Entwurf mit frei erfundenen Beispieldaten – Änderungen gehen beim Neuladen verloren.
+  <!-- Beispielmodus (verwaltung/?entwurf): erfundene Daten, nichts wird
+       gespeichert. Siehe docs/HOFLADEN-VORBESTELLUNG.md -->
+  <div class="vw-entwurf-hinweis" id="vw-beispiel-hinweis" role="note" hidden>
+    Beispielmodus mit frei erfundenen Daten – nichts wird gespeichert.
   </div>
 
   <div class="vw-rahmen">
@@ -57,7 +57,6 @@
   <div id="vw-toast" class="vw-toast" role="status" aria-live="polite"></div>
   <div id="vw-druck" class="vw-druck"></div>
 
-  <script src="entwurf-daten.js"></script>
   <script src="verwaltung.js"></script>
 </body>
 </html>

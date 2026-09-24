@@ -122,11 +122,15 @@ r = await api('POST', `bestellung/${bVoran}`, { aktion: 'termin', terminId: 9999
 assert.equal(r.status, 400);
 ok(await api('POST', `bestellung/${bVoran}`, { aktion: 'termin', terminId: tAbh }));
 ok(await api('POST', `bestellung/${bVoran}`, { aktion: 'zahlart', zahlart: 'ueberweisung' }));
+ok(await api('POST', `bestellung/${bVoran}`, { aktion: 'kontakt', telefon: '+43 660 9', strasse: 'Weg 2', plz: '6233', ort: 'Kramsach' }));
+s = ok(await api('GET', 'stand'));
+assert.equal(s.bestellungen.find((b) => b.id === bVoran).lieferadresse, 'Weg 2, 6233 Kramsach');
+assert.equal(s.kunden.find((k) => k.name === 'Vera Voran').telefon, '+43 660 9');
 r = ok(await api('POST', 'voranmeldung', { kunde: { name: 'Otto Später' }, produktId: huhn, menge: 1, zeitraum: 'fruehjahr', jahr: new Date().getFullYear() + 1 }));
 ok(await api('POST', `voranmeldung/${r.voranmeldungId}/absagen`, {}));
 r = await api('POST', `voranmeldung/${r.voranmeldungId}/absagen`, {});
 assert.equal(r.status, 400, 'zweimal absagen geht nicht');
-console.log('✓ Voranmeldung erfassen, übernehmen, Termin und Zahlart bestätigen, absagen');
+console.log('✓ Voranmeldung erfassen, übernehmen, Termin, Zahlart und Kontakt bestätigen, absagen');
 
 // Charge bearbeiten: Preis ändern (alte Bestellungen behalten Preis), Termin ergänzen,
 // benutzten Artikel nicht entfernen

@@ -1,17 +1,18 @@
 /* ============================================================
- * HOFLADEN-VERWALTUNG – Entwurf
+ * HOFLADEN-VERWALTUNG
  * ============================================================
- * Anklickbarer Entwurf der Verwaltung für Vorbestellungen
- * (Plan: docs/HOFLADEN-VORBESTELLUNG.md, Abschnitt 7).
+ * Verwaltung der Vorbestellungen (Plan: docs/HOFLADEN-VORBESTELLUNG.md,
+ * Abschnitt 7). Lädt den Stand von /api/verwaltung/stand und speichert
+ * jede Änderung sofort über /api/verwaltung/… (Zugang nur über
+ * Cloudflare Access). Nichts wird im Browser gespeichert – bewusst ohne
+ * localStorage (siehe CLAUDE.md).
  *
- * Arbeitet nur mit den Beispieldaten aus entwurf-daten.js im
- * Arbeitsspeicher – bewusst ohne localStorage (siehe CLAUDE.md).
- * In der fertigen Lösung ersetzen Aufrufe an /api/verwaltung/…
- * die Funktionen in Abschnitt 3.
+ * Beispielmodus: verwaltung/?entwurf – erfundene Daten aus
+ * entwurf-daten.js, nur im Arbeitsspeicher, nichts wird gespeichert.
  *
  * Ansichten (Adresse hinter #):
  *   uebersicht · bestellungen · neu · wiegen · uebergabe · zahlungen ·
- *   voranmeldungen
+ *   voranmeldungen · charge (bearbeiten) · charge-neu
  * ============================================================ */
 
 'use strict';
@@ -19,12 +20,17 @@
 /* ------------------------------------------------------------
    1. ZUSTAND
    ------------------------------------------------------------ */
-const daten = JSON.parse(JSON.stringify(ENTWURF_DATEN));
+const BEISPIEL = new URLSearchParams(location.search).has('entwurf');
+let daten = null;            // Stand aus der Schnittstelle (bzw. Beispieldaten)
+let ladeFehler = '';
+let beschaeftigt = false;    // verhindert doppeltes Absenden
 const zustand = {
-  chargeId: daten.chargen[0].id,
+  chargeId: null,
   filter: 'alle',
   suche: '',
   uebergabeArt: 'abholung',
+  nutzer: '',
+  chargeForm: null,          // Arbeitskopie im Formular „Charge"
 };
 
 /* ------------------------------------------------------------
@@ -108,12 +114,17 @@ function freieMenge(ch, artikelId) {
 }
 
 // Gewichtsware ohne Gewicht wird mit dem mittleren Richtgewicht geschätzt.
+// Bestehende Bestellungen rechnen mit ihrem Preis zum Bestellzeitpunkt
+// (einzelpreisCent), neue Eingaben mit dem aktuellen Preis der Charge.
+const preisVon = (ch, pos) => pos.einzelpreisCent ?? artikelVon(ch, pos.artikelId).preisCent;
+
 function positionBetrag(ch, pos) {
   const a = artikelVon(ch, pos.artikelId);
-  if (a.art !== 'gewicht') return { cent: a.preisCent * pos.menge, geschaetzt: false };
-  if (pos.gewichtG) return { cent: Math.round((a.preisCent * pos.gewichtG) / 1000), geschaetzt: false };
+  const preis = preisVon(ch, pos);
+  if (a.art !== 'gewicht') return { cent: preis * pos.menge, geschaetzt: false };
+  if (pos.gewichtG) return { cent: Math.round((preis * pos.gewichtG) / 1000), geschaetzt: false };
   const mittelG = (a.richtVonG + a.richtBisG) / 2;
-  return { cent: Math.round((a.preisCent * mittelG * pos.menge) / 1000), geschaetzt: true };
+  return { cent: Math.round((preis * mittelG * pos.menge) / 1000), geschaetzt: true };
 }
 
 function bestellBetrag(b) {
@@ -150,6 +161,95 @@ function gewichtsPositionen(ch = aktiveCharge()) {
     });
   });
   return liste.sort((x, y) => kundeVon(x.b).name.localeCompare(kundeVon(y.b).name, 'de'));
+}
+
+/* ------------------------------------------------------------
+   3a. LADEN UND SPEICHERN
+   ------------------------------------------------------------ */
+function skriptLaden(pfad) {
+  return new Promise((ok, fehler) => {
+    const skript = document.createElement('script');
+    skript.src = pfad;
+    skript.onload = ok;
+    skript.onerror = () => fehler(new Error(`${pfad} nicht gefunden.`));
+    document.head.appendChild(skript);
+  });
+}
+
+async function laden() {
+  if (BEISPIEL) {
+    if (!daten) {
+      await skriptLaden('entwurf-daten.js');
+      daten = JSON.parse(JSON.stringify(ENTWURF_DATEN));
+    }
+  } else {
+    let antwort;
+    try {
+      antwort = await fetch('/api/verwaltung/stand', { headers: { Accept: 'application/json' }, cache: 'no-store' });
+    } catch {
+      // Meist: Anmeldung abgelaufen, Access leitet auf die Anmeldeseite um
+      throw new Error('Keine Verbindung oder Anmeldung abgelaufen – bitte Seite neu laden.');
+    }
+    const erg = await antwort.json().catch(() => ({}));
+    if (!antwort.ok || !erg.ok) throw new Error(erg.error || `Laden fehlgeschlagen (${antwort.status}).`);
+    daten = erg;
+    zustand.nutzer = erg.nutzer || '';
+  }
+  if (!daten.chargen.some((c) => c.id === zustand.chargeId)) {
+    zustand.chargeId = daten.chargen.length ? daten.chargen[0].id : null;
+  }
+}
+
+async function senden(pfad, eingabe) {
+  let antwort;
+  try {
+    antwort = await fetch(`/api/verwaltung/${pfad}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+      body: JSON.stringify(eingabe),
+    });
+  } catch {
+    throw new Error('Nicht gespeichert – keine Verbindung oder Anmeldung abgelaufen. Bitte Seite neu laden.');
+  }
+  const erg = await antwort.json().catch(() => ({}));
+  if (!antwort.ok || !erg.ok) throw new Error(erg.error || `Nicht gespeichert (${antwort.status}).`);
+  return erg;
+}
+
+/**
+ * Speichert eine Änderung: über die Schnittstelle und lädt danach den
+ * Stand neu – im Beispielmodus stattdessen beispielAenderung() lokal.
+ * Optionen: erfolg (Meldung), neuZeichnen (Standard true), still (keine
+ * Sperre für weitere Eingaben, z. B. beim Wiegen).
+ * @returns {Promise<object|null>} Ergebnis oder null bei Fehler
+ */
+async function speichern(pfad, eingabe, beispielAenderung, optionen = {}) {
+  const { erfolg, neuZeichnen: zeichnen = true, still = false } = optionen;
+  if (beschaeftigt && !still) return null;
+  if (!still) {
+    beschaeftigt = true;
+    document.body.classList.add('vw-beschaeftigt');
+  }
+  try {
+    let erg;
+    if (BEISPIEL) {
+      erg = beispielAenderung();
+    } else {
+      erg = await senden(pfad, eingabe);
+      await laden();
+    }
+    if (zeichnen) neuZeichnen();
+    if (erfolg) meldung(typeof erfolg === 'function' ? erfolg(erg) : erfolg);
+    return erg;
+  } catch (fehler) {
+    meldung(fehler.message || 'Fehler beim Speichern.');
+    return null;
+  } finally {
+    if (!still) {
+      beschaeftigt = false;
+      document.body.classList.remove('vw-beschaeftigt');
+    }
+  }
 }
 
 /* ------------------------------------------------------------
@@ -212,7 +312,8 @@ function bestaetigungText(b) {
   const k = kundeVon(b);
   const preise = b.positionen.map((p) => {
     const a = artikelVon(ch, p.artikelId);
-    return `${p.menge}× ${a.name} (${a.art === 'gewicht' ? `${euro(a.preisCent)}/kg` : `je ${euro(a.preisCent)}`})`;
+    const preis = preisVon(ch, p);
+    return `${p.menge}× ${a.name} (${a.art === 'gewicht' ? `${euro(preis)}/kg` : `je ${euro(preis)}`})`;
   }).join(', ');
   const termine = ch.termine.map((t) => terminText(t)).join(' oder ');
   return `Hallo ${k.name.split(' ')[0]}, ihr hattet euch vorangemeldet – ihr seid dabei: ${preise}. `
@@ -309,7 +410,11 @@ function ansichtUebersicht() {
   aufgaben.push('<li><button type="button" data-aktion="export">Liste für Excel herunterladen <span class="vw-pfeil">›</span></button></li>');
 
   inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Übersicht</h1>${chargeWahl()}</div>
+    <div class="vw-kopf"><h1>Übersicht</h1>${chargeWahl()}
+      <div class="vw-knopfreihe">
+        <a class="vw-knopf" href="#charge">Charge bearbeiten</a>
+        <a class="vw-knopf" href="#charge-neu">+ Neue Charge</a>
+      </div></div>
     <div class="vw-kennzahlen">
       <div class="vw-kennzahl"><strong>${aktiv.length}</strong><span>Bestellungen${warteliste.length ? ` · ${warteliste.length} Warteliste` : ''}</span></div>
       <div class="vw-kennzahl${offenCent ? ' vw-kennzahl--achtung' : ''}"><strong>${euro(offenCent)}</strong><span>noch offen${ungewogen ? ' (teils geschätzt)' : ''}</span></div>
@@ -321,8 +426,10 @@ function ansichtUebersicht() {
       <div>
         <section class="vw-karte" aria-label="Zu erledigen"><h2>Zu erledigen</h2><ul class="vw-aufgaben">${aufgaben.join('')}</ul></section>
         <section class="vw-karte" aria-label="Termine"><h2>Termine</h2>
-          ${ch.termine.map((t) => `<p>${terminText(t)}</p>`).join('')}
+          ${ch.termine.length ? ch.termine.map((t) => `<p>${terminText(t)}</p>`).join('') : '<p class="vw-klein">Noch keine Termine – unter „Charge bearbeiten" ergänzen.</p>'}
+          <p class="vw-klein">Status: ${esc(CHARGE_STATUS[ch.status] || ch.status || '')}</p>
         </section>
+        ${nutzerZeile()}
       </div>
     </div>`;
 }
@@ -426,7 +533,11 @@ function ansichtNeu() {
 
       <div id="vw-adresse">
         <label class="vw-feld"><span>Straße und Hausnummer</span><input name="strasse" autocomplete="off" /></label>
+        <label class="vw-feld"><span>PLZ</span><input name="plz" inputmode="numeric" autocomplete="off" /></label>
         <label class="vw-feld"><span>Ort</span><input name="ort" autocomplete="off" /></label>
+        <p class="vw-klein">Liefergebiet: ${daten.liefergebiet && daten.liefergebiet.length
+          ? daten.liefergebiet.map((l) => `${esc(l.plz)} ${esc(l.ort)}`).join(', ')
+          : esc(daten.tourReihenfolge.join(', '))}</p>
       </div>
 
       <fieldset class="vw-feldgruppe"><legend>Zahlung</legend>
@@ -481,10 +592,13 @@ function kundeVorschlagen(name) {
   if (!k || !form) return;
   feld(form, 'telefon').value = k.telefon;
   feld(form, 'strasse').value = k.strasse;
+  feld(form, 'plz').value = k.plz;
   feld(form, 'ort').value = k.ort;
 }
 
-function bestellungSpeichern(form) {
+const kundeNachName = (name) => daten.kunden.find((x) => x.name.toLowerCase() === name.trim().toLowerCase());
+
+async function bestellungSpeichern(form) {
   const ch = aktiveCharge();
   const name = feld(form, 'name').value.trim();
   const mengen = formularMengen();
@@ -492,46 +606,58 @@ function bestellungSpeichern(form) {
     .filter(([, m]) => m > 0)
     .map(([artikelId, menge]) => ({ artikelId, menge }));
   const termin = form.querySelector('input[name="termin"]:checked');
+  const kontakt = {
+    name,
+    telefon: feld(form, 'telefon').value.trim(),
+    strasse: feld(form, 'strasse').value.trim(),
+    plz: feld(form, 'plz').value.trim(),
+    ort: feld(form, 'ort').value.trim(),
+  };
 
   if (!name) return meldung('Bitte einen Namen eintragen.');
   if (!positionen.length) return meldung('Bitte mindestens einen Artikel wählen.');
-  if (termin.dataset.art === 'lieferung' && (!feld(form, 'strasse').value.trim() || !feld(form, 'ort').value.trim())) {
+  if (!termin) return meldung('Bitte einen Termin wählen.');
+  if (termin.dataset.art === 'lieferung' && (!kontakt.strasse || !kontakt.ort)) {
     return meldung('Für die Lieferung bitte Adresse eintragen.');
   }
-
-  let k = daten.kunden.find((x) => x.name.toLowerCase() === name.toLowerCase());
-  if (!k) {
-    k = { id: `k${daten.kunden.length + 1}`, name, telefon: '', strasse: '', plz: '', ort: '', stammkunde: false };
-    daten.kunden.push(k);
-  }
-  if (feld(form, 'telefon').value.trim()) k.telefon = feld(form, 'telefon').value.trim();
-  if (feld(form, 'strasse').value.trim()) k.strasse = feld(form, 'strasse').value.trim();
-  if (feld(form, 'ort').value.trim()) k.ort = feld(form, 'ort').value.trim();
-
-  const reicht = positionen.every((p) => freieMenge(ch, p.artikelId) >= p.menge);
-  const b = {
-    id: `b${Date.now()}`,
-    nummer: naechsteNummer(),
+  const bekannt = kundeNachName(name);
+  const eingabe = {
     chargeId: ch.id,
-    kundeId: k.id,
-    quelle: form.querySelector('input[name="quelle"]:checked').value,
-    erstellt: new Date().toISOString().slice(0, 10),
-    status: reicht ? 'vorgemerkt' : 'warteliste',
+    kundeId: bekannt ? bekannt.id : null,
+    kunde: kontakt,
     terminId: termin.value,
+    quelle: form.querySelector('input[name="quelle"]:checked').value,
     zahlart: form.querySelector('input[name="zahlart"]:checked').value,
-    bezahlt: null,
-    uebergeben: false,
     anmerkung: feld(form, 'anmerkung').value.trim(),
     positionen,
   };
-  daten.bestellungen.push(b);
 
-  zustand.filter = reicht ? 'alle' : 'warteliste';
+  const erg = await speichern('bestellung', eingabe, () => {
+    let k = bekannt;
+    if (!k) {
+      k = { id: `k${Date.now()}`, name, telefon: '', strasse: '', plz: '', ort: '', stammkunde: false };
+      daten.kunden.push(k);
+    }
+    ['telefon', 'strasse', 'plz', 'ort'].forEach((f) => { if (kontakt[f]) k[f] = kontakt[f]; });
+    const reicht = positionen.every((p) => freieMenge(ch, p.artikelId) >= p.menge);
+    const b = {
+      id: `b${Date.now()}`, nummer: naechsteNummer(), chargeId: ch.id, kundeId: k.id,
+      quelle: eingabe.quelle, erstellt: new Date().toISOString().slice(0, 10),
+      status: reicht ? 'vorgemerkt' : 'warteliste', terminId: eingabe.terminId, zahlart: eingabe.zahlart,
+      bezahlt: null, uebergeben: false, anmerkung: eingabe.anmerkung, positionen,
+    };
+    daten.bestellungen.push(b);
+    return { bestellung: b };
+  }, { neuZeichnen: false });
+  if (!erg) return;
+
+  const vorgemerkt = erg.bestellung.status === 'vorgemerkt';
+  zustand.filter = vorgemerkt ? 'alle' : 'warteliste';
   zustand.suche = '';
   location.hash = '#bestellungen';
-  meldung(reicht
-    ? `Gespeichert: ${b.nummer} für ${k.name}.`
-    : `Nicht genug frei – ${k.name} steht auf der Warteliste.`);
+  meldung(vorgemerkt
+    ? `Gespeichert: ${erg.bestellung.nummer} für ${name}.`
+    : `Nicht genug frei – ${name} steht auf der Warteliste.`);
 }
 
 // 5.4 Wiegen
@@ -560,16 +686,20 @@ function ansichtWiegen() {
 }
 
 function gewichtsZeileText(ch, p) {
-  const a = artikelVon(ch, p.artikelId);
-  if (!p.gewichtG) return `${euro(a.preisCent)}/kg · noch nicht gewogen`;
-  return `${kg(p.gewichtG)} × ${euro(a.preisCent)}/kg = ${euro(positionBetrag(ch, p).cent)}`;
+  const preis = preisVon(ch, p);
+  if (!p.gewichtG) return `${euro(preis)}/kg · noch nicht gewogen`;
+  return `${kg(p.gewichtG)} × ${euro(preis)}/kg = ${euro(positionBetrag(ch, p).cent)}`;
+}
+
+function gewichtAusFeld(input) {
+  const kilo = parseFloat(input.value.replace(/\s/g, '').replace(',', '.'));
+  return Number.isFinite(kilo) && kilo > 0 ? Math.round(kilo * 1000) : undefined;
 }
 
 function gewichtEintragen(input) {
   const b = bestellungVon(input.dataset.gewicht);
   const p = b.positionen[Number(input.dataset.index)];
-  const kilo = parseFloat(input.value.replace(/\s/g, '').replace(',', '.'));
-  p.gewichtG = Number.isFinite(kilo) && kilo > 0 ? Math.round(kilo * 1000) : undefined;
+  p.gewichtG = gewichtAusFeld(input);
   const ch = chargeVon(b);
   document.getElementById(`betrag-${b.id}-${input.dataset.index}`).textContent = gewichtsZeileText(ch, p);
   input.closest('.vw-wiegen-zeile').classList.toggle('vw-wiegen-zeile--fertig', Boolean(p.gewichtG));
@@ -577,6 +707,18 @@ function gewichtEintragen(input) {
   const fertig = liste.filter((x) => x.p.gewichtG).length;
   document.getElementById('vw-wiegen-stand').textContent = `${fertig} von ${liste.length}`;
   document.getElementById('vw-wiegen-balken').style.width = `${Math.round((fertig / liste.length) * 100)}%`;
+}
+
+// Beim Verlassen des Feldes speichern; die Ansicht bleibt stehen, damit
+// man gleich im nächsten Feld weitertippen kann.
+async function gewichtSpeichern(input) {
+  const b = bestellungVon(input.dataset.gewicht);
+  const p = b && b.positionen[Number(input.dataset.index)];
+  if (!p) return;
+  const gewichtG = gewichtAusFeld(input);
+  const erg = await speichern(`bestellung/${b.id}`, { aktion: 'gewicht', positionId: p.id, gewichtG: gewichtG ?? null },
+    () => ({}), { neuZeichnen: false, still: true });
+  input.classList.toggle('vw-feld--fehler', !erg);
 }
 
 // 5.5 Übergabe (Abholung und Liefertour)
@@ -631,8 +773,8 @@ function stoppKarte(b) {
     <div class="vw-knopfreihe">
       <button type="button" class="vw-knopf${b.uebergeben ? '' : ' vw-knopf--voll'}" data-aktion="uebergeben" data-id="${b.id}">${b.uebergeben ? 'Übergeben ✓ (rückgängig)' : 'Übergeben'}</button>
       ${!b.bezahlt ? `<button type="button" class="vw-knopf" data-aktion="bezahlt" data-wert="bar" data-id="${b.id}">Bar erhalten</button>` : ''}
-      <a class="vw-knopf" href="tel:${esc(k.telefon.replace(/\s/g, ''))}">Anrufen</a>
-      <a class="vw-knopf" href="${whatsappLink(b, bereitText(b))}" target="_blank" rel="noopener">WhatsApp</a>
+      ${k.telefon ? `<a class="vw-knopf" href="tel:${esc(k.telefon.replace(/\s/g, ''))}">Anrufen</a>
+      <a class="vw-knopf" href="${whatsappLink(b, bereitText(b))}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
       ${lieferung ? `<a class="vw-knopf" href="${navLink(b)}" target="_blank" rel="noopener">Navi</a>` : ''}
       <button type="button" class="vw-knopf" data-aktion="oeffnen" data-id="${b.id}">Details</button>
     </div>
@@ -703,8 +845,8 @@ function vorausgewaehlt(v, saison) {
 
 function ansichtVoranmeldungen() {
   const ch = aktiveCharge();
-  const saison = saisonVon(ch);
-  const passend = passendeVoranmeldungen(ch);
+  const saison = ch ? saisonVon(ch) : null;
+  const passend = ch ? passendeVoranmeldungen(ch) : [];
   const offen = daten.voranmeldungen.filter((v) => v.status === 'offen');
   const jahr = new Date().getFullYear();
 
@@ -741,13 +883,13 @@ function ansichtVoranmeldungen() {
       <p class="vw-klein">Unverbindlich, noch ohne Preis und Termin. Zählen erst vom Kontingent ab, wenn sie in eine Charge übernommen werden – wer sich zuerst gemeldet hat, kommt zuerst dran.</p>
       ${chargeWahl()}</div>
     <div class="vw-spalten">
-      <section class="vw-karte" aria-label="Übernehmen">
+      ${ch ? `<section class="vw-karte" aria-label="Übernehmen">
         <h2>Passend zu „${esc(ch.titel)}"</h2>
         ${passend.length ? `<p class="vw-klein">Vorausgewählt: „nächste Charge" und ${esc(ZEITRAEUME[saison.zeitraum])} ${saison.jahr}.</p>
           <div id="vw-va-auswahl">${passend.map((v) => vaZeile(v, true)).join('')}</div>
           <button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit" data-aktion="va-uebernehmen">Ausgewählte als Bestellungen übernehmen</button>`
         : '<p class="vw-klein">Keine offenen Voranmeldungen für die Produkte dieser Charge.</p>'}
-      </section>
+      </section>` : '<section class="vw-karte"><p class="vw-klein">Sobald eine Charge angelegt ist, lassen sich passende Voranmeldungen hier übernehmen.</p></section>'}
       <div>
         <section class="vw-karte" aria-label="Planung"><h2>Planung: offen vorangemeldet</h2>
           ${planung || '<p class="vw-klein">Keine offenen Voranmeldungen.</p>'}</section>
@@ -757,7 +899,7 @@ function ansichtVoranmeldungen() {
               <input name="name" list="vw-kundenliste-va" autocomplete="off" required /></label>
             <datalist id="vw-kundenliste-va">${daten.kunden.map((k) => `<option value="${esc(k.name)}">${esc(k.ort)}</option>`).join('')}</datalist>
             <label class="vw-feld"><span>Produkt</span>
-              <select name="produkt">${daten.produkte.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select></label>
+              <select name="produkt">${daten.produkte.filter((p) => p.aktiv !== false).map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select></label>
             <label class="vw-feld"><span>Menge</span><input name="menge" type="number" inputmode="numeric" min="1" value="1" /></label>
             <label class="vw-feld"><span>Für wann?</span>
               <select name="zeitraum">${Object.entries(ZEITRAEUME).map(([wert, text]) => `<option value="${wert}">${text}</option>`).join('')}</select></label>
@@ -778,50 +920,48 @@ function ansichtVoranmeldungen() {
     </div>`;
 }
 
-function voranmeldungSpeichern(form) {
+async function voranmeldungSpeichern(form) {
   const name = feld(form, 'name').value.trim();
   const menge = Number(feld(form, 'menge').value);
   const zeitraum = feld(form, 'zeitraum').value;
   if (!name) return meldung('Bitte einen Namen eintragen.');
   if (!Number.isInteger(menge) || menge < 1) return meldung('Bitte eine gültige Menge eintragen.');
-
-  let k = daten.kunden.find((x) => x.name.toLowerCase() === name.toLowerCase());
-  if (!k) {
-    k = { id: `k${daten.kunden.length + 1}`, name, telefon: '', strasse: '', plz: '', ort: '', stammkunde: false };
-    daten.kunden.push(k);
-  }
-  const v = {
-    id: `v${Date.now()}`,
-    kundeId: k.id,
+  const bekannt = kundeNachName(name);
+  const eingabe = {
+    kundeId: bekannt ? bekannt.id : null,
+    kunde: { name },
     produktId: feld(form, 'produkt').value,
     menge,
     zeitraum,
     jahr: zeitraum === 'naechste' ? null : Number(feld(form, 'jahr').value),
     quelle: form.querySelector('input[name="quelle"]:checked').value,
-    status: 'offen',
-    erstellt: new Date().toISOString().slice(0, 10),
     notiz: feld(form, 'notiz').value.trim(),
   };
-  daten.voranmeldungen.push(v);
-  zeigen();
-  meldung(`Vorgemerkt: ${k.name}, ${menge}× ${produktVon(v.produktId).name} (${zeitraumText(v)}).`);
+  const text = `${name}, ${menge}× ${produktVon(eingabe.produktId).name} (${zeitraumText(eingabe)})`;
+  await speichern('voranmeldung', eingabe, () => {
+    let k = bekannt;
+    if (!k) {
+      k = { id: `k${Date.now()}`, name, telefon: '', strasse: '', plz: '', ort: '', stammkunde: false };
+      daten.kunden.push(k);
+    }
+    daten.voranmeldungen.push({
+      ...eingabe, id: `v${Date.now()}`, kundeId: k.id, status: 'offen', erstellt: new Date().toISOString().slice(0, 10),
+    });
+    return {};
+  }, { erfolg: `Vorgemerkt: ${text}.` });
 }
 
-// Gleiche Logik wie voranmeldungenUebernehmen() in functions/_lib/hofladen.js:
-// je Kunde eine Bestellung, in Reihenfolge der Anmeldung, Rest → Warteliste.
-function voranmeldungenUebernehmen(ids) {
-  const ch = aktiveCharge();
+// Beispielmodus: gleiche Logik wie voranmeldungenUebernehmen() in
+// functions/_lib/hofladen.js – je Kunde eine Bestellung, in Reihenfolge der
+// Anmeldung, Rest → Warteliste.
+function voranmeldungenUebernehmenBeispiel(ch, ids) {
   const auswahl = passendeVoranmeldungen(ch).filter((v) => ids.includes(v.id));
-  if (!auswahl.length) return meldung('Bitte mindestens eine Voranmeldung auswählen.');
-
   const jeKunde = new Map();
   auswahl.forEach((v) => {
     if (!jeKunde.has(v.kundeId)) jeKunde.set(v.kundeId, []);
     jeKunde.get(v.kundeId).push(v);
   });
-
-  let vorgemerkt = 0;
-  let warteliste = 0;
+  const bestellungen = [];
   jeKunde.forEach((liste, kundeId) => {
     const mengen = new Map();
     liste.forEach((v) => {
@@ -831,29 +971,234 @@ function voranmeldungenUebernehmen(ids) {
     const positionen = [...mengen].map(([artikelId, menge]) => ({ artikelId, menge }));
     const reicht = positionen.every((p) => freieMenge(ch, p.artikelId) >= p.menge);
     const b = {
-      id: `b${Date.now()}${kundeId}`,
-      nummer: naechsteNummer(),
-      chargeId: ch.id,
-      kundeId,
-      quelle: liste[0].quelle,
-      erstellt: new Date().toISOString().slice(0, 10),
-      status: reicht ? 'vorgemerkt' : 'warteliste',
-      terminId: null,
-      zahlart: 'bar',
-      bezahlt: null,
-      uebergeben: false,
-      anmerkung: liste.map((v) => v.notiz).filter(Boolean).join(' '),
-      interneNotiz: 'aus Voranmeldung – Termin und Zahlart bestätigen',
-      positionen,
+      id: `b${Date.now()}${kundeId}`, nummer: naechsteNummer(), chargeId: ch.id, kundeId,
+      quelle: liste[0].quelle, erstellt: new Date().toISOString().slice(0, 10),
+      status: reicht ? 'vorgemerkt' : 'warteliste', terminId: null, zahlart: 'bar', bezahlt: null,
+      uebergeben: false, anmerkung: liste.map((v) => v.notiz).filter(Boolean).join(' '),
+      interneNotiz: 'aus Voranmeldung – Termin und Zahlart bestätigen', positionen,
     };
     daten.bestellungen.push(b);
-    liste.forEach((v) => { v.status = 'uebernommen'; v.bestellungId = b.id; });
-    if (reicht) vorgemerkt += 1; else warteliste += 1;
+    liste.forEach((v) => { v.status = 'uebernommen'; });
+    bestellungen.push(b);
   });
+  daten.voranmeldungen = daten.voranmeldungen.filter((v) => v.status === 'offen');
+  return { bestellungen };
+}
 
+async function voranmeldungenUebernehmen(ids) {
+  const ch = aktiveCharge();
+  if (!ids.length) return meldung('Bitte mindestens eine Voranmeldung auswählen.');
+  const erg = await speichern('voranmeldungen/uebernehmen', { chargeId: ch.id, ids },
+    () => voranmeldungenUebernehmenBeispiel(ch, ids), { neuZeichnen: false });
+  if (!erg) return;
+  const vorgemerkt = erg.bestellungen.filter((b) => b.status === 'vorgemerkt').length;
+  const warteliste = erg.bestellungen.length - vorgemerkt;
   zustand.filter = 'termin-offen';
   location.hash = '#bestellungen';
-  meldung(`${vorgemerkt} Bestellungen übernommen${warteliste ? `, ${warteliste} auf der Warteliste` : ''} – jetzt Termine bestätigen.`);
+  zeigen();
+  meldung(`${erg.bestellungen.length} übernommen: ${vorgemerkt} vorgemerkt${warteliste ? `, ${warteliste} auf der Warteliste (nicht genug frei)` : ''} – jetzt Termine bestätigen.`);
+}
+
+// 5.8 Charge anlegen / bearbeiten
+const CHARGE_STATUS = {
+  entwurf: 'Entwurf – nur hier sichtbar',
+  offen: 'Offen – Bestellungen möglich',
+  geschlossen: 'Geschlossen – Bestellschluss vorbei',
+  archiviert: 'Archiviert – fertig, wird ausgeblendet',
+};
+const KATEGORIEN = { fleisch: 'Fleisch', nudeln: 'Eiernudeln', honig: 'Honig', seife: 'Seife', saison: 'Saison' };
+
+const centAusText = (wert) => {
+  const zahl = parseFloat(String(wert).replace(/\s|€/g, '').replace(',', '.'));
+  return Number.isFinite(zahl) && zahl >= 0 ? Math.round(zahl * 100) : null;
+};
+const textAusCent = (cent) => (cent == null ? '' : (cent / 100).toFixed(2).replace('.', ','));
+
+// Vorschlag für neue Chargen: Werte der letzten Charge je Produkt, sonst Startpreis
+function vorschlagFuer(produkt) {
+  if (daten.preisVorschlaege) {
+    const v = daten.preisVorschlaege.find((x) => x.produktId === produkt.id);
+    if (v) return v;
+  }
+  const letzte = [...daten.chargen].reverse().flatMap((c) => c.artikel).find((a) => a.produktId === produkt.id);
+  return letzte
+    ? { preisCent: letzte.preisCent, kontingent: letzte.kontingent, maxProBestellung: letzte.maxProBestellung }
+    : { preisCent: produkt.startpreisCent ?? null, kontingent: null, maxProBestellung: null };
+}
+
+function chargeFormStarten(neu) {
+  const ch = neu ? null : aktiveCharge();
+  const morgen = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+  zustand.chargeForm = {
+    id: ch ? ch.id : null,
+    titel: ch ? ch.titel : '',
+    bestellschluss: ch ? ch.bestellschluss : morgen,
+    status: ch ? ch.status || 'offen' : 'entwurf',
+    termine: ch ? ch.termine.map((t) => ({ ...t })) : [],
+    // je Produkt: angeboten ja/nein und Werte
+    artikel: daten.produkte
+      .filter((p) => p.aktiv !== false || (ch && ch.artikel.some((a) => a.produktId === p.id)))
+      .map((p) => {
+        const vorhanden = ch && ch.artikel.find((a) => a.produktId === p.id);
+        const vorschlag = vorhanden || vorschlagFuer(p);
+        return {
+          produkt: p,
+          id: vorhanden ? vorhanden.id : null,
+          an: Boolean(vorhanden),
+          preis: textAusCent(vorschlag.preisCent),
+          kontingent: vorschlag.kontingent ?? '',
+          max: vorschlag.maxProBestellung ?? '',
+          bestellt: vorhanden ? bestellteMenge(ch, vorhanden.id) : 0,
+        };
+      }),
+  };
+}
+
+// Eingaben aus dem Formular in die Arbeitskopie übernehmen (vor jedem Neuzeichnen)
+function chargeFormLesen() {
+  const form = document.getElementById('vw-charge-formular');
+  const f = zustand.chargeForm;
+  if (!form || !f) return;
+  f.titel = feld(form, 'titel').value;
+  f.bestellschluss = feld(form, 'bestellschluss').value;
+  f.status = feld(form, 'status').value;
+  f.termine = [...form.querySelectorAll('[data-termin]')].map((zeile) => ({
+    id: zeile.dataset.termin || null,
+    art: zeile.querySelector('[name="t-art"]').value,
+    datum: zeile.querySelector('[name="t-datum"]').value,
+    von: zeile.querySelector('[name="t-von"]').value,
+    bis: zeile.querySelector('[name="t-bis"]').value,
+  }));
+  form.querySelectorAll('[data-produkt]').forEach((zeile) => {
+    const a = f.artikel.find((x) => x.produkt.id === zeile.dataset.produkt);
+    a.an = zeile.querySelector('[name="a-an"]').checked;
+    a.preis = zeile.querySelector('[name="a-preis"]').value;
+    a.kontingent = zeile.querySelector('[name="a-menge"]').value;
+    a.max = zeile.querySelector('[name="a-max"]').value;
+  });
+}
+
+function ansichtCharge(neu) {
+  if (!zustand.chargeForm || (neu ? zustand.chargeForm.id : zustand.chargeForm.id !== zustand.chargeId)) {
+    if (!neu && !aktiveCharge()) return ansichtLeer();
+    chargeFormStarten(neu);
+  }
+  const f = zustand.chargeForm;
+  const gruppen = Object.keys(KATEGORIEN).map((kat) => [kat, f.artikel.filter((a) => (a.produkt.kategorie || 'saison') === kat)])
+    .filter(([, liste]) => liste.length);
+  const statusListe = { ...CHARGE_STATUS };
+  if (f.status === 'stammkunden') statusListe.stammkunden = 'Nur Stammkunden';
+
+  inhalt().innerHTML = `
+    <div class="vw-kopf"><h1>${f.id ? 'Charge bearbeiten' : 'Neue Charge'}</h1>
+      <p class="vw-klein">${f.id ? 'Preisänderungen gelten nur für neue Bestellungen.' : 'Preis, Menge und Höchstmenge sind mit den Werten der letzten Charge vorbelegt.'}</p></div>
+    <form id="vw-charge-formular" novalidate>
+      <section class="vw-karte">
+        <label class="vw-feld"><span>Titel</span><input name="titel" value="${esc(f.titel)}" placeholder="z. B. Masthühner Herbst" required /></label>
+        <label class="vw-feld"><span>Bestellschluss</span><input name="bestellschluss" type="date" value="${esc(f.bestellschluss)}" required /></label>
+        <label class="vw-feld"><span>Status</span><select name="status">${Object.entries(statusListe).map(([wert, text]) =>
+          `<option value="${wert}" ${f.status === wert ? 'selected' : ''}>${text}</option>`).join('')}</select></label>
+      </section>
+      <section class="vw-karte"><h2>Termine</h2>
+        ${f.termine.map((t) => `<div class="vw-termin-zeile" data-termin="${esc(t.id || '')}">
+          <select name="t-art" aria-label="Art"><option value="abholung" ${t.art === 'abholung' ? 'selected' : ''}>Abholung</option><option value="lieferung" ${t.art === 'lieferung' ? 'selected' : ''}>Lieferung</option></select>
+          <input name="t-datum" type="date" value="${esc(t.datum)}" aria-label="Datum" />
+          <input name="t-von" type="time" value="${esc(t.von)}" aria-label="von" />
+          <input name="t-bis" type="time" value="${esc(t.bis)}" aria-label="bis" />
+          <button type="button" class="vw-knopf vw-knopf--warnung vw-knopf--klein" data-aktion="termin-entfernen" aria-label="Termin entfernen">×</button>
+        </div>`).join('') || '<p class="vw-klein">Noch keine Termine.</p>'}
+        <div class="vw-knopfreihe">
+          <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="termin-dazu" data-wert="abholung">+ Abholtermin</button>
+          <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="termin-dazu" data-wert="lieferung">+ Liefertermin</button>
+        </div>
+      </section>
+      <section class="vw-karte"><h2>Was wird angeboten?</h2>
+        <p class="vw-klein">Häkchen setzen, Preis (bei Gewichtsware pro kg) und vorhandene Menge eintragen. Höchstmenge pro Bestellung ist optional.</p>
+        ${gruppen.map(([kat, liste]) => `<h3 class="vw-ort-titel">${KATEGORIEN[kat]}</h3>
+          ${liste.map((a) => `<div class="vw-artikel-form" data-produkt="${a.produkt.id}">
+            <label class="vw-artikel-name"><input type="checkbox" name="a-an" ${a.an ? 'checked' : ''} /> ${esc(a.produkt.name)}
+              ${a.bestellt ? `<span class="vw-klein"> · ${a.bestellt} bestellt</span>` : ''}</label>
+            <label><span class="vw-klein">Preis €${a.produkt.art === 'gewicht' ? '/kg' : ''}</span><input name="a-preis" inputmode="decimal" value="${esc(a.preis)}" /></label>
+            <label><span class="vw-klein">Menge</span><input name="a-menge" type="number" inputmode="numeric" min="0" value="${esc(a.kontingent)}" /></label>
+            <label><span class="vw-klein">max.</span><input name="a-max" type="number" inputmode="numeric" min="1" value="${esc(a.max)}" placeholder="–" /></label>
+          </div>`).join('')}`).join('')}
+      </section>
+      <div class="vw-knopfreihe">
+        <button type="submit" class="vw-knopf vw-knopf--voll">${f.id ? 'Änderungen speichern' : 'Charge anlegen'}</button>
+        <a class="vw-knopf" href="#uebersicht">Abbrechen</a>
+      </div>
+    </form>`;
+}
+
+async function chargeSpeichern() {
+  chargeFormLesen();
+  const f = zustand.chargeForm;
+  if (!f.titel.trim()) return meldung('Bitte einen Titel eintragen.');
+  if (!f.bestellschluss) return meldung('Bitte den Bestellschluss eintragen.');
+  if (f.termine.some((t) => !t.datum)) return meldung('Bitte bei jedem Termin ein Datum eintragen.');
+  const artikel = [];
+  for (const a of f.artikel.filter((x) => x.an)) {
+    const preisCent = centAusText(a.preis);
+    const kontingent = Number(a.kontingent);
+    if (preisCent == null) return meldung(`Bitte einen Preis für „${a.produkt.name}" eintragen.`);
+    if (a.kontingent === '' || !Number.isInteger(kontingent) || kontingent < 0) return meldung(`Bitte die Menge für „${a.produkt.name}" eintragen.`);
+    if (a.bestellt && kontingent < a.bestellt) return meldung(`„${a.produkt.name}": schon ${a.bestellt} bestellt – Menge nicht darunter setzen.`);
+    artikel.push({ id: a.id, produktId: a.produkt.id, preisCent, kontingent, maxProBestellung: a.max === '' ? null : Number(a.max) });
+  }
+  if (!artikel.length) return meldung('Bitte mindestens ein Produkt anbieten.');
+  const entfernt = f.artikel.filter((a) => !a.an && a.bestellt);
+  if (entfernt.length) return meldung(`„${entfernt[0].produkt.name}" wurde schon bestellt und bleibt in der Charge.`);
+
+  const eingabe = {
+    titel: f.titel.trim(), bestellschluss: f.bestellschluss, status: f.status,
+    termine: f.termine.map((t) => ({ id: t.id, art: t.art, datum: t.datum, von: t.von, bis: t.bis })),
+    artikel,
+  };
+  const erg = await speichern(f.id ? `charge/${f.id}` : 'charge', eingabe, () => {
+    const id = f.id || `c${Date.now()}`;
+    const neueCharge = {
+      id, titel: eingabe.titel, bestellschluss: eingabe.bestellschluss, status: eingabe.status,
+      termine: eingabe.termine.map((t, i) => ({ ...t, id: t.id || `t${Date.now()}${i}` })),
+      artikel: artikel.map((a, i) => {
+        const p = produktVon(a.produktId);
+        return { id: a.id || `a${Date.now()}${i}`, produktId: a.produktId, name: p.name, art: p.art,
+          preisCent: a.preisCent, kontingent: a.kontingent, maxProBestellung: a.maxProBestellung,
+          richtVonG: p.richtVonG, richtBisG: p.richtBisG };
+      }),
+    };
+    const index = daten.chargen.findIndex((c) => c.id === id);
+    if (index >= 0) daten.chargen[index] = neueCharge; else daten.chargen.push(neueCharge);
+    if (eingabe.status === 'archiviert') daten.chargen = daten.chargen.filter((c) => c.id !== id);
+    return { chargeId: id };
+  }, { neuZeichnen: false });
+  if (!erg) return;
+  zustand.chargeForm = null;
+  if (eingabe.status !== 'archiviert') zustand.chargeId = erg.chargeId;
+  else zustand.chargeId = daten.chargen.length ? daten.chargen[0].id : null;
+  location.hash = '#uebersicht';
+  zeigen();
+  const passend = aktiveCharge() ? passendeVoranmeldungen(aktiveCharge()).length : 0;
+  meldung(`Charge gespeichert.${passend ? ` ${passend} Voranmeldungen passen dazu.` : ''}`);
+}
+
+// Ohne Charge: freundlicher Hinweis statt leerer Ansichten
+function ansichtLeer() {
+  inhalt().innerHTML = `
+    <div class="vw-kopf"><h1>Hofladen</h1></div>
+    <section class="vw-karte">
+      <h2>Noch keine laufende Charge</h2>
+      <p>Legt die erste Charge an – Produkte, Preise und Termine. Voranmeldungen könnt ihr jederzeit erfassen.</p>
+      <div class="vw-knopfreihe">
+        <a class="vw-knopf vw-knopf--voll" href="#charge-neu">+ Neue Charge</a>
+        <a class="vw-knopf" href="#voranmeldungen">Voranmeldungen</a>
+      </div>
+    </section>
+    ${nutzerZeile()}`;
+}
+
+function nutzerZeile() {
+  if (BEISPIEL) return '<p class="vw-klein">Beispielmodus – nichts wird gespeichert.</p>';
+  return `<p class="vw-klein">${zustand.nutzer ? `Angemeldet als ${esc(zustand.nutzer)} · ` : ''}<a href="/cdn-cgi/access/logout">Abmelden</a></p>`;
 }
 
 /* ------------------------------------------------------------
@@ -871,9 +1216,10 @@ function detailOeffnen(id) {
   const positionen = b.positionen.map((p) => {
     const a = artikelVon(ch, p.artikelId);
     const betrag = positionBetrag(ch, p);
+    const preis = preisVon(ch, p);
     const detail = a.art === 'gewicht'
-      ? (p.gewichtG ? `${kg(p.gewichtG)} × ${euro(a.preisCent)}/kg` : `${euro(a.preisCent)}/kg, noch nicht gewogen`)
-      : `je ${euro(a.preisCent)}`;
+      ? (p.gewichtG ? `${kg(p.gewichtG)} × ${euro(preis)}/kg` : `${euro(preis)}/kg, noch nicht gewogen`)
+      : `je ${euro(preis)}`;
     return `<tr><td>${p.menge}× ${esc(a.name)}<br><span class="vw-klein">${detail}</span></td>
       <td class="vw-zahl">${betragText(betrag)}</td></tr>`;
   }).join('');
@@ -904,20 +1250,34 @@ function detailOeffnen(id) {
     <div class="vw-abschnitt">${marken(b)}</div>
     <div class="vw-abschnitt">
       ${t ? `<p><strong>${terminText(t)}</strong></p>` : `<p><strong>Termin noch offen</strong> – mit dem Kunden klären und hier wählen:</p>
-        <div class="vw-knopfreihe">${ch.termine.map((x) => `<button type="button" class="vw-knopf" data-aktion="termin-setzen" data-id="${b.id}" data-wert="${x.id}">${terminText(x)}</button>`).join('')}</div>
-        <div class="vw-knopfreihe">${Object.entries(ZAHLARTEN).map(([wert, text]) => `<button type="button" class="vw-chip" data-aktion="zahlart-setzen" data-id="${b.id}" data-wert="${wert}" aria-pressed="${b.zahlart === wert}">${text}</button>`).join('')}</div>`}
-      ${t && t.art === 'lieferung' ? `<p>${esc(k.strasse)}, ${esc(k.plz)} ${esc(k.ort)}</p>` : ''}
-      <p>${esc(k.telefon)}</p>
+        <div class="vw-knopfreihe">${ch.termine.map((x) => `<button type="button" class="vw-knopf" data-aktion="termin-setzen" data-id="${b.id}" data-wert="${x.id}">${terminText(x)}</button>`).join('')}</div>`}
+      ${t && t.art === 'lieferung' ? (k.strasse
+        ? `<p>${esc(k.strasse)}, ${esc(`${k.plz} ${k.ort}`.trim())}</p>`
+        : '<p class="vw-warnung">Lieferadresse fehlt – bitte unter „Kontakt ändern" eintragen.</p>') : ''}
+      <p>${k.telefon ? esc(k.telefon) : '<span class="vw-klein">keine Telefonnummer</span>'}</p>
+      <details class="vw-kontakt" ${t && t.art === 'lieferung' && !k.strasse ? 'open' : ''}>
+        <summary>Kontakt ändern</summary>
+        <form id="vw-kontakt-formular" data-id="${b.id}" novalidate>
+          <label class="vw-feld"><span>Telefon</span><input name="telefon" type="tel" value="${esc(k.telefon)}" /></label>
+          <label class="vw-feld"><span>Straße und Hausnummer</span><input name="strasse" value="${esc(k.strasse)}" /></label>
+          <label class="vw-feld"><span>PLZ</span><input name="plz" inputmode="numeric" value="${esc(k.plz)}" /></label>
+          <label class="vw-feld"><span>Ort</span><input name="ort" value="${esc(k.ort)}" /></label>
+          <button type="submit" class="vw-knopf vw-knopf--voll">Kontakt speichern</button>
+        </form>
+      </details>
       <div class="vw-knopfreihe">
-        <a class="vw-knopf" href="tel:${esc(k.telefon.replace(/\s/g, ''))}">Anrufen</a>
-        <a class="vw-knopf" href="${whatsappLink(b, bereitText(b))}" target="_blank" rel="noopener">${t ? 'WhatsApp „ist fertig"' : 'WhatsApp „Bestätigung"'}</a>
-        ${t && t.art === 'lieferung' ? `<a class="vw-knopf" href="${navLink(b)}" target="_blank" rel="noopener">Navi</a>` : ''}
+        ${k.telefon ? `<a class="vw-knopf" href="tel:${esc(k.telefon.replace(/\s/g, ''))}">Anrufen</a>` : ''}
+        ${k.telefon ? `<a class="vw-knopf" href="${whatsappLink(b, bereitText(b))}" target="_blank" rel="noopener">${t ? 'WhatsApp „ist fertig"' : 'WhatsApp „Bestätigung"'}</a>` : ''}
+        ${t && t.art === 'lieferung' && k.strasse ? `<a class="vw-knopf" href="${navLink(b)}" target="_blank" rel="noopener">Navi</a>` : ''}
       </div>
     </div>
     <div class="vw-abschnitt">
       <table class="vw-tabelle"><tbody>${positionen}</tbody>
         <tfoot><tr><td>Summe</td><td class="vw-zahl">${betragText(summe)}</td></tr></tfoot></table>
-      <p class="vw-klein">Zahlung gewünscht: ${ZAHLARTEN[b.zahlart]}</p>
+      <div class="vw-knopfreihe" role="group" aria-label="Zahlung gewünscht">
+        <span class="vw-klein">Zahlung gewünscht:</span>
+        ${Object.entries(ZAHLARTEN).map(([wert, text]) => `<button type="button" class="vw-chip" data-aktion="zahlart-setzen" data-id="${b.id}" data-wert="${wert}" aria-pressed="${b.zahlart === wert}">${text}</button>`).join('')}
+      </div>
       ${b.anmerkung ? `<p>„${esc(b.anmerkung)}"</p>` : ''}
       ${b.interneNotiz ? `<p class="vw-klein">Intern: ${esc(b.interneNotiz)}</p>` : ''}
     </div>
@@ -925,6 +1285,17 @@ function detailOeffnen(id) {
   </div>`;
   dialog.dataset.id = b.id;
   if (!dialog.open) dialog.showModal();
+}
+
+function kontaktSpeichern(form) {
+  const b = bestellungVon(form.dataset.id);
+  const k = kundeVon(b);
+  const eingabe = { aktion: 'kontakt' };
+  ['telefon', 'strasse', 'plz', 'ort'].forEach((f) => { eingabe[f] = feld(form, f).value.trim(); });
+  speichern(`bestellung/${b.id}`, eingabe, () => {
+    ['telefon', 'strasse', 'plz', 'ort'].forEach((f) => { if (eingabe[f]) k[f] = eingabe[f]; });
+    return {};
+  }, { erfolg: `Kontakt von ${k.name} gespeichert.` });
 }
 
 function dialogAktualisieren() {
@@ -963,7 +1334,7 @@ function exportieren() {
         zeilen.push([b.nummer, b.erstellt, k.name, k.telefon.replace(/^\+/, '00'), k.strasse,
           `${k.plz} ${k.ort}`.trim(), QUELLEN[b.quelle], b.status,
           t ? (t.art === 'abholung' ? 'Abholung' : 'Lieferung') : 'offen', t ? t.datum : '', a.name, p.menge,
-          p.gewichtG ? p.gewichtG / 1000 : '', a.preisCent / 100, a.art === 'gewicht' ? 'kg' : 'Stück',
+          p.gewichtG ? p.gewichtG / 1000 : '', preisVon(ch, p) / 100, a.art === 'gewicht' ? 'kg' : 'Stück',
           betrag.cent / 100, betrag.geschaetzt ? 'ja' : '', ZAHLARTEN[b.zahlart],
           b.bezahlt ? ZAHLARTEN[b.bezahlt] : 'offen', b.uebergeben ? 'ja' : 'nein', b.anmerkung]);
       });
@@ -1029,7 +1400,11 @@ const ANSICHTEN = {
   uebergabe: ansichtUebergabe,
   zahlungen: ansichtZahlungen,
   voranmeldungen: ansichtVoranmeldungen,
+  charge: () => ansichtCharge(false),
+  'charge-neu': () => ansichtCharge(true),
 };
+// Diese Ansichten funktionieren auch ohne laufende Charge
+const OHNE_CHARGE = ['voranmeldungen', 'charge-neu'];
 
 function aktuelleAnsicht() {
   const name = location.hash.slice(1);
@@ -1038,7 +1413,17 @@ function aktuelleAnsicht() {
 
 function zeigen() {
   const name = aktuelleAnsicht();
-  ANSICHTEN[name]();
+  if (ladeFehler) {
+    inhalt().innerHTML = `<section class="vw-karte"><h1>Hofladen-Verwaltung</h1>
+      <p>${esc(ladeFehler)}</p>
+      <button type="button" class="vw-knopf vw-knopf--voll" data-aktion="neu-laden">Seite neu laden</button></section>`;
+  } else if (!daten) {
+    inhalt().innerHTML = '<p class="vw-klein">Wird geladen …</p>';
+  } else if (!aktiveCharge() && !OHNE_CHARGE.includes(name)) {
+    ansichtLeer();
+  } else {
+    ANSICHTEN[name]();
+  }
   document.querySelectorAll('.vw-nav a[data-ansicht]').forEach((a) => {
     if (a.dataset.ansicht === name) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
@@ -1046,9 +1431,14 @@ function zeigen() {
 }
 
 function neuZeichnen() {
-  // Formular nicht neu zeichnen, sonst gehen Eingaben verloren
-  if (aktuelleAnsicht() !== 'neu') zeigen();
+  // Formulare nicht neu zeichnen, sonst gehen Eingaben verloren
+  if (!['neu', 'charge', 'charge-neu'].includes(aktuelleAnsicht())) zeigen();
   dialogAktualisieren();
+}
+
+// Änderung an einer Bestellung (Übergabe, Zahlung, Termin …)
+function bestellungAendern(b, eingabe, beispielAenderung, erfolg) {
+  return speichern(`bestellung/${b.id}`, eingabe, () => { beispielAenderung(); return {}; }, { erfolg });
 }
 
 function initKlicks() {
@@ -1056,10 +1446,12 @@ function initKlicks() {
     const el = e.target.closest('[data-aktion]');
     if (!el) return;
     const b = el.dataset.id ? bestellungVon(el.dataset.id) : null;
+    const name = b ? kundeVon(b).name : '';
 
     switch (el.dataset.aktion) {
       case 'charge':
         zustand.chargeId = el.dataset.id;
+        zustand.chargeForm = null;
         zeigen();
         break;
       case 'filter':
@@ -1077,32 +1469,44 @@ function initKlicks() {
       case 'schliessen':
         document.getElementById('vw-dialog').close();
         break;
-      case 'uebergeben':
-        b.uebergeben = !b.uebergeben;
-        meldung(b.uebergeben ? `${kundeVon(b).name}: übergeben.` : 'Rückgängig gemacht.');
-        neuZeichnen();
+      case 'uebergeben': {
+        const wert = !b.uebergeben;
+        bestellungAendern(b, { aktion: 'uebergeben', wert }, () => { b.uebergeben = wert; },
+          wert ? `${name}: übergeben.` : 'Rückgängig gemacht.');
         break;
-      case 'bezahlt':
-        b.bezahlt = el.dataset.wert || null;
-        meldung(b.bezahlt ? `${kundeVon(b).name}: bezahlt (${ZAHLARTEN[b.bezahlt]}).` : 'Zahlung zurückgesetzt.');
-        neuZeichnen();
+      }
+      case 'bezahlt': {
+        const art = el.dataset.wert || null;
+        bestellungAendern(b, { aktion: 'bezahlt', art }, () => { b.bezahlt = art; },
+          art ? `${name}: bezahlt (${ZAHLARTEN[art]}).` : 'Zahlung zurückgesetzt.');
         break;
+      }
       case 'stornieren':
-        b.status = 'storniert';
-        meldung(`${b.nummer} storniert.`);
-        neuZeichnen();
+        bestellungAendern(b, { aktion: 'stornieren' }, () => { b.status = 'storniert'; }, `${b.nummer} storniert.`);
         break;
       case 'wiederherstellen':
       case 'nachruecken': {
         const ch = chargeVon(b);
-        const reicht = b.positionen.every((p) => freieMenge(ch, p.artikelId) >= p.menge);
-        if (!reicht && el.dataset.aktion === 'nachruecken') {
-          meldung('Dafür ist nicht mehr genug frei.');
-          break;
-        }
-        b.status = reicht ? 'vorgemerkt' : 'warteliste';
-        meldung(reicht ? `${kundeVon(b).name} ist jetzt vorgemerkt.` : 'Nicht genug frei – zurück auf die Warteliste.');
-        neuZeichnen();
+        speichern(`bestellung/${b.id}`, { aktion: 'nachruecken' }, () => {
+          const reicht = b.positionen.every((p) => freieMenge(ch, p.artikelId) >= p.menge);
+          b.status = reicht ? 'vorgemerkt' : 'warteliste';
+          return { bestellung: { status: b.status } };
+        }, {
+          erfolg: (erg) => (erg.bestellung.status === 'vorgemerkt'
+            ? `${name} ist jetzt vorgemerkt.`
+            : 'Nicht genug frei – bleibt auf der Warteliste.'),
+        });
+        break;
+      }
+      case 'termin-setzen': {
+        const terminId = el.dataset.wert;
+        const t = chargeVon(b).termine.find((x) => x.id === terminId);
+        bestellungAendern(b, { aktion: 'termin', terminId }, () => { b.terminId = terminId; }, `${name}: ${terminText(t)}.`);
+        break;
+      }
+      case 'zahlart-setzen': {
+        const zahlart = el.dataset.wert;
+        bestellungAendern(b, { aktion: 'zahlart', zahlart }, () => { b.zahlart = zahlart; });
         break;
       }
       case 'plus':
@@ -1136,15 +1540,6 @@ function initKlicks() {
         }
         break;
       }
-      case 'termin-setzen':
-        b.terminId = el.dataset.wert;
-        meldung(`${kundeVon(b).name}: ${terminText(terminVon(b))}.`);
-        neuZeichnen();
-        break;
-      case 'zahlart-setzen':
-        b.zahlart = el.dataset.wert;
-        neuZeichnen();
-        break;
       case 'va-uebernehmen': {
         const ids = [...document.querySelectorAll('#vw-va-auswahl input[name="va"]:checked')].map((i) => i.value);
         voranmeldungenUebernehmen(ids);
@@ -1152,14 +1547,30 @@ function initKlicks() {
       }
       case 'va-absagen': {
         e.preventDefault();
-        const v = daten.voranmeldungen.find((x) => x.id === el.dataset.id);
-        v.status = 'abgesagt';
-        meldung('Voranmeldung abgesagt.');
-        zeigen();
+        const id = el.dataset.id;
+        speichern(`voranmeldung/${id}/absagen`, {}, () => {
+          daten.voranmeldungen = daten.voranmeldungen.filter((v) => v.id !== id);
+          return {};
+        }, { erfolg: 'Voranmeldung abgesagt.' });
+        break;
+      }
+      case 'termin-dazu':
+        chargeFormLesen();
+        zustand.chargeForm.termine.push({ id: null, art: el.dataset.wert, datum: '', von: el.dataset.wert === 'abholung' ? '09:00' : '14:00', bis: el.dataset.wert === 'abholung' ? '12:00' : '18:00' });
+        ANSICHTEN[aktuelleAnsicht()]();
+        break;
+      case 'termin-entfernen': {
+        chargeFormLesen();
+        const zeilen = [...document.querySelectorAll('#vw-charge-formular [data-termin]')];
+        zustand.chargeForm.termine.splice(zeilen.indexOf(el.closest('[data-termin]')), 1);
+        ANSICHTEN[aktuelleAnsicht()]();
         break;
       }
       case 'drucken':
         packzettelDrucken();
+        break;
+      case 'neu-laden':
+        location.reload();
         break;
       default:
         break;
@@ -1180,6 +1591,7 @@ function initEingaben() {
   });
 
   document.addEventListener('change', (e) => {
+    if (e.target.dataset.gewicht) gewichtSpeichern(e.target);
     if (e.target.name === 'termin') adresseUmschalten();
     if (e.target.name === 'zeitraum') {
       const jahr = document.getElementById('vw-va-jahr');
@@ -1188,14 +1600,17 @@ function initEingaben() {
   });
 
   document.addEventListener('submit', (e) => {
-    if (e.target.id === 'vw-va-formular') {
+    const id = e.target.id;
+    if (id === 'vw-kontakt-formular') {
       e.preventDefault();
-      voranmeldungSpeichern(e.target);
+      kontaktSpeichern(e.target);
       return;
     }
-    if (e.target.id !== 'vw-formular') return;
+    if (!['vw-va-formular', 'vw-formular', 'vw-charge-formular'].includes(id)) return;
     e.preventDefault();
-    bestellungSpeichern(e.target);
+    if (id === 'vw-va-formular') voranmeldungSpeichern(e.target);
+    else if (id === 'vw-formular') bestellungSpeichern(e.target);
+    else chargeSpeichern();
   });
 
   // Klick auf den Hintergrund schließt den Dialog
@@ -1207,12 +1622,25 @@ function initEingaben() {
   }
 }
 
+async function initDaten() {
+  const hinweis = document.getElementById('vw-beispiel-hinweis');
+  if (hinweis) hinweis.hidden = !BEISPIEL;
+  zeigen();
+  try {
+    await laden();
+  } catch (fehler) {
+    ladeFehler = fehler.message;
+  }
+  zeigen();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   initKlicks();
   initEingaben();
   window.addEventListener('hashchange', () => {
+    zustand.chargeForm = null;
     zeigen();
     window.scrollTo(0, 0);
   });
-  zeigen();
+  initDaten();
 });

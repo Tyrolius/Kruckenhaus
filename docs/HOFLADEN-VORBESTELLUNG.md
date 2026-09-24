@@ -1,6 +1,6 @@
 # Hofladen-Vorbestellung – Umsetzungsplan
 
-Stand: September 2026 · Status: **Phase 1 programmiert (Schema, Helfer, Produkte, Liefergebiet) – Einspielen in D1 durch Kathrin/Florian offen, danach Phase 2 (Abschnitt 12)**
+Stand: September 2026 · Status: **Phase 2 programmiert und lokal getestet – Einrichtung von Cloudflare Access und Veröffentlichung offen (README, „Hofladen-Verwaltung einrichten")**
 
 > Kurzfassung: Statt Vorbestellungen in mehreren WhatsApp-Gruppen zu sammeln,
 > bekommt kruckenhaus.at eine Vorbestellseite für Fleisch, Eiernudeln und
@@ -47,10 +47,11 @@ Datenbank, ohne Mails, ohne Anmeldung:
 Bestellung. Sie öffnet sich per Doppelklick direkt in Excel. Die Spalten
 werden an die bestehende Abrechnungsliste angepasst, sobald diese vorliegt.
 
-**Wichtig:** Der Entwurf ist nicht geschützt. Er darf erst auf `master`,
-wenn Cloudflare Access für `/verwaltung/*` eingerichtet ist (Phase 2) –
-bis dahin nur auf dem Feature-Branch bzw. dessen Vorschau-Adresse.
-In Phase 2 wird `entwurf-daten.js` durch echte Daten aus D1 ersetzt.
+Seit Phase 2 arbeitet die Verwaltung mit echten Daten aus D1. Der Entwurf
+bleibt als **Beispielmodus** erhalten: `verwaltung/?entwurf` (erfundene
+Daten, nichts wird gespeichert) – praktisch zum Ausprobieren und Einschulen.
+Die Schnittstelle ist ohne eingerichteten Zugangsschutz gesperrt, die Seite
+darf deshalb auch vor der Access-Einrichtung auf `master`.
 
 ---
 
@@ -517,7 +518,7 @@ Keine Rechtsberatung – bitte mit der **Landwirtschaftskammer Tirol**
 | 3 | **Produktliste** – geliefert. Offen: Pflichtangaben/Allergene der Nudeln laut Etikett, Seifensorten. Geklärt: halbes Huhn 0,9–1,2 kg, Rindpakete Fixpreis mit Inhalt, Gans 19 €/kg (3–4,5 kg). | Phase 4 (Pflichtangaben), sonst jederzeit |
 | 4 | ~~Liefergebiet~~ – festgelegt: 6252, 6233, 6230, 6250, ohne Liefergebühr | erledigt |
 | 5 | **Termine:** typischer Abholtag/-zeit, typischer Liefertag | Phase 2 |
-| 6 | **E-Mail-Adressen** von Kathrin und Florian für den Verwaltungszugang | Phase 2 |
+| 6 | ~~E-Mail-Adressen~~ – geliefert (drei Adressen; stehen nur in Cloudflare, nicht im Repository) | erledigt |
 | 7 | **Bankverbindung** für die Mail „Abholbereit" | Phase 3 |
 | 8 | **Stammkunden-Vorlauf** gewünscht? Wie viele Tage? (Voranmeldungen werden ohnehin vor der Ankündigung übernommen) | Phase 5 |
 | 9 | **Höchstmengen** pro Bestellung (z. B. max. 2 Gänse)? | Phase 4 |
@@ -541,7 +542,7 @@ kommt danach.
 |---|---|---|---|
 | **0 – Entwurf** | Anklickbare Verwaltung mit Beispieldaten, Excel-Export, WhatsApp-Knöpfe, Voranmeldungen | Bedienung prüfen | **erledigt** |
 | **1 – Grundlage** | `schema-hofladen.sql`, Tabellen in D1 anlegen, gemeinsame Helfer (`functions/_lib/`), Produktkatalog und Liefergebiet befüllen | Datenbank steht | **teilweise** – `schema-hofladen.sql` (inkl. Voranmeldungen), Produktkatalog `hofladen-produkte.sql`, `functions/_lib/hofladen.js` und Test `scripts/test-hofladen-db.mjs` fertig; Produkte und Liefergebiet in `hofladen-produkte.sql` fertig; **offen: beide Dateien in D1 einspielen** |
-| **2 – Verwaltung live** | Cloudflare Access einrichten, Token-Prüfung, `/api/verwaltung/…`; Entwurf an echte Daten anschließen: Chargen anlegen, Bestellung erfassen, Bestellliste, Status, Voranmeldungen erfassen und übernehmen, Excel-Export nach Vorlage | Kathrin und Florian führen eine Charge komplett in einer Liste (Bestellungen per WhatsApp/Telefon) | offen |
+| **2 – Verwaltung live** | Cloudflare Access einrichten, Token-Prüfung, `/api/verwaltung/…`; Entwurf an echte Daten anschließen: Chargen anlegen, Bestellung erfassen, Bestellliste, Status, Voranmeldungen erfassen und übernehmen, Excel-Export nach Vorlage | Kathrin und Florian führen eine Charge komplett in einer Liste (Bestellungen per WhatsApp/Telefon) | **programmiert** – Zugangsprüfung, Schnittstelle, Oberfläche an echten Daten, Chargen-Formular, Kontakt ändern; getestet (Tests + Browser gegen lokale D1). Offen: Access einrichten, Datenbank anlegen, veröffentlichen |
 | **3 – Wiegen, Zahlung, Übergabe** | Gewichte speichern, Endbeträge, Packzettel, Abholliste, Liefertour, offene Zahlungen, Mail „Abholbereit" mit Bankdaten | Ablauf nach der Schlachtung läuft | offen |
 | **4 – Kundenseite** | `hofladen.html`, `js/hofladen.js`, `/api/hofladen/angebot` und `/bestellung`, `/voranmeldung`, Bestätigungsmails, Warteliste, Voranmelden durch Kunden, Pflichtangaben, Bestellbedingungen; noch **nicht** verlinkt | Kunden bestellen selbst über direkten Link | offen |
 | **5 – Kunden und Ankündigung** | Kundenkartei, Newsletter An-/Abmeldung, Ankündigung per Mail, Stammkunden-Link | Chargen ankündigen ohne Gruppen-Chaos | offen |
