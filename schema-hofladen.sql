@@ -43,6 +43,8 @@ CREATE INDEX IF NOT EXISTS idx_kunden_email   ON kunden (email);
 
 -- ------------------------------------------------------------
 -- Produktkatalog: jedes Produkt einmal, Preise stehen je Charge
+-- Saisonprodukte sind normale Produkte (kategorie 'saison'); nach der
+-- Saison aktiv = 0 setzen statt löschen.
 -- art: 'gewicht' (Huhn, Pute, Gans – Preis pro kg, Endpreis nach Wiegen)
 --      'paket'   (Rindfleisch 5 kg / 10 kg – Fixpreis)
 --      'stueck'  (Eiernudeln, Honig – Fixpreis)
@@ -51,6 +53,11 @@ CREATE TABLE IF NOT EXISTS produkte (
   id                 INTEGER PRIMARY KEY AUTOINCREMENT,
   name               TEXT    NOT NULL,
   art                TEXT    NOT NULL CHECK (art IN ('gewicht', 'paket', 'stueck')),
+  kategorie          TEXT    NOT NULL DEFAULT 'saison'
+                     CHECK (kategorie IN ('fleisch', 'nudeln', 'honig', 'seife', 'saison')),
+  startpreis_cent    INTEGER CHECK (startpreis_cent IS NULL OR startpreis_cent >= 0),
+                                       -- Vorschlag für die erste Charge; danach gilt
+                                       -- der Preis der letzten Charge (v_letzter_preis)
   beschreibung       TEXT,             -- z. B. Inhalt des Rind-Pakets
   pflichtangaben     TEXT,             -- Zutaten, Herkunft, Lagerhinweis, Füllmenge
   allergene          TEXT,             -- z. B. „Ei, Gluten"

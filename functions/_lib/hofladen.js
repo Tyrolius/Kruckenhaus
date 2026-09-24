@@ -72,18 +72,18 @@ export async function naechsteBestellnummer(db, datum = new Date()) {
 
 /* Preisvorschläge für eine neue Charge: je aktivem Produkt Preis, Menge
    und Höchstmenge der letzten Charge, in der es vorkam. Produkte, die noch
-   nie verkauft wurden, kommen ohne Vorschlag (preisCent = null).
+   nie verkauft wurden, bekommen den Startpreis aus dem Katalog (oder null).
    Die Werte werden in der Verwaltung nur vorbelegt und können geändert
    werden – bestehende Bestellungen behalten ihren Preis. */
 export async function preisVorschlaege(db) {
   const { results } = await db.prepare(
-    `SELECT p.id AS produktId, p.name, p.art,
-            v.preis_cent AS preisCent, v.kontingent, v.max_pro_bestellung AS maxProBestellung,
+    `SELECT p.id AS produktId, p.name, p.art, p.kategorie,
+            COALESCE(v.preis_cent, p.startpreis_cent) AS preisCent, v.kontingent, v.max_pro_bestellung AS maxProBestellung,
             v.aus_charge_titel AS ausCharge
      FROM produkte p
      LEFT JOIN v_letzter_preis v ON v.produkt_id = p.id
      WHERE p.aktiv = 1
-     ORDER BY p.reihenfolge, p.name`
+     ORDER BY p.kategorie, p.reihenfolge, p.name`
   ).all();
   return results;
 }

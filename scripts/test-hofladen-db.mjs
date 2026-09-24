@@ -127,8 +127,12 @@ assert.equal(vorschlag.Masthuhn.preisCent, 1390);      // nur in Charge 1
 assert.equal(vorschlag.Masthuhn.maxProBestellung, 4);
 assert.equal(vorschlag.Eiernudeln.preisCent, 500);     // jüngste Charge gewinnt
 assert.equal(vorschlag.Eiernudeln.ausCharge, 'Neuer');
-assert.equal(vorschlag.Honig.preisCent, null);         // noch nie verkauft
-console.log('✓ Preisvorschläge aus der letzten Charge je Produkt');
+assert.equal(vorschlag.Honig.preisCent, null);         // noch nie verkauft, kein Startpreis
+roh.exec(`UPDATE produkte SET startpreis_cent = 1200 WHERE name = 'Honig'`);
+assert.equal((await preisVorschlaege(db)).find((v) => v.name === 'Honig').preisCent, 1200); // Startpreis
+roh.exec(`UPDATE produkte SET startpreis_cent = 777 WHERE name = 'Eiernudeln'`);
+assert.equal((await preisVorschlaege(db)).find((v) => v.name === 'Eiernudeln').preisCent, 500); // letzte Charge schlägt Startpreis
+console.log('✓ Preisvorschläge aus der letzten Charge je Produkt, sonst Startpreis');
 
 // Voranmeldungen: anlegen, prüfen, in eine Charge übernehmen
 const heuer = new Date().getUTCFullYear();
@@ -166,6 +170,18 @@ assert.equal(roh.prepare('SELECT status FROM voranmeldungen WHERE id = ?').get(v
 const nochmal = await voranmeldungenUebernehmen(db, cHerbst, va);
 assert.equal(nochmal.bestellungen.length, 0); // nichts doppelt übernommen
 console.log('✓ Übernahme: je Kunde eine Bestellung, wer zuerst kam zuerst, Rest auf Warteliste, nichts doppelt');
+
+// Produktdatei: in leerer Datenbank einspielbar, zweimal ohne Doppelte
+{
+  const leer = new DatabaseSync(':memory:');
+  leer.exec(schema);
+  const produkte = readFileSync(new URL('../hofladen-produkte.sql', import.meta.url), 'utf8');
+  leer.exec(produkte);
+  leer.exec(produkte);
+  const zeilen = leer.prepare('SELECT name, art, kategorie, startpreis_cent FROM produkte ORDER BY id').all();
+  assert.equal(new Set(zeilen.map((z) => z.name)).size, zeilen.length);
+  console.log(`✓ hofladen-produkte.sql: ${zeilen.length} Produkte, zweimal einspielbar`);
+}
 
 // Bestehende Tabellen bleiben unberührt (Schema legt nur eigene an)
 const tabellen = roh.prepare(`SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY name`).all().map((r) => r.name);

@@ -7,4 +7,5 @@
 # Regel auch, wenn die Datei existiert.
 /docs/* / 301
 /schema-hofladen.sql / 301
+/hofladen-produkte.sql / 301
 /scripts/* / 301

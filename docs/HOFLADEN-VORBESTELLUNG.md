@@ -58,13 +58,35 @@ In Phase 2 wird `entwurf-daten.js` durch echte Daten aus D1 ersetzt.
 
 | Punkt | Entscheidung |
 |---|---|
-| Produkte | Masthühner, Pute, Gans (nach Gewicht) · Rindfleisch-Pakete 5 kg / 10 kg (Fixpreis) · Eiernudeln, Honig (Fixpreis je Stück) |
+| Produkte | siehe Tabelle unten und `hofladen-produkte.sql` |
 | Verkaufsform | Vorbestellung je Charge, wenige Chargen im Jahr |
 | Übergabe | Abholung am Hof **oder** Lieferung im Umkreis |
 | Zahlung | Bar bei Übergabe **oder** Überweisung |
 | Nutzer der Verwaltung | Kathrin und Florian, gleichberechtigt, am Handy **und** am Windows-PC |
 | Abrechnung | bestehende Excel-Liste – die Verwaltung liefert dafür einen Export |
 | Dauerhaft | ja – Kundenkartei und Bestellhistorie bleiben erhalten |
+
+**Sortiment (Stand September 2026, Startpreise):**
+
+| Kategorie | Produkt | Art | Preis | Richtgewicht |
+|---|---|---|---|---|
+| Fleisch | Masthuhn ganz | nach Gewicht | 12,00 €/kg | 1,8–2,4 kg |
+| Fleisch | Masthuhn halbiert (je Hälfte) | nach Gewicht | 12,00 €/kg | 0,9–1,2 kg (abgeleitet, bitte prüfen) |
+| Fleisch | Pute ganz, zerlegt | nach Gewicht | 17,50 €/kg | 6–9 kg |
+| Fleisch | Rindfleischpaket 5 kg | Paket | 75,00 € (15 €/kg) | – |
+| Fleisch | Rindfleischpaket 10 kg | Paket | 140,00 € (14 €/kg) | – |
+| Fleisch | Gans | nach Gewicht | offen | offen – meist über Voranmeldungen vergeben |
+| Nudeln | Eiernudeln 500 g: Spaghetti, Hörnchen, Spirelli, Rotunde, Pappardelle, Bandnudeln | Stück | je 4,00 € | – |
+| Honig | Raphaels Wald- & Blütenhonig 500 g | Stück | 12,00 € | – |
+| Seife | Alpakaseife (Sorten offen) | Stück | 4,50 € | – |
+| Saison | nach Bedarf in der Verwaltung anlegen | – | – | – |
+
+- **Nudelsorten** sind nicht immer alle verfügbar: In eine Charge kommen nur
+  die Sorten, die gerade da sind, mit der vorhandenen Menge als Kontingent.
+- **Saisonprodukte** sind normale Produkte der Kategorie „Saison": anlegen,
+  wenn es sie gibt, nach der Saison ausblenden (nicht löschen) – im nächsten
+  Jahr wieder einblenden, der Preis vom letzten Mal ist vorbelegt.
+- Nudeln, Honig und Seife laufen als **Zusatzartikel** in jeder Charge mit.
 
 ## 2. So läuft eine Charge ab (Alltag)
 
@@ -472,6 +494,15 @@ Keine Rechtsberatung – bitte mit der **Landwirtschaftskammer Tirol**
       Honig-Kennzeichnung, Kühlkette bei der Lieferung (Kühlbox,
       Temperaturgrenzen für Geflügel/Fleisch).
 - [ ] **Preisangaben** inkl. Umsatzsteuer bzw. Hinweis bei Pauschalierung.
+- [ ] **Honig:** stammt von Sohn Raphael, verkauft wird unter Florians Namen
+      (steht auf dem Etikett). Klären, ob das als eigene Urproduktion des
+      Betriebs gilt oder als Handel (Gewerbe, Umsatzsteuer).
+- [ ] **Alpakaseife:** wird von einem Hersteller produziert – dieser ist als
+      „verantwortliche Person" für Sicherheitsbewertung, CPNP-Meldung und
+      Kennzeichnung nach EU-Kosmetikverordnung zuständig. Bestätigen lassen,
+      dass Etikett und Meldung vorhanden sind.
+- [ ] **Schnaps und Liköre** (falls je online angeboten): Altersprüfung beim
+      Fernabsatz von Spirituosen.
 
 ## 11. Offene Fragen an Kathrin und Florian
 
@@ -479,7 +510,7 @@ Keine Rechtsberatung – bitte mit der **Landwirtschaftskammer Tirol**
 |---|---|---|
 | 1 | **Rückmeldung zum Entwurf** der Verwaltung (vor allem von Kathrin): Was ist unklar, was fehlt, was braucht ihr nicht? | Phase 2 |
 | 2 | **Excel-Abrechnungsliste** (gern mit erfundenen Namen), damit der Export dieselben Spalten hat | Phase 2 |
-| 3 | **Produktliste:** alle Artikel mit Preis, Einheit, Richtgewicht (Huhn/Pute/Gans), Inhalt der Rind-Pakete, Honig- und Nudelsorten/-größen, Zutaten und Allergene | Phase 1 (Befüllen) |
+| 3 | **Produktliste** – geliefert. Offen: Pflichtangaben/Allergene der Nudeln laut Etikett, Inhalt der Rindfleischpakete, Seifensorten, Gans (Preis, Richtgewicht), Richtgewicht halbes Huhn bestätigen; Rindpakete Fixpreis oder nach Gewicht? | Phase 4 (Pflichtangaben), sonst jederzeit |
 | 4 | **Liefergebiet:** welche Orte/PLZ, Liefergebühr oder gratis, ab welchem Bestellwert gratis | Phase 1 (Befüllen) |
 | 5 | **Termine:** typischer Abholtag/-zeit, typischer Liefertag | Phase 2 |
 | 6 | **E-Mail-Adressen** von Kathrin und Florian für den Verwaltungszugang | Phase 2 |
@@ -505,7 +536,7 @@ kommt danach.
 | Phase | Inhalt | Ergebnis | Stand |
 |---|---|---|---|
 | **0 – Entwurf** | Anklickbare Verwaltung mit Beispieldaten, Excel-Export, WhatsApp-Knöpfe, Voranmeldungen | Bedienung prüfen | **erledigt** |
-| **1 – Grundlage** | `schema-hofladen.sql`, Tabellen in D1 anlegen, gemeinsame Helfer (`functions/_lib/`), Produktkatalog und Liefergebiet befüllen | Datenbank steht | **teilweise** – `schema-hofladen.sql` (inkl. Voranmeldungen), `functions/_lib/hofladen.js` und Test `scripts/test-hofladen-db.mjs` fertig; Tabellen in D1 anlegen und Produkte/Liefergebiet befüllen offen |
+| **1 – Grundlage** | `schema-hofladen.sql`, Tabellen in D1 anlegen, gemeinsame Helfer (`functions/_lib/`), Produktkatalog und Liefergebiet befüllen | Datenbank steht | **teilweise** – `schema-hofladen.sql` (inkl. Voranmeldungen), Produktkatalog `hofladen-produkte.sql`, `functions/_lib/hofladen.js` und Test `scripts/test-hofladen-db.mjs` fertig; Tabellen in D1 anlegen, Produkte einspielen und Liefergebiet befüllen offen |
 | **2 – Verwaltung live** | Cloudflare Access einrichten, Token-Prüfung, `/api/verwaltung/…`; Entwurf an echte Daten anschließen: Chargen anlegen, Bestellung erfassen, Bestellliste, Status, Voranmeldungen erfassen und übernehmen, Excel-Export nach Vorlage | Kathrin und Florian führen eine Charge komplett in einer Liste (Bestellungen per WhatsApp/Telefon) | offen |
 | **3 – Wiegen, Zahlung, Übergabe** | Gewichte speichern, Endbeträge, Packzettel, Abholliste, Liefertour, offene Zahlungen, Mail „Abholbereit" mit Bankdaten | Ablauf nach der Schlachtung läuft | offen |
 | **4 – Kundenseite** | `hofladen.html`, `js/hofladen.js`, `/api/hofladen/angebot` und `/bestellung`, `/voranmeldung`, Bestätigungsmails, Warteliste, Voranmelden durch Kunden, Pflichtangaben, Bestellbedingungen; noch **nicht** verlinkt | Kunden bestellen selbst über direkten Link | offen |

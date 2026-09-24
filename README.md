@@ -370,6 +370,7 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ├── wrangler.toml            → Cloudflare-Pages-Konfiguration (nicht löschen!)
 ├── schema.sql               → D1-Datenbankschema (Tabelle „anfragen")
 ├── schema-hofladen.sql      → D1-Schema der Hofladen-Vorbestellung (im Aufbau)
+├── hofladen-produkte.sql    → Produktkatalog zum Einspielen (Startpreise)
 ├── _headers                 → HTTP-Header & Cache-Regeln (Cloudflare Pages)
 ├── _redirects               → Weiterleitungen; sperrt docs/ für Besucher
 ├── docs/OPTIMIERUNGSPLAN.md → Interner Plan: Direktbuchungen, Preise, Rechtsprüfung
@@ -402,7 +403,11 @@ ausgeführt werden und verändert keine bestehenden Tabellen:
 
 ```
 npx wrangler d1 execute kruckenhaus --remote --file=./schema-hofladen.sql
+npx wrangler d1 execute kruckenhaus --remote --file=./hofladen-produkte.sql
 ```
+
+Die zweite Datei spielt den Produktkatalog ein (Startpreise, Richtgewichte);
+sie überspringt Produkte, die es schon gibt.
 
 | Tabelle / Ansicht | Zweck |
 |---|---|

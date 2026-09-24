@@ -45,6 +45,7 @@ functions/api/kontakt.js      POST /api/kontakt → D1 + E-Mail via Resend
 functions/api/availability.js GET /api/availability → Airbnb-iCal parsen
 schema.sql                 D1-Schema (Tabelle „anfragen")
 schema-hofladen.sql        D1-Schema der Hofladen-Vorbestellung (im Aufbau)
+hofladen-produkte.sql      Produktkatalog der Hofladen-Vorbestellung (Erstbefüllung)
 functions/_lib/hofladen.js gemeinsame Helfer der Hofladen-Functions (keine Route)
 verwaltung/                Hofladen-Verwaltung (derzeit Entwurf mit Beispieldaten)
 scripts/test-hofladen-db.mjs  Test für Schema und Helfer (node, ohne echte D1)
