@@ -1,6 +1,6 @@
 # Hofladen-Vorbestellung – Umsetzungsplan
 
-Stand: September 2026 · Status: **Planung, noch nichts umgesetzt**
+Stand: September 2026 · Status: **Planung, noch nichts umgesetzt – zuerst Friedhold prüfen (Abschnitt 0)**
 
 > Kurzfassung: Statt Vorbestellungen in mehreren WhatsApp-Gruppen zu sammeln,
 > bekommt kruckenhaus.at eine Vorbestellseite für Fleisch, Eiernudeln und
@@ -14,6 +14,45 @@ Stand: September 2026 · Status: **Planung, noch nichts umgesetzt**
 > Die Lösung baut auf dem auf, was es schon gibt (Cloudflare Pages, D1,
 > Resend). Sie braucht **kein Framework, keinen Shop-Anbieter, keine Cookies
 > und kostet im laufenden Betrieb nichts.**
+
+---
+
+## 0. Neue Ausgangslage: Es gibt bereits einen Friedhold-Shop
+
+Der Hof hat schon einen Online-Hofladen bei Friedhold
+(`kruckenhaus.friedhold.at`), über den aber kaum bestellt wird. Friedhold
+deckt laut Anbieter den Großteil dieses Plans bereits ab: Chargen und
+Vorbestellung, Preisspannen für Gewichtsware, Charge duplizieren,
+Lieferscheine und Rechnungen, Newsletter bei neuer Ware. Kosten: 5 % vom
+Online-Umsatz, keine Gebühr ohne aktive Ware.
+
+**Empfehlung, bevor hier etwas gebaut wird:** zuerst Friedhold zum einzigen
+Bestellweg machen (Abschnitt 0.1). Die Eigenentwicklung ab Abschnitt 1 nur
+angehen, wenn sich danach zeigt, dass Friedhold konkret etwas nicht kann
+(z. B. Bestellungen am Telefon nachtragen, Liefertour, gemeinsame Übersicht
+für Kathrin und Florian) oder die 5 % auf Dauer zu teuer werden.
+
+### 0.1 Friedhold zum Laufen bringen
+
+Wenige Bestellungen liegen vermutlich nicht an der Software, sondern daran,
+dass niemand den Shop findet und die Kunden das Bestellen per WhatsApp
+gewohnt sind. Die Website verlinkt den Shop derzeit nirgends.
+
+1. **Ein Bestellweg:** Jede Charge wird nur noch in Friedhold angelegt und in
+   den WhatsApp-Gruppen ausschließlich mit dem Shop-Link angekündigt.
+   Bestellungen, die trotzdem per WhatsApp oder Telefon kommen, trägt
+   Kathrin bzw. Florian selbst in Friedhold ein (prüfen, ob Friedhold das
+   Erfassen von Bestellungen im Namen eines Kunden anbietet).
+2. **Website:** Auf `bauernhof.html` im Abschnitt „Unser Hofladen" einen
+   Knopf „Fleisch vorbestellen" zum Shop, eigener Navigationspunkt
+   „Hofladen", Hinweis in `llms.txt`. Nur ein Link – keine eingebetteten
+   Fremd-Skripte (Datenschutz, siehe `CLAUDE.md`).
+3. **Vor Ort:** QR-Code zum Shop am Selbstbedienungs-Kühlschrank, auf
+   Etiketten und Packzetteln, in der Ferienwohnung.
+4. **Newsletter von Friedhold** nutzen und Stammkunden aktiv bitten, sich
+   einzutragen – damit werden die WhatsApp-Gruppen auf Dauer entbehrlich.
+5. **Nach zwei, drei Chargen auswerten:** Wie viele Bestellungen kamen über
+   den Shop, wie viele mussten nachgetragen werden, was hat gefehlt?
 
 ---
 
