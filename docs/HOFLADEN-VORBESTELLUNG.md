@@ -1,6 +1,6 @@
 # Hofladen-Vorbestellung – Umsetzungsplan
 
-Stand: September 2026 · Status: **Planung, noch nichts umgesetzt – zuerst Friedhold prüfen (Abschnitt 0)**
+Stand: September 2026 · Status: **Entwurf der Verwaltung liegt vor (Abschnitt 0.2), Datenbank und Kundenseite offen**
 
 > Kurzfassung: Statt Vorbestellungen in mehreren WhatsApp-Gruppen zu sammeln,
 > bekommt kruckenhaus.at eine Vorbestellseite für Fleisch, Eiernudeln und
@@ -53,6 +53,32 @@ gewohnt sind. Die Website verlinkt den Shop derzeit nirgends.
    einzutragen – damit werden die WhatsApp-Gruppen auf Dauer entbehrlich.
 5. **Nach zwei, drei Chargen auswerten:** Wie viele Bestellungen kamen über
    den Shop, wie viele mussten nachgetragen werden, was hat gefehlt?
+
+### 0.2 Entscheidung: eigene Lösung, zuerst als Entwurf
+
+Kathrin und Florian empfinden Friedhold als wenig komfortabel und
+unübersichtlich. Beide arbeiten am Handy **und** am Windows-PC, die
+Abrechnung läuft über eine **Excel-Liste**.
+
+Deshalb gibt es unter `verwaltung/` einen **anklickbaren Entwurf** der
+Verwaltung (Abschnitt 7) mit frei erfundenen Beispieldaten – noch ohne
+Datenbank, ohne Mails, ohne Anmeldung:
+
+| Datei | Inhalt |
+|---|---|
+| `verwaltung/index.html` | Gerüst, Navigation (Handy: unten, PC: links) |
+| `verwaltung/verwaltung.js` | Ansichten Übersicht, Bestellungen, Erfassen, Wiegen, Übergabe, Zahlungen; Excel-Export; Packzettel-Druck |
+| `verwaltung/entwurf-daten.js` | Beispieldaten (zwei Chargen, 19 Bestellungen) |
+| `css/style.css` Abschnitt 40 | Gestaltung der Verwaltung |
+
+**Excel:** „Liste für Excel herunterladen" erzeugt eine CSV-Datei
+(Semikolon, Dezimalkomma, Umlaute korrekt), eine Zeile je Artikel einer
+Bestellung. Sie öffnet sich per Doppelklick direkt in Excel. Die Spalten
+werden an die bestehende Abrechnungsliste angepasst, sobald diese vorliegt.
+
+**Wichtig:** Der Entwurf ist nicht geschützt. Er darf erst auf `master`,
+wenn Cloudflare Access für `/verwaltung/*` eingerichtet ist (Phase 3) –
+bis dahin nur auf dem Feature-Branch bzw. dessen Vorschau-Adresse.
 
 ---
 

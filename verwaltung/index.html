@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="Entwurf der Hofladen-Verwaltung für Vorbestellungen (nur intern)." />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#2F5848" />
+  <title>Hofladen-Verwaltung – Entwurf</title>
+  <link rel="stylesheet" href="../css/style.css" />
+</head>
+<body class="vw-body">
+
+  <!-- ENTWURF: Beispieldaten, noch ohne Datenbank und ohne E-Mail-Versand.
+       Siehe docs/HOFLADEN-VORBESTELLUNG.md -->
+  <div class="vw-entwurf-hinweis" role="note">
+    Entwurf mit frei erfundenen Beispieldaten – Änderungen gehen beim Neuladen verloren.
+  </div>
+
+  <div class="vw-rahmen">
+    <nav class="vw-nav" aria-label="Verwaltung">
+      <span class="vw-nav-marke">Hofladen Kruckenhaus</span>
+      <a href="#uebersicht" data-ansicht="uebersicht">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
+        <span>Übersicht</span>
+      </a>
+      <a href="#bestellungen" data-ansicht="bestellungen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>
+        <span>Bestellungen</span>
+      </a>
+      <a href="#neu" data-ansicht="neu" class="vw-nav-neu">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+        <span>Erfassen</span>
+      </a>
+      <a href="#wiegen" data-ansicht="wiegen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h16l-2-12H6z"/><circle cx="12" cy="5" r="2"/></svg>
+        <span>Wiegen</span>
+      </a>
+      <a href="#uebergabe" data-ansicht="uebergabe">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v10H1z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="5.5" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/></svg>
+        <span>Übergabe</span>
+      </a>
+      <a href="#zahlungen" data-ansicht="zahlungen">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="2" y="6" width="20" height="12" rx="2"/><circle cx="12" cy="12" r="2.5"/></svg>
+        <span>Zahlungen</span>
+      </a>
+    </nav>
+
+    <main id="vw-inhalt" class="vw-inhalt" tabindex="-1"></main>
+  </div>
+
+  <dialog id="vw-dialog" class="vw-dialog" aria-labelledby="vw-dialog-titel"></dialog>
+  <div id="vw-toast" class="vw-toast" role="status" aria-live="polite"></div>
+  <div id="vw-druck" class="vw-druck"></div>
+
+  <script src="entwurf-daten.js"></script>
+  <script src="verwaltung.js"></script>
+</body>
+</html>
