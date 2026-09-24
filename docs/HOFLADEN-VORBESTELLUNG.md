@@ -73,14 +73,16 @@ In Phase 2 wird `entwurf-daten.js` durch echte Daten aus D1 ersetzt.
 | Fleisch | Masthuhn ganz | nach Gewicht | 12,00 €/kg | 1,8–2,4 kg |
 | Fleisch | Masthuhn halbiert (je Hälfte) | nach Gewicht | 12,00 €/kg | 0,9–1,2 kg |
 | Fleisch | Pute ganz, zerlegt | nach Gewicht | 17,50 €/kg | 6–9 kg |
+| Fleisch | Gans | nach Gewicht | 19,00 €/kg | 3–4,5 kg – meist über Voranmeldungen vergeben |
 | Fleisch | Rindfleischpaket 5 kg | Paket | 75,00 € (15 €/kg) | – |
 | Fleisch | Rindfleischpaket 10 kg | Paket | 140,00 € (14 €/kg) | – |
-| Fleisch | Gans | nach Gewicht | offen | offen – meist über Voranmeldungen vergeben |
 | Nudeln | Eiernudeln 500 g: Spaghetti, Hörnchen, Spirelli, Rotunde, Pappardelle, Bandnudeln | Stück | je 4,00 € | – |
 | Honig | Raphaels Wald- & Blütenhonig 500 g | Stück | 12,00 € | – |
 | Seife | Alpakaseife (Sorten offen) | Stück | 4,50 € | – |
 | Saison | nach Bedarf in der Verwaltung anlegen | – | – | – |
 
+- **Rindfleischpakete** enthalten Schnitzel, Braten, Gulasch, Faschiertes und
+  Suppenfleisch; Suppenknochen gibt es gratis dazu.
 - **Nudelsorten** sind nicht immer alle verfügbar: In eine Charge kommen nur
   die Sorten, die gerade da sind, mit der vorhandenen Menge als Kontingent.
 - **Saisonprodukte** sind normale Produkte der Kategorie „Saison": anlegen,
@@ -205,8 +207,9 @@ läuft je Kunde in einer Transaktion, nichts wird doppelt übernommen.
   6230 Brixlegg, 6250 Kundl – gepflegt in der Tabelle `liefergebiet`
   (Erstbefüllung in `hofladen-produkte.sql`). Liegt die PLZ außerhalb, bietet
   das Formular nur Abholung an.
-- **Lieferbedingungen:** derzeit kostenlos eingetragen; Liefergebühr und
-  „gratis ab" lassen sich je Ort setzen (offen, siehe Abschnitt 11).
+- **Lieferbedingungen (festgelegt):** Lieferung kostenlos, keine
+  Liefergebühr. Falls sich das ändert, lassen sich Gebühr und „gratis ab"
+  je Ort setzen.
 - Bei Lieferung sind Adresse und Telefonnummer Pflichtfelder, bei Abholung
   nur Telefonnummer.
 - Die Liefertour-Ansicht sortiert nach Ort und lässt die Reihenfolge per
@@ -511,8 +514,8 @@ Keine Rechtsberatung – bitte mit der **Landwirtschaftskammer Tirol**
 |---|---|---|
 | 1 | **Rückmeldung zum Entwurf** der Verwaltung (vor allem von Kathrin): Was ist unklar, was fehlt, was braucht ihr nicht? | Phase 2 |
 | 2 | **Excel-Abrechnungsliste** (gern mit erfundenen Namen), damit der Export dieselben Spalten hat | Phase 2 |
-| 3 | **Produktliste** – geliefert. Offen: Pflichtangaben/Allergene der Nudeln laut Etikett, Inhalt der Rindfleischpakete, Seifensorten, Gans (Preis, Richtgewicht). Geklärt: halbes Huhn 0,9–1,2 kg, Rindpakete Fixpreis. | Phase 4 (Pflichtangaben), sonst jederzeit |
-| 4 | **Liefergebiet** – festgelegt (6252, 6233, 6230, 6250). Offen: Liefergebühr ja/nein, „gratis ab" | vor Phase 4 |
+| 3 | **Produktliste** – geliefert. Offen: Pflichtangaben/Allergene der Nudeln laut Etikett, Seifensorten. Geklärt: halbes Huhn 0,9–1,2 kg, Rindpakete Fixpreis mit Inhalt, Gans 19 €/kg (3–4,5 kg). | Phase 4 (Pflichtangaben), sonst jederzeit |
+| 4 | ~~Liefergebiet~~ – festgelegt: 6252, 6233, 6230, 6250, ohne Liefergebühr | erledigt |
 | 5 | **Termine:** typischer Abholtag/-zeit, typischer Liefertag | Phase 2 |
 | 6 | **E-Mail-Adressen** von Kathrin und Florian für den Verwaltungszugang | Phase 2 |
 | 7 | **Bankverbindung** für die Mail „Abholbereit" | Phase 3 |

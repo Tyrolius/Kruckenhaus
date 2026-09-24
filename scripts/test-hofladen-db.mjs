@@ -176,8 +176,13 @@ console.log('✓ Übernahme: je Kunde eine Bestellung, wer zuerst kam zuerst, Re
   const leer = new DatabaseSync(':memory:');
   leer.exec(schema);
   const produkte = readFileSync(new URL('../hofladen-produkte.sql', import.meta.url), 'utf8');
+  // erste Fassung simulieren: alte Paketbeschreibung wird nachgetragen
+  leer.exec(`INSERT INTO produkte (name, art, kategorie, startpreis_cent, beschreibung)
+    VALUES ('Rindfleischpaket 5 kg', 'paket', 'fleisch', 7500, '5 kg gemischtes Rindfleisch zum Fixpreis (15 €/kg).')`);
   leer.exec(produkte);
   leer.exec(produkte);
+  assert.match(leer.prepare(`SELECT beschreibung FROM produkte WHERE name = 'Rindfleischpaket 5 kg'`).get().beschreibung, /Suppenknochen/);
+  assert.equal(leer.prepare(`SELECT startpreis_cent FROM produkte WHERE name = 'Gans'`).get().startpreis_cent, 1900);
   const zeilen = leer.prepare('SELECT name, art, kategorie, startpreis_cent FROM produkte ORDER BY id').all();
   assert.equal(new Set(zeilen.map((z) => z.name)).size, zeilen.length);
   const plz = leer.prepare('SELECT plz FROM liefergebiet ORDER BY tour_reihenfolge').all().map((z) => z.plz);

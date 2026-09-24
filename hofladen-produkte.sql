@@ -16,11 +16,7 @@
 -- Noch offen (später in der Verwaltung ergänzen):
 --   TODO: Pflichtangaben und Allergene der Eiernudeln laut Etikett
 --         (Zutaten, glutenhaltiges Getreide, Ei)
---   TODO: Inhalt der Rindfleischpakete (welche Teile)
---   TODO: Liefergebühr / gratis ab – derzeit 0 € (kostenlos) eingetragen
 --   TODO: Sorten der Alpakaseife (derzeit ein Sammelartikel)
---   TODO: Gans – Preis/kg und Richtgewicht fehlen noch; wird meist über
---         Voranmeldungen verkauft
 --   Richtgewicht „Masthuhn halbiert" = halbes Richtgewicht des ganzen
 --   Huhns (0,9–1,2 kg), bestätigt.
 -- ============================================================
@@ -37,10 +33,13 @@ INSERT INTO produkte (name, art, kategorie, richtgewicht_von_g, richtgewicht_bis
 SELECT 'Pute ganz, zerlegt', 'gewicht', 'fleisch', 6000, 9000, 1750, 30, 'Ganze Pute, zerlegt. Preis pro kg, abgerechnet nach tatsächlichem Gewicht.'
 WHERE NOT EXISTS (SELECT 1 FROM produkte WHERE name = 'Pute ganz, zerlegt');
 INSERT INTO produkte (name, art, kategorie, richtgewicht_von_g, richtgewicht_bis_g, startpreis_cent, reihenfolge, beschreibung)
-SELECT 'Rindfleischpaket 5 kg', 'paket', 'fleisch', NULL, NULL, 7500, 40, '5 kg gemischtes Rindfleisch zum Fixpreis (15 €/kg).'
+SELECT 'Gans', 'gewicht', 'fleisch', 3000, 4500, 1900, 35, 'Ganze Gans. Preis pro kg, abgerechnet nach tatsächlichem Gewicht. Meist über Voranmeldungen vergeben.'
+WHERE NOT EXISTS (SELECT 1 FROM produkte WHERE name = 'Gans');
+INSERT INTO produkte (name, art, kategorie, richtgewicht_von_g, richtgewicht_bis_g, startpreis_cent, reihenfolge, beschreibung)
+SELECT 'Rindfleischpaket 5 kg', 'paket', 'fleisch', NULL, NULL, 7500, 40, '5 kg Rindfleisch zum Fixpreis (15 €/kg): Schnitzel, Braten, Gulasch, Faschiertes, Suppenfleisch. Suppenknochen gibt es gratis dazu.'
 WHERE NOT EXISTS (SELECT 1 FROM produkte WHERE name = 'Rindfleischpaket 5 kg');
 INSERT INTO produkte (name, art, kategorie, richtgewicht_von_g, richtgewicht_bis_g, startpreis_cent, reihenfolge, beschreibung)
-SELECT 'Rindfleischpaket 10 kg', 'paket', 'fleisch', NULL, NULL, 14000, 50, '10 kg gemischtes Rindfleisch zum Fixpreis (14 €/kg).'
+SELECT 'Rindfleischpaket 10 kg', 'paket', 'fleisch', NULL, NULL, 14000, 50, '10 kg Rindfleisch zum Fixpreis (14 €/kg): Schnitzel, Braten, Gulasch, Faschiertes, Suppenfleisch. Suppenknochen gibt es gratis dazu.'
 WHERE NOT EXISTS (SELECT 1 FROM produkte WHERE name = 'Rindfleischpaket 10 kg');
 
 -- --- Eiernudeln (Sorten nicht immer alle verfügbar – je Charge nur die vorhandenen aufnehmen) ---
@@ -73,9 +72,16 @@ INSERT INTO produkte (name, art, kategorie, richtgewicht_von_g, richtgewicht_bis
 SELECT 'Alpakaseife', 'stueck', 'seife', NULL, NULL, 450, 310, 'Seife mit Alpakamilch, verschiedene Sorten.'
 WHERE NOT EXISTS (SELECT 1 FROM produkte WHERE name = 'Alpakaseife');
 
+-- Nachtrag: Paketinhalt ergänzen, falls die erste Fassung dieser Datei schon
+-- eingespielt wurde (nur solange die Beschreibung noch unverändert ist).
+UPDATE produkte SET beschreibung = '5 kg Rindfleisch zum Fixpreis (15 €/kg): Schnitzel, Braten, Gulasch, Faschiertes, Suppenfleisch. Suppenknochen gibt es gratis dazu.'
+WHERE name = 'Rindfleischpaket 5 kg' AND beschreibung = '5 kg gemischtes Rindfleisch zum Fixpreis (15 €/kg).';
+UPDATE produkte SET beschreibung = '10 kg Rindfleisch zum Fixpreis (14 €/kg): Schnitzel, Braten, Gulasch, Faschiertes, Suppenfleisch. Suppenknochen gibt es gratis dazu.'
+WHERE name = 'Rindfleischpaket 10 kg' AND beschreibung = '10 kg gemischtes Rindfleisch zum Fixpreis (14 €/kg).';
 
 -- ------------------------------------------------------------
 -- LIEFERGEBIET (Postleitzahlen laut Kathrin und Florian)
+-- Lieferung kostenlos (keine Liefergebühr).
 -- Andere Orte: nur Abholung am Hof. tour_reihenfolge = Vorschlag für die
 -- Sortierung der Liefertour, in der Verwaltung änderbar.
 -- ------------------------------------------------------------
