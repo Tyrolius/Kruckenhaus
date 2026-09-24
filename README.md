@@ -369,6 +369,7 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ├── datenschutz.html         → Datenschutzerklärung (DSGVO)
 ├── wrangler.toml            → Cloudflare-Pages-Konfiguration (nicht löschen!)
 ├── schema.sql               → D1-Datenbankschema (Tabelle „anfragen")
+├── schema-hofladen.sql      → D1-Schema der Hofladen-Vorbestellung (im Aufbau)
 ├── _headers                 → HTTP-Header & Cache-Regeln (Cloudflare Pages)
 ├── _redirects               → Weiterleitungen; sperrt docs/ für Besucher
 ├── docs/OPTIMIERUNGSPLAN.md → Interner Plan: Direktbuchungen, Preise, Rechtsprüfung
@@ -380,12 +381,41 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ├── js/preise-config.js      → ALLE Preise zentral
 ├── functions/api/availability.js → Holt den Airbnb-Kalender (Server)
 ├── functions/api/kontakt.js      → Nimmt Formularanfragen entgegen (D1 + E-Mail)
+├── functions/_lib/hofladen.js    → Gemeinsame Helfer der Hofladen-Vorbestellung
+├── verwaltung/              → Hofladen-Verwaltung (derzeit Entwurf, nicht verlinkt)
 ├── .github/workflows/optimize-images.yml → Verkleinert hochgeladene Fotos automatisch
 ├── .github/scripts/optimize-images.js    → Das zugehörige Skript (sharp)
 ├── scripts/sitemap-lastmod.js → Trägt die Änderungsdaten in sitemap.xml nach
+├── scripts/test-hofladen-db.mjs → Prüft Schema und Helfer der Hofladen-Vorbestellung
 ├── fonts/                   → Lokal gehostete Schriften (DSGVO – nicht löschen!)
 └── images/                  → Fotos (siehe Schritt 5)
 ```
+
+---
+
+## Datenbank: Hofladen-Vorbestellung (im Aufbau)
+
+Für die Vorbestellung von Fleisch, Eiernudeln und Honig in Chargen gibt es
+eigene Tabellen (Plan: `docs/HOFLADEN-VORBESTELLUNG.md`). Sie stehen in
+`schema-hofladen.sql` und werden so angelegt – die Datei darf mehrfach
+ausgeführt werden und verändert keine bestehenden Tabellen:
+
+```
+npx wrangler d1 execute kruckenhaus --remote --file=./schema-hofladen.sql
+```
+
+| Tabelle / Ansicht | Zweck |
+|---|---|
+| `kunden` | Kundenkartei (Website, WhatsApp, Telefon) |
+| `produkte` | Produktkatalog: Gewichtsware, Pakete, Stückware |
+| `chargen`, `charge_artikel`, `termine` | Verkaufsdurchgang mit Preis, Kontingent, Abhol-/Lieferterminen |
+| `liefergebiet` | belieferte Orte und Liefergebühr |
+| `bestellungen`, `bestell_positionen` | Vorbestellungen; Übergabe und Zahlung als eigene Felder |
+| `nummernkreis` | fortlaufende Bestellnummern `HK-26-001` … |
+| `v_positionen`, `v_bestand`, `v_bestellsummen` | berechnete Beträge, freie Mengen, Summen |
+
+Nach Änderungen an Schema oder Helfern den Test laufen lassen (Node 22,
+berührt die echte Datenbank nicht): `node scripts/test-hofladen-db.mjs`
 
 ---
 

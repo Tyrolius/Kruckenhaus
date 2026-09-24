@@ -1,6 +1,6 @@
 # Hofladen-Vorbestellung – Umsetzungsplan
 
-Stand: September 2026 · Status: **Plan freigegeben, Entwurf der Verwaltung liegt vor – als Nächstes Phase 1 (Abschnitt 12)**
+Stand: September 2026 · Status: **Plan freigegeben, Entwurf der Verwaltung liegt vor – Phase 1 in Arbeit: Schema und Helfer fertig, Anlegen in D1 und Befüllen offen (Abschnitt 12)**
 
 > Kurzfassung: Statt Vorbestellungen in mehreren WhatsApp-Gruppen zu sammeln,
 > bekommt kruckenhaus.at eine Vorbestellseite für Fleisch, Eiernudeln und
@@ -447,7 +447,7 @@ kommt danach.
 | Phase | Inhalt | Ergebnis | Stand |
 |---|---|---|---|
 | **0 – Entwurf** | Anklickbare Verwaltung mit Beispieldaten, Excel-Export, WhatsApp-Knöpfe | Bedienung prüfen | **erledigt** |
-| **1 – Grundlage** | `schema-hofladen.sql`, Tabellen in D1 anlegen, gemeinsame Helfer (`functions/_lib/`), Produktkatalog und Liefergebiet befüllen | Datenbank steht | offen |
+| **1 – Grundlage** | `schema-hofladen.sql`, Tabellen in D1 anlegen, gemeinsame Helfer (`functions/_lib/`), Produktkatalog und Liefergebiet befüllen | Datenbank steht | **teilweise** – `schema-hofladen.sql`, `functions/_lib/hofladen.js` und Test `scripts/test-hofladen-db.mjs` fertig; Tabellen in D1 anlegen und Produkte/Liefergebiet befüllen offen |
 | **2 – Verwaltung live** | Cloudflare Access einrichten, Token-Prüfung, `/api/verwaltung/…`; Entwurf an echte Daten anschließen: Chargen anlegen, Bestellung erfassen, Bestellliste, Status, Excel-Export nach Vorlage | Kathrin und Florian führen eine Charge komplett in einer Liste (Bestellungen per WhatsApp/Telefon) | offen |
 | **3 – Wiegen, Zahlung, Übergabe** | Gewichte speichern, Endbeträge, Packzettel, Abholliste, Liefertour, offene Zahlungen, Mail „Abholbereit" mit Bankdaten | Ablauf nach der Schlachtung läuft | offen |
 | **4 – Kundenseite** | `hofladen.html`, `js/hofladen.js`, `/api/hofladen/angebot` und `/bestellung`, Bestätigungsmails, Warteliste, Pflichtangaben, Bestellbedingungen; noch **nicht** verlinkt | Kunden bestellen selbst über direkten Link | offen |

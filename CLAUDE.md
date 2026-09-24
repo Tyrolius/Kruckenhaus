@@ -44,6 +44,10 @@ js/slider.js               Hero-Slider (nur index.html)
 functions/api/kontakt.js      POST /api/kontakt → D1 + E-Mail via Resend
 functions/api/availability.js GET /api/availability → Airbnb-iCal parsen
 schema.sql                 D1-Schema (Tabelle „anfragen")
+schema-hofladen.sql        D1-Schema der Hofladen-Vorbestellung (im Aufbau)
+functions/_lib/hofladen.js gemeinsame Helfer der Hofladen-Functions (keine Route)
+verwaltung/                Hofladen-Verwaltung (derzeit Entwurf mit Beispieldaten)
+scripts/test-hofladen-db.mjs  Test für Schema und Helfer (node, ohne echte D1)
 _headers                   Security- und Cache-Header
 wrangler.toml              Pages-Konfiguration inkl. D1-Binding (nicht löschen!)
 sitemap.xml robots.txt llms.txt   SEO / KI-Auffindbarkeit
@@ -155,6 +159,11 @@ Es gibt keine automatisierten Tests und keinen Linter.
 - Die Datenbank enthält neben `anfragen` ein vorbereitetes, **noch nicht
   angebundenes** Buchungsmodell (`einheiten`, `preisperioden`, `buchungen`,
   `naechte`). Nicht löschen, nicht „aufräumen" – Details im README.
+- Hofladen-Vorbestellung: eigenes Schema `schema-hofladen.sql` (mehrfach
+  ausführbar), Plan in `docs/HOFLADEN-VORBESTELLUNG.md`. Nach Änderungen an
+  Schema oder `functions/_lib/hofladen.js`: `node scripts/test-hofladen-db.mjs`.
+  Kontingent nur über `bestellungAnlegen`/`bestellungNachruecken` ändern
+  (Transaktion, verhindert Überbuchung).
 
 ## Git
 

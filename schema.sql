@@ -11,6 +11,8 @@
 -- enthält zusätzlich ein (noch nicht mit der Website verbundenes) Buchungs-
 -- modell: einheiten, preisperioden, buchungen, naechte. Siehe README.md,
 -- Abschnitt "Datenbank: Buchungsmodell".
+--
+-- Die Tabellen der Hofladen-Vorbestellung stehen in schema-hofladen.sql.
 -- ============================================================
 
 CREATE TABLE IF NOT EXISTS anfragen (
