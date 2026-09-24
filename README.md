@@ -369,6 +369,8 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ├── datenschutz.html         → Datenschutzerklärung (DSGVO)
 ├── wrangler.toml            → Cloudflare-Pages-Konfiguration (nicht löschen!)
 ├── schema.sql               → D1-Datenbankschema (Tabelle „anfragen")
+├── schema-hofladen.sql      → D1-Schema der Hofladen-Vorbestellung (im Aufbau)
+├── hofladen-produkte.sql    → Produktkatalog zum Einspielen (Startpreise)
 ├── _headers                 → HTTP-Header & Cache-Regeln (Cloudflare Pages)
 ├── _redirects               → Weiterleitungen; sperrt docs/ für Besucher
 ├── docs/OPTIMIERUNGSPLAN.md → Interner Plan: Direktbuchungen, Preise, Rechtsprüfung
@@ -380,11 +382,130 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ├── js/preise-config.js      → ALLE Preise zentral
 ├── functions/api/availability.js → Holt den Airbnb-Kalender (Server)
 ├── functions/api/kontakt.js      → Nimmt Formularanfragen entgegen (D1 + E-Mail)
+├── functions/_lib/hofladen.js    → Gemeinsame Helfer der Hofladen-Vorbestellung
+├── verwaltung/              → Hofladen-Verwaltung (Anmeldung über Cloudflare Access, nicht verlinkt)
+├── functions/api/verwaltung/ → Schnittstelle der Verwaltung (Zugangsprüfung + Daten)
 ├── .github/workflows/optimize-images.yml → Verkleinert hochgeladene Fotos automatisch
 ├── .github/scripts/optimize-images.js    → Das zugehörige Skript (sharp)
 ├── scripts/sitemap-lastmod.js → Trägt die Änderungsdaten in sitemap.xml nach
+├── scripts/test-hofladen-*.mjs → Tests für Datenbank, Schnittstelle und Zugang der Hofladen-Verwaltung
 ├── fonts/                   → Lokal gehostete Schriften (DSGVO – nicht löschen!)
 └── images/                  → Fotos (siehe Schritt 5)
+```
+
+---
+
+## Datenbank: Hofladen-Vorbestellung (im Aufbau)
+
+Für die Vorbestellung von Fleisch, Eiernudeln und Honig in Chargen gibt es
+eigene Tabellen (Plan: `docs/HOFLADEN-VORBESTELLUNG.md`). Sie stehen in
+`schema-hofladen.sql` und werden so angelegt – die Datei darf mehrfach
+ausgeführt werden und verändert keine bestehenden Tabellen:
+
+```
+npx wrangler d1 execute kruckenhaus --remote --file=./schema-hofladen.sql
+npx wrangler d1 execute kruckenhaus --remote --file=./hofladen-produkte.sql
+```
+
+Die zweite Datei spielt Produktkatalog (Startpreise, Richtgewichte) und
+Liefergebiet ein; sie überspringt Einträge, die es schon gibt.
+
+| Tabelle / Ansicht | Zweck |
+|---|---|
+| `kunden` | Kundenkartei (Website, WhatsApp, Telefon) |
+| `produkte` | Produktkatalog: Gewichtsware, Pakete, Stückware |
+| `chargen`, `charge_artikel`, `termine` | Verkaufsdurchgang mit Preis, Kontingent, Abhol-/Lieferterminen |
+| `liefergebiet` | belieferte Orte und Liefergebühr |
+| `bestellungen`, `bestell_positionen` | Vorbestellungen; Übergabe und Zahlung als eigene Felder |
+| `nummernkreis` | fortlaufende Bestellnummern `2026-001` … |
+| `v_positionen`, `v_bestand`, `v_bestellsummen` | berechnete Beträge, freie Mengen, Summen |
+| `v_letzter_preis` | Preisvorschlag für neue Chargen (Werte der letzten Charge je Produkt) |
+| `voranmeldungen`, `v_voranmeldungen_summe` | unverbindliche Vormerkungen für spätere Chargen und ihre Summe je Zeitraum |
+
+Nach Änderungen an Schema, Helfern oder Schnittstelle die Tests laufen lassen
+(Node 22, berühren die echte Datenbank nicht):
+
+```
+node scripts/test-hofladen-db.mjs
+node scripts/test-hofladen-api.mjs
+node scripts/test-hofladen-zugang.mjs
+```
+
+---
+
+## Hofladen-Verwaltung einrichten (einmalig, ca. 15 Minuten)
+
+Die Verwaltung liegt unter **https://www.kruckenhaus.at/verwaltung/**. Sie
+zeigt Kundendaten und Bestellungen und ist deshalb doppelt geschützt:
+Cloudflare Access verlangt eine Anmeldung per E-Mail-Code, und die
+Schnittstelle prüft diese Anmeldung zusätzlich selbst. **Solange die
+Schritte 2 und 3 nicht erledigt sind, ist die Verwaltung gesperrt** – es
+kann also nichts versehentlich offen stehen.
+
+**1. Tabellen in der Datenbank anlegen** (falls noch nicht geschehen):
+Cloudflare-Dashboard → *Storage & Databases → D1 → kruckenhaus → Console*,
+nacheinander den Inhalt von `schema-hofladen.sql` und `hofladen-produkte.sql`
+einfügen und ausführen.
+
+**2. Anmeldung einrichten (Cloudflare Access / Zero Trust):**
+
+1. Im Cloudflare-Dashboard links **Zero Trust** öffnen. Beim ersten Mal einen
+   Team-Namen wählen (z. B. `kruckenhaus`) und den kostenlosen Tarif
+   (**Free**, bis 50 Nutzer) auswählen. Cloudflare fragt dabei unter
+   Umständen nach einer Zahlungsmethode – der Free-Tarif kostet nichts.
+2. **Access → Applications → Add an application → Self-hosted**.
+   - Name: `Hofladen-Verwaltung`
+   - Session Duration: z. B. `1 month` (so muss man sich am Handy nicht
+     ständig neu anmelden)
+   - Adressen (Public hostname / Destinations) – **zwei Einträge**:
+     `www.kruckenhaus.at` mit Pfad `verwaltung` und
+     `www.kruckenhaus.at` mit Pfad `api/verwaltung`.
+     Ist die Website auch ohne `www` erreichbar, dieselben zwei Einträge
+     für `kruckenhaus.at` ergänzen.
+3. Policy anlegen: Name `Familie`, Action **Allow**, Include → **Emails** →
+   die freigegebenen Adressen eintragen.
+4. Anmeldemethode: **One-time PIN** (Code per E-Mail) – ist Standard.
+5. Speichern. In der Übersicht der Anwendung den Wert **Application
+   Audience (AUD) Tag** kopieren.
+6. Unter **Settings → Custom Pages** (bzw. *Team domain*) steht die
+   Team-Adresse, z. B. `kruckenhaus.cloudflareaccess.com`.
+
+**3. Werte im Pages-Projekt hinterlegen:** *Workers & Pages → kruckenhaus →
+Settings → Variables and Secrets → Add*, Umgebung **Production**, Typ
+jeweils **Secret** (verschlüsselt):
+
+| Name | Wert |
+|---|---|
+| `ACCESS_TEAM_DOMAIN` | Team-Adresse aus Schritt 2.6, ohne `https://` |
+| `ACCESS_AUD` | AUD-Tag aus Schritt 2.5 |
+| `VERWALTUNG_EMAILS` | die freigegebenen E-Mail-Adressen, durch Komma getrennt |
+
+Danach unter *Deployments* die letzte Veröffentlichung erneut ausführen
+(„Retry deployment"), damit die Werte greifen.
+
+**4. Testen:** https://www.kruckenhaus.at/verwaltung/ öffnen → E-Mail-Adresse
+eingeben → Code aus dem Postfach eintragen. Am Handy die Seite zum
+Startbildschirm hinzufügen – dann wirkt sie wie eine App.
+
+**Weitere Person freischalten:** Adresse in der Access-Policy (Schritt 2.3)
+**und** in `VERWALTUNG_EMAILS` ergänzen. **Jemanden aussperren:** an beiden
+Stellen entfernen.
+
+**Vorschau-Adressen (`*.kruckenhaus.pages.dev`):** Dort gibt es die
+Access-Anmeldung nicht automatisch, die Verwaltung bleibt gesperrt. Wer sie
+auch dort nutzen will: *Pages → Settings → General → Access policy* für
+Vorschauen aktivieren und deren AUD-Tag mit Komma an `ACCESS_AUD` anhängen.
+
+**Beispielmodus zum Ausprobieren/Einschulen:** `…/verwaltung/?entwurf` zeigt
+die Verwaltung mit erfundenen Daten; dabei wird nichts gespeichert.
+
+**Lokal testen** (mit Test-Datenbank, ohne Anmeldung – wirkt nur auf
+localhost):
+
+```
+npx wrangler d1 execute kruckenhaus --local --file=./schema-hofladen.sql
+npx wrangler d1 execute kruckenhaus --local --file=./hofladen-produkte.sql
+npx wrangler pages dev . --binding VERWALTUNG_LOKAL=1
 ```
 
 ---

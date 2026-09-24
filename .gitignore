@@ -1,0 +1,4 @@
+# Lokale Daten von wrangler (Test-Datenbank) und lokale Geheimnisse –
+# gehören nicht ins Repository
+.wrangler/
+.dev.vars
