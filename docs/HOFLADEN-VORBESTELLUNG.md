@@ -1,13 +1,13 @@
 # Hofladen-Vorbestellung – Umsetzungsplan
 
-Stand: September 2026 · Status: **Entwurf der Verwaltung liegt vor (Abschnitt 0.2), Datenbank und Kundenseite offen**
+Stand: September 2026 · Status: **Plan freigegeben, Entwurf der Verwaltung liegt vor – als Nächstes Phase 1 (Abschnitt 12)**
 
 > Kurzfassung: Statt Vorbestellungen in mehreren WhatsApp-Gruppen zu sammeln,
 > bekommt kruckenhaus.at eine Vorbestellseite für Fleisch, Eiernudeln und
 > Honig. Jede Schlachtung oder Lieferung ist eine **Charge** mit fester Menge,
 > Bestellschluss und Abhol-/Liefertermin. Kunden bestellen selbst, die Menge
 > zählt automatisch herunter, und Kathrin und Florian sehen alles in **einer**
-> Liste am Handy: wer was bestellt hat, was gewogen ist, was geliefert und was
+> Liste – am Handy und am PC: wer was bestellt hat, was gewogen ist, was geliefert und was
 > bezahlt ist. Telefon- und WhatsApp-Bestellungen werden dort mit wenigen
 > Klicks nachgetragen.
 >
@@ -17,50 +17,19 @@ Stand: September 2026 · Status: **Entwurf der Verwaltung liegt vor (Abschnitt 0
 
 ---
 
-## 0. Neue Ausgangslage: Es gibt bereits einen Friedhold-Shop
+## 0. Ausgangslage und Entscheidungen
 
-Der Hof hat schon einen Online-Hofladen bei Friedhold
-(`kruckenhaus.friedhold.at`), über den aber kaum bestellt wird. Friedhold
-deckt laut Anbieter den Großteil dieses Plans bereits ab: Chargen und
-Vorbestellung, Preisspannen für Gewichtsware, Charge duplizieren,
-Lieferscheine und Rechnungen, Newsletter bei neuer Ware. Kosten: 5 % vom
-Online-Umsatz, keine Gebühr ohne aktive Ware.
+| Frage | Entscheidung (September 2026) |
+|---|---|
+| Fertiger Shop (Shopify o. Ä.)? | Nein – laufende Kosten, Preis nach Gewicht passt schlecht, Cookies/Tracking |
+| Bestehender Friedhold-Shop (`kruckenhaus.friedhold.at`)? | Nein – wird kaum genutzt, Kathrin und Florian empfinden ihn als wenig komfortabel und unübersichtlich. Bleibt bis zum Start der eigenen Lösung bestehen (ohne aktive Ware keine Gebühr) und wird danach stillgelegt. |
+| Eigene Lösung auf kruckenhaus.at? | **Ja** – dieser Plan |
+| WhatsApp-Schnittstelle (Cloud API)? | Nein – nur Knöpfe mit fertigem Text, siehe Abschnitt 8 |
+| Online-Zahlung? | Nein – bar oder Überweisung, siehe Abschnitt 5 |
 
-**Empfehlung, bevor hier etwas gebaut wird:** zuerst Friedhold zum einzigen
-Bestellweg machen (Abschnitt 0.1). Die Eigenentwicklung ab Abschnitt 1 nur
-angehen, wenn sich danach zeigt, dass Friedhold konkret etwas nicht kann
-(z. B. Bestellungen am Telefon nachtragen, Liefertour, gemeinsame Übersicht
-für Kathrin und Florian) oder die 5 % auf Dauer zu teuer werden.
+### 0.1 Entwurf der Verwaltung
 
-### 0.1 Friedhold zum Laufen bringen
-
-Wenige Bestellungen liegen vermutlich nicht an der Software, sondern daran,
-dass niemand den Shop findet und die Kunden das Bestellen per WhatsApp
-gewohnt sind. Die Website verlinkt den Shop derzeit nirgends.
-
-1. **Ein Bestellweg:** Jede Charge wird nur noch in Friedhold angelegt und in
-   den WhatsApp-Gruppen ausschließlich mit dem Shop-Link angekündigt.
-   Bestellungen, die trotzdem per WhatsApp oder Telefon kommen, trägt
-   Kathrin bzw. Florian selbst in Friedhold ein (prüfen, ob Friedhold das
-   Erfassen von Bestellungen im Namen eines Kunden anbietet).
-2. **Website:** Auf `bauernhof.html` im Abschnitt „Unser Hofladen" einen
-   Knopf „Fleisch vorbestellen" zum Shop, eigener Navigationspunkt
-   „Hofladen", Hinweis in `llms.txt`. Nur ein Link – keine eingebetteten
-   Fremd-Skripte (Datenschutz, siehe `CLAUDE.md`).
-3. **Vor Ort:** QR-Code zum Shop am Selbstbedienungs-Kühlschrank, auf
-   Etiketten und Packzetteln, in der Ferienwohnung.
-4. **Newsletter von Friedhold** nutzen und Stammkunden aktiv bitten, sich
-   einzutragen – damit werden die WhatsApp-Gruppen auf Dauer entbehrlich.
-5. **Nach zwei, drei Chargen auswerten:** Wie viele Bestellungen kamen über
-   den Shop, wie viele mussten nachgetragen werden, was hat gefehlt?
-
-### 0.2 Entscheidung: eigene Lösung, zuerst als Entwurf
-
-Kathrin und Florian empfinden Friedhold als wenig komfortabel und
-unübersichtlich. Beide arbeiten am Handy **und** am Windows-PC, die
-Abrechnung läuft über eine **Excel-Liste**.
-
-Deshalb gibt es unter `verwaltung/` einen **anklickbaren Entwurf** der
+Damit die Bedienung passt, bevor Datenbank und Mails gebaut werden, gibt es unter `verwaltung/` einen **anklickbaren Entwurf** der
 Verwaltung (Abschnitt 7) mit frei erfundenen Beispieldaten – noch ohne
 Datenbank, ohne Mails, ohne Anmeldung:
 
@@ -77,8 +46,9 @@ Bestellung. Sie öffnet sich per Doppelklick direkt in Excel. Die Spalten
 werden an die bestehende Abrechnungsliste angepasst, sobald diese vorliegt.
 
 **Wichtig:** Der Entwurf ist nicht geschützt. Er darf erst auf `master`,
-wenn Cloudflare Access für `/verwaltung/*` eingerichtet ist (Phase 3) –
+wenn Cloudflare Access für `/verwaltung/*` eingerichtet ist (Phase 2) –
 bis dahin nur auf dem Feature-Branch bzw. dessen Vorschau-Adresse.
+In Phase 2 wird `entwurf-daten.js` durch echte Daten aus D1 ersetzt.
 
 ---
 
@@ -90,7 +60,8 @@ bis dahin nur auf dem Feature-Branch bzw. dessen Vorschau-Adresse.
 | Verkaufsform | Vorbestellung je Charge, wenige Chargen im Jahr |
 | Übergabe | Abholung am Hof **oder** Lieferung im Umkreis |
 | Zahlung | Bar bei Übergabe **oder** Überweisung |
-| Nutzer der Verwaltung | Kathrin und Florian, gleichberechtigt, beide am Handy |
+| Nutzer der Verwaltung | Kathrin und Florian, gleichberechtigt, am Handy **und** am Windows-PC |
+| Abrechnung | bestehende Excel-Liste – die Verwaltung liefert dafür einen Export |
 | Dauerhaft | ja – Kundenkartei und Bestellhistorie bleiben erhalten |
 
 ## 2. So läuft eine Charge ab (Alltag)
@@ -211,7 +182,7 @@ So sieht es für Kathrin und Florian aus, ohne Technik:
 6. **Ändern/Stornieren:** Bis zum Bestellschluss per Anruf/WhatsApp; Kathrin
    oder Florian ändern es in der Verwaltung. (Ein Selbstbedienungs-Link
    „Meine Bestellung ändern" ist als späterer Ausbau vorgesehen, siehe
-   Phase 7.)
+   Abschnitt 12, „später".)
 
 **Pflichtangaben neben jedem Produkt** (siehe Abschnitt 10): Bezeichnung,
 Zutaten und Allergene (Eiernudeln: Ei, Gluten), Nettofüllmenge, Herkunft,
@@ -234,7 +205,10 @@ Florian – kein Passwort, keine App. Auf dem Handy als Lesezeichen auf dem
 Startbildschirm ablegen, dann fühlt es sich wie eine App an. Beide sehen
 immer denselben Stand.
 
-**Ansichten** (große Knöpfe, für Daumen gebaut, druckbar):
+**Ansichten** (große Knöpfe, für Daumen gebaut, am PC mit Seitenleiste, druckbar).
+Im Entwurf (Abschnitt 0.1) schon zum Durchklicken: Start, Charge,
+Bestellung erfassen, Wiegen, Packzettel, Abholung, Liefertour, Zahlungen,
+Warteliste, Export.
 
 | Ansicht | Inhalt |
 |---|---|
@@ -250,18 +224,20 @@ immer denselben Stand.
 | **Kunden** | Kartei mit Bestellhistorie, Notizen („liefert immer an Nachbarn"), Stammkunde ja/nein, Newsletter-Einwilligung |
 | **Produkte** | Katalog pflegen (Texte, Allergene, Richtgewicht, Foto) |
 | **Chargen** | Neu anlegen, bearbeiten, Bestellung öffnen/schließen, archivieren; Jahresübersicht (Stück, kg, Umsatz) |
-| **Export** | CSV aller Bestellungen einer Charge oder eines Jahres (für Buchhaltung/Excel) |
+| **Export** | Datei für Excel (CSV) aller Bestellungen einer Charge oder eines Jahres – Spalten passend zur bestehenden Abrechnungsliste |
 
 **Status einer Bestellung** (bewusst wenige, gut lesbar):
 
 ```
-Warteliste ─► Vorgemerkt ─► Bereit (gewogen/gepackt) ─► Übergeben
-                  │                                        │
-                  └─► Storniert              Zahlung: offen / bezahlt (bar|Überweisung)
+Warteliste ─► Vorgemerkt ─► Storniert        (Status der Bestellung)
+
+Übergabe:  offen ─► übergeben                (eigenes Feld)
+Zahlung:   offen ─► bezahlt (bar | Überweisung)   (eigenes Feld)
 ```
 
 Übergabe und Zahlung sind getrennt – so sieht man auch „übergeben, aber noch
-nicht überwiesen".
+nicht überwiesen". „Gewogen" ergibt sich daraus, ob bei jeder Gewichtsware
+ein Gewicht eingetragen ist.
 
 ## 8. Benachrichtigungen
 
@@ -307,20 +283,22 @@ nicht überwiesen".
 ```
 hofladen.html                           öffentliche Vorbestellseite
 js/hofladen.js                          Angebot laden, Formular, Summen
-verwaltung/index.html                   Verwaltung (eine Seite, mehrere Ansichten)
-verwaltung/verwaltung.js                Logik der Verwaltung
+verwaltung/index.html                   Verwaltung (eine Seite, mehrere Ansichten) – Entwurf vorhanden
+verwaltung/verwaltung.js                Logik der Verwaltung – Entwurf vorhanden
+verwaltung/entwurf-daten.js             Beispieldaten – entfällt in Phase 2
 functions/api/hofladen/angebot.js       GET  – offene Chargen + Restmengen
 functions/api/hofladen/bestellung.js    POST – Bestellung aufgeben
 functions/api/hofladen/newsletter.js    POST – An-/Abmeldung Neuigkeiten
 functions/api/verwaltung/[[pfad]].js    alle Verwaltungs-Aufrufe (nur mit Access)
 functions/_lib/hofladen.js              gemeinsame Helfer (Mail, Escape, Beträge)
 schema-hofladen.sql                     neue Tabellen (schema.sql bleibt unberührt)
-css/style.css                           neuer Abschnitt „HOFLADEN" + „VERWALTUNG"
+css/style.css                           Abschnitt 40 „VERWALTUNG" (vorhanden) + 41 „HOFLADEN"
 ```
 
 Anzupassen: Navigation in allen `.html`, `sitemap.xml`, `llms.txt`,
-`bauernhof.html` (Knopf), `robots.txt` und `_headers` (Verwaltung:
-`Disallow`, `X-Robots-Tag: noindex`, `Cache-Control: no-store`),
+`bauernhof.html` (Knopf), `_headers` (Verwaltung: `X-Robots-Tag: noindex`,
+`Cache-Control: no-store` – bereits eingetragen; bewusst kein Eintrag in
+`robots.txt`, der würde die Adresse nur bekannt machen),
 `wrangler.toml` (neue nicht-geheime Variablen), `README.md` (Bedienung),
 `datenschutz.html` (**nur nach ausdrücklicher Freigabe**, siehe Abschnitt 10).
 
@@ -351,10 +329,10 @@ liefergebiet      plz, ort, liefergebuehr_cent
 
 bestellungen      id, nummer ('HK-26-014'), charge_id, kunde_id,
                   quelle ('web'|'telefon'|'whatsapp'|'persoenlich'),
-                  status ('warteliste'|'vorgemerkt'|'bereit'
-                         |'uebergeben'|'storniert'),
+                  status ('warteliste'|'vorgemerkt'|'storniert'),
                   termin_id, lieferadresse, zahlart ('bar'|'ueberweisung'),
-                  bezahlt_am, bezahlt_betrag_cent, liefergebuehr_cent,
+                  uebergeben_am, bezahlt_am, bezahlt_art ('bar'|'ueberweisung'),
+                  bezahlt_betrag_cent, liefergebuehr_cent,
                   anmerkung, interne_notiz, erstellt_am, geaendert_am
 
 bestell_positionen id, bestellung_id, charge_artikel_id, menge,
@@ -439,42 +417,47 @@ Keine Rechtsberatung – bitte mit der **Landwirtschaftskammer Tirol**
 
 ## 11. Offene Fragen an Kathrin und Florian
 
-Diese Antworten brauche ich vor Phase 2:
-
-1. **Produktliste:** alle Artikel mit Preis, Einheit, Richtgewicht
-   (Huhn/Pute/Gans), Inhalt der Rind-Pakete, Honig- und Nudelsorten/-größen,
-   Zutaten und Allergene.
-2. **Liefergebiet:** Welche Orte/PLZ? Liefergebühr oder gratis? Ab welchem
-   Bestellwert gratis?
-3. **Termine:** Typischer Abholtag/-zeit, typischer Liefertag?
-4. **Stammkunden-Vorlauf:** gewünscht? Wie viele Tage vorher?
-5. **Höchstmengen** pro Bestellung (z. B. max. 2 Gänse)?
-6. **E-Mail-Adressen** von Kathrin und Florian für den Verwaltungszugang.
-7. **Bankverbindung** für die Überweisungs-Mail.
-8. **Bestellnummern-Format:** Vorschlag `HK-26-014` (Jahr + laufende Nummer).
-9. **Fotos** der Produkte (Rind-Paket, Honig, Nudeln, Huhn) – bis dahin
-    TODO-Platzhalter.
-10. Sollen **Ferienwohnungsgäste** auf der Seite angesprochen werden?
+| # | Frage | nötig für |
+|---|---|---|
+| 1 | **Rückmeldung zum Entwurf** der Verwaltung (vor allem von Kathrin): Was ist unklar, was fehlt, was braucht ihr nicht? | Phase 2 |
+| 2 | **Excel-Abrechnungsliste** (gern mit erfundenen Namen), damit der Export dieselben Spalten hat | Phase 2 |
+| 3 | **Produktliste:** alle Artikel mit Preis, Einheit, Richtgewicht (Huhn/Pute/Gans), Inhalt der Rind-Pakete, Honig- und Nudelsorten/-größen, Zutaten und Allergene | Phase 1 (Befüllen) |
+| 4 | **Liefergebiet:** welche Orte/PLZ, Liefergebühr oder gratis, ab welchem Bestellwert gratis | Phase 1 (Befüllen) |
+| 5 | **Termine:** typischer Abholtag/-zeit, typischer Liefertag | Phase 2 |
+| 6 | **E-Mail-Adressen** von Kathrin und Florian für den Verwaltungszugang | Phase 2 |
+| 7 | **Bankverbindung** für die Mail „Abholbereit" | Phase 3 |
+| 8 | **Stammkunden-Vorlauf** gewünscht? Wie viele Tage? | Phase 5 |
+| 9 | **Höchstmengen** pro Bestellung (z. B. max. 2 Gänse)? | Phase 4 |
+| 10 | **Bestellnummern-Format:** Vorschlag `HK-26-014` (Jahr + laufende Nummer) | Phase 1 |
+| 11 | **Fotos** der Produkte – bis dahin TODO-Platzhalter | Phase 4 |
+| 12 | Sollen **Ferienwohnungsgäste** auf der Seite angesprochen werden? | Phase 6 |
+| 13 | **Rechtliches** aus Abschnitt 10 mit der LK Tirol klären | vor Phase 6 |
 
 ## 12. Umsetzung in Phasen
 
 Arbeitsweise wie im `UMSETZUNGSPLAN.md`: **eine Sitzung = ein Thema = ein
 Commit**, auf dem Feature-Branch; erst nach dem Testlauf auf `master`.
 
-| Phase | Inhalt | Ergebnis |
-|---|---|---|
-| **1 – Grundlage** | `schema-hofladen.sql`, Tabellen in D1 anlegen, Produktkatalog und Liefergebiet befüllen, gemeinsame Helfer | Datenbank steht |
-| **2 – Kundenseite** | `hofladen.html`, `js/hofladen.js`, `/api/hofladen/angebot` und `/bestellung`, Bestätigungsmails, Warteliste; noch **nicht** verlinkt | Bestellen funktioniert über direkten Link |
-| **3 – Verwaltung Kern** | Cloudflare Access einrichten, Token-Prüfung, Start, Charge, Bestellung erfassen, Status ändern, Chargen anlegen | Kathrin und Florian können eine Charge komplett führen |
-| **4 – Wiegen und Zahlung** | Wiegen, Endbeträge, Mail „Abholbereit", offene Zahlungen, Packliste/Etiketten drucken | Ablauf nach der Schlachtung läuft |
-| **5 – Übergabe** | Abholliste, Liefertour mit Anruf-/Navi-Links, Druckansichten | Abhol- und Liefertag am Handy |
-| **6 – Kunden und Ankündigung** | Kundenkartei, Newsletter An-/Abmeldung, „Ankündigung"-Knopf, Stammkunden-Link, WhatsApp-Text | Chargen ankündigen ohne Gruppen-Chaos |
-| **7 – Veröffentlichung** | Navigation in allen Seiten, `sitemap.xml`, `llms.txt`, Knopf auf `bauernhof.html`, `robots.txt`/`_headers`, README-Bedienungsanleitung, Datenschutz (nach Freigabe) | live |
-| **später** | „Meine Bestellung ändern"-Link, Jahresauswertung als Grafik, CSV-Import alter Kunden | nach Bedarf |
+Reihenfolge bewusst: **zuerst die Verwaltung.** Sie ist schon nach Phase 2
+im Alltag nutzbar – alle WhatsApp- und Telefonbestellungen landen dann in
+einer Liste, auch bevor Kunden online bestellen können. Die öffentliche
+Bestellseite (und damit Datenschutz, Pflichtangaben, Bestellbedingungen)
+kommt danach.
+
+| Phase | Inhalt | Ergebnis | Stand |
+|---|---|---|---|
+| **0 – Entwurf** | Anklickbare Verwaltung mit Beispieldaten, Excel-Export, WhatsApp-Knöpfe | Bedienung prüfen | **erledigt** |
+| **1 – Grundlage** | `schema-hofladen.sql`, Tabellen in D1 anlegen, gemeinsame Helfer (`functions/_lib/`), Produktkatalog und Liefergebiet befüllen | Datenbank steht | offen |
+| **2 – Verwaltung live** | Cloudflare Access einrichten, Token-Prüfung, `/api/verwaltung/…`; Entwurf an echte Daten anschließen: Chargen anlegen, Bestellung erfassen, Bestellliste, Status, Excel-Export nach Vorlage | Kathrin und Florian führen eine Charge komplett in einer Liste (Bestellungen per WhatsApp/Telefon) | offen |
+| **3 – Wiegen, Zahlung, Übergabe** | Gewichte speichern, Endbeträge, Packzettel, Abholliste, Liefertour, offene Zahlungen, Mail „Abholbereit" mit Bankdaten | Ablauf nach der Schlachtung läuft | offen |
+| **4 – Kundenseite** | `hofladen.html`, `js/hofladen.js`, `/api/hofladen/angebot` und `/bestellung`, Bestätigungsmails, Warteliste, Pflichtangaben, Bestellbedingungen; noch **nicht** verlinkt | Kunden bestellen selbst über direkten Link | offen |
+| **5 – Kunden und Ankündigung** | Kundenkartei, Newsletter An-/Abmeldung, Ankündigung per Mail, Stammkunden-Link | Chargen ankündigen ohne Gruppen-Chaos | offen |
+| **6 – Veröffentlichung** | Navigation in allen Seiten, `sitemap.xml`, `llms.txt`, Knopf auf `bauernhof.html`, README-Bedienungsanleitung, Datenschutz (nach Freigabe), Friedhold stilllegen | live | offen |
+| **später** | „Meine Bestellung ändern"-Link, Jahresauswertung als Grafik, CSV-Import alter Kunden | nach Bedarf | – |
 
 **Testlauf vor dem Start:** Eine echte, kleine Charge (z. B. Honig und
 Nudeln) mit ein paar Stammkunden durchspielen – vom Anlegen bis „bezahlt".
-Die bestehenden WhatsApp-Bestellungen der laufenden Charge in Phase 3
+Die bestehenden WhatsApp-Bestellungen der laufenden Charge in Phase 2
 einmalig nachtragen, damit ab dann **nur noch eine Liste** zählt.
 
 ## 13. Kosten
