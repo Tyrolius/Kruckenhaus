@@ -12,6 +12,7 @@
  *   1. Antworten und Eingaben (json, escapeHtml, istGueltigeEmail)
  *   2. Beträge (positionBetrag, euro)
  *   3. Bestellnummern (naechsteBestellnummer)
+ *      Preisvorschläge für neue Chargen (preisVorschlaege)
  *   4. Bestellung anlegen / nachrücken – Kontingent sicher prüfen
  * ============================================================ */
 
@@ -55,7 +56,7 @@ export const euro = (cent) => euroFormat.format(cent / 100);
 
 /* ------------------------------------------------------------
    3. BESTELLNUMMERN
-   Fortlaufend je Jahr: HK-26-001, HK-26-002, …
+   Fortlaufend je Jahr: 2026-001, 2026-002, … (ab 1000 vierstellig)
    Hochzählen und Lesen in einer Anweisung – keine doppelten Nummern.
    ------------------------------------------------------------ */
 export async function naechsteBestellnummer(db, datum = new Date()) {
@@ -65,7 +66,25 @@ export async function naechsteBestellnummer(db, datum = new Date()) {
      ON CONFLICT (jahr) DO UPDATE SET letzte = letzte + 1
      RETURNING letzte`
   ).bind(jahr).first();
-  return `HK-${String(jahr).slice(-2)}-${String(zeile.letzte).padStart(3, '0')}`;
+  return `${jahr}-${String(zeile.letzte).padStart(3, '0')}`;
+}
+
+/* Preisvorschläge für eine neue Charge: je aktivem Produkt Preis, Menge
+   und Höchstmenge der letzten Charge, in der es vorkam. Produkte, die noch
+   nie verkauft wurden, kommen ohne Vorschlag (preisCent = null).
+   Die Werte werden in der Verwaltung nur vorbelegt und können geändert
+   werden – bestehende Bestellungen behalten ihren Preis. */
+export async function preisVorschlaege(db) {
+  const { results } = await db.prepare(
+    `SELECT p.id AS produktId, p.name, p.art,
+            v.preis_cent AS preisCent, v.kontingent, v.max_pro_bestellung AS maxProBestellung,
+            v.aus_charge_titel AS ausCharge
+     FROM produkte p
+     LEFT JOIN v_letzter_preis v ON v.produkt_id = p.id
+     WHERE p.aktiv = 1
+     ORDER BY p.reihenfolge, p.name`
+  ).all();
+  return results;
 }
 
 /* ------------------------------------------------------------

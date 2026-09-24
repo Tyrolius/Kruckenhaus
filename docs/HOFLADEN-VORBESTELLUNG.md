@@ -104,7 +104,7 @@ So sieht es für Kathrin und Florian aus, ohne Technik:
      oben.
 9. **Zahlungen nachverfolgen:** Die Ansicht „Offene Zahlungen" zeigt, wer
    noch überweisen muss. Kommt Geld am Konto an, in der Liste auf „bezahlt"
-   tippen. Die Zahlungsreferenz (z. B. `HK-26-014`) macht das Zuordnen
+   tippen. Die Zahlungsreferenz (z. B. `2026-014`) macht das Zuordnen
    einfach.
 10. **Charge abschließen:** Wenn alles übergeben und bezahlt ist, wird die
     Charge archiviert. Umsatz, Stück, Kilo bleiben für den Jahresüberblick
@@ -123,6 +123,11 @@ So sieht es für Kathrin und Florian aus, ohne Technik:
 - In der Charge wird es mit **Preis und Kontingent** angeboten. So kann der
   Kilopreis von Charge zu Charge anders sein, ohne dass alte Bestellungen sich
   ändern.
+- **Preise anpassen (entschieden):** Beim Anlegen einer neuen Charge sind
+  Preis, Menge und Höchstmenge jedes Produkts mit den Werten der **letzten
+  Charge** vorbelegt (Ansicht `v_letzter_preis`); geändert wird nur, was sich
+  geändert hat. Jede Bestellung speichert ihren Preis zum Bestellzeitpunkt –
+  Preisänderungen gelten nur für neue Bestellungen.
 - **Rind-Paketinhalt** (z. B. „Steaks, Braten, Gulasch, Faschiertes,
   Suppenfleisch") steht in der Produktbeschreibung.
 - Beträge werden intern in **Cent**, Gewichte in **Gramm** gespeichert
@@ -327,7 +332,7 @@ termine           id, charge_id, art ('abholung'|'lieferung'),
 
 liefergebiet      plz, ort, liefergebuehr_cent
 
-bestellungen      id, nummer ('HK-26-014'), charge_id, kunde_id,
+bestellungen      id, nummer ('2026-014'), charge_id, kunde_id,
                   quelle ('web'|'telefon'|'whatsapp'|'persoenlich'),
                   status ('warteliste'|'vorgemerkt'|'storniert'),
                   termin_id, lieferadresse, zahlart ('bar'|'ueberweisung'),
@@ -428,7 +433,7 @@ Keine Rechtsberatung – bitte mit der **Landwirtschaftskammer Tirol**
 | 7 | **Bankverbindung** für die Mail „Abholbereit" | Phase 3 |
 | 8 | **Stammkunden-Vorlauf** gewünscht? Wie viele Tage? | Phase 5 |
 | 9 | **Höchstmengen** pro Bestellung (z. B. max. 2 Gänse)? | Phase 4 |
-| 10 | **Bestellnummern-Format:** Vorschlag `HK-26-014` (Jahr + laufende Nummer) | Phase 1 |
+| 10 | ~~Bestellnummern-Format~~ – entschieden: `2026-001` (Jahr + laufende Nummer) | erledigt |
 | 11 | **Fotos** der Produkte – bis dahin TODO-Platzhalter | Phase 4 |
 | 12 | Sollen **Ferienwohnungsgäste** auf der Seite angesprochen werden? | Phase 6 |
 | 13 | **Rechtliches** aus Abschnitt 10 mit der LK Tirol klären | vor Phase 6 |

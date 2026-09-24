@@ -138,7 +138,7 @@ CREATE TABLE IF NOT EXISTS liefergebiet (
 
 
 -- ------------------------------------------------------------
--- Nummernkreis für Bestellnummern: HK-<JJ>-<laufende Nummer>
+-- Nummernkreis für Bestellnummern: <Jahr>-<laufende Nummer>, z. B. 2026-001
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS nummernkreis (
   jahr    INTEGER PRIMARY KEY,
@@ -257,3 +257,23 @@ SELECT
 FROM bestellungen b
 LEFT JOIN v_positionen v ON v.bestellung_id = b.id
 GROUP BY b.id;
+
+-- Vorschlag für eine neue Charge: Preis, Menge und Höchstmenge je Produkt
+-- aus der zuletzt angelegten Charge, in der das Produkt vorkam.
+CREATE VIEW IF NOT EXISTS v_letzter_preis AS
+SELECT
+  ca.produkt_id,
+  ca.preis_cent,
+  ca.kontingent,
+  ca.max_pro_bestellung,
+  ca.charge_id AS aus_charge_id,
+  c.titel      AS aus_charge_titel
+FROM charge_artikel ca
+JOIN chargen c ON c.id = ca.charge_id
+WHERE ca.id = (
+  SELECT ca2.id FROM charge_artikel ca2
+  JOIN chargen c2 ON c2.id = ca2.charge_id
+  WHERE ca2.produkt_id = ca.produkt_id
+  ORDER BY c2.erstellt_am DESC, c2.id DESC
+  LIMIT 1
+);

@@ -124,9 +124,9 @@ function artikelKurz(b) {
 
 function naechsteNummer() {
   const hoechste = daten.bestellungen
-    .map((b) => Number(b.nummer.split('-')[2]))
+    .map((b) => Number(b.nummer.split('-')[1]))
     .reduce((a, b) => Math.max(a, b), 0);
-  return `HK-26-${String(hoechste + 1).padStart(3, '0')}`;
+  return `${new Date().getFullYear()}-${String(hoechste + 1).padStart(3, '0')}`;
 }
 
 function gewichtsPositionen(ch = aktiveCharge()) {

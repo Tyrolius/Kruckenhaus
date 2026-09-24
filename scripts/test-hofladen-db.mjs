@@ -15,7 +15,7 @@
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { bestellungAnlegen, bestellungNachruecken, naechsteBestellnummer, positionBetrag, EingabeFehler, euro }
+import { bestellungAnlegen, bestellungNachruecken, preisVorschlaege, positionBetrag, EingabeFehler, euro }
   from '../functions/_lib/hofladen.js';
 
 // Minimaler D1-Nachbau auf node:sqlite (prepare/bind/first/all/run, batch als Transaktion)
@@ -65,12 +65,12 @@ roh.exec(`
 try { roh.exec(`INSERT INTO produkte (name, art) VALUES ('Gans ohne Gewicht', 'gewicht')`); assert.fail(); }
 catch (e) { assert.match(e.message, /CHECK/); console.log('✓ Gewichtsware ohne Richtgewicht abgelehnt'); }
 
-const jahr = String(new Date().getUTCFullYear()).slice(-2);
+const jahr = new Date().getUTCFullYear();
 const b1 = await bestellungAnlegen(db, { chargeId: 1, kundeId: 1, terminId: 1, positionen: [{ chargeArtikelId: 1, menge: 3 }, { chargeArtikelId: 2, menge: 2 }] });
 const b2 = await bestellungAnlegen(db, { chargeId: 1, kundeId: 2, terminId: 1, quelle: 'whatsapp', positionen: [{ chargeArtikelId: 1, menge: 2 }] });
 const b3 = await bestellungAnlegen(db, { chargeId: 1, kundeId: 3, terminId: 1, positionen: [{ chargeArtikelId: 1, menge: 1 }, { chargeArtikelId: 2, menge: 1 }] });
 assert.equal(b1.status, 'vorgemerkt'); assert.equal(b2.status, 'vorgemerkt'); assert.equal(b3.status, 'warteliste');
-assert.deepEqual([b1.nummer, b2.nummer, b3.nummer], [`HK-${jahr}-001`, `HK-${jahr}-002`, `HK-${jahr}-003`]);
+assert.deepEqual([b1.nummer, b2.nummer, b3.nummer], [`${jahr}-001`, `${jahr}-002`, `${jahr}-003`]);
 console.log('✓ Kontingent: 3+2 vorgemerkt, 3. Bestellung auf Warteliste;', b1.nummer, b2.nummer, b3.nummer);
 
 let bestand = roh.prepare('SELECT charge_artikel_id, bestellt, frei FROM v_bestand WHERE charge_id = 1 ORDER BY 1').all();
@@ -116,6 +116,18 @@ catch (e) { assert.match(e.message, /FOREIGN KEY/); }
 assert.equal(roh.prepare('SELECT COUNT(*) n FROM bestellungen').get().n, vorher);
 assert.equal(roh.prepare('SELECT COUNT(*) n FROM bestell_positionen WHERE bestellung_id NOT IN (SELECT id FROM bestellungen)').get().n, 0);
 console.log('✓ Unbekannter Kunde: Transaktion vollständig zurückgerollt');
+
+// Preisvorschläge: Werte der zuletzt angelegten Charge je Produkt
+roh.exec(`INSERT INTO produkte (name, art) VALUES ('Honig', 'stueck')`);
+roh.exec(`INSERT INTO chargen (titel, bestellschluss, erstellt_am) VALUES ('Neuer', '2026-12-01', datetime('now', '+1 day'))`);
+roh.exec(`INSERT INTO charge_artikel (charge_id, produkt_id, preis_cent, kontingent) VALUES (3, 2, 500, 12)`);
+const vorschlag = Object.fromEntries((await preisVorschlaege(db)).map((v) => [v.name, v]));
+assert.equal(vorschlag.Masthuhn.preisCent, 1390);      // nur in Charge 1
+assert.equal(vorschlag.Masthuhn.maxProBestellung, 4);
+assert.equal(vorschlag.Eiernudeln.preisCent, 500);     // jüngste Charge gewinnt
+assert.equal(vorschlag.Eiernudeln.ausCharge, 'Neuer');
+assert.equal(vorschlag.Honig.preisCent, null);         // noch nie verkauft
+console.log('✓ Preisvorschläge aus der letzten Charge je Produkt');
 
 // Bestehende Tabellen bleiben unberührt (Schema legt nur eigene an)
 const tabellen = roh.prepare(`SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY name`).all().map((r) => r.name);
