@@ -11,8 +11,9 @@
 'use strict';
 
 const ENTWURF_DATEN = {
-  // Reihenfolge der Orte für die Liefertour (vom Hof aus gedacht)
-  tourReihenfolge: ['Breitenbach am Inn', 'Kundl', 'Angath', 'Wörgl', 'Radfeld', 'Rattenberg', 'Brixlegg', 'Kramsach'],
+  // Liefergebiet 6252, 6233, 6230, 6250 – Reihenfolge der Liefertour
+  // (Vorschlag, wie in hofladen-produkte.sql). Andere Orte: nur Abholung.
+  tourReihenfolge: ['Breitenbach am Inn', 'Kramsach', 'Brixlegg', 'Kundl'],
 
   // Produktkatalog (Preise stehen je Charge) – echtes Sortiment, Stand 09/2026
   produkte: [
@@ -73,18 +74,18 @@ const ENTWURF_DATEN = {
   kunden: [
     { id: 'k1', name: 'Maria Huber', telefon: '+43 660 0000001', strasse: 'Dorfstraße 4', plz: '6252', ort: 'Breitenbach am Inn', stammkunde: true },
     { id: 'k2', name: 'Josef Brunner', telefon: '+43 660 0000002', strasse: 'Bahnhofstraße 12', plz: '6250', ort: 'Kundl', stammkunde: true },
-    { id: 'k3', name: 'Anna Mair', telefon: '+43 660 0000003', strasse: 'Salzburger Straße 30', plz: '6300', ort: 'Wörgl', stammkunde: true },
+    { id: 'k3', name: 'Anna Mair', telefon: '+43 660 0000003', strasse: 'Innweg 30', plz: '6233', ort: 'Kramsach', stammkunde: true },
     { id: 'k4', name: 'Thomas Hofer', telefon: '+43 660 0000004', strasse: 'Achenrainweg 7', plz: '6233', ort: 'Kramsach', stammkunde: false },
     { id: 'k5', name: 'Elisabeth Egger', telefon: '+43 660 0000005', strasse: 'Kirchweg 2', plz: '6241', ort: 'Radfeld', stammkunde: true },
     { id: 'k6', name: 'Stefan Moser', telefon: '+43 660 0000006', strasse: 'Schmiedgasse 9', plz: '6252', ort: 'Breitenbach am Inn', stammkunde: true },
     { id: 'k7', name: 'Theresia Gruber', telefon: '+43 660 0000007', strasse: 'Marktstraße 15', plz: '6230', ort: 'Brixlegg', stammkunde: false },
     { id: 'k8', name: 'Martin Haas', telefon: '+43 660 0000008', strasse: 'Au 3', plz: '6250', ort: 'Kundl', stammkunde: false },
     { id: 'k9', name: 'Christina Pichler', telefon: '+43 660 0000009', strasse: 'Innstraße 21', plz: '6300', ort: 'Wörgl', stammkunde: true },
-    { id: 'k10', name: 'Georg Steiner', telefon: '+43 660 0000010', strasse: 'Dorf 11', plz: '6321', ort: 'Angath', stammkunde: true },
+    { id: 'k10', name: 'Georg Steiner', telefon: '+43 660 0000010', strasse: 'Dorf 11', plz: '6230', ort: 'Brixlegg', stammkunde: true },
     { id: 'k11', name: 'Barbara Wimmer', telefon: '+43 660 0000011', strasse: 'Kleinsöll 8', plz: '6252', ort: 'Breitenbach am Inn', stammkunde: false },
     { id: 'k12', name: 'Johann Lechner', telefon: '+43 660 0000012', strasse: 'Seeweg 6', plz: '6233', ort: 'Kramsach', stammkunde: false },
     { id: 'k13', name: 'Sabine Fuchs', telefon: '+43 660 0000013', strasse: 'Südtiroler Straße 3', plz: '6240', ort: 'Rattenberg', stammkunde: false },
-    { id: 'k14', name: 'Peter Kogler', telefon: '+43 660 0000014', strasse: 'Feldweg 1', plz: '6241', ort: 'Radfeld', stammkunde: true },
+    { id: 'k14', name: 'Peter Kogler', telefon: '+43 660 0000014', strasse: 'Feldweg 1', plz: '6250', ort: 'Kundl', stammkunde: true },
   ],
 
   // Voranmeldungen: unverbindlich, noch ohne Preis und Termin

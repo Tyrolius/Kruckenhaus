@@ -406,8 +406,8 @@ npx wrangler d1 execute kruckenhaus --remote --file=./schema-hofladen.sql
 npx wrangler d1 execute kruckenhaus --remote --file=./hofladen-produkte.sql
 ```
 
-Die zweite Datei spielt den Produktkatalog ein (Startpreise, Richtgewichte);
-sie überspringt Produkte, die es schon gibt.
+Die zweite Datei spielt Produktkatalog (Startpreise, Richtgewichte) und
+Liefergebiet ein; sie überspringt Einträge, die es schon gibt.
 
 | Tabelle / Ansicht | Zweck |
 |---|---|

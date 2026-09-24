@@ -1,5 +1,5 @@
 -- ============================================================
--- PRODUKTKATALOG – Hofladen-Vorbestellung (Erstbefüllung)
+-- PRODUKTKATALOG UND LIEFERGEBIET – Hofladen-Vorbestellung (Erstbefüllung)
 -- ============================================================
 -- Stand September 2026, Angaben von Kathrin und Florian.
 -- Voraussetzung: schema-hofladen.sql wurde ausgeführt.
@@ -17,11 +17,12 @@
 --   TODO: Pflichtangaben und Allergene der Eiernudeln laut Etikett
 --         (Zutaten, glutenhaltiges Getreide, Ei)
 --   TODO: Inhalt der Rindfleischpakete (welche Teile)
+--   TODO: Liefergebühr / gratis ab – derzeit 0 € (kostenlos) eingetragen
 --   TODO: Sorten der Alpakaseife (derzeit ein Sammelartikel)
 --   TODO: Gans – Preis/kg und Richtgewicht fehlen noch; wird meist über
 --         Voranmeldungen verkauft
 --   Richtgewicht „Masthuhn halbiert" = halbes Richtgewicht des ganzen
---   Huhns (0,9–1,2 kg), bitte prüfen.
+--   Huhns (0,9–1,2 kg), bestätigt.
 -- ============================================================
 
 
@@ -71,3 +72,15 @@ WHERE NOT EXISTS (SELECT 1 FROM produkte WHERE name = 'Raphaels Wald- & Blütenh
 INSERT INTO produkte (name, art, kategorie, richtgewicht_von_g, richtgewicht_bis_g, startpreis_cent, reihenfolge, beschreibung)
 SELECT 'Alpakaseife', 'stueck', 'seife', NULL, NULL, 450, 310, 'Seife mit Alpakamilch, verschiedene Sorten.'
 WHERE NOT EXISTS (SELECT 1 FROM produkte WHERE name = 'Alpakaseife');
+
+
+-- ------------------------------------------------------------
+-- LIEFERGEBIET (Postleitzahlen laut Kathrin und Florian)
+-- Andere Orte: nur Abholung am Hof. tour_reihenfolge = Vorschlag für die
+-- Sortierung der Liefertour, in der Verwaltung änderbar.
+-- ------------------------------------------------------------
+INSERT OR IGNORE INTO liefergebiet (plz, ort, liefergebuehr_cent, gratis_ab_cent, tour_reihenfolge) VALUES
+  ('6252', 'Breitenbach am Inn', 0, NULL, 10),
+  ('6233', 'Kramsach',           0, NULL, 20),
+  ('6230', 'Brixlegg',           0, NULL, 30),
+  ('6250', 'Kundl',              0, NULL, 40);

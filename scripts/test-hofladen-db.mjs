@@ -180,7 +180,9 @@ console.log('✓ Übernahme: je Kunde eine Bestellung, wer zuerst kam zuerst, Re
   leer.exec(produkte);
   const zeilen = leer.prepare('SELECT name, art, kategorie, startpreis_cent FROM produkte ORDER BY id').all();
   assert.equal(new Set(zeilen.map((z) => z.name)).size, zeilen.length);
-  console.log(`✓ hofladen-produkte.sql: ${zeilen.length} Produkte, zweimal einspielbar`);
+  const plz = leer.prepare('SELECT plz FROM liefergebiet ORDER BY tour_reihenfolge').all().map((z) => z.plz);
+  assert.deepEqual(plz, ['6252', '6233', '6230', '6250']);
+  console.log(`✓ hofladen-produkte.sql: ${zeilen.length} Produkte und ${plz.length} Lieferorte, zweimal einspielbar`);
 }
 
 // Bestehende Tabellen bleiben unberührt (Schema legt nur eigene an)
