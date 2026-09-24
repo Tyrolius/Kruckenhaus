@@ -3902,6 +3902,7 @@ body.season-winter .winter-image { display: block; }
 
 /* --- Dialog (Bestelldetails) --- */
 .vw-dialog {
+  margin: auto;   /* der Reset in Abschnitt 3 nimmt dem Dialog sonst die Zentrierung */
   border: 0;
   border-radius: var(--border-radius-lg);
   box-shadow: var(--shadow-lg);

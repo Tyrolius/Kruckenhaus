@@ -190,6 +190,42 @@ function bereitText(b) {
     + `Betrag: ${betragText(bestellBetrag(b))}. ${wann} Liebe Grüße, Kathrin & Florian`;
 }
 
+// Ankündigung einer Charge – zum Weiterleiten in WhatsApp-Kanal,
+// Übertragungsliste oder Gruppe. Der Link zeigt später auf hofladen.html.
+function ankuendigungText(ch) {
+  const artikel = ch.artikel.map((a) => {
+    const preis = a.art === 'gewicht' ? `${euro(a.preisCent)}/kg` : euro(a.preisCent);
+    return `• ${a.name} – ${preis}`;
+  }).join('\n');
+  const termine = ch.termine.map((t) => `• ${terminText(t)}`).join('\n');
+  return `Neu vom Hof Kruckenhaus: ${ch.titel}\n\n${artikel}\n\n${termine}\n\n`
+    + `Bestellschluss: ${datumKurz(ch.bestellschluss)}\n`
+    + 'Jetzt vorbestellen: https://www.kruckenhaus.at/hofladen.html\n\n'
+    + 'Liebe Grüße, Kathrin & Florian';
+}
+
+function ankuendigungOeffnen() {
+  const ch = aktiveCharge();
+  const dialog = document.getElementById('vw-dialog');
+  if (!dialog) return;
+  const text = ankuendigungText(ch);
+  dialog.innerHTML = `<div class="vw-dialog-inhalt">
+    <div class="vw-dialog-kopf">
+      <h2 id="vw-dialog-titel">Ankündigung für WhatsApp</h2>
+      <button type="button" class="vw-schliessen" data-aktion="schliessen" aria-label="Schließen">×</button>
+    </div>
+    <p class="vw-klein">Text prüfen, dann in WhatsApp öffnen und dort Kanal, Übertragungsliste oder Gruppe auswählen.</p>
+    <label class="vw-feld"><span>Text</span>
+      <textarea id="vw-ankuendigung" rows="12">${esc(text)}</textarea></label>
+    <div class="vw-knopfreihe">
+      <button type="button" class="vw-knopf vw-knopf--voll" data-aktion="ankuendigung-whatsapp">In WhatsApp öffnen</button>
+      <button type="button" class="vw-knopf" data-aktion="ankuendigung-kopieren">Text kopieren</button>
+    </div>
+  </div>`;
+  delete dialog.dataset.id;
+  if (!dialog.open) dialog.showModal();
+}
+
 function navLink(b) {
   const k = kundeVon(b);
   const ziel = encodeURIComponent(`${k.strasse}, ${k.plz} ${k.ort}`);
@@ -232,6 +268,7 @@ function ansichtUebersicht() {
   if (ungewogen) aufgaben.push(`<li><a href="#wiegen">${ungewogen} Positionen noch nicht gewogen <span class="vw-pfeil">›</span></a></li>`);
   if (nichtUebergeben) aufgaben.push(`<li><a href="#uebergabe">${nichtUebergeben} Bestellungen noch nicht übergeben <span class="vw-pfeil">›</span></a></li>`);
   if (offen.length) aufgaben.push(`<li><a href="#zahlungen">${offen.length} Bestellungen noch nicht bezahlt <span class="vw-pfeil">›</span></a></li>`);
+  aufgaben.push('<li><button type="button" data-aktion="ankuendigung">Ankündigung für WhatsApp <span class="vw-pfeil">›</span></button></li>');
   aufgaben.push('<li><button type="button" data-aktion="drucken">Packzettel drucken <span class="vw-pfeil">›</span></button></li>');
   aufgaben.push('<li><button type="button" data-aktion="export">Liste für Excel herunterladen <span class="vw-pfeil">›</span></button></li>');
 
@@ -554,6 +591,7 @@ function stoppKarte(b) {
       <button type="button" class="vw-knopf${b.uebergeben ? '' : ' vw-knopf--voll'}" data-aktion="uebergeben" data-id="${b.id}">${b.uebergeben ? 'Übergeben ✓ (rückgängig)' : 'Übergeben'}</button>
       ${!b.bezahlt ? `<button type="button" class="vw-knopf" data-aktion="bezahlt" data-wert="bar" data-id="${b.id}">Bar erhalten</button>` : ''}
       <a class="vw-knopf" href="tel:${esc(k.telefon.replace(/\s/g, ''))}">Anrufen</a>
+      <a class="vw-knopf" href="${whatsappLink(b, bereitText(b))}" target="_blank" rel="noopener">WhatsApp</a>
       ${lieferung ? `<a class="vw-knopf" href="${navLink(b)}" target="_blank" rel="noopener">Navi</a>` : ''}
       <button type="button" class="vw-knopf" data-aktion="oeffnen" data-id="${b.id}">Details</button>
     </div>
@@ -852,6 +890,25 @@ function initKlicks() {
       case 'export':
         exportieren();
         break;
+      case 'ankuendigung':
+        ankuendigungOeffnen();
+        break;
+      case 'ankuendigung-whatsapp': {
+        const text = document.getElementById('vw-ankuendigung').value;
+        window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank', 'noopener');
+        break;
+      }
+      case 'ankuendigung-kopieren': {
+        const text = document.getElementById('vw-ankuendigung').value;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(text)
+            .then(() => meldung('Text kopiert – jetzt in WhatsApp einfügen.'))
+            .catch(() => meldung('Kopieren nicht möglich – bitte Text markieren und kopieren.'));
+        } else {
+          meldung('Kopieren nicht möglich – bitte Text markieren und kopieren.');
+        }
+        break;
+      }
       case 'drucken':
         packzettelDrucken();
         break;

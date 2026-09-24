@@ -271,18 +271,31 @@ nicht überwiesen".
 | Neue Bestellung eingegangen | Kathrin + Florian | Mail (automatisch) |
 | Von Warteliste nachgerückt | Kunde | Mail (auf Knopfdruck) |
 | Abholbereit / Lieferung kommt, mit Endbetrag | Kunde | Mail (auf Knopfdruck, alle einer Charge) |
-| Neue Charge | Kunden mit Einwilligung | Mail (auf Knopfdruck) + Text zum Kopieren für WhatsApp |
-| Einzelne Rückfrage | Kunde | WhatsApp-Knopf mit vorbereitetem Text (öffnet WhatsApp am Handy) |
+| Neue Charge | Kunden mit Einwilligung | Mail (auf Knopfdruck) + „Ankündigung für WhatsApp“ (Kanal, Übertragungsliste, Gruppe) |
+| Einzelne Rückfrage / „ist fertig“ | Kunde | WhatsApp-Knopf mit vorbereitetem Text (öffnet WhatsApp am Handy) |
 
 - Versand über **Resend** (schon eingerichtet, gratis bis 3.000 Mails/Monat,
   100 pro Tag – reicht deutlich). Bei der Ankündigung an viele Empfänger
   werden die Mails gestaffelt verschickt.
-- **Keine automatische WhatsApp-Anbindung:** Die offizielle WhatsApp-Business-
-  Schnittstelle ist kostenpflichtig, aufwendig freizuschalten und für diese
-  Mengen nicht nötig. Die WhatsApp-Gruppen können bleiben – sie dienen dann
-  nur noch zum **Ankündigen**, nicht mehr zum Sammeln. Empfehlung: aus den
-  Gruppen langfristig einen **WhatsApp-Kanal** machen (nur ihr schreibt,
-  keine Antworten-Flut).
+- **WhatsApp ohne Schnittstelle (entschieden 09/2026):** Die offizielle
+  WhatsApp-Business-Schnittstelle (Cloud API) wird **nicht** angebunden –
+  Kosten pro Nachricht, Meta-Verifizierung, Vorlagen-Freigabe und
+  zusätzliche Datenweitergabe an Meta stehen in keinem Verhältnis zum
+  Nutzen; bestehende Gruppen ließen sich ohnehin nicht einbinden.
+  Stattdessen, kostenlos und ohne Einrichtung:
+  - **„WhatsApp“-Knopf je Bestellung** (Details und Übergabe-Liste): öffnet
+    WhatsApp am Handy mit fertigem Text „ist fertig“ samt Betrag und Termin
+    an genau diesen Kunden – nur noch auf Senden tippen.
+  - **„Ankündigung für WhatsApp“** in der Übersicht: fertiger Text zur
+    Charge (Artikel, Preise, Termine, Bestellschluss, Link zur
+    Vorbestellseite), vorher änderbar. „In WhatsApp öffnen“ lässt Kanal,
+    Übertragungsliste oder Gruppe auswählen; alternativ „Text kopieren“.
+  - Für Ankündigungen die **Übertragungslisten** der WhatsApp-Business-App
+    oder einen **WhatsApp-Kanal** nutzen (Übertragungslisten erreichen nur
+    Kunden, die eure Nummer gespeichert haben). Die Gruppen können bleiben –
+    sie dienen dann nur noch zum **Ankündigen**, nicht mehr zum Sammeln.
+  - Bestellungen, die per WhatsApp kommen, werden in der Verwaltung mit
+    „Erfassen“ (Quelle „WhatsApp“) eingetragen.
 - Jede Newsletter-Mail enthält einen Abmeldelink.
 - Fehlt `RESEND_API_KEY`, wird trotzdem alles gespeichert (gleiches Muster
   wie beim Kontaktformular) – es geht nur keine Mail raus.
