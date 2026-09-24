@@ -13,37 +13,14 @@
  * ============================================================ */
 
 import { DatabaseSync } from 'node:sqlite';
+import { d1Nachbau } from './_d1-nachbau.mjs';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { bestellungAnlegen, bestellungNachruecken, preisVorschlaege, positionBetrag, EingabeFehler, euro,
   voranmeldungAnlegen, voranmeldungenUebernehmen }
   from '../functions/_lib/hofladen.js';
 
-// Minimaler D1-Nachbau auf node:sqlite (prepare/bind/first/all/run, batch als Transaktion)
-const roh = new DatabaseSync(':memory:');
-roh.exec('PRAGMA foreign_keys = ON');
-const liefertZeilen = (sql) => /^\s*select/i.test(sql) || /returning/i.test(sql);
-const db = {
-  prepare(sql) {
-    const stmt = { sql, args: [],
-      bind(...a) { return { ...stmt, args: a }; },
-      async first() { return roh.prepare(sql).get(...this.args) ?? null; },
-      async all() { return { results: roh.prepare(sql).all(...this.args) }; },
-      async run() { return { meta: roh.prepare(sql).run(...this.args) }; },
-    };
-    return stmt;
-  },
-  async batch(stmts) {
-    roh.exec('BEGIN');
-    try {
-      const erg = stmts.map((s) => liefertZeilen(s.sql)
-        ? { results: roh.prepare(s.sql).all(...s.args) }
-        : { results: [], meta: roh.prepare(s.sql).run(...s.args) });
-      roh.exec('COMMIT');
-      return erg;
-    } catch (e) { roh.exec('ROLLBACK'); throw e; }
-  },
-};
+const { roh, db } = d1Nachbau();
 
 const schema = readFileSync(new URL('../schema-hofladen.sql', import.meta.url), 'utf8');
 roh.exec(schema);
