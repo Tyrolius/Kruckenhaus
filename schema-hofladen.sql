@@ -277,3 +277,53 @@ WHERE ca.id = (
   ORDER BY c2.erstellt_am DESC, c2.id DESC
   LIMIT 1
 );
+
+
+-- ------------------------------------------------------------
+-- Voranmeldungen: unverbindliche Vormerkung für eine spätere Charge,
+-- z. B. im Frühjahr „3 Masthühner für den Herbst".
+-- Noch ohne Preis, Termin und Kontingent. Beim Anlegen der passenden
+-- Charge werden sie in der Verwaltung zu Bestellungen übernommen
+-- (wer sich zuerst gemeldet hat, kommt zuerst dran).
+-- zeitraum: 'naechste' (nächste Charge mit dem Produkt, ohne Jahr)
+--           oder Saison mit Jahr: 'fruehjahr', 'sommer', 'herbst',
+--           'martini', 'weihnachten'
+-- status:   'offen' | 'uebernommen' (→ bestellung_id) | 'abgesagt'
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS voranmeldungen (
+  id            INTEGER PRIMARY KEY AUTOINCREMENT,
+  kunde_id      INTEGER NOT NULL REFERENCES kunden (id),
+  produkt_id    INTEGER NOT NULL REFERENCES produkte (id),
+  menge         INTEGER NOT NULL CHECK (menge > 0),
+  zeitraum      TEXT    NOT NULL
+                CHECK (zeitraum IN ('naechste', 'fruehjahr', 'sommer', 'herbst', 'martini', 'weihnachten')),
+  jahr          INTEGER,
+  quelle        TEXT    NOT NULL DEFAULT 'web'
+                CHECK (quelle IN ('web', 'whatsapp', 'telefon', 'persoenlich')),
+  status        TEXT    NOT NULL DEFAULT 'offen'
+                CHECK (status IN ('offen', 'uebernommen', 'abgesagt')),
+  bestellung_id INTEGER REFERENCES bestellungen (id),
+  notiz         TEXT,
+  erstellt_am   TEXT    NOT NULL DEFAULT (datetime('now')),
+  geaendert_am  TEXT    NOT NULL DEFAULT (datetime('now')),
+  CHECK ((zeitraum = 'naechste' AND jahr IS NULL)
+         OR (zeitraum <> 'naechste' AND jahr IS NOT NULL))
+);
+
+CREATE INDEX IF NOT EXISTS idx_voranmeldungen_offen ON voranmeldungen (status, produkt_id, zeitraum, jahr);
+CREATE INDEX IF NOT EXISTS idx_voranmeldungen_kunde ON voranmeldungen (kunde_id);
+
+-- Planungshilfe: offene Voranmeldungen je Produkt und Zeitraum
+-- („Herbst 2026: 34 Masthühner von 11 Kunden")
+CREATE VIEW IF NOT EXISTS v_voranmeldungen_summe AS
+SELECT
+  v.produkt_id,
+  p.name AS produkt_name,
+  v.zeitraum,
+  v.jahr,
+  SUM(v.menge)               AS menge,
+  COUNT(DISTINCT v.kunde_id) AS kunden
+FROM voranmeldungen v
+JOIN produkte p ON p.id = v.produkt_id
+WHERE v.status = 'offen'
+GROUP BY v.produkt_id, v.zeitraum, v.jahr;

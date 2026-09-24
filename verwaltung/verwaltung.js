@@ -10,7 +10,8 @@
  * die Funktionen in Abschnitt 3.
  *
  * Ansichten (Adresse hinter #):
- *   uebersicht · bestellungen · neu · wiegen · uebergabe · zahlungen
+ *   uebersicht · bestellungen · neu · wiegen · uebergabe · zahlungen ·
+ *   voranmeldungen
  * ============================================================ */
 
 'use strict';
@@ -66,6 +67,15 @@ function terminText(t) {
 
 const QUELLEN = { web: 'Website', whatsapp: 'WhatsApp', telefon: 'Telefon', persoenlich: 'persönlich' };
 const ZAHLARTEN = { bar: 'bar', ueberweisung: 'Überweisung' };
+const ZEITRAEUME = {
+  naechste: 'nächste Charge',
+  fruehjahr: 'Frühjahr',
+  sommer: 'Sommer',
+  herbst: 'Herbst',
+  martini: 'Martini',
+  weihnachten: 'Weihnachten',
+};
+const zeitraumText = (v) => (v.zeitraum === 'naechste' ? ZEITRAEUME.naechste : `${ZEITRAEUME[v.zeitraum]} ${v.jahr}`);
 
 /* ------------------------------------------------------------
    3. DATEN UND BERECHNUNGEN
@@ -74,7 +84,10 @@ const aktiveCharge = () => daten.chargen.find((c) => c.id === zustand.chargeId);
 const chargeVon = (b) => daten.chargen.find((c) => c.id === b.chargeId);
 const kundeVon = (b) => daten.kunden.find((k) => k.id === b.kundeId);
 const artikelVon = (ch, id) => ch.artikel.find((a) => a.id === id);
-const terminVon = (b) => chargeVon(b).termine.find((t) => t.id === b.terminId);
+// Übernommene Voranmeldungen haben anfangs keinen Termin (null)
+const terminVon = (b) => chargeVon(b).termine.find((t) => t.id === b.terminId) || null;
+const terminArt = (b) => (terminVon(b) ? terminVon(b).art : null);
+const produktVon = (id) => daten.produkte.find((p) => p.id === id);
 const bestellungVon = (id) => daten.bestellungen.find((b) => b.id === id);
 
 const bestellungenDerCharge = (ch = aktiveCharge()) =>
@@ -154,7 +167,9 @@ function marken(b) {
   const teile = [];
   if (b.status === 'warteliste') teile.push('<span class="vw-marke vw-marke--info">Warteliste</span>');
   if (b.status === 'storniert') teile.push('<span class="vw-marke">storniert</span>');
-  teile.push(`<span class="vw-marke">${t.art === 'abholung' ? 'Abholung' : 'Lieferung'} ${datumKurz(t.datum)}</span>`);
+  teile.push(t
+    ? `<span class="vw-marke">${t.art === 'abholung' ? 'Abholung' : 'Lieferung'} ${datumKurz(t.datum)}</span>`
+    : '<span class="vw-marke vw-marke--offen">Termin offen</span>');
   if (istAktiv(b)) {
     teile.push(b.bezahlt
       ? `<span class="vw-marke vw-marke--gut">bezahlt (${ZAHLARTEN[b.bezahlt]})</span>`
@@ -183,11 +198,25 @@ function whatsappLink(b, text) {
 function bereitText(b) {
   const k = kundeVon(b);
   const t = terminVon(b);
+  if (!t) return bestaetigungText(b);
   const wann = t.art === 'abholung'
     ? `Ihr könnt sie am ${datumKurz(t.datum)} zwischen ${uhrzeit(t.von)} und ${uhrzeit(t.bis)} Uhr bei uns am Hof abholen.`
     : `Wir liefern am ${datumKurz(t.datum)} zwischen ${uhrzeit(t.von)} und ${uhrzeit(t.bis)} Uhr.`;
   return `Hallo ${k.name.split(' ')[0]}, eure Bestellung ${b.nummer} ist fertig: ${artikelKurz(b)}. `
     + `Betrag: ${betragText(bestellBetrag(b))}. ${wann} Liebe Grüße, Kathrin & Florian`;
+}
+
+// Für übernommene Voranmeldungen: dabei, Preis nennen, Termin erfragen
+function bestaetigungText(b) {
+  const ch = chargeVon(b);
+  const k = kundeVon(b);
+  const preise = b.positionen.map((p) => {
+    const a = artikelVon(ch, p.artikelId);
+    return `${p.menge}× ${a.name} (${a.art === 'gewicht' ? `${euro(a.preisCent)}/kg` : `je ${euro(a.preisCent)}`})`;
+  }).join(', ');
+  const termine = ch.termine.map((t) => terminText(t)).join(' oder ');
+  return `Hallo ${k.name.split(' ')[0]}, ihr hattet euch vorangemeldet – ihr seid dabei: ${preise}. `
+    + `Passt euch ${termine}? Und zahlt ihr bar oder per Überweisung? Liebe Grüße, Kathrin & Florian`;
 }
 
 // Ankündigung einer Charge – zum Weiterleiten in WhatsApp-Kanal,
@@ -264,6 +293,13 @@ function ansichtUebersicht() {
   }).join('');
 
   const aufgaben = [];
+  const ohneTermin = aktiv.filter((b) => !terminVon(b)).length;
+  const passendeVa = passendeVoranmeldungen(ch).length;
+  const offeneVa = daten.voranmeldungen.filter((v) => v.status === 'offen').length;
+  aufgaben.push(`<li><a href="#voranmeldungen">${passendeVa
+    ? `${passendeVa} Voranmeldungen passen zu dieser Charge`
+    : `Voranmeldungen (${offeneVa} offen)`} <span class="vw-pfeil">›</span></a></li>`);
+  if (ohneTermin) aufgaben.push(`<li><button type="button" data-aktion="filter" data-wert="termin-offen">${ohneTermin} Bestellungen ohne Termin – bestätigen <span class="vw-pfeil">›</span></button></li>`);
   if (warteliste.length) aufgaben.push(`<li><button type="button" data-aktion="filter" data-wert="warteliste">${warteliste.length} auf der Warteliste <span class="vw-pfeil">›</span></button></li>`);
   if (ungewogen) aufgaben.push(`<li><a href="#wiegen">${ungewogen} Positionen noch nicht gewogen <span class="vw-pfeil">›</span></a></li>`);
   if (nichtUebergeben) aufgaben.push(`<li><a href="#uebergabe">${nichtUebergeben} Bestellungen noch nicht übergeben <span class="vw-pfeil">›</span></a></li>`);
@@ -297,6 +333,7 @@ const FILTER = [
   ['abholung', 'Abholung'],
   ['lieferung', 'Lieferung'],
   ['offen', 'Nicht bezahlt'],
+  ['termin-offen', 'Termin offen'],
   ['warteliste', 'Warteliste'],
   ['storniert', 'Storniert'],
 ];
@@ -304,7 +341,8 @@ const FILTER = [
 function passtZumFilter(b) {
   switch (zustand.filter) {
     case 'abholung':
-    case 'lieferung': return istAktiv(b) && terminVon(b).art === zustand.filter;
+    case 'lieferung': return istAktiv(b) && terminArt(b) === zustand.filter;
+    case 'termin-offen': return istAktiv(b) && !terminVon(b);
     case 'offen': return istAktiv(b) && !b.bezahlt;
     case 'warteliste': return b.status === 'warteliste';
     case 'storniert': return b.status === 'storniert';
@@ -349,7 +387,8 @@ function ansichtNeu() {
   const ch = aktiveCharge();
   inhalt().innerHTML = `
     <div class="vw-kopf"><h1>Bestellung erfassen</h1>
-      <p class="vw-klein">Für Bestellungen per Telefon, WhatsApp oder persönlich. Zählt genauso vom Kontingent ab wie eine Bestellung über die Website.</p>
+      <p class="vw-klein">Für Bestellungen per Telefon, WhatsApp oder persönlich. Zählt genauso vom Kontingent ab wie eine Bestellung über die Website.
+        Für eine spätere Charge ohne Preis und Termin: <a href="#voranmeldungen">Voranmeldung erfassen</a>.</p>
       ${chargeWahl()}</div>
     <form class="vw-karte" id="vw-formular" novalidate>
       <fieldset class="vw-feldgruppe"><legend>Wie kam die Bestellung?</legend>
@@ -544,8 +583,9 @@ function gewichtEintragen(input) {
 function ansichtUebergabe() {
   const ch = aktiveCharge();
   const aktiv = bestellungenDerCharge(ch).filter(istAktiv);
-  const anzahl = (art) => aktiv.filter((b) => terminVon(b).art === art && !b.uebergeben).length;
-  const auswahl = aktiv.filter((b) => terminVon(b).art === zustand.uebergabeArt);
+  const anzahl = (art) => aktiv.filter((b) => terminArt(b) === art && !b.uebergeben).length;
+  const auswahl = aktiv.filter((b) => terminArt(b) === zustand.uebergabeArt);
+  const ohneTermin = aktiv.filter((b) => !terminVon(b)).length;
   const termine = ch.termine.filter((t) => t.art === zustand.uebergabeArt);
 
   let liste;
@@ -571,13 +611,14 @@ function ansichtUebergabe() {
         <button type="button" class="vw-chip" data-aktion="uebergabe-art" data-wert="lieferung" aria-pressed="${zustand.uebergabeArt === 'lieferung'}">Liefertour (${anzahl('lieferung')} offen)</button>
       </div>
       ${termine.map((t) => `<p class="vw-klein">${terminText(t)}</p>`).join('')}
+      ${ohneTermin ? `<p><button type="button" class="vw-knopf vw-knopf--warnung" data-aktion="filter" data-wert="termin-offen">${ohneTermin} Bestellungen ohne Termin</button></p>` : ''}
     </div>
     ${liste || '<p class="vw-klein">Keine Bestellungen.</p>'}`;
 }
 
 function stoppKarte(b) {
   const k = kundeVon(b);
-  const lieferung = terminVon(b).art === 'lieferung';
+  const lieferung = terminArt(b) === 'lieferung';
   return `<article class="vw-karte vw-stopp${b.uebergeben ? ' vw-stopp--erledigt' : ''}">
     <div class="vw-dialog-kopf">
       <div><strong>${esc(k.name)}</strong> <span class="vw-klein">${esc(b.nummer)}</span></div>
@@ -633,6 +674,188 @@ function ansichtZahlungen() {
     <button type="button" class="vw-knopf vw-knopf--breit" data-aktion="export">Liste für Excel herunterladen</button>`;
 }
 
+// 5.7 Voranmeldungen (unverbindlich, für spätere Chargen)
+
+// Saison einer Charge aus dem Datum des ersten Termins – nur für die
+// Vorauswahl beim Übernehmen, lässt sich per Häkchen ändern.
+function saisonVon(ch) {
+  const datum = ch.termine.map((t) => t.datum).sort()[0] || ch.bestellschluss;
+  const [jahr, monat, tag] = datum.split('-').map(Number);
+  let zeitraum = 'fruehjahr';
+  if (monat >= 6 && monat <= 8) zeitraum = 'sommer';
+  else if (monat === 9 || monat === 10) zeitraum = 'herbst';
+  else if (monat === 11 && tag <= 20) zeitraum = 'martini';
+  else if (monat === 11 || monat === 12) zeitraum = 'weihnachten';
+  return { zeitraum, jahr };
+}
+
+// Offene Voranmeldungen für Produkte, die in dieser Charge angeboten werden
+function passendeVoranmeldungen(ch) {
+  const produkte = new Set(ch.artikel.map((a) => a.produktId));
+  return daten.voranmeldungen
+    .filter((v) => v.status === 'offen' && produkte.has(v.produktId))
+    .sort((x, y) => x.erstellt.localeCompare(y.erstellt));
+}
+
+function vorausgewaehlt(v, saison) {
+  return v.zeitraum === 'naechste' || (v.zeitraum === saison.zeitraum && v.jahr === saison.jahr);
+}
+
+function ansichtVoranmeldungen() {
+  const ch = aktiveCharge();
+  const saison = saisonVon(ch);
+  const passend = passendeVoranmeldungen(ch);
+  const offen = daten.voranmeldungen.filter((v) => v.status === 'offen');
+  const jahr = new Date().getFullYear();
+
+  // Planungsübersicht: Summe je Zeitraum und Produkt
+  const gruppen = new Map();
+  offen.forEach((v) => {
+    const schluessel = zeitraumText(v);
+    if (!gruppen.has(schluessel)) gruppen.set(schluessel, new Map());
+    const g = gruppen.get(schluessel);
+    const eintrag = g.get(v.produktId) || { menge: 0, kunden: new Set() };
+    eintrag.menge += v.menge;
+    eintrag.kunden.add(v.kundeId);
+    g.set(v.produktId, eintrag);
+  });
+  const planung = [...gruppen].map(([zeitraum, g]) => `
+    <div class="vw-artikel-zeile"><strong>${esc(zeitraum)}</strong>
+      ${[...g].map(([produktId, e]) => `<div class="vw-zeile-kopf vw-klein">
+        <span>${esc(produktVon(produktId).name)}</span><span>${e.menge} Stück · ${e.kunden.size} ${e.kunden.size === 1 ? 'Kunde' : 'Kunden'}</span></div>`).join('')}
+    </div>`).join('');
+
+  const vaZeile = (v, mitHaken) => {
+    const k = daten.kunden.find((x) => x.id === v.kundeId);
+    return `<label class="vw-va-zeile">
+      ${mitHaken ? `<input type="checkbox" name="va" value="${v.id}" ${vorausgewaehlt(v, saison) ? 'checked' : ''} />` : ''}
+      <span class="vw-va-text"><strong>${esc(k.name)}</strong> · ${v.menge}× ${esc(produktVon(v.produktId).name)}<br>
+        <span class="vw-klein">${esc(zeitraumText(v))} · ${QUELLEN[v.quelle]} · gemeldet ${datumKurz(v.erstellt)}${v.notiz ? ` · „${esc(v.notiz)}"` : ''}</span></span>
+      <button type="button" class="vw-knopf vw-knopf--warnung vw-knopf--klein" data-aktion="va-absagen" data-id="${v.id}">Absagen</button>
+    </label>`;
+  };
+  const andere = offen.filter((v) => !passend.includes(v));
+
+  inhalt().innerHTML = `
+    <div class="vw-kopf"><h1>Voranmeldungen</h1>
+      <p class="vw-klein">Unverbindlich, noch ohne Preis und Termin. Zählen erst vom Kontingent ab, wenn sie in eine Charge übernommen werden – wer sich zuerst gemeldet hat, kommt zuerst dran.</p>
+      ${chargeWahl()}</div>
+    <div class="vw-spalten">
+      <section class="vw-karte" aria-label="Übernehmen">
+        <h2>Passend zu „${esc(ch.titel)}"</h2>
+        ${passend.length ? `<p class="vw-klein">Vorausgewählt: „nächste Charge" und ${esc(ZEITRAEUME[saison.zeitraum])} ${saison.jahr}.</p>
+          <div id="vw-va-auswahl">${passend.map((v) => vaZeile(v, true)).join('')}</div>
+          <button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit" data-aktion="va-uebernehmen">Ausgewählte als Bestellungen übernehmen</button>`
+        : '<p class="vw-klein">Keine offenen Voranmeldungen für die Produkte dieser Charge.</p>'}
+      </section>
+      <div>
+        <section class="vw-karte" aria-label="Planung"><h2>Planung: offen vorangemeldet</h2>
+          ${planung || '<p class="vw-klein">Keine offenen Voranmeldungen.</p>'}</section>
+        <section class="vw-karte" aria-label="Voranmeldung erfassen"><h2>Voranmeldung erfassen</h2>
+          <form id="vw-va-formular" novalidate>
+            <label class="vw-feld"><span>Name</span>
+              <input name="name" list="vw-kundenliste-va" autocomplete="off" required /></label>
+            <datalist id="vw-kundenliste-va">${daten.kunden.map((k) => `<option value="${esc(k.name)}">${esc(k.ort)}</option>`).join('')}</datalist>
+            <label class="vw-feld"><span>Produkt</span>
+              <select name="produkt">${daten.produkte.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select></label>
+            <label class="vw-feld"><span>Menge</span><input name="menge" type="number" inputmode="numeric" min="1" value="1" /></label>
+            <label class="vw-feld"><span>Für wann?</span>
+              <select name="zeitraum">${Object.entries(ZEITRAEUME).map(([wert, text]) => `<option value="${wert}">${text}</option>`).join('')}</select></label>
+            <label class="vw-feld" id="vw-va-jahr" hidden><span>Jahr</span>
+              <select name="jahr"><option>${jahr}</option><option>${jahr + 1}</option></select></label>
+            <fieldset class="vw-feldgruppe"><legend>Wie kam sie?</legend>
+              <div class="vw-auswahl vw-auswahl--reihe">
+                <label><input type="radio" name="quelle" value="whatsapp" checked /> WhatsApp</label>
+                <label><input type="radio" name="quelle" value="telefon" /> Telefon</label>
+                <label><input type="radio" name="quelle" value="persoenlich" /> persönlich</label>
+              </div></fieldset>
+            <label class="vw-feld"><span>Notiz (optional)</span><input name="notiz" autocomplete="off" /></label>
+            <button type="submit" class="vw-knopf vw-knopf--voll vw-knopf--breit">Voranmeldung speichern</button>
+          </form>
+        </section>
+        ${andere.length ? `<section class="vw-karte" aria-label="Weitere"><h2>Für spätere Chargen</h2>${andere.map((v) => vaZeile(v, false)).join('')}</section>` : ''}
+      </div>
+    </div>`;
+}
+
+function voranmeldungSpeichern(form) {
+  const name = feld(form, 'name').value.trim();
+  const menge = Number(feld(form, 'menge').value);
+  const zeitraum = feld(form, 'zeitraum').value;
+  if (!name) return meldung('Bitte einen Namen eintragen.');
+  if (!Number.isInteger(menge) || menge < 1) return meldung('Bitte eine gültige Menge eintragen.');
+
+  let k = daten.kunden.find((x) => x.name.toLowerCase() === name.toLowerCase());
+  if (!k) {
+    k = { id: `k${daten.kunden.length + 1}`, name, telefon: '', strasse: '', plz: '', ort: '', stammkunde: false };
+    daten.kunden.push(k);
+  }
+  const v = {
+    id: `v${Date.now()}`,
+    kundeId: k.id,
+    produktId: feld(form, 'produkt').value,
+    menge,
+    zeitraum,
+    jahr: zeitraum === 'naechste' ? null : Number(feld(form, 'jahr').value),
+    quelle: form.querySelector('input[name="quelle"]:checked').value,
+    status: 'offen',
+    erstellt: new Date().toISOString().slice(0, 10),
+    notiz: feld(form, 'notiz').value.trim(),
+  };
+  daten.voranmeldungen.push(v);
+  zeigen();
+  meldung(`Vorgemerkt: ${k.name}, ${menge}× ${produktVon(v.produktId).name} (${zeitraumText(v)}).`);
+}
+
+// Gleiche Logik wie voranmeldungenUebernehmen() in functions/_lib/hofladen.js:
+// je Kunde eine Bestellung, in Reihenfolge der Anmeldung, Rest → Warteliste.
+function voranmeldungenUebernehmen(ids) {
+  const ch = aktiveCharge();
+  const auswahl = passendeVoranmeldungen(ch).filter((v) => ids.includes(v.id));
+  if (!auswahl.length) return meldung('Bitte mindestens eine Voranmeldung auswählen.');
+
+  const jeKunde = new Map();
+  auswahl.forEach((v) => {
+    if (!jeKunde.has(v.kundeId)) jeKunde.set(v.kundeId, []);
+    jeKunde.get(v.kundeId).push(v);
+  });
+
+  let vorgemerkt = 0;
+  let warteliste = 0;
+  jeKunde.forEach((liste, kundeId) => {
+    const mengen = new Map();
+    liste.forEach((v) => {
+      const a = ch.artikel.find((x) => x.produktId === v.produktId);
+      mengen.set(a.id, (mengen.get(a.id) || 0) + v.menge);
+    });
+    const positionen = [...mengen].map(([artikelId, menge]) => ({ artikelId, menge }));
+    const reicht = positionen.every((p) => freieMenge(ch, p.artikelId) >= p.menge);
+    const b = {
+      id: `b${Date.now()}${kundeId}`,
+      nummer: naechsteNummer(),
+      chargeId: ch.id,
+      kundeId,
+      quelle: liste[0].quelle,
+      erstellt: new Date().toISOString().slice(0, 10),
+      status: reicht ? 'vorgemerkt' : 'warteliste',
+      terminId: null,
+      zahlart: 'bar',
+      bezahlt: null,
+      uebergeben: false,
+      anmerkung: liste.map((v) => v.notiz).filter(Boolean).join(' '),
+      interneNotiz: 'aus Voranmeldung – Termin und Zahlart bestätigen',
+      positionen,
+    };
+    daten.bestellungen.push(b);
+    liste.forEach((v) => { v.status = 'uebernommen'; v.bestellungId = b.id; });
+    if (reicht) vorgemerkt += 1; else warteliste += 1;
+  });
+
+  zustand.filter = 'termin-offen';
+  location.hash = '#bestellungen';
+  meldung(`${vorgemerkt} Bestellungen übernommen${warteliste ? `, ${warteliste} auf der Warteliste` : ''} – jetzt Termine bestätigen.`);
+}
+
 /* ------------------------------------------------------------
    6. DETAIL-DIALOG
    ------------------------------------------------------------ */
@@ -680,13 +903,15 @@ function detailOeffnen(id) {
     </div>
     <div class="vw-abschnitt">${marken(b)}</div>
     <div class="vw-abschnitt">
-      <p><strong>${terminText(t)}</strong></p>
-      ${t.art === 'lieferung' ? `<p>${esc(k.strasse)}, ${esc(k.plz)} ${esc(k.ort)}</p>` : ''}
+      ${t ? `<p><strong>${terminText(t)}</strong></p>` : `<p><strong>Termin noch offen</strong> – mit dem Kunden klären und hier wählen:</p>
+        <div class="vw-knopfreihe">${ch.termine.map((x) => `<button type="button" class="vw-knopf" data-aktion="termin-setzen" data-id="${b.id}" data-wert="${x.id}">${terminText(x)}</button>`).join('')}</div>
+        <div class="vw-knopfreihe">${Object.entries(ZAHLARTEN).map(([wert, text]) => `<button type="button" class="vw-chip" data-aktion="zahlart-setzen" data-id="${b.id}" data-wert="${wert}" aria-pressed="${b.zahlart === wert}">${text}</button>`).join('')}</div>`}
+      ${t && t.art === 'lieferung' ? `<p>${esc(k.strasse)}, ${esc(k.plz)} ${esc(k.ort)}</p>` : ''}
       <p>${esc(k.telefon)}</p>
       <div class="vw-knopfreihe">
         <a class="vw-knopf" href="tel:${esc(k.telefon.replace(/\s/g, ''))}">Anrufen</a>
-        <a class="vw-knopf" href="${whatsappLink(b, bereitText(b))}" target="_blank" rel="noopener">WhatsApp „ist fertig"</a>
-        ${t.art === 'lieferung' ? `<a class="vw-knopf" href="${navLink(b)}" target="_blank" rel="noopener">Navi</a>` : ''}
+        <a class="vw-knopf" href="${whatsappLink(b, bereitText(b))}" target="_blank" rel="noopener">${t ? 'WhatsApp „ist fertig"' : 'WhatsApp „Bestätigung"'}</a>
+        ${t && t.art === 'lieferung' ? `<a class="vw-knopf" href="${navLink(b)}" target="_blank" rel="noopener">Navi</a>` : ''}
       </div>
     </div>
     <div class="vw-abschnitt">
@@ -694,6 +919,7 @@ function detailOeffnen(id) {
         <tfoot><tr><td>Summe</td><td class="vw-zahl">${betragText(summe)}</td></tr></tfoot></table>
       <p class="vw-klein">Zahlung gewünscht: ${ZAHLARTEN[b.zahlart]}</p>
       ${b.anmerkung ? `<p>„${esc(b.anmerkung)}"</p>` : ''}
+      ${b.interneNotiz ? `<p class="vw-klein">Intern: ${esc(b.interneNotiz)}</p>` : ''}
     </div>
     <div class="vw-abschnitt vw-knopfreihe">${aktionen}</div>
   </div>`;
@@ -736,7 +962,7 @@ function exportieren() {
         const betrag = positionBetrag(ch, p);
         zeilen.push([b.nummer, b.erstellt, k.name, k.telefon.replace(/^\+/, '00'), k.strasse,
           `${k.plz} ${k.ort}`.trim(), QUELLEN[b.quelle], b.status,
-          t.art === 'abholung' ? 'Abholung' : 'Lieferung', t.datum, a.name, p.menge,
+          t ? (t.art === 'abholung' ? 'Abholung' : 'Lieferung') : 'offen', t ? t.datum : '', a.name, p.menge,
           p.gewichtG ? p.gewichtG / 1000 : '', a.preisCent / 100, a.art === 'gewicht' ? 'kg' : 'Stück',
           betrag.cent / 100, betrag.geschaetzt ? 'ja' : '', ZAHLARTEN[b.zahlart],
           b.bezahlt ? ZAHLARTEN[b.bezahlt] : 'offen', b.uebergeben ? 'ja' : 'nein', b.anmerkung]);
@@ -766,7 +992,7 @@ function packzettelDrucken() {
       const t = terminVon(b);
       return `<section class="vw-packzettel">
         <h2>${esc(k.name)} – ${esc(b.nummer)}</h2>
-        <p>${terminText(t)}${t.art === 'lieferung' ? ` · ${esc(k.strasse)}, ${esc(k.ort)}` : ''} · ${esc(k.telefon)}</p>
+        <p>${t ? terminText(t) : 'Termin offen'}${t && t.art === 'lieferung' ? ` · ${esc(k.strasse)}, ${esc(k.ort)}` : ''} · ${esc(k.telefon)}</p>
         <table class="vw-tabelle"><tbody>${b.positionen.map((p) => {
           const a = artikelVon(ch, p.artikelId);
           return `<tr><td>${p.menge}× ${esc(a.name)}</td><td>${p.gewichtG ? kg(p.gewichtG) : ''}</td>
@@ -802,6 +1028,7 @@ const ANSICHTEN = {
   wiegen: ansichtWiegen,
   uebergabe: ansichtUebergabe,
   zahlungen: ansichtZahlungen,
+  voranmeldungen: ansichtVoranmeldungen,
 };
 
 function aktuelleAnsicht() {
@@ -909,6 +1136,28 @@ function initKlicks() {
         }
         break;
       }
+      case 'termin-setzen':
+        b.terminId = el.dataset.wert;
+        meldung(`${kundeVon(b).name}: ${terminText(terminVon(b))}.`);
+        neuZeichnen();
+        break;
+      case 'zahlart-setzen':
+        b.zahlart = el.dataset.wert;
+        neuZeichnen();
+        break;
+      case 'va-uebernehmen': {
+        const ids = [...document.querySelectorAll('#vw-va-auswahl input[name="va"]:checked')].map((i) => i.value);
+        voranmeldungenUebernehmen(ids);
+        break;
+      }
+      case 'va-absagen': {
+        e.preventDefault();
+        const v = daten.voranmeldungen.find((x) => x.id === el.dataset.id);
+        v.status = 'abgesagt';
+        meldung('Voranmeldung abgesagt.');
+        zeigen();
+        break;
+      }
       case 'drucken':
         packzettelDrucken();
         break;
@@ -932,9 +1181,18 @@ function initEingaben() {
 
   document.addEventListener('change', (e) => {
     if (e.target.name === 'termin') adresseUmschalten();
+    if (e.target.name === 'zeitraum') {
+      const jahr = document.getElementById('vw-va-jahr');
+      if (jahr) jahr.hidden = e.target.value === 'naechste';
+    }
   });
 
   document.addEventListener('submit', (e) => {
+    if (e.target.id === 'vw-va-formular') {
+      e.preventDefault();
+      voranmeldungSpeichern(e.target);
+      return;
+    }
     if (e.target.id !== 'vw-formular') return;
     e.preventDefault();
     bestellungSpeichern(e.target);

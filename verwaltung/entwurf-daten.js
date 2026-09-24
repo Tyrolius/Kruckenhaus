@@ -14,6 +14,17 @@ const ENTWURF_DATEN = {
   // Reihenfolge der Orte für die Liefertour (vom Hof aus gedacht)
   tourReihenfolge: ['Breitenbach am Inn', 'Kundl', 'Angath', 'Wörgl', 'Radfeld', 'Rattenberg', 'Brixlegg', 'Kramsach'],
 
+  // Produktkatalog (Preise stehen je Charge)
+  produkte: [
+    { id: 'p1', name: 'Masthuhn' },
+    { id: 'p2', name: 'Eiernudeln 500 g' },
+    { id: 'p3', name: 'Honig 500 g' },
+    { id: 'p4', name: 'Gans' },
+    { id: 'p5', name: 'Rindfleisch-Paket 5 kg' },
+    { id: 'p6', name: 'Rindfleisch-Paket 10 kg' },
+    { id: 'p7', name: 'Pute' },
+  ],
+
   chargen: [
     {
       id: 'c1',
@@ -24,9 +35,9 @@ const ENTWURF_DATEN = {
         { id: 't2', art: 'abholung', datum: '2026-10-10', von: '09:00', bis: '12:00' },
       ],
       artikel: [
-        { id: 'a1', name: 'Masthuhn', art: 'gewicht', preisCent: 1390, kontingent: 40, richtVonG: 1800, richtBisG: 2200 },
-        { id: 'a2', name: 'Eiernudeln 500 g', art: 'stueck', preisCent: 450, kontingent: 40 },
-        { id: 'a3', name: 'Honig 500 g', art: 'stueck', preisCent: 900, kontingent: 25 },
+        { id: 'a1', produktId: 'p1', name: 'Masthuhn', art: 'gewicht', preisCent: 1390, kontingent: 40, richtVonG: 1800, richtBisG: 2200 },
+        { id: 'a2', produktId: 'p2', name: 'Eiernudeln 500 g', art: 'stueck', preisCent: 450, kontingent: 40 },
+        { id: 'a3', produktId: 'p3', name: 'Honig 500 g', art: 'stueck', preisCent: 900, kontingent: 25 },
       ],
     },
     {
@@ -38,10 +49,10 @@ const ENTWURF_DATEN = {
         { id: 't4', art: 'abholung', datum: '2026-11-07', von: '09:00', bis: '12:00' },
       ],
       artikel: [
-        { id: 'a4', name: 'Gans', art: 'gewicht', preisCent: 1690, kontingent: 15, richtVonG: 4500, richtBisG: 5500 },
-        { id: 'a5', name: 'Rindfleisch-Paket 5 kg', art: 'paket', preisCent: 10500, kontingent: 12 },
-        { id: 'a6', name: 'Rindfleisch-Paket 10 kg', art: 'paket', preisCent: 19900, kontingent: 6 },
-        { id: 'a7', name: 'Honig 500 g', art: 'stueck', preisCent: 900, kontingent: 20 },
+        { id: 'a4', produktId: 'p4', name: 'Gans', art: 'gewicht', preisCent: 1690, kontingent: 15, richtVonG: 4500, richtBisG: 5500 },
+        { id: 'a5', produktId: 'p5', name: 'Rindfleisch-Paket 5 kg', art: 'paket', preisCent: 10500, kontingent: 12 },
+        { id: 'a6', produktId: 'p6', name: 'Rindfleisch-Paket 10 kg', art: 'paket', preisCent: 19900, kontingent: 6 },
+        { id: 'a7', produktId: 'p3', name: 'Honig 500 g', art: 'stueck', preisCent: 900, kontingent: 20 },
       ],
     },
   ],
@@ -61,6 +72,20 @@ const ENTWURF_DATEN = {
     { id: 'k12', name: 'Johann Lechner', telefon: '+43 660 0000012', strasse: 'Seeweg 6', plz: '6233', ort: 'Kramsach', stammkunde: false },
     { id: 'k13', name: 'Sabine Fuchs', telefon: '+43 660 0000013', strasse: 'Südtiroler Straße 3', plz: '6240', ort: 'Rattenberg', stammkunde: false },
     { id: 'k14', name: 'Peter Kogler', telefon: '+43 660 0000014', strasse: 'Feldweg 1', plz: '6241', ort: 'Radfeld', stammkunde: true },
+  ],
+
+  // Voranmeldungen: unverbindlich, noch ohne Preis und Termin
+  // zeitraum: 'naechste' | 'fruehjahr' | 'sommer' | 'herbst' | 'martini' | 'weihnachten'
+  voranmeldungen: [
+    { id: 'v1', kundeId: 'k4', produktId: 'p4', menge: 1, zeitraum: 'martini', jahr: 2026, quelle: 'telefon', status: 'offen', erstellt: '2026-03-14', notiz: '' },
+    { id: 'v2', kundeId: 'k7', produktId: 'p4', menge: 2, zeitraum: 'martini', jahr: 2026, quelle: 'whatsapp', status: 'offen', erstellt: '2026-04-02', notiz: 'Eine davon für die Schwiegermutter.' },
+    { id: 'v3', kundeId: 'k12', produktId: 'p5', menge: 1, zeitraum: 'martini', jahr: 2026, quelle: 'web', status: 'offen', erstellt: '2026-05-20', notiz: '' },
+    { id: 'v4', kundeId: 'k9', produktId: 'p3', menge: 2, zeitraum: 'naechste', jahr: null, quelle: 'persoenlich', status: 'offen', erstellt: '2026-09-02', notiz: '' },
+    { id: 'v5', kundeId: 'k6', produktId: 'p7', menge: 1, zeitraum: 'weihnachten', jahr: 2026, quelle: 'whatsapp', status: 'offen', erstellt: '2026-06-11', notiz: '' },
+    { id: 'v6', kundeId: 'k10', produktId: 'p7', menge: 1, zeitraum: 'weihnachten', jahr: 2026, quelle: 'web', status: 'offen', erstellt: '2026-07-01', notiz: '' },
+    { id: 'v7', kundeId: 'k1', produktId: 'p1', menge: 3, zeitraum: 'fruehjahr', jahr: 2027, quelle: 'whatsapp', status: 'offen', erstellt: '2026-09-15', notiz: '' },
+    { id: 'v8', kundeId: 'k5', produktId: 'p1', menge: 4, zeitraum: 'fruehjahr', jahr: 2027, quelle: 'telefon', status: 'offen', erstellt: '2026-09-17', notiz: '' },
+    { id: 'v9', kundeId: 'k11', produktId: 'p1', menge: 2, zeitraum: 'fruehjahr', jahr: 2027, quelle: 'web', status: 'offen', erstellt: '2026-09-22', notiz: '' },
   ],
 
   // status: 'vorgemerkt' | 'warteliste' | 'storniert'

@@ -4,7 +4,7 @@
  * Führt schema-hofladen.sql in einer leeren SQLite-Datenbank im
  * Arbeitsspeicher aus (D1 basiert auf SQLite) und prüft die Helfer aus
  * functions/_lib/hofladen.js: Bestellnummern, Kontingent und Warteliste,
- * Beträge, Eingabeprüfung, Transaktionen.
+ * Beträge, Eingabeprüfung, Transaktionen, Preisvorschläge, Voranmeldungen.
  *
  * Berührt die echte D1-Datenbank NICHT.
  *
@@ -15,7 +15,8 @@
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
-import { bestellungAnlegen, bestellungNachruecken, preisVorschlaege, positionBetrag, EingabeFehler, euro }
+import { bestellungAnlegen, bestellungNachruecken, preisVorschlaege, positionBetrag, EingabeFehler, euro,
+  voranmeldungAnlegen, voranmeldungenUebernehmen }
   from '../functions/_lib/hofladen.js';
 
 // Minimaler D1-Nachbau auf node:sqlite (prepare/bind/first/all/run, batch als Transaktion)
@@ -128,6 +129,43 @@ assert.equal(vorschlag.Eiernudeln.preisCent, 500);     // jüngste Charge gewinn
 assert.equal(vorschlag.Eiernudeln.ausCharge, 'Neuer');
 assert.equal(vorschlag.Honig.preisCent, null);         // noch nie verkauft
 console.log('✓ Preisvorschläge aus der letzten Charge je Produkt');
+
+// Voranmeldungen: anlegen, prüfen, in eine Charge übernehmen
+const heuer = new Date().getUTCFullYear();
+roh.exec(`INSERT INTO chargen (titel, bestellschluss, erstellt_am) VALUES ('Herbst', '2026-10-01', datetime('now', '+2 day'))`);
+const cHerbst = roh.prepare('SELECT MAX(id) id FROM chargen').get().id;
+roh.prepare('INSERT INTO charge_artikel (charge_id, produkt_id, preis_cent, kontingent, max_pro_bestellung) VALUES (?, 1, 1450, 4, 2)').run(cHerbst);
+roh.prepare('INSERT INTO charge_artikel (charge_id, produkt_id, preis_cent, kontingent) VALUES (?, 2, 500, 10)').run(cHerbst);
+const honigId = roh.prepare(`SELECT id FROM produkte WHERE name = 'Honig'`).get().id;
+const va = [];
+va.push(await voranmeldungAnlegen(db, { kundeId: 2, produktId: 1, menge: 3, zeitraum: 'herbst', jahr: heuer, quelle: 'whatsapp' }));
+va.push(await voranmeldungAnlegen(db, { kundeId: 1, produktId: 1, menge: 1, zeitraum: 'naechste', jahr: heuer }));
+va.push(await voranmeldungAnlegen(db, { kundeId: 1, produktId: 2, menge: 3, zeitraum: 'naechste' }));
+va.push(await voranmeldungAnlegen(db, { kundeId: 3, produktId: 1, menge: 2, zeitraum: 'herbst', jahr: heuer }));
+va.push(await voranmeldungAnlegen(db, { kundeId: 3, produktId: honigId, menge: 1, zeitraum: 'herbst', jahr: heuer }));
+assert.equal(roh.prepare('SELECT jahr FROM voranmeldungen WHERE id = ?').get(va[1]).jahr, null); // „nächste" ohne Jahr
+await fehler(() => voranmeldungAnlegen(db, { kundeId: 1, produktId: 1, menge: 1, zeitraum: 'ostern', jahr: heuer }), /Zeitraum/);
+await fehler(() => voranmeldungAnlegen(db, { kundeId: 1, produktId: 1, menge: 1, zeitraum: 'herbst', jahr: heuer + 5 }), /Jahr/);
+await fehler(() => voranmeldungAnlegen(db, { kundeId: 1, produktId: 1, menge: 0, zeitraum: 'herbst', jahr: heuer }), /Menge/);
+try { roh.exec(`INSERT INTO voranmeldungen (kunde_id, produkt_id, menge, zeitraum) VALUES (1, 1, 1, 'herbst')`); assert.fail(); }
+catch (e) { assert.match(e.message, /CHECK/); }
+const summe1 = roh.prepare(`SELECT menge, kunden FROM v_voranmeldungen_summe WHERE produkt_id = 1 AND zeitraum = 'herbst'`).get();
+assert.deepEqual([summe1.menge, summe1.kunden], [5, 2]);
+console.log('✓ Voranmeldungen anlegen, Eingaben prüfen, Summe je Zeitraum (Herbst: 5 Hühner, 2 Kunden)');
+
+const uebernahme = await voranmeldungenUebernehmen(db, cHerbst, va);
+const status = uebernahme.bestellungen.map((b) => [b.kundeId, b.status]);
+// Kunde 2 kam zuerst (3 Hühner, trotz Höchstmenge 2), dann Kunde 1 (1 Huhn + Nudeln) → 4 von 4;
+// Kunde 3 (2 Hühner) passt nicht mehr → Warteliste
+assert.deepEqual(status, [[2, 'vorgemerkt'], [1, 'vorgemerkt'], [3, 'warteliste']]);
+assert.deepEqual(uebernahme.uebersprungen, [va[4]]); // Honig ist nicht in der Charge
+const k1 = uebernahme.bestellungen.find((b) => b.kundeId === 1);
+assert.equal(roh.prepare('SELECT COUNT(*) n FROM bestell_positionen WHERE bestellung_id = ?').get(k1.id).n, 2);
+assert.equal(roh.prepare(`SELECT COUNT(*) n FROM voranmeldungen WHERE status = 'uebernommen' AND bestellung_id IS NOT NULL`).get().n, 4);
+assert.equal(roh.prepare('SELECT status FROM voranmeldungen WHERE id = ?').get(va[4]).status, 'offen');
+const nochmal = await voranmeldungenUebernehmen(db, cHerbst, va);
+assert.equal(nochmal.bestellungen.length, 0); // nichts doppelt übernommen
+console.log('✓ Übernahme: je Kunde eine Bestellung, wer zuerst kam zuerst, Rest auf Warteliste, nichts doppelt');
 
 // Bestehende Tabellen bleiben unberührt (Schema legt nur eigene an)
 const tabellen = roh.prepare(`SELECT name FROM sqlite_master WHERE type IN ('table','view') AND name NOT LIKE 'sqlite_%' ORDER BY name`).all().map((r) => r.name);

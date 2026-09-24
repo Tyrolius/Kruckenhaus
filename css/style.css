@@ -3753,6 +3753,7 @@ body.season-winter .winter-image { display: block; }
 
 /* --- Formular (Bestellung erfassen) --- */
 .vw-feld { display: block; margin-bottom: 0.9rem; }
+.vw-feld[hidden] { display: none; }
 
 .vw-feld > span,
 .vw-feldgruppe > legend {
@@ -3885,6 +3886,25 @@ body.season-winter .winter-image { display: block; }
 
 .vw-zahlung-info { grid-column: 1 / -1; }
 .vw-zahlung .vw-knopf { grid-column: 1 / -1; }
+
+/* --- Voranmeldungen --- */
+.vw-va-zeile {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--color-beige);
+}
+
+.vw-va-zeile input[type="checkbox"] { width: 1.3rem; height: 1.3rem; accent-color: var(--color-primary); }
+.vw-va-zeile:not(:has(input)) { grid-template-columns: 1fr auto; }
+#vw-va-auswahl { margin-bottom: 0.9rem; }
+
+.vw-knopf--klein { min-height: 36px; padding: 0.3rem 0.6rem; font-size: 0.8rem; }
+
+/* Nur in der PC-Seitenleiste; am Handy über Übersicht und „Erfassen" erreichbar */
+.vw-nav a.vw-nav-nur-pc { display: none; }
 
 /* --- Übergabe / Liefertour --- */
 .vw-ort-titel {
@@ -4024,6 +4044,7 @@ body.season-winter .winter-image { display: block; }
     text-align: left;
   }
   .vw-nav a[aria-current="page"] { background-color: var(--color-cream); }
+  .vw-nav a.vw-nav-nur-pc { display: flex; }
   .vw-inhalt { padding: var(--spacing-md) var(--spacing-md) var(--spacing-lg); }
   .vw-toast { bottom: 2rem; }
 }
