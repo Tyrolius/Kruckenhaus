@@ -414,6 +414,7 @@ npx wrangler d1 execute kruckenhaus --remote --file=./schema-hofladen.sql
 | `nummernkreis` | fortlaufende Bestellnummern `2026-001` … |
 | `v_positionen`, `v_bestand`, `v_bestellsummen` | berechnete Beträge, freie Mengen, Summen |
 | `v_letzter_preis` | Preisvorschlag für neue Chargen (Werte der letzten Charge je Produkt) |
+| `voranmeldungen`, `v_voranmeldungen_summe` | unverbindliche Vormerkungen für spätere Chargen und ihre Summe je Zeitraum |
 
 Nach Änderungen an Schema oder Helfern den Test laufen lassen (Node 22,
 berührt die echte Datenbank nicht): `node scripts/test-hofladen-db.mjs`

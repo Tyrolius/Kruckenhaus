@@ -26,6 +26,8 @@ Stand: September 2026 · Status: **Plan freigegeben, Entwurf der Verwaltung lieg
 | Eigene Lösung auf kruckenhaus.at? | **Ja** – dieser Plan |
 | WhatsApp-Schnittstelle (Cloud API)? | Nein – nur Knöpfe mit fertigem Text, siehe Abschnitt 8 |
 | Online-Zahlung? | Nein – bar oder Überweisung, siehe Abschnitt 5 |
+| Bestellnummern? | `2026-001` – Jahr und laufende Nummer |
+| Voranmeldungen für spätere Chargen? | Ja – unverbindlich, feste Zeiträume, durch Verwaltung **und** Kunden selbst (Abschnitt 3a) |
 
 ### 0.1 Entwurf der Verwaltung
 
@@ -135,6 +137,44 @@ So sieht es für Kathrin und Florian aus, ohne Technik:
 - Optional je Charge: **Höchstmenge pro Bestellung** (z. B. max. 2 Gänse),
   damit nicht einer alles nimmt.
 
+## 3a. Voranmeldungen für spätere Chargen
+
+Kunden melden sich oft schon lange vorher an, z. B. im Frühjahr für die
+Herbst-Hühner. Das wird **getrennt von Bestellungen** geführt:
+
+| | Voranmeldung | Bestellung |
+|---|---|---|
+| Gebunden an | Produkt | konkrete Charge |
+| Zeitraum | feste Auswahl: nächste Charge, Frühjahr, Sommer, Herbst, Martini, Weihnachten (mit Jahr) | Abhol-/Liefertermin |
+| Preis | keiner (höchstens „zuletzt …" als Orientierung) | fix aus der Charge |
+| Kontingent | zählt nicht | zählt |
+| Verbindlich | nein, für beide Seiten | ja |
+
+**Ablauf:**
+
+1. **Erfassen:** in der Verwaltung („Voranmeldung erfassen", Quelle
+   WhatsApp/Telefon/persönlich) oder vom Kunden selbst auf `hofladen.html`
+   (siehe Abschnitt 6).
+2. **Planen:** Die Verwaltung zeigt je Zeitraum und Produkt die Summe
+   („Frühjahr 2027: 9 Masthühner von 3 Kunden") – Grundlage, wie viele Küken
+   und Gänse eingestellt werden.
+3. **Übernehmen:** Beim Anlegen der passenden Charge zeigt die Verwaltung
+   „N Voranmeldungen passen zu dieser Charge". Vorausgewählt sind „nächste
+   Charge" und die Saison des ersten Termins der Charge (änderbar). Ein Tipp
+   macht daraus Bestellungen – je Kunde eine, mit dem aktuellen Preis, in der
+   Reihenfolge der Anmeldung. Reicht die Menge nicht, landen die späteren auf
+   der Warteliste. Das passiert **vor** der öffentlichen Ankündigung.
+4. **Bestätigen:** Übernommene Bestellungen haben noch **keinen Termin**
+   („Termin offen"). Der WhatsApp-Knopf „Bestätigung" schickt Preis und die
+   Termine der Charge und fragt Termin und Zahlart ab; die Antwort wird in
+   der Bestellung mit einem Tipp gesetzt.
+5. **Absagen:** Voranmeldungen lassen sich jederzeit absagen; übernommene
+   Bestellungen werden wie jede Bestellung storniert (Warteliste rückt nach).
+
+Technik: Tabelle `voranmeldungen`, Ansicht `v_voranmeldungen_summe`, Helfer
+`voranmeldungAnlegen()` und `voranmeldungenUebernehmen()` – die Übernahme
+läuft je Kunde in einer Transaktion, nichts wird doppelt übernommen.
+
 ## 4. Abholung und Lieferung
 
 - Jede Charge hat einen oder mehrere **Termine**: Abholzeitfenster am Hof und
@@ -169,8 +209,11 @@ So sieht es für Kathrin und Florian aus, ohne Technik:
 2. **Aktuelle Chargen** als Karten: Produkt, Foto, Preis (bzw. Kilopreis
    mit „ca."-Preis je Stück), **noch verfügbar: 12 von 40**, Bestellschluss,
    Termine. Ausverkauft → „Auf die Warteliste".
-3. Gibt es keine offene Charge: „Die nächste Charge kommt voraussichtlich
-   im …" plus Anmeldung „Bei neuen Chargen Bescheid geben" (E-Mail,
+3. **Voranmelden:** Für jedes Produkt – auch wenn gerade keine Charge offen
+   oder es ausverkauft ist – „Für später vormerken": Produkt, Menge,
+   Zeitraum (feste Auswahl), Name, Telefon oder E-Mail. Deutlich als
+   **unverbindlich** gekennzeichnet; Bestätigungsmail „Voranmeldung
+   erhalten". Optional dazu „Bei neuen Chargen Bescheid geben" (E-Mail,
    ausdrückliche Einwilligung).
 4. **Bestellformular** (eine Seite, keine Registrierung, kein Konto):
    - Mengen je Artikel (Plus/Minus-Knöpfe)
@@ -213,7 +256,7 @@ immer denselben Stand.
 **Ansichten** (große Knöpfe, für Daumen gebaut, am PC mit Seitenleiste, druckbar).
 Im Entwurf (Abschnitt 0.1) schon zum Durchklicken: Start, Charge,
 Bestellung erfassen, Wiegen, Packzettel, Abholung, Liefertour, Zahlungen,
-Warteliste, Export.
+Warteliste, Voranmeldungen, Termin offen, Export.
 
 | Ansicht | Inhalt |
 |---|---|
@@ -226,6 +269,8 @@ Warteliste, Export.
 | **Liefertour** | Nach Ort sortiert, Adresse, Anruf- und Navigationslink, Abhaken |
 | **Offene Zahlungen** | Wer noch zahlen muss, mit Zahlungsreferenz; „bezahlt"-Knopf |
 | **Warteliste** | Nachrücken mit einem Tipp (Kunde bekommt Mail) |
+| **Voranmeldungen** | Planung je Zeitraum, erfassen, absagen, in die Charge übernehmen (Abschnitt 3a) |
+| **Termin offen** | Filter für übernommene Voranmeldungen; Termin und Zahlart mit einem Tipp setzen, WhatsApp „Bestätigung" |
 | **Kunden** | Kartei mit Bestellhistorie, Notizen („liefert immer an Nachbarn"), Stammkunde ja/nein, Newsletter-Einwilligung |
 | **Produkte** | Katalog pflegen (Texte, Allergene, Richtgewicht, Foto) |
 | **Chargen** | Neu anlegen, bearbeiten, Bestellung öffnen/schließen, archivieren; Jahresübersicht (Stück, kg, Umsatz) |
@@ -293,6 +338,7 @@ verwaltung/verwaltung.js                Logik der Verwaltung – Entwurf vorhand
 verwaltung/entwurf-daten.js             Beispieldaten – entfällt in Phase 2
 functions/api/hofladen/angebot.js       GET  – offene Chargen + Restmengen
 functions/api/hofladen/bestellung.js    POST – Bestellung aufgeben
+functions/api/hofladen/voranmeldung.js  POST – Voranmeldung durch Kunden
 functions/api/hofladen/newsletter.js    POST – An-/Abmeldung Neuigkeiten
 functions/api/verwaltung/[[pfad]].js    alle Verwaltungs-Aufrufe (nur mit Access)
 functions/_lib/hofladen.js              gemeinsame Helfer (Mail, Escape, Beträge)
@@ -330,7 +376,13 @@ charge_artikel    id, charge_id, produkt_id,
 termine           id, charge_id, art ('abholung'|'lieferung'),
                   datum, von, bis, hinweis
 
-liefergebiet      plz, ort, liefergebuehr_cent
+liefergebiet      plz, ort, liefergebuehr_cent, gratis_ab_cent, tour_reihenfolge
+
+voranmeldungen    id, kunde_id, produkt_id, menge,
+                  zeitraum ('naechste'|'fruehjahr'|'sommer'|'herbst'
+                           |'martini'|'weihnachten'), jahr,
+                  quelle, status ('offen'|'uebernommen'|'abgesagt'),
+                  bestellung_id, notiz, erstellt_am, geaendert_am
 
 bestellungen      id, nummer ('2026-014'), charge_id, kunde_id,
                   quelle ('web'|'telefon'|'whatsapp'|'persoenlich'),
@@ -361,6 +413,7 @@ bestell_positionen id, bestellung_id, charge_artikel_id, menge,
 |---|---|---|---|
 | `/api/hofladen/angebot` | GET | offene Chargen, Artikel, Restmengen, Termine, Liefergebiet | öffentlich (mit `?t=` Stammkunden-Token für Vorab-Chargen) |
 | `/api/hofladen/bestellung` | POST | Bestellung aufgeben | öffentlich, Honeypot, Plausibilitätsprüfung, Bestellschluss |
+| `/api/hofladen/voranmeldung` | POST | Voranmeldung durch Kunden | öffentlich, Honeypot, Plausibilitätsprüfung |
 | `/api/hofladen/newsletter` | POST | Anmelden/Abmelden | öffentlich, Abmelden nur mit Token |
 | `/api/verwaltung/…` | GET/POST | alles aus Abschnitt 7 | Cloudflare Access **und** Prüfung des Access-Tokens in der Function |
 
@@ -431,7 +484,7 @@ Keine Rechtsberatung – bitte mit der **Landwirtschaftskammer Tirol**
 | 5 | **Termine:** typischer Abholtag/-zeit, typischer Liefertag | Phase 2 |
 | 6 | **E-Mail-Adressen** von Kathrin und Florian für den Verwaltungszugang | Phase 2 |
 | 7 | **Bankverbindung** für die Mail „Abholbereit" | Phase 3 |
-| 8 | **Stammkunden-Vorlauf** gewünscht? Wie viele Tage? | Phase 5 |
+| 8 | **Stammkunden-Vorlauf** gewünscht? Wie viele Tage? (Voranmeldungen werden ohnehin vor der Ankündigung übernommen) | Phase 5 |
 | 9 | **Höchstmengen** pro Bestellung (z. B. max. 2 Gänse)? | Phase 4 |
 | 10 | ~~Bestellnummern-Format~~ – entschieden: `2026-001` (Jahr + laufende Nummer) | erledigt |
 | 11 | **Fotos** der Produkte – bis dahin TODO-Platzhalter | Phase 4 |
@@ -451,11 +504,11 @@ kommt danach.
 
 | Phase | Inhalt | Ergebnis | Stand |
 |---|---|---|---|
-| **0 – Entwurf** | Anklickbare Verwaltung mit Beispieldaten, Excel-Export, WhatsApp-Knöpfe | Bedienung prüfen | **erledigt** |
-| **1 – Grundlage** | `schema-hofladen.sql`, Tabellen in D1 anlegen, gemeinsame Helfer (`functions/_lib/`), Produktkatalog und Liefergebiet befüllen | Datenbank steht | **teilweise** – `schema-hofladen.sql`, `functions/_lib/hofladen.js` und Test `scripts/test-hofladen-db.mjs` fertig; Tabellen in D1 anlegen und Produkte/Liefergebiet befüllen offen |
-| **2 – Verwaltung live** | Cloudflare Access einrichten, Token-Prüfung, `/api/verwaltung/…`; Entwurf an echte Daten anschließen: Chargen anlegen, Bestellung erfassen, Bestellliste, Status, Excel-Export nach Vorlage | Kathrin und Florian führen eine Charge komplett in einer Liste (Bestellungen per WhatsApp/Telefon) | offen |
+| **0 – Entwurf** | Anklickbare Verwaltung mit Beispieldaten, Excel-Export, WhatsApp-Knöpfe, Voranmeldungen | Bedienung prüfen | **erledigt** |
+| **1 – Grundlage** | `schema-hofladen.sql`, Tabellen in D1 anlegen, gemeinsame Helfer (`functions/_lib/`), Produktkatalog und Liefergebiet befüllen | Datenbank steht | **teilweise** – `schema-hofladen.sql` (inkl. Voranmeldungen), `functions/_lib/hofladen.js` und Test `scripts/test-hofladen-db.mjs` fertig; Tabellen in D1 anlegen und Produkte/Liefergebiet befüllen offen |
+| **2 – Verwaltung live** | Cloudflare Access einrichten, Token-Prüfung, `/api/verwaltung/…`; Entwurf an echte Daten anschließen: Chargen anlegen, Bestellung erfassen, Bestellliste, Status, Voranmeldungen erfassen und übernehmen, Excel-Export nach Vorlage | Kathrin und Florian führen eine Charge komplett in einer Liste (Bestellungen per WhatsApp/Telefon) | offen |
 | **3 – Wiegen, Zahlung, Übergabe** | Gewichte speichern, Endbeträge, Packzettel, Abholliste, Liefertour, offene Zahlungen, Mail „Abholbereit" mit Bankdaten | Ablauf nach der Schlachtung läuft | offen |
-| **4 – Kundenseite** | `hofladen.html`, `js/hofladen.js`, `/api/hofladen/angebot` und `/bestellung`, Bestätigungsmails, Warteliste, Pflichtangaben, Bestellbedingungen; noch **nicht** verlinkt | Kunden bestellen selbst über direkten Link | offen |
+| **4 – Kundenseite** | `hofladen.html`, `js/hofladen.js`, `/api/hofladen/angebot` und `/bestellung`, `/voranmeldung`, Bestätigungsmails, Warteliste, Voranmelden durch Kunden, Pflichtangaben, Bestellbedingungen; noch **nicht** verlinkt | Kunden bestellen selbst über direkten Link | offen |
 | **5 – Kunden und Ankündigung** | Kundenkartei, Newsletter An-/Abmeldung, Ankündigung per Mail, Stammkunden-Link | Chargen ankündigen ohne Gruppen-Chaos | offen |
 | **6 – Veröffentlichung** | Navigation in allen Seiten, `sitemap.xml`, `llms.txt`, Knopf auf `bauernhof.html`, README-Bedienungsanleitung, Datenschutz (nach Freigabe), Friedhold stilllegen | live | offen |
 | **später** | „Meine Bestellung ändern"-Link, Jahresauswertung als Grafik, CSV-Import alter Kunden | nach Bedarf | – |
