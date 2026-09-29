@@ -231,7 +231,7 @@ function positionenHtml(zeilen) {
   return `<table style="border-collapse:collapse;min-width:280px">${reihen}
     <tr><td style="padding:8px 12px 0 0;font-weight:700">Summe</td>
       <td style="padding:8px 0 0;text-align:right;font-weight:700">${geschaetzt ? 'ca. ' : ''}${euro(summe)}</td></tr>
-  </table>${geschaetzt ? '<p style="font-size:14px;color:#7A7067">Bei Gewichtsware steht der Endbetrag erst nach dem Wiegen fest – wir melden uns mit dem genauen Betrag.</p>' : ''}`;
+  </table>${geschaetzt ? '<p style="font-size:14px;color:#7A7067">Fleisch wird nach Gewicht abgerechnet – den genauen Betrag erfahrt ihr bei der Abholung bzw. Lieferung.</p>' : ''}`;
 }
 
 async function bestellMailsSenden(env, d) {

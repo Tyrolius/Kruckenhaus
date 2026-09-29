@@ -142,13 +142,13 @@ function chargeFormular(ch, liefergebiet) {
       <fieldset class="hl-feldgruppe">
         <legend>Bezahlung</legend>
         <label class="hl-auswahl"><input type="radio" name="zahlart" value="bar" checked /> <span>bar bei der Übergabe</span></label>
-        <label class="hl-auswahl"><input type="radio" name="zahlart" value="ueberweisung" /> <span>Überweisung (Bankdaten kommen mit dem Endbetrag)</span></label>
+        <label class="hl-auswahl"><input type="radio" name="zahlart" value="ueberweisung" /> <span>Überweisung (Endbetrag und Bankdaten bekommt ihr bei der Übergabe)</span></label>
       </fieldset>
 
       <div class="form-group"><label>Anmerkung <small>(optional, z. B. „Gans lieber größer")</small><textarea name="anmerkung" rows="2"></textarea></label></div>
 
       <div class="hl-summe" aria-live="polite"><span>Summe</span><strong data-summe>€ 0,00</strong></div>
-      <p class="form-hint" data-summe-hinweis hidden>Fleisch wird nach Gewicht abgerechnet – den genauen Betrag schicken wir euch nach dem Wiegen.</p>
+      <p class="form-hint" data-summe-hinweis hidden>Fleisch wird nach Gewicht abgerechnet – den genauen Betrag erfahrt ihr bei der Übergabe.</p>
 
       <label class="hl-zustimmung">
         <input type="checkbox" name="zustimmung" required />

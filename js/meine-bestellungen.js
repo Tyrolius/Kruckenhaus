@@ -61,7 +61,7 @@ function mbBestellung(b) {
     <table class="hl-tabelle"><tbody>${zeilen}</tbody>
       <tfoot><tr><td>Summe</td><td class="hl-zahl">${b.geschaetzt ? 'ca. ' : ''}${mbEuro.format(b.summeCent / 100)}</td></tr></tfoot>
     </table>
-    ${b.geschaetzt && b.status !== 'storniert' ? '<p class="form-hint">Der genaue Betrag steht nach dem Wiegen fest.</p>' : ''}
+    ${b.geschaetzt && b.status !== 'storniert' ? '<p class="form-hint">Fleisch wird nach Gewicht abgerechnet – den genauen Betrag erfahrt ihr bei der Übergabe.</p>' : ''}
   </article>`;
 }
 
