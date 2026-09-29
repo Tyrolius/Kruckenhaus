@@ -125,15 +125,40 @@ Booking.com dazu: dessen iCal-Link einfach per Komma an die Variable anhängen.
 Für Cloudflare Pages verwaltet ihr die Domain am einfachsten direkt bei Cloudflare
 (DNS + Proxy). Der Registrar bleibt world4you – es wechseln nur die Nameserver.
 
+### 4a-vorab: Bestehende DNS-Einträge sichern (Stand 03.09.2026)
+
+Die Domain liegt aktuell **komplett bei world4you** (Nameserver `ns1/ns2.world4you.at`),
+dort läuft auch das Postfach `info@kruckenhaus.at`. Diese Einträge müssen nach dem
+Umzug in Cloudflare wieder vorhanden sein – Haken setzen, sobald jeder Eintrag in
+Cloudflare angelegt ist:
+
+| ✓ | Name | Typ | Wert | Wofür |
+|---|---|---|---|---|
+| [ ] | `kruckenhaus.at` | MX (Prio 10) | `mail.kruckenhaus.at` | E-Mail-Empfang |
+| [ ] | `mail` | A | `81.19.149.74` | Mailserver von world4you |
+| [ ] | `imap` | CNAME | `imap.world4you.com` | Postfachabruf im Mailprogramm |
+| [ ] | `kruckenhaus.at` | TXT | `v=spf1 mx include:spf.w4ymail.at -all` | SPF – sonst landet ausgehende Post im Spam |
+| [ ] | `_dmarc` | TXT | `v=DMARC1;p=none;` | DMARC |
+| [ ] | `resend._domainkey` | TXT | langer `p=MIGf…`-Schlüssel, **1:1 aus world4you kopieren** | DKIM für Resend (Schritt 2b) |
+| [ ] | `send` | MX (Prio 10) | `feedback-smtp.eu-west-1.amazonses.com` | Resend-Bounces |
+| [ ] | `send` | TXT | `v=spf1 include:amazonses.com ~all` | SPF für Resend |
+| [ ] | `kruckenhaus.at` / `www` | A | *entfällt* – ersetzt Cloudflare in Schritt 4c durch den Pages-Eintrag | Website |
+
+> Die A-Einträge von `kruckenhaus.at` und `www` zeigen derzeit auf `81.19.145.44`
+> (world4you-Webhosting). **Nur diese beiden** werden beim Umzug ersetzt; alles
+> andere in der Tabelle bleibt unverändert.
+>
+> Aktuellen Stand jederzeit selbst prüfen, z. B. mit
+> `dig MX kruckenhaus.at`, `dig TXT kruckenhaus.at`, `dig NS kruckenhaus.at`
+> oder über [dnschecker.org](https://dnschecker.org).
+
 ### 4a. Domain in Cloudflare aufnehmen
 
 1. Cloudflare-Dashboard → **Add a domain** (oben) → `kruckenhaus.at` eingeben →
    **kostenlosen Free-Plan** wählen.
-2. Cloudflare scannt die bestehenden DNS-Einträge. **Prüft die Liste genau** und
-   ergänzt fehlende Einträge – besonders wichtig:
-   - die **MX-Einträge** eurer E-Mail-Postfächer (info@kruckenhaus.at),
-   - zugehörige **SPF/DKIM-TXT-Einträge**,
-   - die **Resend-Einträge** aus Schritt 2b.
+2. Cloudflare scannt die bestehenden DNS-Einträge. **Prüft die Liste gegen die
+   Tabelle oben** und ergänzt jeden Eintrag, den Cloudflare nicht selbst gefunden
+   hat – besonders MX, SPF/DKIM und die Resend-Einträge.
 3. Cloudflare zeigt euch **zwei Nameserver** an (z. B. `xxx.ns.cloudflare.com`).
 
 > ⚠️ **E-Mail nicht kaputt machen:** Wenn eure Postfächer bei world4you liegen,
