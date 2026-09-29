@@ -1,6 +1,6 @@
 # Hofladen-Vorbestellung – Umsetzungsplan
 
-Stand: September 2026 · Status: **Phase 2 programmiert und lokal getestet – Einrichtung von Cloudflare Access und Veröffentlichung offen (README, „Hofladen-Verwaltung einrichten")**
+Stand: September 2026 · Status: **Phase 1, 2 und 4 programmiert; Phase 4 wartet auf die Prüfung der Bestellbedingungen, dann Veröffentlichung (Phase 6)**
 
 > Kurzfassung: Statt Vorbestellungen in mehreren WhatsApp-Gruppen zu sammeln,
 > bekommt kruckenhaus.at eine Vorbestellseite für Fleisch, Eiernudeln und
@@ -119,10 +119,11 @@ So sieht es für Kathrin und Florian aus, ohne Technik:
    Bestellung in einer Zeile; Gewicht eintippen, weiter zur nächsten. Der
    Endbetrag wird sofort ausgerechnet. Die Etiketten/Packzettel können
    gedruckt werden (Name, Inhalt, Gewicht, Betrag, Abholung/Lieferung).
-7. **„Abholbereit" verschicken:** Ein Tipp schickt allen Kunden der Charge
-   eine Mail mit Endbetrag, Termin und – bei Überweisung – Bankdaten und
-   Zahlungsreferenz. Wer lieber per WhatsApp informiert werden will: Neben
-   jedem Kunden gibt es einen WhatsApp-Knopf mit fertigem Text.
+7. **Kein Vorab-Endbetrag (entschieden):** Den genauen Betrag für Fleisch
+   erfahren die Kunden erst **bei der Übergabe** (Packzettel mit Gewicht und
+   Betrag, bei Überweisung mit Bankdaten und Zahlungsreferenz). Vorher wird
+   nichts verschickt – das spart Arbeit. Eine Erinnerung an den Termin ist
+   bei Bedarf über den WhatsApp-Knopf möglich.
 8. **Übergabe:**
    - *Abholung:* Liste „Abholung" am Handy offen, Kunde kommt, abhaken
      („übergeben", ggf. „bar bezahlt").
@@ -219,8 +220,14 @@ läuft je Kunde in einer Transaktion, nichts wird doppelt übernommen.
 ## 5. Zahlung
 
 - **Bar:** bei Übergabe, wird beim Abhaken mit „bar bezahlt" vermerkt.
-- **Überweisung:** Bankdaten und Zahlungsreferenz kommen mit der Mail
-  „Abholbereit" (erst dann steht der Endbetrag fest). Kein Vorab-Zahlen,
+- **Überweisung:** Endbetrag, Bankdaten und Zahlungsreferenz bekommt der
+  Kunde bei der Übergabe (Packzettel). Sobald alles gewogen ist, trägt
+  der Packzettel einen **Überweisungs-QR-Code** (EPC-QR/„GiroCode") mit
+  Empfänger, IBAN, genauem Betrag und „Bestellung 2026-001" als
+  Verwendungszweck – dieselben Daten samt QR-Code stehen bei
+  „Meine Bestellungen". Solange der Betrag nur geschätzt ist, gibt es
+  keinen QR-Code. Erzeugt wird er im Browser (`js/qrcode.js`, ohne
+  fremde Bibliothek). Kein Vorab-Zahlen,
   keine Anzahlung – passt zu Stammkunden und vermeidet Rückzahlungen bei
   Gewichtsabweichungen.
 - **Keine Online-Zahlung** (Karte/PayPal/Stripe): unnötige Gebühren und
@@ -323,7 +330,7 @@ ein Gewicht eingetragen ist.
 | Neue Bestellung eingegangen | Kunde | Mail (automatisch) |
 | Neue Bestellung eingegangen | Kathrin + Florian | Mail (automatisch) |
 | Von Warteliste nachgerückt | Kunde | Mail (auf Knopfdruck) |
-| Abholbereit / Lieferung kommt, mit Endbetrag | Kunde | Mail (auf Knopfdruck, alle einer Charge) |
+| ~~Abholbereit mit Endbetrag~~ | – | entfällt: Endbetrag erst bei der Übergabe (Packzettel) |
 | Neue Charge | Kunden mit Einwilligung | Mail (auf Knopfdruck) + „Ankündigung für WhatsApp“ (Kanal, Übertragungsliste, Gruppe) |
 | Einzelne Rückfrage / „ist fertig“ | Kunde | WhatsApp-Knopf mit vorbereitetem Text (öffnet WhatsApp am Handy) |
 
@@ -457,7 +464,7 @@ die API trotzdem nichts aus.
 | `ACCESS_TEAM_DOMAIN` | Variable | `<team>.cloudflareaccess.com` |
 | `ACCESS_AUD` | Variable | Application Audience aus Access |
 | `VERWALTUNG_EMAILS` | Variable | E-Mail-Adressen von Kathrin und Florian |
-| `BANK_IBAN`, `BANK_BIC`, `BANK_INHABER` | Variable | für die Mail „Abholbereit" |
+| `BANK_INHABER`, `BANK_IBAN`, `BANK_BIC`, `BANK_NAME` | Secret | für Packzettel und „Meine Bestellungen" (Überweisung, QR-Code) – umgesetzt |
 | `HOFLADEN_TO` | Variable (optional) | wohin „Neue Vorbestellung" geht, Standard `CONTACT_TO` |
 
 `RESEND_API_KEY` und die D1-Anbindung gibt es schon.
@@ -519,13 +526,15 @@ Keine Rechtsberatung – bitte mit der **Landwirtschaftskammer Tirol**
 | 4 | ~~Liefergebiet~~ – festgelegt: 6252, 6233, 6230, 6250, ohne Liefergebühr | erledigt |
 | 5 | **Termine:** typischer Abholtag/-zeit, typischer Liefertag | Phase 2 |
 | 6 | ~~E-Mail-Adressen~~ – geliefert (drei Adressen; stehen nur in Cloudflare, nicht im Repository) | erledigt |
-| 7 | **Bankverbindung** für die Mail „Abholbereit" | Phase 3 |
+| 7 | ~~Bankverbindung~~ – geliefert; steht nur als Cloudflare-Secret (`BANK_*`), nicht im Repository | erledigt |
 | 8 | **Stammkunden-Vorlauf** gewünscht? Wie viele Tage? (Voranmeldungen werden ohnehin vor der Ankündigung übernommen) | Phase 5 |
 | 9 | **Höchstmengen** pro Bestellung (z. B. max. 2 Gänse)? | Phase 4 |
 | 10 | ~~Bestellnummern-Format~~ – entschieden: `2026-001` (Jahr + laufende Nummer) | erledigt |
 | 11 | **Fotos** der Produkte – bis dahin TODO-Platzhalter | Phase 4 |
 | 12 | Sollen **Ferienwohnungsgäste** auf der Seite angesprochen werden? | Phase 6 |
-| 13 | **Rechtliches** aus Abschnitt 10 mit der LK Tirol klären | vor Phase 6 |
+| 13 | **Rechtliches** aus Abschnitt 10 mit der LK Tirol klären – insbesondere den Entwurf der **Bestellbedingungen** auf `hofladen.html` (Rücktrittsrecht für Nudeln, Honig, Seife; Preisangabe/USt bei Pauschalierung) | vor Phase 6 |
+| 14 | ~~Datenschutzerklärung~~ – ergänzt (Abschnitt 6 „Hofladen", Cookies, Weitergabe, Speicherdauer) | erledigt |
+| 15 | ~~Zutaten Nudeln~~ – Hartweizengrieß, Eier, Salz, Wasser; Allergene Weizen (Gluten), Ei | erledigt |
 
 ## 12. Umsetzung in Phasen
 
@@ -543,8 +552,8 @@ kommt danach.
 | **0 – Entwurf** | Anklickbare Verwaltung mit Beispieldaten, Excel-Export, WhatsApp-Knöpfe, Voranmeldungen | Bedienung prüfen | **erledigt** |
 | **1 – Grundlage** | `schema-hofladen.sql`, Tabellen in D1 anlegen, gemeinsame Helfer (`functions/_lib/`), Produktkatalog und Liefergebiet befüllen | Datenbank steht | **teilweise** – `schema-hofladen.sql` (inkl. Voranmeldungen), Produktkatalog `hofladen-produkte.sql`, `functions/_lib/hofladen.js` und Test `scripts/test-hofladen-db.mjs` fertig; Produkte und Liefergebiet in `hofladen-produkte.sql` fertig; **offen: beide Dateien in D1 einspielen** |
 | **2 – Verwaltung live** | Cloudflare Access einrichten, Token-Prüfung, `/api/verwaltung/…`; Entwurf an echte Daten anschließen: Chargen anlegen, Bestellung erfassen, Bestellliste, Status, Voranmeldungen erfassen und übernehmen, Excel-Export nach Vorlage | Kathrin und Florian führen eine Charge komplett in einer Liste (Bestellungen per WhatsApp/Telefon) | **programmiert** – Zugangsprüfung, Schnittstelle, Oberfläche an echten Daten, Chargen-Formular, Kontakt ändern; getestet (Tests + Browser gegen lokale D1). Offen: Access einrichten, Datenbank anlegen, veröffentlichen |
-| **3 – Wiegen, Zahlung, Übergabe** | Gewichte speichern, Endbeträge, Packzettel, Abholliste, Liefertour, offene Zahlungen, Mail „Abholbereit" mit Bankdaten | Ablauf nach der Schlachtung läuft | offen |
-| **4 – Kundenseite** | `hofladen.html`, `js/hofladen.js`, `/api/hofladen/angebot` und `/bestellung`, `/voranmeldung`, Bestätigungsmails, Warteliste, Voranmelden durch Kunden, Pflichtangaben, Bestellbedingungen; noch **nicht** verlinkt | Kunden bestellen selbst über direkten Link | offen |
+| **3 – Wiegen, Zahlung, Übergabe** | Gewichte speichern, Endbeträge, Packzettel, Abholliste, Liefertour, offene Zahlungen, Packzettel mit Endbetrag und Bankdaten (kein Vorab-Versand) | Ablauf nach der Schlachtung läuft | **programmiert** – Wiegen, Übergabe (Abholung/Liefertour), offene Zahlungen, Excel-Export, Packzettel mit Endbetrag, Bankdaten und Überweisungs-QR-Code; getestet. Offen: Testlauf mit echter Charge, Excel-Spalten nach eurer Vorlage |
+| **4 – Kundenseite** | `hofladen.html`, `js/hofladen.js`, `/api/hofladen/angebot` und `/bestellung`, `/voranmeldung`, Bestätigungsmails, Warteliste, Voranmelden durch Kunden, Pflichtangaben, Bestellbedingungen; noch **nicht** verlinkt | Kunden bestellen selbst über direkten Link | **programmiert** – `hofladen.html`, `meine-bestellungen.html`, `/api/hofladen/…`, Bestätigungsmails, persönlicher Link, Datenschutzerklärung ergänzt, Pflichtangaben Nudeln; getestet (Tests + Browser). Offen: Bestellbedingungen prüfen lassen, dann Phase 6 |
 | **5 – Kunden und Ankündigung** | Kundenkartei, Newsletter An-/Abmeldung, Ankündigung per Mail, Stammkunden-Link | Chargen ankündigen ohne Gruppen-Chaos | offen |
 | **6 – Veröffentlichung** | Navigation in allen Seiten, `sitemap.xml`, `llms.txt`, Knopf auf `bauernhof.html`, README-Bedienungsanleitung, Datenschutz (nach Freigabe), Friedhold stilllegen | live | offen |
 | **später** | „Meine Bestellung ändern"-Link, Jahresauswertung als Grafik, CSV-Import alter Kunden | nach Bedarf | – |

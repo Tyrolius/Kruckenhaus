@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Eure Vorbestellungen und Voranmeldungen beim Hofladen Kruckenhaus." />
+  <!-- Persönliche Seite: nie in Suchmaschinen, keine Weitergabe der Adresse -->
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="referrer" content="no-referrer" />
+  <link rel="canonical" href="https://www.kruckenhaus.at/meine-bestellungen.html" />
+  <title>Meine Bestellungen – Hofladen Kruckenhaus</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="site-header scrolled" role="banner">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo" aria-label="Kruckenhaus – Zur Startseite">
+        <div class="logo-placeholder">
+          <img src="images/logo.png" alt="Kruckenhaus Logo" class="logo-img"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <div class="logo-fallback">
+            <span class="logo-text">Kruckenhaus</span>
+            <span class="logo-sub">Hof &amp; Ferienwohnung</span>
+          </div>
+        </div>
+      </a>
+      <nav class="nav-menu" role="navigation" aria-label="Hauptnavigation">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="bauernhof.html" class="nav-link">Bauernhof</a>
+        <a href="hofladen.html" class="nav-link">Hofladen</a>
+        <a href="kontakt.html" class="nav-link">Kontakt</a>
+      </nav>
+      <button class="hamburger" aria-label="Menü öffnen" aria-expanded="false" aria-controls="nav-overlay">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="nav-overlay" id="nav-overlay" role="navigation" aria-label="Mobile Navigation">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="bauernhof.html" class="nav-link">Bauernhof</a>
+    <a href="hofladen.html" class="nav-link">Hofladen</a>
+    <a href="kontakt.html" class="nav-link">Kontakt</a>
+  </nav>
+
+  <main id="main-content">
+    <section class="page-hero" aria-labelledby="mb-titel">
+      <div class="page-hero-content container">
+        <span class="section-label" style="color:var(--color-beige);">Hofladen Kruckenhaus</span>
+        <h1 id="mb-titel">Meine Bestellungen</h1>
+      </div>
+    </section>
+
+    <section class="section" aria-label="Bestellungen und Voranmeldungen">
+      <div class="container hl-schmal">
+        <div id="mb-inhalt" aria-live="polite">
+          <p class="hl-hinweis">Wird geladen …</p>
+          <noscript><p>Für diese Seite wird JavaScript benötigt.</p></noscript>
+        </div>
+        <p class="form-hint">Etwas ändern oder stornieren? Einfach anrufen oder per WhatsApp melden:
+          <a href="tel:+436642166181">+43 664 2166181</a>. Diese Seite ist über euren persönlichen Link
+          erreichbar – bitte gebt ihn nicht weiter.</p>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-bottom">
+        <p>&copy; 2026 Kruckenhaus – Florian Häusler | Breitenbach am Inn, Tirol</p>
+        <div class="footer-links">
+          <a href="datenschutz.html">Datenschutzerklärung</a>
+          <a href="impressum.html">Impressum</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <script src="js/main.js"></script>
+  <script src="js/qrcode.js"></script>
+  <script src="js/meine-bestellungen.js"></script>
+</body>
+</html>

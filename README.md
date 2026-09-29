@@ -371,6 +371,8 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ├── schema.sql               → D1-Datenbankschema (Tabelle „anfragen")
 ├── schema-hofladen.sql      → D1-Schema der Hofladen-Vorbestellung (im Aufbau)
 ├── hofladen-produkte.sql    → Produktkatalog zum Einspielen (Startpreise)
+├── hofladen.html            → Bestellseite des Hofladens (noch nicht verlinkt)
+├── meine-bestellungen.html  → Bestellungen zum persönlichen Link aus der Mail
 ├── _headers                 → HTTP-Header & Cache-Regeln (Cloudflare Pages)
 ├── _redirects               → Weiterleitungen; sperrt docs/ für Besucher
 ├── docs/OPTIMIERUNGSPLAN.md → Interner Plan: Direktbuchungen, Preise, Rechtsprüfung
@@ -388,7 +390,8 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ├── .github/workflows/optimize-images.yml → Verkleinert hochgeladene Fotos automatisch
 ├── .github/scripts/optimize-images.js    → Das zugehörige Skript (sharp)
 ├── scripts/sitemap-lastmod.js → Trägt die Änderungsdaten in sitemap.xml nach
-├── scripts/test-hofladen-*.mjs → Tests für Datenbank, Schnittstelle und Zugang der Hofladen-Verwaltung
+├── js/qrcode.js             → Überweisungs-QR-Code (EPC-QR) für Packzettel und „Meine Bestellungen"
+├── scripts/test-hofladen-*.mjs → Tests für Datenbank, Schnittstelle, Zugang, Bestellseite und QR-Code
 ├── fonts/                   → Lokal gehostete Schriften (DSGVO – nicht löschen!)
 └── images/                  → Fotos (siehe Schritt 5)
 ```
@@ -429,7 +432,17 @@ Nach Änderungen an Schema, Helfern oder Schnittstelle die Tests laufen lassen
 node scripts/test-hofladen-db.mjs
 node scripts/test-hofladen-api.mjs
 node scripts/test-hofladen-zugang.mjs
+node scripts/test-hofladen-oeffentlich.mjs
+node scripts/test-hofladen-qr.mjs
 ```
+
+**Bestellseite für Kunden:** `hofladen.html` zeigt die offenen Chargen (Status
+„Offen", Bestellschluss nicht vorbei) mit freier Menge, Zutaten und Allergenen,
+nimmt Vorbestellungen und unverbindliche Voranmeldungen an und verschickt
+Bestätigungen (über Resend, wie das Kontaktformular). Jede Bestätigung enthält
+einen persönlichen Link auf `meine-bestellungen.html` – ohne Kundenkonto, ohne
+Cookies. Die Seite ist derzeit **noch nicht verlinkt und auf „noindex"**, bis
+die Bestellbedingungen geprüft sind (siehe `docs/HOFLADEN-VORBESTELLUNG.md`).
 
 ---
 
@@ -479,6 +492,7 @@ jeweils **Secret** (verschlüsselt):
 | `ACCESS_TEAM_DOMAIN` | Team-Adresse aus Schritt 2.6, ohne `https://` |
 | `ACCESS_AUD` | AUD-Tag aus Schritt 2.5 |
 | `VERWALTUNG_EMAILS` | die freigegebenen E-Mail-Adressen, durch Komma getrennt |
+| `BANK_INHABER`, `BANK_IBAN`, `BANK_BIC`, `BANK_NAME` | Bankverbindung für die Überweisungsdaten samt QR-Code auf dem Packzettel und bei „Meine Bestellungen" (optional; ohne sie gibt es keinen QR-Code, auf dem Packzettel steht ein Hinweis) |
 
 Danach unter *Deployments* die letzte Veröffentlichung erneut ausführen
 („Retry deployment"), damit die Werte greifen.

@@ -20,12 +20,15 @@
  * IDs gehen als Text an die Oberfläche und werden hier wieder geprüft.
  *
  * Binding: DB (D1 „kruckenhaus", Tabellen aus schema-hofladen.sql)
+ * Optional (Secrets, für den Packzettel bei Überweisung):
+ *   BANK_INHABER, BANK_IBAN, BANK_BIC, BANK_NAME – fehlen sie, druckt der
+ *   Packzettel keinen Überweisungsblock.
  * ============================================================ */
 
 import {
-  json, EingabeFehler, ZEITRAEUME,
+  json, EingabeFehler, ZEITRAEUME, istGueltigeEmail,
   bestellungAnlegen, bestellungNachruecken, preisVorschlaege,
-  voranmeldungAnlegen, voranmeldungenUebernehmen,
+  voranmeldungAnlegen, voranmeldungenUebernehmen, bankAusEnv,
 } from '../../_lib/hofladen.js';
 
 /* ------------------------------------------------------------
@@ -73,7 +76,8 @@ const id = (wert) => (wert == null ? null : String(wert));
    2. STAND LADEN (für die Oberfläche)
    Gleiche Form wie verwaltung/entwurf-daten.js.
    ------------------------------------------------------------ */
-async function standLaden(db) {
+
+async function standLaden(db, bank = null) {
   const aktiv = `SELECT id FROM chargen WHERE status <> 'archiviert'`;
   const [chargen, artikel, termine, bestellungen, positionen, kunden, produkte, voranmeldungen, liefergebiet] =
     (await db.batch([
@@ -147,6 +151,7 @@ async function standLaden(db) {
       plz: l.plz, ort: l.ort, liefergebuehrCent: l.liefergebuehr_cent, gratisAbCent: l.gratis_ab_cent,
     })),
     tourReihenfolge: liefergebiet.map((l) => l.ort),
+    bank,
     preisVorschlaege: (await preisVorschlaege(db)).map((v) => ({
       produktId: id(v.produktId), preisCent: v.preisCent, kontingent: v.kontingent,
       maxProBestellung: v.maxProBestellung, ausCharge: v.ausCharge || '',
@@ -160,7 +165,10 @@ async function standLaden(db) {
    wenn etwas eingetragen wurde. Sonst neuen Kunden anlegen.
    ------------------------------------------------------------ */
 async function kundeSichern(db, kundeId, kunde = {}) {
+  const email = text(kunde.email, 160).toLowerCase() || null;
+  if (email && !istGueltigeEmail(email)) throw new EingabeFehler('Bitte eine gültige E-Mail-Adresse eintragen.');
   const felder = {
+    email,
     telefon: textOderNull(kunde.telefon, 40),
     strasse: textOderNull(kunde.strasse, 120),
     plz: textOderNull(kunde.plz, 10),
@@ -169,18 +177,18 @@ async function kundeSichern(db, kundeId, kunde = {}) {
   if (kundeId) {
     const kid = nummer(kundeId, 'Kundennummer');
     const r = await db.prepare(
-      `UPDATE kunden SET telefon = COALESCE(?, telefon), strasse = COALESCE(?, strasse),
-              plz = COALESCE(?, plz), ort = COALESCE(?, ort)
+      `UPDATE kunden SET email = COALESCE(?, email), telefon = COALESCE(?, telefon),
+              strasse = COALESCE(?, strasse), plz = COALESCE(?, plz), ort = COALESCE(?, ort)
        WHERE id = ?`
-    ).bind(felder.telefon, felder.strasse, felder.plz, felder.ort, kid).run();
+    ).bind(felder.email, felder.telefon, felder.strasse, felder.plz, felder.ort, kid).run();
     if (!r.meta.changes) throw new EingabeFehler('Kunde nicht gefunden.');
     return kid;
   }
   const name = text(kunde.name, 120);
   if (!name) throw new EingabeFehler('Bitte einen Namen eintragen.');
   const zeile = await db.prepare(
-    'INSERT INTO kunden (name, telefon, strasse, plz, ort) VALUES (?, ?, ?, ?, ?) RETURNING id'
-  ).bind(name, felder.telefon, felder.strasse, felder.plz, felder.ort).first();
+    'INSERT INTO kunden (name, email, telefon, strasse, plz, ort) VALUES (?, ?, ?, ?, ?, ?) RETURNING id'
+  ).bind(name, felder.email, felder.telefon, felder.strasse, felder.plz, felder.ort).first();
   return zeile.id;
 }
 
@@ -426,7 +434,7 @@ export async function onRequest({ request, env, params, data }) {
 
   try {
     if (request.method === 'GET' && bereich === 'stand' && pfad.length === 1) {
-      return json({ ok: true, nutzer: data.nutzer, ...(await standLaden(db)) });
+      return json({ ok: true, nutzer: data.nutzer, ...(await standLaden(db, bankAusEnv(env))) });
     }
     if (request.method !== 'POST') return json({ ok: false, error: 'Nicht gefunden.' }, 404);
     if (!(request.headers.get('content-type') || '').includes('application/json')) {

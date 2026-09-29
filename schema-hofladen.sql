@@ -334,3 +334,20 @@ FROM voranmeldungen v
 JOIN produkte p ON p.id = v.produkt_id
 WHERE v.status = 'offen'
 GROUP BY v.produkt_id, v.zeitraum, v.jahr;
+
+
+-- ------------------------------------------------------------
+-- Persönliche Links „Meine Bestellungen" (ohne Kundenkonto)
+-- Der Link in der Bestätigungsmail enthält einen zufälligen Schlüssel.
+-- Gespeichert wird nur dessen SHA-256-Prüfsumme – wer die Datenbank sieht,
+-- kann daraus keinen gültigen Link bauen. Gesperrt = gesperrt_am gesetzt.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS kunden_links (
+  schluessel_hash TEXT    PRIMARY KEY,
+  kunde_id        INTEGER NOT NULL REFERENCES kunden (id),
+  erstellt_am     TEXT    NOT NULL DEFAULT (datetime('now')),
+  zuletzt_genutzt TEXT,
+  gesperrt_am     TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_kunden_links_kunde ON kunden_links (kunde_id);

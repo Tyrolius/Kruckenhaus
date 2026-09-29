@@ -164,4 +164,13 @@ const ohneDb = await onRequest({ request: new Request('https://x/api/verwaltung/
 assert.equal(ohneDb.status, 503);
 console.log('✓ Nur JSON, unbekannte Wege/Aktionen, leere Eingaben, fehlende Datenbank');
 
+// Bankverbindung für den Packzettel: nur aus den Einstellungen, sonst null
+assert.equal((await api('GET', 'stand')).bank, null);
+env.BANK_IBAN = 'AT001234567890123456';
+env.BANK_INHABER = 'Test Inhaber';
+const mitBank = await api('GET', 'stand');
+assert.deepEqual(mitBank.bank, { inhaber: 'Test Inhaber', iban: 'AT00 1234 5678 9012 3456', bic: '', bank: '' });
+delete env.BANK_IBAN;
+console.log('✓ Bankverbindung nur aus den Einstellungen, IBAN in Vierergruppen');
+
 console.log('\nAlle Tests bestanden.');
