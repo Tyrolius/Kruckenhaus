@@ -229,6 +229,9 @@
   --color-black:      #2C2420;  /* Footer */
   --color-border:     #D4CBC3;  /* Subtile Trennlinien */
   --color-overlay:    rgba(47, 88, 72, 0.50);
+  --color-scrim-oben: rgba(20, 34, 28, 0.45);  /* Hero: Abdunkelung hinter der Navigation */
+  --color-scrim-unten: rgba(20, 34, 28, 0.72); /* Hero: Abdunkelung hinter dem Text */
+  --color-weiss-90:   rgba(255, 255, 255, 0.90); /* Fließtext auf dunklem Grund */
 
   /* Typografie – Destillierte Natur */
   --font-heading:     'Playfair Display', 'Libre Baskerville', Georgia, serif;
@@ -2263,7 +2266,7 @@ body.season-winter .winter-image { display: block; }
    28. DESKTOP: >= 1024px
    ============================================================ */
 /* Horizontale Hauptnavigation erst ab 1200px – darunter das Hamburger-Menü,
-   damit die 9 Navigationspunkte nicht mit dem Logo kollidieren oder umbrechen. */
+   damit die Navigationspunkte samt Buchungs-Button nicht mit dem Logo kollidieren. */
 @media (min-width: 1200px) {
   .hamburger {
     display: none;
@@ -4374,4 +4377,386 @@ body.season-winter .winter-image { display: block; }
   .hl-bankdaten dd { margin: 0; }
   .hl-zweispaltig { grid-template-columns: 1fr 1fr; }
   .hl-formular { padding: var(--spacing-md); }
+}
+
+/* ============================================================
+   42. STARTSEITE – Hero, Intro, Hofchronik, Karten, Stimmen
+   Neues Startseiten-Design (Herbst 2026): Text links statt zentriert,
+   keine Wellen-Trenner, Fotokarten statt Emoji-Kacheln.
+   ============================================================ */
+
+/* Buchungs-Button in der Desktop-Navigation (alle Seiten) */
+.nav-link.nav-cta {
+  background-color: var(--color-white);
+  color: var(--color-primary);
+  text-shadow: none;
+  padding: 0.6rem 1rem;
+  border-radius: var(--border-radius);
+}
+.nav-link.nav-cta::after { display: none; }
+.nav-link.nav-cta:hover,
+.nav-link.nav-cta.active {
+  background-color: var(--color-beige);
+  color: var(--color-primary);
+}
+.site-header.scrolled .nav-link.nav-cta {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+.site-header.scrolled .nav-link.nav-cta:hover,
+.site-header.scrolled .nav-link.nav-cta.active {
+  background-color: var(--color-terracotta);
+  color: var(--color-white);
+}
+
+/* Kleine Überzeile in Versalien */
+.start-label {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-terracotta);
+  margin-bottom: 0.75rem;
+}
+
+/* --- Hero --- */
+.start-hero {
+  position: relative;
+  min-height: 560px;
+  height: 92svh;
+  max-height: 860px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+.start-hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.start-hero-overlay {
+  position: absolute;
+  inset: 0;
+  /* Am Handy steht der Text weiter oben im Bild – daher früher abdunkeln */
+  background: linear-gradient(180deg,
+    var(--color-scrim-oben) 0%,
+    transparent 22%,
+    var(--color-scrim-unten) 55%,
+    var(--color-scrim-unten) 100%);
+}
+.start-hero-inhalt {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding-bottom: var(--spacing-lg);
+}
+.start-hero-text { max-width: 760px; }
+.start-hero-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-weiss-90);
+  margin-bottom: 1rem;
+}
+.start-hero h1 {
+  color: var(--color-white);
+  font-size: clamp(2.3rem, 6.4vw, 5rem);
+  font-weight: 600;
+  line-height: 1.04;
+  margin-bottom: 1rem;
+}
+.start-hero-text p {
+  font-size: clamp(1rem, 1.6vw, 1.25rem);
+  line-height: 1.5;
+  color: var(--color-weiss-90);
+  max-width: 620px;
+}
+.start-hero-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+.start-hero-bewertung {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  color: var(--color-white);
+  font-size: 0.85rem;
+}
+.start-hero-bewertung:hover { color: var(--color-beige); }
+.start-hero-note {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* --- Intro --- */
+.start-intro { padding-block: var(--spacing-lg); }
+.start-intro-grid {
+  display: grid;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+.start-intro h2 {
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-weight: 600;
+  line-height: 1.1;
+  margin-bottom: 1.25rem;
+}
+.start-intro-text p { font-size: 1.05rem; line-height: 1.7; }
+.start-fakten {
+  list-style: none;
+  padding: 0;
+  margin: 1.25rem 0 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem 1.5rem;
+}
+.start-fakten li {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 0.95rem;
+}
+.start-fakten li::before {
+  content: '';
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+}
+.start-intro-bild {
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  max-height: 600px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+/* --- Hofchronik --- */
+.hofchronik-rahmen {
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  padding-block: var(--spacing-lg);
+}
+.hofchronik-kopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 1.5rem;
+  margin-bottom: var(--spacing-md);
+}
+.hofchronik-kopf .start-label { margin-bottom: 0; }
+.hofchronik-kopf h2,
+.start-erwartet-kopf h2 {
+  font-size: clamp(1.8rem, 3.2vw, 2.75rem);
+  font-weight: 600;
+  margin: 0;
+}
+.hofchronik-liste {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--spacing-md);
+}
+.hofchronik-liste li {
+  border-top: 2px solid var(--color-primary);
+  padding-top: 1.1rem;
+}
+.hofchronik-jahr {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: clamp(2.4rem, 4vw, 3.25rem);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--color-primary);
+  margin-bottom: 0.75rem;
+}
+.hofchronik-liste h3 {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.hofchronik-liste p { font-size: 1rem; line-height: 1.65; margin: 0; }
+.hofchronik-liste .hofchronik-neu { border-top-color: var(--color-terracotta); }
+.hofchronik-neu .hofchronik-jahr { color: var(--color-terracotta); }
+
+/* --- Was euch erwartet --- */
+.start-erwartet-kopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  margin-bottom: var(--spacing-md);
+}
+.start-textlink {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.start-textlink:hover { color: var(--color-terracotta); }
+.start-karten {
+  display: grid;
+  gap: var(--spacing-md) 1.5rem;
+}
+.start-karte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  color: var(--color-text);
+}
+.start-karte img,
+.start-karte-platzhalter {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+  transition: transform var(--transition-med);
+}
+.start-karte-platzhalter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  text-align: center;
+  background-color: var(--color-cream);
+  border: 1px dashed var(--color-border);
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+}
+.start-karte h3 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0.25rem 0 0;
+}
+.start-karte p { margin: 0; font-size: 1rem; line-height: 1.6; }
+.start-karte:hover h3 { color: var(--color-primary); }
+.start-karte:hover img,
+.start-karte:hover .start-karte-platzhalter { transform: translateY(-3px); }
+
+/* --- Gästestimmen --- */
+.start-stimmen-kopf { max-width: 640px; margin-bottom: var(--spacing-md); }
+.start-stimmen-kopf h2 {
+  font-size: clamp(1.8rem, 3.2vw, 2.75rem);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.start-stimmen-kopf p { margin: 0; color: var(--color-text-light); }
+.start-stimmen-grid { display: grid; gap: 1.5rem; }
+.start-stimme {
+  margin: 0;
+  background-color: var(--color-white);
+  border-radius: 6px;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+.start-stimme blockquote {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-style: italic;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--color-dark);
+}
+.start-stimme figcaption {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-light);
+}
+
+/* --- Direkt buchen --- */
+.start-cta {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  padding-block: var(--spacing-lg);
+}
+.start-cta-inhalt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+.start-cta h2 {
+  color: var(--color-white);
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.start-cta p { margin: 0; color: var(--color-weiss-90); }
+.start-cta-buttons { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.start-btn-hell {
+  background-color: var(--color-white);
+  color: var(--color-primary);
+  border-color: var(--color-white);
+}
+.start-btn-hell:hover {
+  background-color: var(--color-beige);
+  border-color: var(--color-beige);
+  color: var(--color-primary);
+}
+
+@media (min-width: 768px) {
+  .start-hero-overlay {
+    background: linear-gradient(180deg,
+      var(--color-scrim-oben) 0%,
+      transparent 30%,
+      transparent 50%,
+      var(--color-scrim-unten) 100%);
+  }
+  .start-hero-inhalt {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding-bottom: 4.5rem;
+  }
+  .start-hero-bewertung {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.3rem;
+    text-align: right;
+    flex: none;
+  }
+  .start-hero-note { font-size: 2.75rem; }
+  .start-karten,
+  .start-stimmen-grid,
+  .hofchronik-liste { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 1024px) {
+  .start-intro { padding-block: var(--spacing-xl); }
+  .start-intro-grid { grid-template-columns: 1fr 1fr; gap: var(--spacing-xl); }
+  .start-karten,
+  .start-stimmen-grid,
+  .hofchronik-liste { grid-template-columns: repeat(4, 1fr); }
+  .hofchronik-liste { gap: 2.5rem; }
+  .start-erwartet { padding-block: var(--spacing-xl); }
+  .start-cta-inhalt {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .start-cta-buttons { flex: none; }
+  .start-hero h1 { font-size: clamp(3rem, 5.6vw, 4.5rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .start-karte img,
+  .start-karte-platzhalter { transition: none; }
 }
