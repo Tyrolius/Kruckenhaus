@@ -388,7 +388,7 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ├── bauernhof.html           → Hof, Alpakas, Hofladen
 ├── berglsteiner-see.html    → Der See, Wanderroute
 ├── workation.html           → Arbeiten mit Starlink-Internet
-├── umgebung.html / lage.html→ Ausflugsziele, Anfahrt
+├── lage.html               → Lage & Umgebung: Anfahrt, Karte, Ausflugsziele
 ├── kontakt.html             → Kontaktformular
 ├── impressum.html           → Impressum (§ 5 ECG, § 25 MedienG, UID)
 ├── datenschutz.html         → Datenschutzerklärung (DSGVO)

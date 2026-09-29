@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Zum Inhalt springen</a>
 
   <!-- HEADER -->
   <header class="site-header scrolled" role="banner">
@@ -38,7 +39,7 @@
         <a href="bauernhof.html" class="nav-link">Bauernhof</a>
         <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
         <a href="workation.html" class="nav-link">Workation</a>
-        <a href="lage.html" class="nav-link">Lage</a>
+        <a href="lage.html" class="nav-link">Lage &amp; Umgebung</a>
         <a href="kontakt.html" class="nav-link">Kontakt</a>
         <a href="preise.html" class="nav-link nav-cta active" aria-current="page">Preise &amp; Buchung</a>
       </nav>
@@ -55,12 +56,11 @@
     <a href="bauernhof.html" class="nav-link">Bauernhof</a>
     <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
     <a href="workation.html" class="nav-link">Workation</a>
-    <a href="umgebung.html" class="nav-link">Umgebung</a>
-    <a href="lage.html" class="nav-link">Lage</a>
+    <a href="lage.html" class="nav-link">Lage &amp; Umgebung</a>
     <a href="kontakt.html" class="nav-link">Kontakt</a>
   </nav>
 
-  <main id="main-content">
+  <main id="main-content" tabindex="-1">
 
     <!-- PAGE HERO -->
     <section class="page-hero" aria-label="Preise und Buchung">
@@ -267,21 +267,90 @@
     <!-- ========================================================
          VERFÜGBARKEIT (Airbnb-iCal-Sync, siehe ferienwohnung.html)
          ======================================================== -->
-    <section class="section section-alt" id="buchung" aria-label="Verfügbarkeit und Buchung">
+    <section class="section section-alt" id="buchung" aria-labelledby="buchung-titel">
       <div class="container">
-        <div class="section-header slide-up">
-          <span class="section-label">Direkt buchen &amp; sparen</span>
-          <h2>Verfügbarkeit &amp; Buchung</h2>
-          <div class="divider"></div>
-          <p>Bucht direkt bei uns – Bestpreis, persönlicher Kontakt, Begrüßungskorb aus dem Hofladen</p>
+        <div class="section-header">
+          <span class="section-label">Direkt bei uns anfragen</span>
+          <h2 id="buchung-titel">Verfügbarkeit &amp; Anfrage</h2>
+          <p>Wählt im Kalender euren Zeitraum und schickt uns die Anfrage. Wir melden uns innerhalb von 24 Stunden mit einer verbindlichen Bestätigung – ohne Portalgebühren.</p>
         </div>
-        <div style="background:var(--color-white);border-radius:16px;padding:2rem;box-shadow:var(--shadow-md);" class="slide-up">
-          <div id="verfuegbarkeits-kalender" aria-label="Belegungskalender der Ferienwohnung" aria-live="polite"></div>
-          <p style="text-align:center;margin:2rem 0 1.5rem;font-size:1.05rem;">Euer Wunschtermin ist frei? Dann schreibt uns – wir bestätigen innerhalb von 24 Stunden.</p>
-          <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-            <a href="kontakt.html" class="btn btn-primary">Buchungsanfrage senden</a>
-            <a href="https://wa.me/436642166181?text=Hallo%2C%20ich%20m%C3%B6chte%20die%20Ferienwohnung%20Kruckenhaus%20buchen." class="btn btn-green" target="_blank" rel="noopener">Per WhatsApp buchen</a>
-            <a href="tel:+436642166181" class="btn btn-outline" style="color:var(--color-primary);border-color:var(--color-primary);">+43 664 2166181 anrufen</a>
+
+        <div class="buchung-grid">
+          <!-- Schritt 1: Kalender -->
+          <div class="buchung-karte">
+            <h3 class="buchung-schritt"><span aria-hidden="true">1</span> Zeitraum wählen</h3>
+            <div id="verfuegbarkeits-kalender" aria-label="Belegungskalender der Ferienwohnung"></div>
+            <p id="kalender-auswahl" class="kalender-auswahl" role="status" aria-live="polite"></p>
+            <p class="buchung-hinweis">Mindestaufenthalt je nach Saison 2 bis 7 Nächte – siehe Mietpreise oben.</p>
+          </div>
+
+          <!-- Schritt 2: Anfrageformular -->
+          <div class="buchung-karte">
+            <h3 class="buchung-schritt"><span aria-hidden="true">2</span> Anfrage senden</h3>
+            <form class="contact-form" id="contact-form" novalidate
+                  method="POST"
+                  action="/api/kontakt"
+                  name="buchungsanfrage">
+              <!-- Spam-Schutz: Bots füllen dieses versteckte Feld aus -->
+              <p style="display: none;" aria-hidden="true">
+                <label>Nicht ausfüllen: <input name="bot-field" tabindex="-1" autocomplete="off" /></label>
+              </p>
+
+              <div class="form-zeile">
+                <div class="form-group">
+                  <label for="anreise">Anreise</label>
+                  <input type="date" id="anreise" name="anreise" />
+                </div>
+                <div class="form-group">
+                  <label for="abreise">Abreise</label>
+                  <input type="date" id="abreise" name="abreise" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="personen">Anzahl Personen</label>
+                <select id="personen" name="personen">
+                  <option value="">Bitte wählen</option>
+                  <option value="1">1 Person</option>
+                  <option value="2">2 Personen</option>
+                  <option value="3">3 Personen</option>
+                  <option value="4">4 Personen</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="name">Name <span class="pflicht">(Pflichtfeld)</span></label>
+                <input type="text" id="name" name="name" required aria-required="true"
+                       autocomplete="name" />
+              </div>
+
+              <div class="form-group">
+                <label for="email">E-Mail-Adresse <span class="pflicht">(Pflichtfeld)</span></label>
+                <input type="email" id="email" name="email" required aria-required="true"
+                       autocomplete="email" />
+              </div>
+
+              <div class="form-group">
+                <label for="phone">Telefonnummer <span class="optional">(optional, für Rückfragen)</span></label>
+                <input type="tel" id="phone" name="phone" autocomplete="tel" />
+              </div>
+
+              <div class="form-group">
+                <label for="message">Nachricht <span class="optional">(optional)</span></label>
+                <textarea id="message" name="message" rows="4"
+                          placeholder="Anreisezeit, Haustier, Fragen …"></textarea>
+              </div>
+
+              <div class="form-dsgvo">
+                Eure Daten verwenden wir nur für die Bearbeitung eurer Anfrage.
+                Mehr dazu in der <a href="datenschutz.html">Datenschutzerklärung</a>.
+              </div>
+
+              <button type="submit" class="btn btn-primary buchung-senden">Anfrage senden</button>
+              <p class="buchung-hinweis">Die Anfrage ist unverbindlich. Lieber persönlich?
+                <a href="tel:+436642166181">+43 664 2166181</a> oder
+                <a href="https://wa.me/436642166181?text=Hallo%2C%20ich%20m%C3%B6chte%20die%20Ferienwohnung%20Kruckenhaus%20anfragen." target="_blank" rel="noopener">WhatsApp</a>.</p>
+            </form>
           </div>
         </div>
       </div>
@@ -407,7 +476,7 @@
           Habt ihr noch Fragen zu Preisen oder Verfügbarkeit?
           Meldet euch – wir helfen gerne weiter!
         </p>
-        <a href="kontakt.html" class="btn btn-primary">Anfrage senden</a>
+        <a href="#buchung" class="btn btn-primary">Anfrage senden</a>
       </div>
     </section>
 
@@ -430,8 +499,7 @@
             <li><a href="bauernhof.html">Bauernhof &amp; Alpakas</a></li>
             <li><a href="berglsteiner-see.html">Berglsteiner See</a></li>
             <li><a href="workation.html">Workation</a></li>
-            <li><a href="umgebung.html">Umgebung</a></li>
-            <li><a href="lage.html">Lage &amp; Anfahrt</a></li>
+            <li><a href="lage.html">Lage &amp; Umgebung</a></li>
             <li><a href="kontakt.html">Kontakt</a></li>
           </ul>
         </div>
@@ -469,30 +537,28 @@
   </a>
   <button class="back-to-top" aria-label="Zurück nach oben" title="Zurück nach oben">&#8593;</button>
 
-  <!-- FLOATING ACTION BUTTON "Jetzt buchen" (Mobile) -->
-  <a href="kontakt.html" class="fab-book" aria-label="Jetzt buchen">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-    Jetzt buchen
-  </a>
-
   <!-- BOTTOM TAB BAR (Mobile) -->
-  <nav class="bottom-tab-bar" id="bottomTabBar" role="navigation" aria-label="Schnellnavigation">
+  <nav class="bottom-tab-bar" id="bottomTabBar" aria-label="Schnellnavigation">
     <div class="bottom-tab-bar-inner">
-      <a href="ferienwohnung.html" class="bottom-tab-item" aria-label="Ferienwohnung">
+      <a href="ferienwohnung.html" class="bottom-tab-item">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-        Fewo
+        Wohnung
       </a>
-      <a href="preise.html" class="bottom-tab-item" aria-label="Preise">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 7.756a4.5 4.5 0 100 8.488M7.5 10.5h5.25m-5.25 3h5.25M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        Preise
-      </a>
-      <a href="bauernhof.html" class="bottom-tab-item" aria-label="Bauernhof &amp; Alpakas">
+      <a href="bauernhof.html" class="bottom-tab-item">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
         Hof
       </a>
-      <a href="lage.html" class="bottom-tab-item" aria-label="Lage &amp; Umgebung">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <a href="lage.html" class="bottom-tab-item">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         Lage
+      </a>
+      <a href="https://wa.me/436642166181" class="bottom-tab-item" target="_blank" rel="noopener">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"/></svg>
+        WhatsApp
+      </a>
+      <a href="#buchung" class="bottom-tab-item bottom-tab-item--buchen">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Anfragen
       </a>
     </div>
   </nav>
@@ -500,6 +566,6 @@
   <!-- Preiskonfiguration wird VOR main.js geladen -->
   <script src="js/preise-config.js"></script>
   <script src="js/main.js"></script>
-  <script src="js/verfuegbarkeit.js?v=1"></script>
+  <script src="js/verfuegbarkeit.js?v=2"></script>
 </body>
 </html>

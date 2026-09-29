@@ -6,7 +6,9 @@
  *
  * Ablauf pro Anfrage:
  *   1. Spam-Schutz (Honeypot-Feld "bot-field").
- *   2. Pflichtfelder validieren (name, email, message).
+ *   2. Pflichtfelder validieren (name, email und entweder Nachricht
+ *      oder Zeitraum – Terminanfragen aus dem Buchungskalender auf
+ *      preise.html dürfen ohne Nachricht kommen).
  *   3. Anfrage in der D1-Datenbank speichern (Tabelle "anfragen").
  *      Bewusst OHNE IP-Adresse und Browserkennung – die Datenschutz-
  *      erklärung sagt das so zu, und der Honeypot reicht als Spamschutz.
@@ -118,14 +120,19 @@ export async function onRequestPost({ request, env }) {
     message: (payload.message || '').trim(),
   };
 
-  if (!data.name || !data.email || !data.message) {
-    return json({ ok: false, error: 'Bitte füllen Sie alle Pflichtfelder aus.' }, 400);
+  const mitZeitraum = Boolean(data.anreise && data.abreise);
+  if (!data.name || !data.email || (!data.message && !mitZeitraum)) {
+    return json({ ok: false, error: 'Bitte füllt alle Pflichtfelder aus.' }, 400);
   }
   if (!isValidEmail(data.email)) {
-    return json({ ok: false, error: 'Bitte geben Sie eine gültige E-Mail-Adresse ein.' }, 400);
+    return json({ ok: false, error: 'Bitte gebt eine gültige E-Mail-Adresse ein.' }, 400);
   }
-  if (data.message.length < 10) {
-    return json({ ok: false, error: 'Bitte beschreiben Sie Ihr Anliegen etwas ausführlicher.' }, 400);
+  if (!mitZeitraum && data.message.length < 10) {
+    return json({ ok: false, error: 'Bitte beschreibt euer Anliegen etwas ausführlicher.' }, 400);
+  }
+  if (!data.message) {
+    // Spalte "nachricht" ist NOT NULL – reine Terminanfrage kennzeichnen
+    data.message = 'Terminanfrage über den Buchungskalender (ohne Nachricht).';
   }
   if (data.anreise && data.abreise && data.abreise <= data.anreise) {
     return json({ ok: false, error: 'Die Abreise muss nach der Anreise liegen.' }, 400);

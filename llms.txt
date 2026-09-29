@@ -85,7 +85,7 @@ Gastgeber: Kathrin und Florian Häusler.
 - [Bauernhof](https://www.kruckenhaus.at/bauernhof.html): Alpakas, Hofladen, Landwirtschaft
 - [Berglsteiner See](https://www.kruckenhaus.at/berglsteiner-see.html): Der See und die Wanderroute
 - [Workation](https://www.kruckenhaus.at/workation.html): Arbeiten mit Starlink-Internet
-- [Umgebung](https://www.kruckenhaus.at/umgebung.html): Ausflugsziele in der Region
+- [Umgebung](https://www.kruckenhaus.at/lage.html#umgebung): Ausflugsziele in der Region (Teil der Seite Lage & Umgebung)
 - [Lage & Anfahrt](https://www.kruckenhaus.at/lage.html): Anreise mit Auto und Bahn
 - [Kontakt](https://www.kruckenhaus.at/kontakt.html): Anfrageformular und Kontaktdaten
 

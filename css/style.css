@@ -224,7 +224,7 @@
   --color-cream:      #F5F0EB;  /* Section Alt – leicht dunkleres Cloud Dancer */
   --color-terracotta: #964F33;  /* Terracotta – aktive Links, Icons, Heritage */
   --color-text:       #464646;  /* Alpine Slate – Haupttext */
-  --color-text-light: #7A7067;  /* Sekundärer Text, Bildunterschriften */
+  --color-text-light: #6B6158;  /* Sekundärer Text – dunkler für Kontrast ≥ 4,5:1 auf Creme */
   --color-white:      #FFFFFF;
   --color-black:      #2C2420;  /* Footer */
   --color-border:     #D4CBC3;  /* Subtile Trennlinien */
@@ -276,7 +276,8 @@
 }
 
 html {
-  font-size: 16px;
+  /* 17 px Grundschrift: besser lesbar für ältere Gäste (vorher 16 px) */
+  font-size: 17px;
   scroll-behavior: smooth;
 }
 
@@ -4827,3 +4828,198 @@ body.season-winter .winter-image { display: block; }
   background: var(--color-white);
   border-left-color: var(--color-primary);
 }
+
+/* ============================================================
+   44. BARRIEREFREIHEIT & BUCHUNGSBEREICH (Herbst 2026)
+   - Mindestschriftgrößen für Fließ- und Hinweistexte
+   - Türkis nur noch als Flächen-/Akzentfarbe, nicht für Text
+   - Sichtbarer Tastatur-Fokus, „Zum Inhalt springen“-Link
+   - Buchungsbereich auf preise.html: Kalender + Anfrageformular
+   ============================================================ */
+
+/* Kleine Texte: nicht unter ~15 px (0.9rem bei 17 px Grundschrift) */
+.testimonial-origin, .equipment-item span:last-child, .room-card p,
+.sehens-info p, .sehens-distance, .zahlung-item p, .form-hint, .form-dsgvo,
+.footer-bottom p, .footer-links a, .breadcrumb, .usp-kachel-link,
+.speedtest-sub, .legende-box cite, .cal-legend-item, .cal-hint,
+.beispiel-card .bsp-pro-nacht, .start-hero-bewertung, .start-stimme figcaption,
+.alpbachtal-card-hinweis, .preis-badge {
+  font-size: 0.9rem;
+}
+.cal-day { font-size: 0.95rem; }
+.cal-weekday { font-size: 0.8rem; }
+.form-group label { font-size: 1rem; }
+.form-group input,
+.form-group textarea,
+.form-group select { font-size: 1rem; min-height: 48px; }
+.form-hint { opacity: 1; color: var(--color-text-light); }
+
+/* Türkis-Text auf hellem Grund war zu kontrastarm (unter 2:1) */
+.testimonial-author,
+.zimmer-subtitle,
+.vergleich-ideal,
+.legende-box cite { color: var(--color-primary); }
+.detail-list li::before,
+.alpbachtal-card-features li::before { color: var(--color-primary); }
+
+/* Sichtbarer Fokus für Tastaturbedienung – überall gleich */
+:focus-visible {
+  outline: 3px solid var(--color-terracotta);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.page-hero :focus-visible,
+.start-hero :focus-visible,
+.start-cta :focus-visible,
+.site-footer :focus-visible,
+.site-header:not(.scrolled) :focus-visible {
+  outline-color: var(--color-white);
+}
+
+/* „Zum Inhalt springen“ – erscheint erst beim Tabben */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -100px;
+  z-index: 2000;
+  background: var(--color-primary);
+  color: var(--color-white);
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--border-radius);
+  font-weight: 700;
+}
+.skip-link:focus { top: 1rem; color: var(--color-white); }
+
+/* Formular-Meldungen: bleiben stehen, klar lesbar */
+.form-message {
+  margin-top: 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--border-radius);
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.5;
+  border-left: 5px solid;
+}
+.form-message:focus { outline: none; }
+.form-message--success { background: #E8F1EC; color: var(--color-primary); border-left-color: var(--color-primary); }
+.form-message--error   { background: #FBEDEA; color: #8A2E1C; border-left-color: #B3432A; }
+
+/* Pflicht-/Optional-Kennzeichnung in Worten statt nur „*“ */
+.form-group label .pflicht,
+.form-group label .optional {
+  font-weight: 400;
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+}
+
+/* --- Buchungsbereich (preise.html#buchung) --- */
+.buchung-grid {
+  display: grid;
+  gap: var(--spacing-md);
+  align-items: start;
+}
+.buchung-karte {
+  background: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+.buchung-schritt {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.35rem;
+  margin-bottom: 1.25rem;
+}
+.buchung-schritt span {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-white);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.buchung-hinweis {
+  font-size: 0.9rem;
+  color: var(--color-text-light);
+  margin: 1rem 0 0;
+}
+.buchung-senden { width: 100%; margin-top: 1.25rem; padding: 1rem; font-size: 1rem; }
+.form-zeile { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+.kalender-auswahl {
+  margin: 1rem 0 0;
+  padding: 0.85rem 1rem;
+  border-radius: var(--border-radius);
+  background: var(--color-cream);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.kalender-auswahl:empty { display: none; }
+.kalender-auswahl--fehler { background: #FBEDEA; color: #8A2E1C; }
+
+/* Kalendertage als Schaltflächen (Auswahlmodus) */
+button.cal-day {
+  border: 0;
+  width: 100%;
+  font-family: var(--font-body);
+  cursor: pointer;
+  min-height: 40px;
+}
+button.cal-day--free:hover { background: rgba(47, 88, 72, 0.18); }
+button.cal-day--booked { cursor: not-allowed; }
+.cal-day--free { background: rgba(121, 192, 188, 0.22); color: var(--color-primary); }
+.cal-day--booked { color: var(--color-text-light); }
+.cal-day--zwischen { background: rgba(47, 88, 72, 0.18); color: var(--color-primary); text-decoration: none; }
+.cal-day--anreise,
+.cal-day--abreise { background: var(--color-primary) !important; color: var(--color-white) !important; text-decoration: none; }
+.cal-dot--gewaehlt { background: var(--color-primary); }
+.cal-nav-label { font-weight: 700; }
+
+@media (min-width: 1024px) {
+  .buchung-grid { grid-template-columns: 1.15fr 1fr; }
+  .buchung-karte { padding: 2rem; }
+}
+
+/* --- Handy: eine Leiste statt drei schwebender Elemente --- */
+.bottom-tab-bar-inner { grid-template-columns: repeat(5, 1fr); }
+.bottom-tab-item { font-size: 0.72rem; text-transform: none; letter-spacing: 0; min-height: 48px; }
+.bottom-tab-item--buchen {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+.bottom-tab-item--buchen:hover,
+.bottom-tab-item--buchen:focus-visible { color: var(--color-white); background-color: var(--color-terracotta); }
+@media (max-width: 767px) {
+  /* WhatsApp steckt am Handy in der Leiste – der runde Knopf würde Inhalt verdecken */
+  .whatsapp-btn { display: none; }
+  /* Platz für die Leiste, damit der Footer nicht verdeckt wird */
+  body { padding-bottom: 64px; }
+}
+
+/* Buchungsbereich: nichts darf am Handy seitlich überstehen */
+.buchung-grid { grid-template-columns: minmax(0, 1fr); }
+.buchung-karte { min-width: 0; }
+.buchung-karte .cal-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.buchung-karte .contact-form { padding: 0; background: none; box-shadow: none; border: 0; }
+@media (max-width: 767px) {
+  .buchung-karte { padding: 1rem; }
+  button.cal-day { min-height: 38px; }
+}
+@media (min-width: 1024px) {
+  .buchung-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+}
+@media (max-width: 767px) {
+  /* Gebührentabelle am Handy seitlich scrollbar statt über den Rand */
+  .zusatz-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+/* Einblend-Animationen (slide-left/right) dürfen keinen Querscroll erzeugen */
+html, body { overflow-x: clip; }
+.form-zeile { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.form-zeile input { min-width: 0; }
+.buchung-karte .cal-nav-label { font-size: 1rem; text-align: center; }

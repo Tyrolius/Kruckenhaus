@@ -34,7 +34,7 @@ Das ist eine bewusste Entscheidung (Wartbarkeit durch Nicht-Entwickler).
 ## Aufbau
 
 ```
-*.html                     12 eigenständige Seiten, jede vollständig
+*.html                     11 eigenständige Seiten, jede vollständig
                            (Head, Navigation, Footer dupliziert – kein Include)
 css/style.css              gesamtes Design, ~3400 Zeilen, nummerierte Abschnitte
 js/main.js                 Navigation, Lightbox, Scroll-Effekte, Formular
