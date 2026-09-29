@@ -94,9 +94,8 @@ const PREISE = {
 
   // ----------------------------------------------------------
   // AUFENTHALTSABGABE (Tiroler Aufenthaltsabgabegesetz, "Ortstaxe").
-  // Laut Familie Häusler aktuell 3,50 €. Hinweis: Die Abgabenübersicht
-  // des Landes Tirol nennt für den TVB Alpbachtal & Tiroler Seenland
-  // ab 1.5.2026 einen Satz von 4,00 € – beim TVB gegenprüfen.
+  // TVB Alpbachtal & Tiroler Seenland: 3,50 € (bestätigt 09/2026,
+  // gültig laut Land Tirol seit 1.12.2023).
   // ----------------------------------------------------------
   ortstaxe: {
     betrag:  3.50,   // € pro Person und Nacht
