@@ -5023,3 +5023,72 @@ html, body { overflow-x: clip; }
 .form-zeile { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .form-zeile input { min-width: 0; }
 .buchung-karte .cal-nav-label { font-size: 1rem; text-align: center; }
+
+/* ============================================================
+   45. PREISSEITE – fünf Saisonen & Abschnitt „Herbst & Frühling“
+   ============================================================ */
+.preise-grid--fuenf .preis-card { margin: 0; }
+.preise-grid--fuenf { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 768px) {
+  .preise-grid--fuenf { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .preise-grid--fuenf { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.preis-tipp {
+  display: inline-block;
+  margin-bottom: 0.4rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  background: var(--color-terracotta);
+  color: var(--color-white);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.preis-details a { font-weight: 700; color: var(--color-primary); }
+
+/* Startseite: Herbst & Frühling am Hof */
+.jahreszeiten {
+  background-color: var(--color-cream);
+  padding-block: var(--spacing-lg);
+}
+.jahreszeiten-grid {
+  display: grid;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+.jahreszeit {
+  background: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  padding: 1.75rem;
+  border-top: 4px solid var(--color-primary);
+}
+.jahreszeit--herbst { border-top-color: var(--color-terracotta); }
+.jahreszeit h3 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+.jahreszeit-monate {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text-light);
+  margin-bottom: 1rem;
+}
+.jahreszeit ul { padding-left: 1.1rem; margin: 0; }
+.jahreszeit li { margin-bottom: 0.5rem; line-height: 1.6; }
+.jahreszeiten-angebot {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: var(--spacing-md);
+  padding: 1.5rem;
+  border-radius: var(--border-radius-lg);
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+.jahreszeiten-angebot p { margin: 0; color: var(--color-weiss-90); }
+.jahreszeiten-angebot strong { color: var(--color-white); font-size: 1.25rem; }
+@media (min-width: 768px) {
+  .jahreszeiten-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .jahreszeiten-angebot { flex-direction: row; align-items: center; justify-content: space-between; }
+}
