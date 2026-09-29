@@ -227,17 +227,17 @@ if (contactForm) {
     const abreise = contactForm.querySelector('#abreise')?.value;
 
     if (!name || !email || !message) {
-      showFormMessage('Bitte füllen Sie alle Pflichtfelder aus.', 'error');
+      showFormMessage('Bitte füllt alle Pflichtfelder aus.', 'error');
       return;
     }
 
     if (!isValidEmail(email)) {
-      showFormMessage('Bitte geben Sie eine gültige E-Mail-Adresse ein.', 'error');
+      showFormMessage('Bitte gebt eine gültige E-Mail-Adresse ein.', 'error');
       return;
     }
 
     if (message.length < 10) {
-      showFormMessage('Bitte beschreiben Sie Ihr Anliegen etwas ausführlicher (mind. 10 Zeichen).', 'error');
+      showFormMessage('Bitte beschreibt euer Anliegen etwas ausführlicher (mind. 10 Zeichen).', 'error');
       return;
     }
 
@@ -263,14 +263,14 @@ if (contactForm) {
         const data = await response.json().catch(() => ({}));
         if (!response.ok || !data.ok) throw new Error(data.error || 'Netzwerkfehler');
         showFormMessage(
-          'Vielen Dank für Ihre Nachricht! Wir melden uns innerhalb von 24 Stunden.',
+          'Vielen Dank für eure Nachricht! Wir melden uns innerhalb von 24 Stunden.',
           'success'
         );
         contactForm.reset();
       })
       .catch(() => {
         showFormMessage(
-          'Das Senden hat leider nicht funktioniert. Bitte schreiben Sie uns direkt an info@kruckenhaus.at oder rufen Sie an.',
+          'Das Senden hat leider nicht funktioniert. Bitte schreibt uns direkt an info@kruckenhaus.at oder ruft an.',
           'error'
         );
       })
