@@ -9,7 +9,8 @@
  *   POST /api/hofladen/bestellung    verbindliche Vorbestellung
  *   POST /api/hofladen/voranmeldung  unverbindliche Voranmeldung
  *   GET  /api/hofladen/meine         Bestellungen zum persönlichen Link
- *                                    (Schlüssel im Header X-Link-Schluessel)
+ *                                    (Schlüssel im Header X-Link-Schluessel),
+ *                                    bei offener Überweisung mit Bankverbindung
  *
  * Ablauf einer Bestellung:
  *   1. Spam-Falle (Feld „bot-field"), Pflichtfelder, Zustimmung prüfen
@@ -25,12 +26,13 @@
  * Fehlt RESEND_API_KEY, wird trotzdem gespeichert (nur keine Mail).
  *
  * Bindings / Variablen: DB (D1), RESEND_API_KEY (Secret, optional),
- *   CONTACT_TO (Empfänger Hof), CONTACT_FROM (Absender)
+ *   CONTACT_TO (Empfänger Hof), CONTACT_FROM (Absender),
+ *   BANK_INHABER, BANK_IBAN, BANK_BIC, BANK_NAME (Secrets, optional)
  * ============================================================ */
 
 import {
   json, escapeHtml, istGueltigeEmail, EingabeFehler, euro, positionBetrag, zeitraumText, ZEITRAEUME,
-  bestellungAnlegen, voranmeldungAnlegen, kundenLinkErstellen, kundeAusLink, mailSenden,
+  bestellungAnlegen, voranmeldungAnlegen, kundenLinkErstellen, kundeAusLink, mailSenden, bankAusEnv,
 } from '../../_lib/hofladen.js';
 
 const ZAHLARTEN = { bar: 'bar bei Übergabe', ueberweisung: 'Überweisung' };
@@ -379,6 +381,11 @@ async function meineLaden(db, schluessel) {
   };
 }
 
+// Genauer Betrag steht fest (alles gewogen), Zahlung per Überweisung offen
+function istUeberweisungFaellig(b) {
+  return b.status === 'vorgemerkt' && b.zahlart === 'ueberweisung' && !b.bezahlt && !b.geschaetzt && b.summeCent > 0;
+}
+
 /* ------------------------------------------------------------
    6. VERTEILER
    ------------------------------------------------------------ */
@@ -394,7 +401,9 @@ export async function onRequest({ request, env, params }) {
     if (request.method === 'GET' && pfad === 'meine') {
       const daten = await meineLaden(db, request.headers.get('X-Link-Schluessel'));
       if (!daten) return json({ ok: false, error: 'Dieser Link ist ungültig oder wurde gesperrt.' }, 404);
-      return json({ ok: true, ...daten });
+      // Bankverbindung nur mitschicken, wenn gerade eine Überweisung ansteht
+      const bank = daten.bestellungen.some(istUeberweisungFaellig) ? bankAusEnv(env) : null;
+      return json({ ok: true, ...daten, bank });
     }
     if (request.method === 'POST' && (pfad === 'bestellung' || pfad === 'voranmeldung')) {
       const eingabe = await eingabeLesen(request);

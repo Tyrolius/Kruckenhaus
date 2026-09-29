@@ -17,6 +17,7 @@
  *   5. Voranmeldungen (anlegen, in eine Charge übernehmen)
  *   6. Persönliche Links „Meine Bestellungen" (kundenLinkErstellen, kundeAusLink)
  *   7. E-Mail über Resend (mailSenden)
+ *   8. Bankverbindung aus den Cloudflare-Einstellungen (bankAusEnv)
  * ============================================================ */
 
 /* ------------------------------------------------------------
@@ -360,4 +361,20 @@ export async function mailSenden(env, { an, betreff, html, antwortAn }) {
     console.error('E-Mail-Versand fehlgeschlagen:', fehler);
     return { gesendet: false, grund: 'netzwerk' };
   }
+}
+
+/* ------------------------------------------------------------
+   8. BANKVERBINDUNG
+   Bewusst nicht im Code, sondern als Cloudflare-Secrets (BANK_INHABER,
+   BANK_IBAN, BANK_BIC, BANK_NAME). Fehlt BANK_IBAN, gibt es keine
+   Überweisungsdaten und keinen QR-Code – sonst läuft alles weiter.
+   ------------------------------------------------------------ */
+export function bankAusEnv(env) {
+  if (!env.BANK_IBAN) return null;
+  return {
+    inhaber: env.BANK_INHABER || '',
+    iban: String(env.BANK_IBAN).replace(/\s+/g, '').replace(/(.{4})/g, '$1 ').trim(),
+    bic: env.BANK_BIC || '',
+    bank: env.BANK_NAME || '',
+  };
 }

@@ -1360,9 +1360,25 @@ function exportieren() {
 function ueberweisungsBlock(b) {
   const bank = daten.bank;
   if (!bank) return '<p class="vw-packzettel-bank">Bitte überweisen – Bankverbindung ist in Cloudflare noch nicht hinterlegt.</p>';
-  return `<p class="vw-packzettel-bank"><strong>Bitte überweisen an:</strong> ${esc(bank.inhaber)}<br>
+  const zweck = `Bestellung ${b.nummer}`;
+  const text = `<p><strong>Bitte überweisen an:</strong> ${esc(bank.inhaber)}<br>
     IBAN ${esc(bank.iban)}${bank.bic ? ` · BIC ${esc(bank.bic)}` : ''}${bank.bank ? ` · ${esc(bank.bank)}` : ''}<br>
-    Verwendungszweck: <strong>${esc(b.nummer)}</strong></p>`;
+    Verwendungszweck: <strong>${esc(zweck)}</strong></p>`;
+  return `<div class="vw-packzettel-bank">${ueberweisungsQr(b, bank, zweck)}${text}</div>`;
+}
+
+// QR-Code zum Scannen mit der Banking-App – nur mit genauem Betrag,
+// also erst wenn alles Fleisch gewogen ist
+function ueberweisungsQr(b, bank, zweck) {
+  const betrag = bestellBetrag(b);
+  if (betrag.geschaetzt || betrag.cent < 1 || !window.KruckenhausQr) return '';
+  try {
+    const epc = KruckenhausQr.epcText({ name: bank.inhaber, iban: bank.iban, bic: bank.bic, betragCent: betrag.cent, zweck });
+    return `<div class="vw-packzettel-qr">${KruckenhausQr.svg(epc, { titel: `Überweisung ${euro(betrag.cent)}` })}
+      <small>Mit der Banking-App scannen</small></div>`;
+  } catch {
+    return '';
+  }
 }
 
 function packzettelDrucken() {

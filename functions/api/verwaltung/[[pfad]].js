@@ -28,7 +28,7 @@
 import {
   json, EingabeFehler, ZEITRAEUME, istGueltigeEmail,
   bestellungAnlegen, bestellungNachruecken, preisVorschlaege,
-  voranmeldungAnlegen, voranmeldungenUebernehmen,
+  voranmeldungAnlegen, voranmeldungenUebernehmen, bankAusEnv,
 } from '../../_lib/hofladen.js';
 
 /* ------------------------------------------------------------
@@ -76,17 +76,6 @@ const id = (wert) => (wert == null ? null : String(wert));
    2. STAND LADEN (für die Oberfläche)
    Gleiche Form wie verwaltung/entwurf-daten.js.
    ------------------------------------------------------------ */
-// Bankverbindung für den Packzettel – bewusst nicht im Code, sondern als
-// Cloudflare-Secret; nur hinter der Zugangsprüfung abrufbar.
-function bankAusEnv(env) {
-  if (!env.BANK_IBAN) return null;
-  return {
-    inhaber: env.BANK_INHABER || '',
-    iban: String(env.BANK_IBAN).replace(/\s+/g, '').replace(/(.{4})/g, '$1 ').trim(),
-    bic: env.BANK_BIC || '',
-    bank: env.BANK_NAME || '',
-  };
-}
 
 async function standLaden(db, bank = null) {
   const aktiv = `SELECT id FROM chargen WHERE status <> 'archiviert'`;

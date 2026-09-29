@@ -4117,7 +4117,17 @@ body.season-winter .winter-image { display: block; }
     font-size: 11pt;
   }
   .vw-packzettel h2 { font-size: 14pt; margin-bottom: 0.3rem; }
-  .vw-packzettel-bank { margin-top: 0.5rem; font-size: 10pt; border-top: 1px dashed var(--color-dark); padding-top: 0.4rem; }
+  .vw-packzettel-bank {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: 0.5rem;
+    font-size: 10pt;
+    border-top: 1px dashed var(--color-dark);
+    padding-top: 0.4rem;
+  }
+  .vw-packzettel-qr { flex: 0 0 auto; text-align: center; font-size: 8pt; }
+  .vw-packzettel-qr svg { display: block; width: 3.2cm; height: 3.2cm; }
 }
 
 /* ============================================================
@@ -4340,8 +4350,28 @@ body.season-winter .winter-image { display: block; }
   margin-bottom: 0.4rem;
 }
 
+/* Überweisung mit QR-Code bei „Meine Bestellungen" */
+.hl-ueberweisung {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border-radius: var(--border-radius);
+  background-color: var(--color-cream);
+}
+.hl-ueberweisung p { margin-bottom: 0.4rem; }
+.hl-qr { justify-self: center; }
+.hl-qr svg { display: block; width: 180px; height: 180px; }
+.hl-bankdaten { margin: 0; font-size: 0.9rem; }
+.hl-bankdaten dt { color: var(--color-text-light); font-size: 0.8rem; }
+.hl-bankdaten dd { margin: 0 0 0.35rem; font-weight: 700; overflow-wrap: anywhere; }
+
 @media (min-width: 768px) {
   .hl-schritte { grid-template-columns: repeat(3, 1fr); }
+  .hl-ueberweisung { grid-template-columns: auto 1fr; align-items: center; }
+  .hl-bankdaten { display: grid; grid-template-columns: auto 1fr; gap: 0.15rem 0.75rem; }
+  .hl-bankdaten dt { font-size: inherit; }
+  .hl-bankdaten dd { margin: 0; }
   .hl-zweispaltig { grid-template-columns: 1fr 1fr; }
   .hl-formular { padding: var(--spacing-md); }
 }

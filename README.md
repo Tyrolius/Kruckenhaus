@@ -390,7 +390,8 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ├── .github/workflows/optimize-images.yml → Verkleinert hochgeladene Fotos automatisch
 ├── .github/scripts/optimize-images.js    → Das zugehörige Skript (sharp)
 ├── scripts/sitemap-lastmod.js → Trägt die Änderungsdaten in sitemap.xml nach
-├── scripts/test-hofladen-*.mjs → Tests für Datenbank, Schnittstelle und Zugang der Hofladen-Verwaltung
+├── js/qrcode.js             → Überweisungs-QR-Code (EPC-QR) für Packzettel und „Meine Bestellungen"
+├── scripts/test-hofladen-*.mjs → Tests für Datenbank, Schnittstelle, Zugang, Bestellseite und QR-Code
 ├── fonts/                   → Lokal gehostete Schriften (DSGVO – nicht löschen!)
 └── images/                  → Fotos (siehe Schritt 5)
 ```
@@ -432,6 +433,7 @@ node scripts/test-hofladen-db.mjs
 node scripts/test-hofladen-api.mjs
 node scripts/test-hofladen-zugang.mjs
 node scripts/test-hofladen-oeffentlich.mjs
+node scripts/test-hofladen-qr.mjs
 ```
 
 **Bestellseite für Kunden:** `hofladen.html` zeigt die offenen Chargen (Status
@@ -490,7 +492,7 @@ jeweils **Secret** (verschlüsselt):
 | `ACCESS_TEAM_DOMAIN` | Team-Adresse aus Schritt 2.6, ohne `https://` |
 | `ACCESS_AUD` | AUD-Tag aus Schritt 2.5 |
 | `VERWALTUNG_EMAILS` | die freigegebenen E-Mail-Adressen, durch Komma getrennt |
-| `BANK_INHABER`, `BANK_IBAN`, `BANK_BIC`, `BANK_NAME` | Bankverbindung für den Überweisungsblock auf dem Packzettel (optional; ohne sie steht dort ein Hinweis) |
+| `BANK_INHABER`, `BANK_IBAN`, `BANK_BIC`, `BANK_NAME` | Bankverbindung für die Überweisungsdaten samt QR-Code auf dem Packzettel und bei „Meine Bestellungen" (optional; ohne sie gibt es keinen QR-Code, auf dem Packzettel steht ein Hinweis) |
 
 Danach unter *Deployments* die letzte Veröffentlichung erneut ausführen
 („Retry deployment"), damit die Werte greifen.

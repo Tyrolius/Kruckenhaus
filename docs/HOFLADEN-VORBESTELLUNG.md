@@ -221,7 +221,13 @@ läuft je Kunde in einer Transaktion, nichts wird doppelt übernommen.
 
 - **Bar:** bei Übergabe, wird beim Abhaken mit „bar bezahlt" vermerkt.
 - **Überweisung:** Endbetrag, Bankdaten und Zahlungsreferenz bekommt der
-  Kunde bei der Übergabe (Packzettel). Kein Vorab-Zahlen,
+  Kunde bei der Übergabe (Packzettel). Sobald alles gewogen ist, trägt
+  der Packzettel einen **Überweisungs-QR-Code** (EPC-QR/„GiroCode") mit
+  Empfänger, IBAN, genauem Betrag und „Bestellung 2026-001" als
+  Verwendungszweck – dieselben Daten samt QR-Code stehen bei
+  „Meine Bestellungen". Solange der Betrag nur geschätzt ist, gibt es
+  keinen QR-Code. Erzeugt wird er im Browser (`js/qrcode.js`, ohne
+  fremde Bibliothek). Kein Vorab-Zahlen,
   keine Anzahlung – passt zu Stammkunden und vermeidet Rückzahlungen bei
   Gewichtsabweichungen.
 - **Keine Online-Zahlung** (Karte/PayPal/Stripe): unnötige Gebühren und
@@ -458,7 +464,7 @@ die API trotzdem nichts aus.
 | `ACCESS_TEAM_DOMAIN` | Variable | `<team>.cloudflareaccess.com` |
 | `ACCESS_AUD` | Variable | Application Audience aus Access |
 | `VERWALTUNG_EMAILS` | Variable | E-Mail-Adressen von Kathrin und Florian |
-| `BANK_INHABER`, `BANK_IBAN`, `BANK_BIC`, `BANK_NAME` | Secret | für den Packzettel (Überweisung) – umgesetzt |
+| `BANK_INHABER`, `BANK_IBAN`, `BANK_BIC`, `BANK_NAME` | Secret | für Packzettel und „Meine Bestellungen" (Überweisung, QR-Code) – umgesetzt |
 | `HOFLADEN_TO` | Variable (optional) | wohin „Neue Vorbestellung" geht, Standard `CONTACT_TO` |
 
 `RESEND_API_KEY` und die D1-Anbindung gibt es schon.

@@ -156,6 +156,25 @@ assert.equal(r.name, 'Maria Web');
 assert.equal(r.bestellungen.length, 2);
 assert.deepEqual(r.bestellungen.map((b) => b.status).sort(), ['vorgemerkt', 'warteliste']);
 assert.equal(r.bestellungen.find((b) => b.status === 'vorgemerkt').positionen.length, 2);
+assert.equal(r.bank, null, 'ohne Bank-Secrets keine Bankverbindung');
+// Bankverbindung erst, wenn alles gewogen ist und die Überweisung offen ist
+Object.assign(env, { BANK_INHABER: 'Test Inhaber', BANK_IBAN: 'AT000000000000000000', BANK_BIC: 'TESTATXX' });
+r = ok(await api('GET', 'meine', null, { 'X-Link-Schluessel': schluessel1 }));
+assert.equal(r.bank, null, 'Betrag noch geschätzt → keine Bankverbindung');
+roh.prepare(`UPDATE bestell_positionen SET gewicht_g = 4200 WHERE bestellung_id =
+  (SELECT id FROM bestellungen WHERE status = 'vorgemerkt' AND zahlart = 'ueberweisung' ORDER BY id LIMIT 1)
+  AND charge_artikel_id = ?`).run(aHuhn);
+r = ok(await api('GET', 'meine', null, { 'X-Link-Schluessel': schluessel1 }));
+const gewogen = r.bestellungen.find((b) => b.status === 'vorgemerkt');
+assert.equal(gewogen.geschaetzt, false);
+assert.equal(gewogen.summeCent, 5040 + 400);
+assert.deepEqual(r.bank, { inhaber: 'Test Inhaber', iban: 'AT00 0000 0000 0000 0000', bic: 'TESTATXX', bank: '' });
+roh.exec(`UPDATE bestellungen SET bezahlt_art = 'ueberweisung', bezahlt_am = datetime('now')`);
+r = ok(await api('GET', 'meine', null, { 'X-Link-Schluessel': schluessel1 }));
+assert.equal(r.bank, null, 'bezahlt → keine Bankverbindung');
+roh.exec(`UPDATE bestellungen SET bezahlt_art = NULL, bezahlt_am = NULL`);
+for (const k of ['BANK_INHABER', 'BANK_IBAN', 'BANK_BIC']) delete env[k];
+console.log('✓ Meine Bestellungen: Bankverbindung nur bei gewogener, offener Überweisung');
 const r2 = ok(await api('GET', 'meine', null, { 'X-Link-Schluessel': schluessel2 }));
 assert.equal(r2.bestellungen.length, 2, 'jeder Link zeigt alle Bestellungen des Kunden');
 r = ok(await api('GET', 'meine', null, { 'X-Link-Schluessel': schluesselOtto }));

@@ -53,7 +53,8 @@ verwaltung/                Hofladen-Verwaltung; ?entwurf = Beispielmodus
 hofladen.html + js/hofladen.js   Bestellseite für Kunden (noch noindex, nicht verlinkt)
 meine-bestellungen.html + js/meine-bestellungen.js   Ansicht zum persönlichen Link
 functions/api/hofladen/    öffentliche Schnittstelle: Angebot, Bestellung, Voranmeldung, „meine"
-scripts/test-hofladen-*.mjs   Tests für Schema/Helfer, Verwaltung, Zugang, Bestellseite
+js/qrcode.js               Überweisungs-QR-Code (EPC-QR), eigener Kodierer ohne Bibliothek
+scripts/test-hofladen-*.mjs   Tests für Schema/Helfer, Verwaltung, Zugang, Bestellseite, QR-Code
                               (node, ohne echte D1)
 _headers                   Security- und Cache-Header
 wrangler.toml              Pages-Konfiguration inkl. D1-Binding (nicht löschen!)
@@ -169,7 +170,9 @@ Es gibt keine automatisierten Tests und keinen Linter.
 - Hofladen-Vorbestellung: eigenes Schema `schema-hofladen.sql` (mehrfach
   ausführbar), Plan in `docs/HOFLADEN-VORBESTELLUNG.md`. Nach Änderungen an
   Schema, `functions/_lib/` oder `functions/api/verwaltung/`:
-  `node scripts/test-hofladen-db.mjs`, `…-api.mjs`, `…-zugang.mjs`, `…-oeffentlich.mjs`.
+  `node scripts/test-hofladen-db.mjs`, `…-api.mjs`, `…-zugang.mjs`, `…-oeffentlich.mjs`, `…-qr.mjs`.
+- Überweisungs-QR-Code nur mit genauem Betrag (alles gewogen, nicht bezahlt).
+  Bankdaten nur aus den Secrets `BANK_*` (`bankAusEnv`), nie ins Repository.
 - Persönliche Links „Meine Bestellungen": Schlüssel nur hinter `#` in der
   Adresse, in D1 nur die SHA-256-Prüfsumme (`kunden_links`). Nie den Schlüssel
   selbst speichern oder loggen.
