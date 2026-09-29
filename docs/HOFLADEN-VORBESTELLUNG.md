@@ -1,6 +1,6 @@
 # Hofladen-Vorbestellung – Umsetzungsplan
 
-Stand: September 2026 · Status: **Phase 2 programmiert und lokal getestet – Einrichtung von Cloudflare Access und Veröffentlichung offen (README, „Hofladen-Verwaltung einrichten")**
+Stand: September 2026 · Status: **Phase 1, 2 und 4 programmiert; Phase 4 wartet auf die Prüfung der Bestellbedingungen, dann Veröffentlichung (Phase 6)**
 
 > Kurzfassung: Statt Vorbestellungen in mehreren WhatsApp-Gruppen zu sammeln,
 > bekommt kruckenhaus.at eine Vorbestellseite für Fleisch, Eiernudeln und
@@ -525,7 +525,9 @@ Keine Rechtsberatung – bitte mit der **Landwirtschaftskammer Tirol**
 | 10 | ~~Bestellnummern-Format~~ – entschieden: `2026-001` (Jahr + laufende Nummer) | erledigt |
 | 11 | **Fotos** der Produkte – bis dahin TODO-Platzhalter | Phase 4 |
 | 12 | Sollen **Ferienwohnungsgäste** auf der Seite angesprochen werden? | Phase 6 |
-| 13 | **Rechtliches** aus Abschnitt 10 mit der LK Tirol klären | vor Phase 6 |
+| 13 | **Rechtliches** aus Abschnitt 10 mit der LK Tirol klären – insbesondere den Entwurf der **Bestellbedingungen** auf `hofladen.html` (Rücktrittsrecht für Nudeln, Honig, Seife; Preisangabe/USt bei Pauschalierung) | vor Phase 6 |
+| 14 | ~~Datenschutzerklärung~~ – ergänzt (Abschnitt 6 „Hofladen", Cookies, Weitergabe, Speicherdauer) | erledigt |
+| 15 | ~~Zutaten Nudeln~~ – Hartweizengrieß, Eier, Salz, Wasser; Allergene Weizen (Gluten), Ei | erledigt |
 
 ## 12. Umsetzung in Phasen
 
@@ -544,7 +546,7 @@ kommt danach.
 | **1 – Grundlage** | `schema-hofladen.sql`, Tabellen in D1 anlegen, gemeinsame Helfer (`functions/_lib/`), Produktkatalog und Liefergebiet befüllen | Datenbank steht | **teilweise** – `schema-hofladen.sql` (inkl. Voranmeldungen), Produktkatalog `hofladen-produkte.sql`, `functions/_lib/hofladen.js` und Test `scripts/test-hofladen-db.mjs` fertig; Produkte und Liefergebiet in `hofladen-produkte.sql` fertig; **offen: beide Dateien in D1 einspielen** |
 | **2 – Verwaltung live** | Cloudflare Access einrichten, Token-Prüfung, `/api/verwaltung/…`; Entwurf an echte Daten anschließen: Chargen anlegen, Bestellung erfassen, Bestellliste, Status, Voranmeldungen erfassen und übernehmen, Excel-Export nach Vorlage | Kathrin und Florian führen eine Charge komplett in einer Liste (Bestellungen per WhatsApp/Telefon) | **programmiert** – Zugangsprüfung, Schnittstelle, Oberfläche an echten Daten, Chargen-Formular, Kontakt ändern; getestet (Tests + Browser gegen lokale D1). Offen: Access einrichten, Datenbank anlegen, veröffentlichen |
 | **3 – Wiegen, Zahlung, Übergabe** | Gewichte speichern, Endbeträge, Packzettel, Abholliste, Liefertour, offene Zahlungen, Mail „Abholbereit" mit Bankdaten | Ablauf nach der Schlachtung läuft | offen |
-| **4 – Kundenseite** | `hofladen.html`, `js/hofladen.js`, `/api/hofladen/angebot` und `/bestellung`, `/voranmeldung`, Bestätigungsmails, Warteliste, Voranmelden durch Kunden, Pflichtangaben, Bestellbedingungen; noch **nicht** verlinkt | Kunden bestellen selbst über direkten Link | offen |
+| **4 – Kundenseite** | `hofladen.html`, `js/hofladen.js`, `/api/hofladen/angebot` und `/bestellung`, `/voranmeldung`, Bestätigungsmails, Warteliste, Voranmelden durch Kunden, Pflichtangaben, Bestellbedingungen; noch **nicht** verlinkt | Kunden bestellen selbst über direkten Link | **programmiert** – `hofladen.html`, `meine-bestellungen.html`, `/api/hofladen/…`, Bestätigungsmails, persönlicher Link, Datenschutzerklärung ergänzt, Pflichtangaben Nudeln; getestet (Tests + Browser). Offen: Bestellbedingungen prüfen lassen, dann Phase 6 |
 | **5 – Kunden und Ankündigung** | Kundenkartei, Newsletter An-/Abmeldung, Ankündigung per Mail, Stammkunden-Link | Chargen ankündigen ohne Gruppen-Chaos | offen |
 | **6 – Veröffentlichung** | Navigation in allen Seiten, `sitemap.xml`, `llms.txt`, Knopf auf `bauernhof.html`, README-Bedienungsanleitung, Datenschutz (nach Freigabe), Friedhold stilllegen | live | offen |
 | **später** | „Meine Bestellung ändern"-Link, Jahresauswertung als Grafik, CSV-Import alter Kunden | nach Bedarf | – |

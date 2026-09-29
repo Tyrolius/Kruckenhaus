@@ -371,6 +371,8 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ├── schema.sql               → D1-Datenbankschema (Tabelle „anfragen")
 ├── schema-hofladen.sql      → D1-Schema der Hofladen-Vorbestellung (im Aufbau)
 ├── hofladen-produkte.sql    → Produktkatalog zum Einspielen (Startpreise)
+├── hofladen.html            → Bestellseite des Hofladens (noch nicht verlinkt)
+├── meine-bestellungen.html  → Bestellungen zum persönlichen Link aus der Mail
 ├── _headers                 → HTTP-Header & Cache-Regeln (Cloudflare Pages)
 ├── _redirects               → Weiterleitungen; sperrt docs/ für Besucher
 ├── docs/OPTIMIERUNGSPLAN.md → Interner Plan: Direktbuchungen, Preise, Rechtsprüfung
@@ -429,7 +431,16 @@ Nach Änderungen an Schema, Helfern oder Schnittstelle die Tests laufen lassen
 node scripts/test-hofladen-db.mjs
 node scripts/test-hofladen-api.mjs
 node scripts/test-hofladen-zugang.mjs
+node scripts/test-hofladen-oeffentlich.mjs
 ```
+
+**Bestellseite für Kunden:** `hofladen.html` zeigt die offenen Chargen (Status
+„Offen", Bestellschluss nicht vorbei) mit freier Menge, Zutaten und Allergenen,
+nimmt Vorbestellungen und unverbindliche Voranmeldungen an und verschickt
+Bestätigungen (über Resend, wie das Kontaktformular). Jede Bestätigung enthält
+einen persönlichen Link auf `meine-bestellungen.html` – ohne Kundenkonto, ohne
+Cookies. Die Seite ist derzeit **noch nicht verlinkt und auf „noindex"**, bis
+die Bestellbedingungen geprüft sind (siehe `docs/HOFLADEN-VORBESTELLUNG.md`).
 
 ---
 

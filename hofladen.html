@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="Hofladen Kruckenhaus: Masthühner, Pute, Gans, Rindfleischpakete, Eiernudeln und Honig vom Hof in Breitenbach am Inn auf Vorbestellung – Abholung am Hof oder kostenlose Lieferung." />
+  <meta name="keywords" content="Hofladen Breitenbach am Inn, Masthuhn vorbestellen Tirol, Rindfleischpaket Tirol, Eiernudeln Hof, Honig Breitenbach" />
+  <!-- Bis zur Freigabe der Bestellbedingungen nicht in Suchmaschinen und nicht verlinkt
+       (docs/HOFLADEN-VORBESTELLUNG.md, Phase 4/6). Danach auf "index, follow" stellen. -->
+  <meta name="robots" content="noindex, follow" />
+  <meta property="og:title" content="Hofladen Kruckenhaus – Fleisch, Nudeln &amp; Honig vorbestellen" />
+  <meta property="og:description" content="Masthühner, Pute, Gans, Rindfleisch, Eiernudeln und Honig vom Hof – auf Vorbestellung, Abholung oder kostenlose Lieferung." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://www.kruckenhaus.at/hofladen.html" />
+  <meta property="og:image" content="https://www.kruckenhaus.at/hero-poster.jpg" />
+  <link rel="canonical" href="https://www.kruckenhaus.at/hofladen.html" />
+  <title>Hofladen Kruckenhaus – Fleisch, Nudeln &amp; Honig vorbestellen</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+<body>
+
+  <header class="site-header scrolled" role="banner">
+    <div class="nav-container">
+      <a href="index.html" class="nav-logo" aria-label="Kruckenhaus – Zur Startseite">
+        <div class="logo-placeholder">
+          <img src="images/logo.png" alt="Kruckenhaus Logo" class="logo-img"
+               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+          <div class="logo-fallback">
+            <span class="logo-text">Kruckenhaus</span>
+            <span class="logo-sub">Hof &amp; Ferienwohnung</span>
+          </div>
+        </div>
+      </a>
+      <nav class="nav-menu" role="navigation" aria-label="Hauptnavigation">
+        <a href="index.html" class="nav-link">Home</a>
+        <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
+        <a href="preise.html" class="nav-link">Preise</a>
+        <a href="bauernhof.html" class="nav-link">Bauernhof</a>
+        <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
+        <a href="workation.html" class="nav-link">Workation</a>
+        <a href="umgebung.html" class="nav-link">Umgebung</a>
+        <a href="lage.html" class="nav-link">Lage</a>
+        <a href="kontakt.html" class="nav-link">Kontakt</a>
+      </nav>
+      <button class="hamburger" aria-label="Menü öffnen" aria-expanded="false" aria-controls="nav-overlay">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </header>
+
+  <nav class="nav-overlay" id="nav-overlay" role="navigation" aria-label="Mobile Navigation">
+    <a href="index.html" class="nav-link">Home</a>
+    <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
+    <a href="preise.html" class="nav-link">Preise</a>
+    <a href="bauernhof.html" class="nav-link">Bauernhof</a>
+    <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
+    <a href="workation.html" class="nav-link">Workation</a>
+    <a href="umgebung.html" class="nav-link">Umgebung</a>
+    <a href="lage.html" class="nav-link">Lage</a>
+    <a href="kontakt.html" class="nav-link">Kontakt</a>
+  </nav>
+
+  <main id="main-content">
+
+    <section class="page-hero" aria-label="Hofladen">
+      <!-- TODO: Foto Hofprodukte – Rindfleischpaket, Honig, Eiernudeln auf Holztisch (1920x600) -->
+      <div class="page-hero-content container">
+        <nav class="breadcrumb" aria-label="Brotkrümelpfad">
+          <a href="index.html">Home</a>
+          <span class="breadcrumb-sep" aria-hidden="true">›</span>
+          <a href="bauernhof.html">Bauernhof</a>
+          <span class="breadcrumb-sep" aria-hidden="true">›</span>
+          <span aria-current="page">Hofladen</span>
+        </nav>
+        <span class="section-label" style="color:var(--color-beige);">Vom Hof, auf Vorbestellung</span>
+        <h1>Hofladen</h1>
+        <p>Fleisch, Eiernudeln, Honig und mehr – frisch vom Hof Kruckenhaus</p>
+      </div>
+    </section>
+
+    <!-- SO FUNKTIONIERT'S -->
+    <section class="section" aria-label="So funktioniert die Vorbestellung">
+      <div class="container">
+        <ol class="hl-schritte">
+          <li><strong>Vorbestellen</strong><span>Produkte und Abhol- oder Liefertermin auswählen. Ihr bekommt sofort eine Bestätigung per E-Mail.</span></li>
+          <li><strong>Wir bereiten vor</strong><span>Fleisch wird nach dem Wiegen abgerechnet – den genauen Betrag schicken wir euch vorab.</span></li>
+          <li><strong>Abholen oder liefern lassen</strong><span>Am Hof abholen oder kostenlos liefern lassen nach Breitenbach, Kramsach, Brixlegg und Kundl. Bezahlt wird bar oder per Überweisung.</span></li>
+        </ol>
+      </div>
+    </section>
+
+    <!-- AKTUELLES ANGEBOT (wird von js/hofladen.js gefüllt) -->
+    <section class="section section-alt" id="vorbestellen" aria-labelledby="hl-angebot-titel">
+      <div class="container">
+        <span class="section-label">Jetzt vorbestellen</span>
+        <h2 id="hl-angebot-titel">Aktuelles Angebot</h2>
+        <div class="divider" style="margin-left:0;"></div>
+        <div id="hl-angebot" class="hl-angebot" aria-live="polite">
+          <p class="hl-hinweis">Das Angebot wird geladen …</p>
+          <noscript><p>Für die Vorbestellung wird JavaScript benötigt. Ihr könnt auch gern anrufen: <a href="tel:+436642166181">+43 664 2166181</a>.</p></noscript>
+        </div>
+      </div>
+    </section>
+
+    <!-- VORANMELDUNG -->
+    <section class="section" id="vormerken" aria-labelledby="hl-vormerken-titel">
+      <div class="container hl-schmal">
+        <span class="section-label">Für später</span>
+        <h2 id="hl-vormerken-titel">Vormerken lassen</h2>
+        <div class="divider" style="margin-left:0;"></div>
+        <p>Die nächste Gans zu Martini, im Frühjahr wieder Hühner? Meldet euch unverbindlich vor –
+           sobald die passende Charge feststeht, melden wir uns mit Preis und Termin. Wer sich zuerst
+           meldet, kommt zuerst dran.</p>
+        <form id="hl-voranmeldung" class="contact-form hl-formular" novalidate>
+          <p style="display:none;" aria-hidden="true">
+            <label>Nicht ausfüllen: <input name="bot-field" tabindex="-1" autocomplete="off" /></label>
+          </p>
+          <div class="hl-zweispaltig">
+            <div class="form-group">
+              <label for="va-produkt">Produkt</label>
+              <select id="va-produkt" name="produktId" required></select>
+            </div>
+            <div class="form-group">
+              <label for="va-menge">Menge</label>
+              <input id="va-menge" name="menge" type="number" inputmode="numeric" min="1" max="99" value="1" required />
+            </div>
+            <div class="form-group">
+              <label for="va-zeitraum">Für wann?</label>
+              <select id="va-zeitraum" name="zeitraum" required></select>
+            </div>
+            <div class="form-group" id="va-jahr-feld" hidden>
+              <label for="va-jahr">Jahr</label>
+              <select id="va-jahr" name="jahr"></select>
+            </div>
+          </div>
+          <div class="hl-zweispaltig">
+            <div class="form-group">
+              <label for="va-name">Name</label>
+              <input id="va-name" name="name" autocomplete="name" required />
+            </div>
+            <div class="form-group">
+              <label for="va-telefon">Telefon</label>
+              <input id="va-telefon" name="telefon" type="tel" autocomplete="tel" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="va-email">E-Mail</label>
+            <input id="va-email" name="email" type="email" autocomplete="email" required />
+          </div>
+          <div class="form-group">
+            <label for="va-notiz">Anmerkung <span style="font-weight:400;opacity:0.7;">(optional)</span></label>
+            <input id="va-notiz" name="notiz" />
+          </div>
+          <label class="hl-zustimmung">
+            <input type="checkbox" name="zustimmung" required />
+            <span>Ich habe die <a href="datenschutz.html#hofladen">Datenschutzerklärung</a> gelesen und bin
+              einverstanden, dass meine Angaben für die Voranmeldung gespeichert werden.</span>
+          </label>
+          <button type="submit" class="btn btn-primary hl-knopf-breit">Unverbindlich vormerken</button>
+          <p class="hl-meldung" role="status" aria-live="polite"></p>
+        </form>
+      </div>
+    </section>
+
+    <!-- BESTELLBEDINGUNGEN
+         ENTWURF – vor der Veröffentlichung von der Landwirtschaftskammer Tirol
+         bzw. Rechtsberatung prüfen lassen (docs/HOFLADEN-VORBESTELLUNG.md, Abschnitt 10). -->
+    <section class="section section-alt" id="bedingungen" aria-labelledby="hl-bedingungen-titel">
+      <div class="container hl-schmal">
+        <h2 id="hl-bedingungen-titel">Bestellbedingungen</h2>
+        <div class="divider" style="margin-left:0;"></div>
+        <div class="legal-content hl-bedingungen">
+          <h3>Verkäufer</h3>
+          <p>Florian Häusler, Hof Kruckenhaus, Oberberg 70, 6252 Breitenbach am Inn, Österreich ·
+             <a href="mailto:info@kruckenhaus.at">info@kruckenhaus.at</a> ·
+             <a href="tel:+436642166181">+43 664 2166181</a> · weitere Angaben im <a href="impressum.html">Impressum</a>.</p>
+          <h3>Vorbestellung</h3>
+          <p>Mit „Verbindlich vorbestellen" gebt ihr eine verbindliche Bestellung ab; ihr erhaltet eine
+             Bestätigung per E-Mail. Ist die gewünschte Menge nicht mehr verfügbar, kommt ihr auf die
+             Warteliste – eine Bestellung entsteht dann erst, wenn wir euch bestätigen, dass ihr
+             nachgerückt seid. Eine Voranmeldung („Vormerken lassen") ist für beide Seiten unverbindlich.</p>
+          <h3>Preise und Gewicht</h3>
+          <p>Alle Preise sind Endpreise in Euro. Fleisch nach Gewicht (Masthuhn, Pute, Gans) wird pro
+             Kilogramm nach dem tatsächlichen Gewicht abgerechnet; der bei der Bestellung angezeigte
+             Betrag ist eine Schätzung auf Basis des Richtgewichts. Den genauen Betrag teilen wir euch
+             vor der Übergabe mit. Rindfleischpakete, Nudeln, Honig und Seife haben Fixpreise.</p>
+          <h3>Abholung und Lieferung</h3>
+          <p>Übergabe zum gewählten Termin – Abholung am Hof oder Lieferung. Die Lieferung ist kostenlos
+             nach Breitenbach am Inn (6252), Kramsach (6233), Brixlegg (6230) und Kundl (6250).
+             Bitte seid zum Liefertermin erreichbar; frisches Fleisch sollte gleich gekühlt werden.</p>
+          <h3>Zahlung</h3>
+          <p>Bar bei der Übergabe oder per Überweisung, sobald ihr den Endbetrag von uns erhalten habt.
+             Die Bankverbindung schicken wir euch mit dem Endbetrag.</p>
+          <h3>Ändern und stornieren</h3>
+          <p>Bis zum Bestellschluss könnt ihr eure Bestellung kostenlos ändern oder stornieren – einfach
+             anrufen oder per WhatsApp melden. Danach bitte nur nach Absprache, weil die Ware eigens für
+             euch vorbereitet wird.</p>
+          <h3>Rücktrittsrecht</h3>
+          <p>Frisches Fleisch ist als schnell verderbliche Ware vom 14-tägigen Rücktrittsrecht bei
+             Fernabsatzverträgen ausgenommen (§ 18 Abs. 1 Z 4 FAGG). Für Nudeln, Honig und Seife gilt das
+             gesetzliche Rücktrittsrecht von 14 Tagen ab Übergabe; eine formlose Nachricht an
+             <a href="mailto:info@kruckenhaus.at">info@kruckenhaus.at</a> genügt.</p>
+          <h3>Zutaten und Allergene</h3>
+          <p>Zutaten, Allergene und weitere Angaben findet ihr beim jeweiligen Produkt unter
+             „Zutaten &amp; Angaben". Fragen dazu beantworten wir gern.</p>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="site-footer" role="contentinfo">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <span class="footer-logo">Kruckenhaus<span>Hof &amp; Ferienwohnung</span></span>
+          <p class="footer-tagline">Ferienwohnung in Alleinlage mit Bergpanorama.<br>Breitenbach am Inn, Alpbachtal Tirol.</p>
+        </div>
+        <div class="footer-nav">
+          <h4>Navigation</h4>
+          <ul>
+            <li><a href="index.html">Startseite</a></li>
+            <li><a href="ferienwohnung.html">Ferienwohnung</a></li>
+            <li><a href="preise.html">Preise &amp; Buchung</a></li>
+            <li><a href="bauernhof.html">Bauernhof &amp; Alpakas</a></li>
+            <li><a href="berglsteiner-see.html">Berglsteiner See</a></li>
+            <li><a href="workation.html">Workation</a></li>
+            <li><a href="umgebung.html">Umgebung</a></li>
+            <li><a href="lage.html">Lage &amp; Anfahrt</a></li>
+            <li><a href="kontakt.html">Kontakt</a></li>
+          </ul>
+        </div>
+        <div class="footer-nav">
+          <h4>Rechtliches</h4>
+          <ul>
+            <li><a href="datenschutz.html">Datenschutz</a></li>
+            <li><a href="impressum.html">Impressum</a></li>
+          </ul>
+        </div>
+        <div class="footer-contact">
+          <h4>Kontakt</h4>
+          <p>Kathrin &amp; Florian Häusler</p>
+          <p>Oberberg 70<br>6252 Breitenbach am Inn<br>Tirol, Österreich</p>
+          <p><a href="mailto:info@kruckenhaus.at">info@kruckenhaus.at</a></p>
+          <p><a href="tel:+436642166181">+43 664 2166181</a></p>
+          <p><a href="https://wa.me/436642166181" style="color:var(--color-green);font-weight:700;">&#128172; WhatsApp</a></p>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>&copy; 2026 Kruckenhaus – Florian Häusler | Breitenbach am Inn, Tirol</p>
+        <div class="footer-links">
+          <a href="datenschutz.html">Datenschutzerklärung</a>
+          <a href="impressum.html">Impressum</a>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+  <a href="https://wa.me/436642166181?text=Hallo%2C%20ich%20habe%20eine%20Frage%20zum%20Hofladen."
+     class="whatsapp-btn" aria-label="WhatsApp" title="WhatsApp" target="_blank" rel="noopener noreferrer">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true">
+      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+    </svg>
+  </a>
+  <button class="back-to-top" aria-label="Zurueck nach oben" title="Zurueck nach oben">&#8593;</button>
+
+  <script src="js/main.js"></script>
+  <script src="js/hofladen.js"></script>
+
+  <!-- BOTTOM TAB BAR (Mobile) -->
+  <nav class="bottom-tab-bar" id="bottomTabBar" role="navigation" aria-label="Schnellnavigation">
+    <div class="bottom-tab-bar-inner">
+      <a href="ferienwohnung.html" class="bottom-tab-item" aria-label="Ferienwohnung">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+        Fewo
+      </a>
+      <a href="preise.html" class="bottom-tab-item" aria-label="Preise">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 7.756a4.5 4.5 0 100 8.488M7.5 10.5h5.25m-5.25 3h5.25M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        Preise
+      </a>
+      <a href="bauernhof.html" class="bottom-tab-item" aria-label="Bauernhof &amp; Alpakas">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        Hof
+      </a>
+      <a href="lage.html" class="bottom-tab-item" aria-label="Lage &amp; Umgebung">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        Lage
+      </a>
+    </div>
+  </nav>
+
+</body>
+</html>

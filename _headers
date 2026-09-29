@@ -29,3 +29,16 @@
 /verwaltung/*
   X-Robots-Tag: noindex, nofollow
   Cache-Control: no-store
+
+# Persönliche Seite „Meine Bestellungen": nicht indexieren, nie cachen,
+# Adresse (mit Schlüssel) nie als Referrer weitergeben
+# (Cloudflare Pages liefert .html-Seiten auch ohne Endung aus – daher beide)
+/meine-bestellungen.html
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer
+  Cache-Control: no-store
+
+/meine-bestellungen
+  X-Robots-Tag: noindex, nofollow
+  Referrer-Policy: no-referrer
+  Cache-Control: no-store

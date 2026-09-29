@@ -511,6 +511,7 @@ function ansichtNeu() {
       </label>
       <datalist id="vw-kundenliste">${daten.kunden.map((k) => `<option value="${esc(k.name)}">${esc(k.ort)}</option>`).join('')}</datalist>
       <label class="vw-feld"><span>Telefon</span><input name="telefon" type="tel" inputmode="tel" /></label>
+      <label class="vw-feld"><span>E-Mail (optional – für Bestätigungen und „Meine Bestellungen")</span><input name="email" type="email" autocomplete="off" /></label>
 
       <fieldset class="vw-feldgruppe"><legend>Was?</legend>
         ${ch.artikel.map((a) => `
@@ -591,6 +592,7 @@ function kundeVorschlagen(name) {
   const form = document.getElementById('vw-formular');
   if (!k || !form) return;
   feld(form, 'telefon').value = k.telefon;
+  feld(form, 'email').value = k.email || '';
   feld(form, 'strasse').value = k.strasse;
   feld(form, 'plz').value = k.plz;
   feld(form, 'ort').value = k.ort;
@@ -609,6 +611,7 @@ async function bestellungSpeichern(form) {
   const kontakt = {
     name,
     telefon: feld(form, 'telefon').value.trim(),
+    email: feld(form, 'email').value.trim(),
     strasse: feld(form, 'strasse').value.trim(),
     plz: feld(form, 'plz').value.trim(),
     ort: feld(form, 'ort').value.trim(),
@@ -638,7 +641,7 @@ async function bestellungSpeichern(form) {
       k = { id: `k${Date.now()}`, name, telefon: '', strasse: '', plz: '', ort: '', stammkunde: false };
       daten.kunden.push(k);
     }
-    ['telefon', 'strasse', 'plz', 'ort'].forEach((f) => { if (kontakt[f]) k[f] = kontakt[f]; });
+    ['telefon', 'email', 'strasse', 'plz', 'ort'].forEach((f) => { if (kontakt[f]) k[f] = kontakt[f]; });
     const reicht = positionen.every((p) => freieMenge(ch, p.artikelId) >= p.menge);
     const b = {
       id: `b${Date.now()}`, nummer: naechsteNummer(), chargeId: ch.id, kundeId: k.id,
@@ -1254,11 +1257,12 @@ function detailOeffnen(id) {
       ${t && t.art === 'lieferung' ? (k.strasse
         ? `<p>${esc(k.strasse)}, ${esc(`${k.plz} ${k.ort}`.trim())}</p>`
         : '<p class="vw-warnung">Lieferadresse fehlt – bitte unter „Kontakt ändern" eintragen.</p>') : ''}
-      <p>${k.telefon ? esc(k.telefon) : '<span class="vw-klein">keine Telefonnummer</span>'}</p>
+      <p>${k.telefon ? esc(k.telefon) : '<span class="vw-klein">keine Telefonnummer</span>'}${k.email ? `<br><a href="mailto:${esc(k.email)}">${esc(k.email)}</a>` : ''}</p>
       <details class="vw-kontakt" ${t && t.art === 'lieferung' && !k.strasse ? 'open' : ''}>
         <summary>Kontakt ändern</summary>
         <form id="vw-kontakt-formular" data-id="${b.id}" novalidate>
           <label class="vw-feld"><span>Telefon</span><input name="telefon" type="tel" value="${esc(k.telefon)}" /></label>
+          <label class="vw-feld"><span>E-Mail</span><input name="email" type="email" value="${esc(k.email || '')}" /></label>
           <label class="vw-feld"><span>Straße und Hausnummer</span><input name="strasse" value="${esc(k.strasse)}" /></label>
           <label class="vw-feld"><span>PLZ</span><input name="plz" inputmode="numeric" value="${esc(k.plz)}" /></label>
           <label class="vw-feld"><span>Ort</span><input name="ort" value="${esc(k.ort)}" /></label>
@@ -1291,9 +1295,9 @@ function kontaktSpeichern(form) {
   const b = bestellungVon(form.dataset.id);
   const k = kundeVon(b);
   const eingabe = { aktion: 'kontakt' };
-  ['telefon', 'strasse', 'plz', 'ort'].forEach((f) => { eingabe[f] = feld(form, f).value.trim(); });
+  ['telefon', 'email', 'strasse', 'plz', 'ort'].forEach((f) => { eingabe[f] = feld(form, f).value.trim(); });
   speichern(`bestellung/${b.id}`, eingabe, () => {
-    ['telefon', 'strasse', 'plz', 'ort'].forEach((f) => { if (eingabe[f]) k[f] = eingabe[f]; });
+    ['telefon', 'email', 'strasse', 'plz', 'ort'].forEach((f) => { if (eingabe[f]) k[f] = eingabe[f]; });
     return {};
   }, { erfolg: `Kontakt von ${k.name} gespeichert.` });
 }

@@ -23,7 +23,7 @@
  * ============================================================ */
 
 import {
-  json, EingabeFehler, ZEITRAEUME,
+  json, EingabeFehler, ZEITRAEUME, istGueltigeEmail,
   bestellungAnlegen, bestellungNachruecken, preisVorschlaege,
   voranmeldungAnlegen, voranmeldungenUebernehmen,
 } from '../../_lib/hofladen.js';
@@ -160,7 +160,10 @@ async function standLaden(db) {
    wenn etwas eingetragen wurde. Sonst neuen Kunden anlegen.
    ------------------------------------------------------------ */
 async function kundeSichern(db, kundeId, kunde = {}) {
+  const email = text(kunde.email, 160).toLowerCase() || null;
+  if (email && !istGueltigeEmail(email)) throw new EingabeFehler('Bitte eine gültige E-Mail-Adresse eintragen.');
   const felder = {
+    email,
     telefon: textOderNull(kunde.telefon, 40),
     strasse: textOderNull(kunde.strasse, 120),
     plz: textOderNull(kunde.plz, 10),
@@ -169,18 +172,18 @@ async function kundeSichern(db, kundeId, kunde = {}) {
   if (kundeId) {
     const kid = nummer(kundeId, 'Kundennummer');
     const r = await db.prepare(
-      `UPDATE kunden SET telefon = COALESCE(?, telefon), strasse = COALESCE(?, strasse),
-              plz = COALESCE(?, plz), ort = COALESCE(?, ort)
+      `UPDATE kunden SET email = COALESCE(?, email), telefon = COALESCE(?, telefon),
+              strasse = COALESCE(?, strasse), plz = COALESCE(?, plz), ort = COALESCE(?, ort)
        WHERE id = ?`
-    ).bind(felder.telefon, felder.strasse, felder.plz, felder.ort, kid).run();
+    ).bind(felder.email, felder.telefon, felder.strasse, felder.plz, felder.ort, kid).run();
     if (!r.meta.changes) throw new EingabeFehler('Kunde nicht gefunden.');
     return kid;
   }
   const name = text(kunde.name, 120);
   if (!name) throw new EingabeFehler('Bitte einen Namen eintragen.');
   const zeile = await db.prepare(
-    'INSERT INTO kunden (name, telefon, strasse, plz, ort) VALUES (?, ?, ?, ?, ?) RETURNING id'
-  ).bind(name, felder.telefon, felder.strasse, felder.plz, felder.ort).first();
+    'INSERT INTO kunden (name, email, telefon, strasse, plz, ort) VALUES (?, ?, ?, ?, ?, ?) RETURNING id'
+  ).bind(name, felder.email, felder.telefon, felder.strasse, felder.plz, felder.ort).first();
   return zeile.id;
 }
 
