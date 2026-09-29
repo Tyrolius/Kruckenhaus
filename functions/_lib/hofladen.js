@@ -15,6 +15,8 @@
  *      Preisvorschläge für neue Chargen (preisVorschlaege)
  *   4. Bestellung anlegen / nachrücken – Kontingent sicher prüfen
  *   5. Voranmeldungen (anlegen, in eine Charge übernehmen)
+ *   6. Persönliche Links „Meine Bestellungen" (kundenLinkErstellen, kundeAusLink)
+ *   7. E-Mail über Resend (mailSenden)
  * ============================================================ */
 
 /* ------------------------------------------------------------
@@ -295,4 +297,67 @@ export async function voranmeldungenUebernehmen(db, chargeId, voranmeldungIds) {
 
   const uebernommen = new Set(results.map((r) => r.id));
   return { bestellungen, uebersprungen: ids.filter((id) => !uebernommen.has(id)) };
+}
+
+/* ------------------------------------------------------------
+   6. PERSÖNLICHE LINKS „MEINE BESTELLUNGEN"
+   Zufälliger Schlüssel (256 Bit) im Link, in der Datenbank nur dessen
+   SHA-256-Prüfsumme. Der Schlüssel steht im Link hinter „#" und wird so
+   nie in Server-Protokollen oder als Referrer übertragen.
+   ------------------------------------------------------------ */
+async function sha256Hex(text) {
+  const bytes = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)));
+  return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function zufallsSchluessel() {
+  const bytes = crypto.getRandomValues(new Uint8Array(32));
+  return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+/** Erzeugt einen neuen Link-Schlüssel für einen Kunden (ältere bleiben gültig). */
+export async function kundenLinkErstellen(db, kundeId) {
+  const schluessel = zufallsSchluessel();
+  await db.prepare('INSERT INTO kunden_links (schluessel_hash, kunde_id) VALUES (?, ?)')
+    .bind(await sha256Hex(schluessel), kundeId).run();
+  return schluessel;
+}
+
+/** Liefert die Kunden-ID zu einem Link-Schlüssel oder null (unbekannt/gesperrt). */
+export async function kundeAusLink(db, schluessel) {
+  if (typeof schluessel !== 'string' || !/^[A-Za-z0-9_-]{40,64}$/.test(schluessel)) return null;
+  const hash = await sha256Hex(schluessel);
+  const zeile = await db.prepare(
+    'SELECT kunde_id FROM kunden_links WHERE schluessel_hash = ? AND gesperrt_am IS NULL'
+  ).bind(hash).first();
+  if (!zeile) return null;
+  await db.prepare("UPDATE kunden_links SET zuletzt_genutzt = datetime('now') WHERE schluessel_hash = ?")
+    .bind(hash).run();
+  return zeile.kunde_id;
+}
+
+/* ------------------------------------------------------------
+   7. E-MAIL (Resend)
+   Fehlt RESEND_API_KEY, wird nichts verschickt, aber auch kein Fehler
+   ausgelöst – gespeichert ist die Bestellung trotzdem.
+   ------------------------------------------------------------ */
+export async function mailSenden(env, { an, betreff, html, antwortAn }) {
+  if (!env.RESEND_API_KEY) return { gesendet: false, grund: 'kein-api-key' };
+  try {
+    const antwort = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        from: env.CONTACT_FROM || 'Kruckenhaus Website <website@kruckenhaus.at>',
+        to: an,
+        subject: betreff,
+        html,
+        ...(antwortAn ? { reply_to: antwortAn } : {}),
+      }),
+    });
+    return { gesendet: antwort.ok, grund: antwort.ok ? null : `resend-http-${antwort.status}` };
+  } catch (fehler) {
+    console.error('E-Mail-Versand fehlgeschlagen:', fehler);
+    return { gesendet: false, grund: 'netzwerk' };
+  }
 }

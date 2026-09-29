@@ -14,8 +14,6 @@
 -- Beträge in Cent, Richtgewichte in Gramm.
 --
 -- Noch offen (später in der Verwaltung ergänzen):
---   TODO: Pflichtangaben und Allergene der Eiernudeln laut Etikett
---         (Zutaten, glutenhaltiges Getreide, Ei)
 --   TODO: Sorten der Alpakaseife (derzeit ein Sammelartikel)
 --   Richtgewicht „Masthuhn halbiert" = halbes Richtgewicht des ganzen
 --   Huhns (0,9–1,2 kg), bestätigt.
@@ -71,6 +69,14 @@ WHERE NOT EXISTS (SELECT 1 FROM produkte WHERE name = 'Raphaels Wald- & Blütenh
 INSERT INTO produkte (name, art, kategorie, richtgewicht_von_g, richtgewicht_bis_g, startpreis_cent, reihenfolge, beschreibung)
 SELECT 'Alpakaseife', 'stueck', 'seife', NULL, NULL, 450, 310, 'Seife mit Alpakamilch, verschiedene Sorten.'
 WHERE NOT EXISTS (SELECT 1 FROM produkte WHERE name = 'Alpakaseife');
+
+-- Pflichtangaben der Eiernudeln (Zutaten laut Kathrin und Florian, Allergene
+-- nach LMIV Anhang II fett hervorzuheben: Weizen, Ei). Gesetzt nur, solange
+-- noch nichts eingetragen ist – in der Verwaltung Geändertes bleibt.
+UPDATE produkte
+SET pflichtangaben = 'Zutaten: Hartweizengrieß, Eier, Salz, Wasser. Nettofüllmenge 500 g.',
+    allergene = 'Weizen (Gluten), Ei'
+WHERE kategorie = 'nudeln' AND pflichtangaben IS NULL AND allergene IS NULL;
 
 -- Nachtrag: Paketinhalt ergänzen, falls die erste Fassung dieser Datei schon
 -- eingespielt wurde (nur solange die Beschreibung noch unverändert ist).

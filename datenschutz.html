@@ -164,6 +164,7 @@
               <li><a href="#kontaktformular">Kontaktformular &amp; Datenverarbeitung</a></li>
               <li><a href="#kontaktwege">Kontakt per E-Mail, Telefon &amp; WhatsApp</a></li>
               <li><a href="#buchung">Buchung, Gästemeldung &amp; gesetzliche Pflichten</a></li>
+              <li><a href="#hofladen">Hofladen: Vorbestellungen &amp; Voranmeldungen</a></li>
               <li><a href="#cookies">Cookies &amp; lokale Speicherung</a></li>
               <li><a href="#schriftarten">Schriftarten (lokal gehostet)</a></li>
               <li><a href="#openstreetmap">OpenStreetMap (eingebettete Karte)</a></li>
@@ -193,16 +194,17 @@
               Telefon: <a href="tel:+436642166180">+43 664 2166180</a> und <a href="tel:+436642166181">+43 664 2166181</a>
             </div>
             <p>
-              Die Betreuung der Gäste – insbesondere Korrespondenz, Buchungsabwicklung und
-              die gesetzlich vorgeschriebene Gästemeldung – erfolgt durch Kathrin Häusler.
+              Die Betreuung der Gäste und der Hofladen-Kundinnen und -Kunden – insbesondere
+              Korrespondenz, Buchungsabwicklung, die Abwicklung von Vorbestellungen und die
+              gesetzlich vorgeschriebene Gästemeldung – erfolgt auch durch Kathrin Häusler.
               Sie handelt dabei unter der Verantwortung des oben genannten Verantwortlichen
               (Art. 29 DSGVO); datenschutzrechtlich verantwortlich bleibt ausschließlich
               Florian Häusler als Betriebsinhaber.
             </p>
             <p>
               Diese Website dient der Präsentation des land- und forstwirtschaftlichen Betriebes
-              Kruckenhaus und der Vermietung der Ferienwohnung. Es handelt sich um keine
-              Datenverarbeitung in großem Umfang.
+              Kruckenhaus, der Vermietung der Ferienwohnung und dem Verkauf von Hofprodukten auf
+              Vorbestellung. Es handelt sich um keine Datenverarbeitung in großem Umfang.
             </p>
           </section>
 
@@ -351,20 +353,74 @@
             </p>
           </section>
 
-          <!-- 6. Cookies -->
+          <!-- 6. Hofladen -->
+          <section id="hofladen" aria-labelledby="h-hofladen">
+            <h2 id="h-hofladen">6. Hofladen: Vorbestellungen &amp; Voranmeldungen</h2>
+            <p>
+              Fleisch, Nudeln, Honig und weitere Hofprodukte verkaufen wir auf Vorbestellung.
+              Sie können über das Bestellformular auf dieser Website bestellen oder sich
+              unverbindlich für eine spätere Lieferung vormerken lassen (Voranmeldung).
+              Bestellungen und Voranmeldungen, die Sie uns telefonisch, per WhatsApp oder
+              persönlich mitteilen, erfassen wir ebenfalls in unserem Bestellsystem.
+            </p>
+            <h3>Welche Daten wir verarbeiten</h3>
+            <ul>
+              <li>Name, E-Mail-Adresse und Telefonnummer</li>
+              <li>bei Lieferung: Ihre Anschrift</li>
+              <li>bestellte Produkte und Mengen, bei Gewichtsware das tatsächliche Gewicht</li>
+              <li>gewählter Abhol- oder Liefertermin, gewünschte Zahlungsart, Zahlungs- und Übergabestatus</li>
+              <li>bei Voranmeldungen: Produkt, Menge und gewünschter Zeitraum</li>
+              <li>Ihre Anmerkungen zur Bestellung</li>
+            </ul>
+            <p>
+              <strong>Zweck:</strong> Reservierung und Abwicklung Ihrer Vorbestellung
+              (Zusammenstellen, Abholung oder Lieferung, Abrechnung), Benachrichtigung über den
+              Stand Ihrer Bestellung sowie – bei Voranmeldungen – die Planung unserer Tierhaltung
+              und Produktion.<br>
+              <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung bzw.
+              vorvertragliche Maßnahmen); für die Aufbewahrung abrechnungsrelevanter Unterlagen
+              Art. 6 Abs. 1 lit. c DSGVO.
+            </p>
+            <h3>Technische Umsetzung</h3>
+            <p>
+              Das Bestellsystem läuft auf der Infrastruktur von <strong>Cloudflare</strong>
+              (serverseitige Funktionen und Datenbank Cloudflare&nbsp;D1, siehe Abschnitt 3).
+              Bestätigungen und Benachrichtigungen zu Ihrer Bestellung versenden wir über den
+              E-Mail-Dienst <strong>Resend</strong> (siehe Abschnitt 3). Beim Bestellen werden
+              weder Ihre IP-Adresse noch Ihre Browserkennung gespeichert, und es werden keine
+              Cookies gesetzt.
+            </p>
+            <h3>Persönlicher Link „Meine Bestellungen"</h3>
+            <p>
+              Mit der Bestätigungs-E-Mail erhalten Sie einen persönlichen Link, über den Sie Ihre
+              Bestellungen und Voranmeldungen ohne Kundenkonto einsehen können. Der Link enthält
+              einen zufällig erzeugten Schlüssel; wir speichern davon nur eine nicht
+              zurückrechenbare Prüfsumme. Wer den Link kennt, kann Ihre Bestellungen sehen –
+              bitte geben Sie ihn daher nicht weiter. Auf Ihren Wunsch sperren wir den Link
+              jederzeit.
+            </p>
+          </section>
+
+          <!-- 7. Cookies -->
           <section id="cookies" aria-labelledby="h-cookies">
-            <h2 id="h-cookies">6. Cookies &amp; lokale Speicherung</h2>
+            <h2 id="h-cookies">7. Cookies &amp; lokale Speicherung</h2>
             <p>
               Diese Website verwendet <strong>keine Cookies</strong>, kein Analyse-Tool (wie Google
               Analytics) und keinerlei lokale Speicherung im Browser (z. B. localStorage). Es gibt
               keinen Werbeeinsatz. Ein Einwilligungs-Banner ist daher nicht erforderlich und wird
               nicht eingeblendet.
             </p>
+            <p>
+              Ausgenommen ist ausschließlich der nicht öffentliche Verwaltungsbereich, den nur wir
+              als Betreiber zur Bearbeitung der Vorbestellungen nutzen: Dort setzt der
+              Anmeldedienst Cloudflare Access nach der Anmeldung ein technisch notwendiges
+              Anmelde-Cookie. Besucherinnen und Besucher der Website sind davon nicht betroffen.
+            </p>
           </section>
 
-          <!-- 7. Schriftarten -->
+          <!-- 8. Schriftarten -->
           <section id="schriftarten" aria-labelledby="h-schriftarten">
-            <h2 id="h-schriftarten">7. Schriftarten (lokal gehostet)</h2>
+            <h2 id="h-schriftarten">8. Schriftarten (lokal gehostet)</h2>
             <p>
               Die auf dieser Website verwendeten Schriftarten (<em>Playfair Display</em>,
               <em>Lato</em>, <em>Cormorant Garamond</em>) sind <strong>lokal auf unserem
@@ -374,9 +430,9 @@
             </p>
           </section>
 
-          <!-- 8. OpenStreetMap -->
+          <!-- 9. OpenStreetMap -->
           <section id="openstreetmap" aria-labelledby="h-openstreetmap">
-            <h2 id="h-openstreetmap">8. OpenStreetMap (eingebettete Karte)</h2>
+            <h2 id="h-openstreetmap">9. OpenStreetMap (eingebettete Karte)</h2>
             <p>
               Auf den Seiten „Lage &amp; Anfahrt", „Umgebung" und „Kontakt" binden wir Kartenmaterial von
               <strong>OpenStreetMap</strong> ein. OpenStreetMap wird betrieben von der
@@ -397,9 +453,9 @@
             </p>
           </section>
 
-          <!-- 9. Belegungskalender -->
+          <!-- 10. Belegungskalender -->
           <section id="belegungskalender" aria-labelledby="h-belegungskalender">
-            <h2 id="h-belegungskalender">9. Belegungskalender</h2>
+            <h2 id="h-belegungskalender">10. Belegungskalender</h2>
             <p>
               Der auf den Seiten „Ferienwohnung" und „Preise" angezeigte Belegungskalender
               wird von unserer Website-Infrastruktur bei Cloudflare bereitgestellt. Die
@@ -411,9 +467,9 @@
             </p>
           </section>
 
-          <!-- 10. Datenweitergabe -->
+          <!-- 11. Datenweitergabe -->
           <section id="datenweitergabe" aria-labelledby="h-datenweitergabe">
-            <h2 id="h-datenweitergabe">10. Datenweitergabe an Dritte</h2>
+            <h2 id="h-datenweitergabe">11. Datenweitergabe an Dritte</h2>
             <p>
               Wir geben Ihre personenbezogenen Daten grundsätzlich <strong>nicht</strong> an Dritte
               weiter, es sei denn:
@@ -426,16 +482,17 @@
             </ul>
             <p>
               Technische Dienstleister, die im Rahmen des Betriebs dieser Website Daten
-              verarbeiten, sind Cloudflare (Hosting, Datenbank und Formularverarbeitung) sowie
-              Resend (E-Mail-Zustellung der Formularanfragen) – siehe Abschnitt 3. Empfänger
+              verarbeiten, sind Cloudflare (Hosting, Datenbank, Formularverarbeitung und
+              Hofladen-Bestellsystem) sowie Resend (E-Mail-Zustellung der Formularanfragen und
+              der Bestellbestätigungen) – siehe Abschnitte 3 und 6. Empfänger
               gesetzlich vorgeschriebener Meldungen sind die zuständige Gemeinde bzw. der
               Tourismusverband und die Finanzverwaltung (siehe Abschnitt 5).
             </p>
           </section>
 
-          <!-- 11. Speicherdauer -->
+          <!-- 12. Speicherdauer -->
           <section id="speicherdauer" aria-labelledby="h-speicherdauer">
-            <h2 id="h-speicherdauer">11. Speicherdauer</h2>
+            <h2 id="h-speicherdauer">12. Speicherdauer</h2>
             <p>
               Wir speichern Ihre personenbezogenen Daten nur so lange, wie es für die jeweiligen
               Zwecke erforderlich ist oder gesetzliche Aufbewahrungsfristen dies vorschreiben:
@@ -444,13 +501,16 @@
               <li><strong>Buchungsunterlagen und Rechnungen:</strong> 7 Jahre (Aufbewahrungspflicht nach § 132 BAO)</li>
               <li><strong>Gästeverzeichnis:</strong> gemäß den Fristen des Meldegesetzes bzw. der Gästeverzeichnisverordnung</li>
               <li><strong>Unverbindliche Anfragen ohne Buchung:</strong> Löschung spätestens zwölf Monate nach der letzten Korrespondenz</li>
+              <li><strong>Hofladen-Bestellungen:</strong> 7 Jahre, soweit sie abrechnungsrelevant sind (§ 132 BAO)</li>
+              <li><strong>Voranmeldungen, aus denen keine Bestellung wird:</strong> Löschung spätestens zwölf Monate nach dem gewünschten Zeitraum</li>
+              <li><strong>Kundendaten (Name, Kontaktdaten, Anschrift):</strong> solange Sie bei uns bestellen; auf Ihren Wunsch löschen wir sie, soweit keine Aufbewahrungspflicht entgegensteht</li>
               <li><strong>Server-Logs (Cloudflare):</strong> In der Regel nur wenige Tage</li>
             </ul>
           </section>
 
-          <!-- 12. Ihre Rechte -->
+          <!-- 13. Ihre Rechte -->
           <section id="ihre-rechte" aria-labelledby="h-ihre-rechte">
-            <h2 id="h-ihre-rechte">12. Ihre Rechte</h2>
+            <h2 id="h-ihre-rechte">13. Ihre Rechte</h2>
             <p>
               Als betroffene Person haben Sie gemäß DSGVO folgende Rechte. Um diese geltend zu machen,
               kontaktieren Sie uns unter <a href="mailto:info@kruckenhaus.at">info@kruckenhaus.at</a>:
@@ -503,9 +563,9 @@
             </div>
           </section>
 
-          <!-- 13. Beschwerderecht -->
+          <!-- 14. Beschwerderecht -->
           <section id="beschwerderecht" aria-labelledby="h-beschwerderecht">
-            <h2 id="h-beschwerderecht">13. Beschwerderecht bei der Datenschutzbehörde</h2>
+            <h2 id="h-beschwerderecht">14. Beschwerderecht bei der Datenschutzbehörde</h2>
             <p>
               Wenn Sie der Ansicht sind, dass die Verarbeitung Ihrer Daten gegen die DSGVO verstößt,
               haben Sie das Recht, eine Beschwerde bei der zuständigen Datenschutzaufsichtsbehörde
@@ -521,9 +581,9 @@
             </div>
           </section>
 
-          <!-- 14. Änderungen -->
+          <!-- 15. Änderungen -->
           <section id="aenderungen" aria-labelledby="h-aenderungen">
-            <h2 id="h-aenderungen">14. Änderungen dieser Datenschutzerklärung</h2>
+            <h2 id="h-aenderungen">15. Änderungen dieser Datenschutzerklärung</h2>
             <p>
               Wir behalten uns vor, diese Datenschutzerklärung bei Bedarf anzupassen, insbesondere
               wenn sich rechtliche Rahmenbedingungen oder die technische Umsetzung der Website ändert.
