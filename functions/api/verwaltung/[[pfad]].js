@@ -20,6 +20,9 @@
  * IDs gehen als Text an die Oberfläche und werden hier wieder geprüft.
  *
  * Binding: DB (D1 „kruckenhaus", Tabellen aus schema-hofladen.sql)
+ * Optional (Secrets, für den Packzettel bei Überweisung):
+ *   BANK_INHABER, BANK_IBAN, BANK_BIC, BANK_NAME – fehlen sie, druckt der
+ *   Packzettel keinen Überweisungsblock.
  * ============================================================ */
 
 import {
@@ -73,7 +76,19 @@ const id = (wert) => (wert == null ? null : String(wert));
    2. STAND LADEN (für die Oberfläche)
    Gleiche Form wie verwaltung/entwurf-daten.js.
    ------------------------------------------------------------ */
-async function standLaden(db) {
+// Bankverbindung für den Packzettel – bewusst nicht im Code, sondern als
+// Cloudflare-Secret; nur hinter der Zugangsprüfung abrufbar.
+function bankAusEnv(env) {
+  if (!env.BANK_IBAN) return null;
+  return {
+    inhaber: env.BANK_INHABER || '',
+    iban: String(env.BANK_IBAN).replace(/\s+/g, '').replace(/(.{4})/g, '$1 ').trim(),
+    bic: env.BANK_BIC || '',
+    bank: env.BANK_NAME || '',
+  };
+}
+
+async function standLaden(db, bank = null) {
   const aktiv = `SELECT id FROM chargen WHERE status <> 'archiviert'`;
   const [chargen, artikel, termine, bestellungen, positionen, kunden, produkte, voranmeldungen, liefergebiet] =
     (await db.batch([
@@ -147,6 +162,7 @@ async function standLaden(db) {
       plz: l.plz, ort: l.ort, liefergebuehrCent: l.liefergebuehr_cent, gratisAbCent: l.gratis_ab_cent,
     })),
     tourReihenfolge: liefergebiet.map((l) => l.ort),
+    bank,
     preisVorschlaege: (await preisVorschlaege(db)).map((v) => ({
       produktId: id(v.produktId), preisCent: v.preisCent, kontingent: v.kontingent,
       maxProBestellung: v.maxProBestellung, ausCharge: v.ausCharge || '',
@@ -429,7 +445,7 @@ export async function onRequest({ request, env, params, data }) {
 
   try {
     if (request.method === 'GET' && bereich === 'stand' && pfad.length === 1) {
-      return json({ ok: true, nutzer: data.nutzer, ...(await standLaden(db)) });
+      return json({ ok: true, nutzer: data.nutzer, ...(await standLaden(db, bankAusEnv(env))) });
     }
     if (request.method !== 'POST') return json({ ok: false, error: 'Nicht gefunden.' }, 404);
     if (!(request.headers.get('content-type') || '').includes('application/json')) {

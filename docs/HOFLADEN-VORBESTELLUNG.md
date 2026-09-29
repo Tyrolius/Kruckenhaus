@@ -458,7 +458,7 @@ die API trotzdem nichts aus.
 | `ACCESS_TEAM_DOMAIN` | Variable | `<team>.cloudflareaccess.com` |
 | `ACCESS_AUD` | Variable | Application Audience aus Access |
 | `VERWALTUNG_EMAILS` | Variable | E-Mail-Adressen von Kathrin und Florian |
-| `BANK_IBAN`, `BANK_BIC`, `BANK_INHABER` | Variable | für den Packzettel (Überweisung) |
+| `BANK_INHABER`, `BANK_IBAN`, `BANK_BIC`, `BANK_NAME` | Secret | für den Packzettel (Überweisung) – umgesetzt |
 | `HOFLADEN_TO` | Variable (optional) | wohin „Neue Vorbestellung" geht, Standard `CONTACT_TO` |
 
 `RESEND_API_KEY` und die D1-Anbindung gibt es schon.
@@ -520,7 +520,7 @@ Keine Rechtsberatung – bitte mit der **Landwirtschaftskammer Tirol**
 | 4 | ~~Liefergebiet~~ – festgelegt: 6252, 6233, 6230, 6250, ohne Liefergebühr | erledigt |
 | 5 | **Termine:** typischer Abholtag/-zeit, typischer Liefertag | Phase 2 |
 | 6 | ~~E-Mail-Adressen~~ – geliefert (drei Adressen; stehen nur in Cloudflare, nicht im Repository) | erledigt |
-| 7 | **Bankverbindung** für den Packzettel (Überweisung) | Phase 3 |
+| 7 | ~~Bankverbindung~~ – geliefert; steht nur als Cloudflare-Secret (`BANK_*`), nicht im Repository | erledigt |
 | 8 | **Stammkunden-Vorlauf** gewünscht? Wie viele Tage? (Voranmeldungen werden ohnehin vor der Ankündigung übernommen) | Phase 5 |
 | 9 | **Höchstmengen** pro Bestellung (z. B. max. 2 Gänse)? | Phase 4 |
 | 10 | ~~Bestellnummern-Format~~ – entschieden: `2026-001` (Jahr + laufende Nummer) | erledigt |

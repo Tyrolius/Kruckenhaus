@@ -490,6 +490,7 @@ jeweils **Secret** (verschlüsselt):
 | `ACCESS_TEAM_DOMAIN` | Team-Adresse aus Schritt 2.6, ohne `https://` |
 | `ACCESS_AUD` | AUD-Tag aus Schritt 2.5 |
 | `VERWALTUNG_EMAILS` | die freigegebenen E-Mail-Adressen, durch Komma getrennt |
+| `BANK_INHABER`, `BANK_IBAN`, `BANK_BIC`, `BANK_NAME` | Bankverbindung für den Überweisungsblock auf dem Packzettel (optional; ohne sie steht dort ein Hinweis) |
 
 Danach unter *Deployments* die letzte Veröffentlichung erneut ausführen
 („Retry deployment"), damit die Werte greifen.

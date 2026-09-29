@@ -1355,6 +1355,16 @@ function exportieren() {
   meldung('Liste für Excel wurde heruntergeladen.');
 }
 
+// Überweisungsdaten auf dem Packzettel (Bankverbindung aus den Cloudflare-
+// Einstellungen, siehe README; fehlt sie, erscheint ein Hinweis)
+function ueberweisungsBlock(b) {
+  const bank = daten.bank;
+  if (!bank) return '<p class="vw-packzettel-bank">Bitte überweisen – Bankverbindung ist in Cloudflare noch nicht hinterlegt.</p>';
+  return `<p class="vw-packzettel-bank"><strong>Bitte überweisen an:</strong> ${esc(bank.inhaber)}<br>
+    IBAN ${esc(bank.iban)}${bank.bic ? ` · BIC ${esc(bank.bic)}` : ''}${bank.bank ? ` · ${esc(bank.bank)}` : ''}<br>
+    Verwendungszweck: <strong>${esc(b.nummer)}</strong></p>`;
+}
+
 function packzettelDrucken() {
   const ch = aktiveCharge();
   const druck = document.getElementById('vw-druck');
@@ -1375,6 +1385,7 @@ function packzettelDrucken() {
         }).join('')}</tbody>
         <tfoot><tr><td colspan="2">Summe · ${b.bezahlt ? 'bezahlt' : ZAHLARTEN[b.zahlart]}</td>
           <td class="vw-zahl">${betragText(bestellBetrag(b))}</td></tr></tfoot></table>
+        ${!b.bezahlt && b.zahlart === 'ueberweisung' ? ueberweisungsBlock(b) : ''}
       </section>`;
     }).join('');
   window.print();
