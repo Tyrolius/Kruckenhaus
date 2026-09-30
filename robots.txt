@@ -1,31 +1,27 @@
+# Alle Suchmaschinen und KI-Crawler dürfen die Website lesen.
+# KI-Crawler sind über "User-agent: *" ohnehin zugelassen – sie stehen hier
+# nur ausdrücklich, damit die Ferienwohnung in Antworten von ChatGPT,
+# Claude & Co. auftauchen kann.
+#
+# Wichtig: Ein Crawler befolgt nur die EINE Gruppe, die ihn am genauesten
+# nennt. Deshalb stehen alle Crawler in einer gemeinsamen Gruppe, damit die
+# Disallow-Zeilen für alle gelten. Einen Dienst aussperren: seine
+# "User-agent"-Zeile hier entfernen und unten eine eigene Gruppe
+# "User-agent: <Name>" mit "Disallow: /" anlegen.
 User-agent: *
-Allow: /
-
-# KI-Crawler ausdrücklich erlauben. Sie sind über "User-agent: *" ohnehin
-# zugelassen – die Einträge machen die Absicht nur explizit, damit die
-# Ferienwohnung in Antworten von ChatGPT, Claude & Co. auftauchen kann.
-# Zum Aussperren einzelner Dienste hier "Allow: /" durch "Disallow: /" ersetzen.
 User-agent: GPTBot
-Allow: /
-
 User-agent: OAI-SearchBot
-Allow: /
-
 User-agent: ClaudeBot
-Allow: /
-
 User-agent: PerplexityBot
-Allow: /
-
 User-agent: Google-Extended
+# Interne Dateien (zusätzlich per _redirects gesperrt). Die Disallow-Zeilen
+# stehen vor "Allow: /", weil einfache Crawler die erste passende Zeile nehmen.
+Disallow: /wrangler.toml
+Disallow: /schema.sql
+Disallow: /*.md
 Allow: /
 
 # Sitemap
 Sitemap: https://www.kruckenhaus.at/sitemap.xml
 
 # Kompakte Angebotsübersicht für KI-Systeme: /llms.txt
-
-# Disallow dev/config files
-Disallow: /wrangler.toml
-Disallow: /schema.sql
-Disallow: /*.md

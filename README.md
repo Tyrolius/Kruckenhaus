@@ -399,7 +399,7 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ├── hofladen.html            → Bestellseite des Hofladens (noch nicht verlinkt)
 ├── meine-bestellungen.html  → Bestellungen zum persönlichen Link aus der Mail
 ├── _headers                 → HTTP-Header & Cache-Regeln (Cloudflare Pages)
-├── _redirects               → Weiterleitungen; sperrt docs/ für Besucher
+├── _redirects               → Weiterleitungen; sperrt interne Dateien (docs/, README, Schemata …)
 ├── docs/OPTIMIERUNGSPLAN.md → Interner Plan: Direktbuchungen, Preise, Rechtsprüfung
 ├── sitemap.xml / robots.txt → Für Google & Co.
 ├── llms.txt                 → Angebotsübersicht für KI-Systeme (ChatGPT, Claude …)

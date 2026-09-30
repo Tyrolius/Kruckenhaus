@@ -5,11 +5,25 @@
 # öffentlich unter kruckenhaus.at/docs/... abrufbar sein. Cloudflare
 # Pages wendet Redirects vor statischen Dateien an, daher greift die
 # Regel auch, wenn die Datei existiert.
-/docs/* / 301
+# Gilt auch für Anleitungen, Konfiguration und Datenbankschemata im
+# Projektstamm: Sie werden mit veröffentlicht, sind aber nur für die Arbeit
+# am Projekt gedacht (Pläne, DNS-Einträge, Datenbank-Kennung).
+# Neue interne Datei im Projektstamm? Hier ergänzen.
+/README.md / 301
+/CLAUDE.md / 301
+/UMSETZUNGSPLAN.md / 301
+/wrangler.toml / 301
+/schema.sql / 301
 /schema-hofladen.sql / 301
 /hofladen-produkte.sql / 301
-/scripts/* / 301
+/.gitignore / 301
 
 # Umgebung ist seit 09/2026 Teil der Seite „Lage & Umgebung“
 /umgebung.html /lage.html#umgebung 301
 /umgebung /lage.html#umgebung 301
+
+# Ganze Ordner (Platzhalter-Regeln laut Cloudflare nach den festen Regeln)
+/docs/* / 301
+/scripts/* / 301
+/functions/* / 301
+/.github/* / 301
