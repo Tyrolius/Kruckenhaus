@@ -9,3 +9,7 @@
 /schema-hofladen.sql / 301
 /hofladen-produkte.sql / 301
 /scripts/* / 301
+
+# Umgebung ist seit 09/2026 Teil der Seite „Lage & Umgebung“
+/umgebung.html /lage.html#umgebung 301
+/umgebung /lage.html#umgebung 301

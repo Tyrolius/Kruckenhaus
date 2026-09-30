@@ -13,16 +13,18 @@
  *   3. Nach einer Preisänderung auch llms.txt und den makesOffer-Block
  *      in index.html nachziehen (dort stehen die Preise als Text).
  *
- * PREISMODELL (Stand September 2026):
+ * PREISMODELL (Stand Ende September 2026):
  *   - Pauschalpreis pro Nacht für die ganze Wohnung, bis 4 Personen.
- *   - Vier Saisonstufen mit Datumsbereichen (siehe unten).
+ *   - Fünf Saisonstufen nach der tatsächlichen Nachfrage: stark im
+ *     Winter (Jänner/Februar) und Sommer (Juli/August), schwach im
+ *     Frühling und Herbst (= Nebensaison, günstigster Preis).
+ *   - Ostern zählt als Sommer-Preis (bewegliches Datum, manuell zuordnen).
  *   - Endreinigung einmalig, separat ausgewiesen.
  *   - Aufenthaltsabgabe (Ortstaxe) pro Person und Nacht, ab 15 Jahren.
- *   - Langzeitrabatt ab 7 bzw. 14 Nächten auf den Nachtpreis.
+ *   - Langzeitrabatt ab 7 bzw. 14 Nächten auf den Nachtpreis – nur in der
+ *     Nebensaison (Saison mit langzeitRabatt: true).
  *
- * Die Saisonpreise sind ein Vorschlag aus dem Optimierungsplan
- * (docs/OPTIMIERUNGSPLAN.md, Abschnitt 3) und sollten mit den
- * Airbnb-Preisen abgeglichen werden: Der Website-Preis darf nie über
+ * Die Saisonpreise müssen mit den Airbnb-Preisen abgeglichen werden: Der Website-Preis darf nie über
  * dem Airbnb-Preis liegen, sonst stimmt die Bestpreis-Zusage nicht.
  * ============================================================
  */
@@ -38,36 +40,45 @@ const PREISE = {
   // ----------------------------------------------------------
   saisons: [
     {
-      key:        'ruhig',
-      label:      'Ruhige Saison',
-      zeitraum:   'November bis Mitte Dezember · nach Ostern bis Mitte Mai',
-      zeitraeume: [ ['11-01', '12-19'], ['04-20', '05-14'] ],
+      key:        'neben',
+      label:      'Nebensaison',
+      zeitraum:   'März bis Mai · September bis Mitte Dezember (außer Ostern)',
+      zeitraeume: [ ['03-01', '05-31'], ['09-01', '12-19'] ],
       preis:      125,   // € pro Nacht, ganze Wohnung
       mindest:    2,     // Nächte
+      langzeitRabatt: true,  // Langzeitrabatt gilt nur hier (siehe rabatte)
+      featured:   true,      // wird auf der Preisseite als Tipp hervorgehoben
     },
     {
-      key:        'mittel',
-      label:      'Zwischensaison',
-      zeitraum:   'Mitte Mai bis Juni · September bis Oktober · Jänner (nach Dreikönig) bis März',
-      zeitraeume: [ ['05-15', '06-30'], ['09-01', '10-31'], ['01-07', '03-31'] ],
-      preis:      145,
+      key:        'fruehsommer',
+      label:      'Frühsommer',
+      zeitraum:   'Juni',
+      zeitraeume: [ ['06-01', '06-30'] ],
+      preis:      150,
       mindest:    3,
     },
     {
-      key:        'hoch',
-      label:      'Hauptsaison',
-      zeitraum:   'Juli und August · Semesterferien · Ostern',
-      zeitraeume: [ ['07-01', '08-31'] ],
+      key:        'winter',
+      label:      'Winter',
+      zeitraum:   '7. Jänner bis Ende Februar · inkl. Semesterferien',
+      zeitraeume: [ ['01-07', '02-29'] ],
       preis:      175,
-      mindest:    5,
-      featured:   true,  // wird auf der Preisseite hervorgehoben
+      mindest:    4,
     },
     {
-      key:        'spitze',
+      key:        'sommer',
+      label:      'Sommer',
+      zeitraum:   'Juli und August · Ostern',
+      zeitraeume: [ ['07-01', '08-31'] ],
+      preis:      185,
+      mindest:    5,
+    },
+    {
+      key:        'weihnachten',
       label:      'Weihnachten & Silvester',
       zeitraum:   '20. Dezember bis 6. Jänner',
       zeitraeume: [ ['12-20', '12-31'], ['01-01', '01-06'] ],
-      preis:      210,
+      preis:      225,
       mindest:    7,
     },
   ],
@@ -94,9 +105,8 @@ const PREISE = {
 
   // ----------------------------------------------------------
   // AUFENTHALTSABGABE (Tiroler Aufenthaltsabgabegesetz, "Ortstaxe").
-  // Laut Familie Häusler aktuell 3,50 €. Hinweis: Die Abgabenübersicht
-  // des Landes Tirol nennt für den TVB Alpbachtal & Tiroler Seenland
-  // ab 1.5.2026 einen Satz von 4,00 € – beim TVB gegenprüfen.
+  // TVB Alpbachtal & Tiroler Seenland: 3,50 € (bestätigt 09/2026,
+  // gültig laut Land Tirol seit 1.12.2023).
   // ----------------------------------------------------------
   ortstaxe: {
     betrag:  3.50,   // € pro Person und Nacht
@@ -155,7 +165,9 @@ const PREISE = {
   /** Gesamtpreis-Beispiel: Nächte × Nachtpreis (abzgl. Langzeitrabatt) + Endreinigung + Abgabe. */
   function gesamt(saison, naechte, personen) {
     let rabatt = 0;
-    PREISE.rabatte.langzeit.forEach((r) => { if (naechte >= r.abNaechte) rabatt = r.prozent; });
+    if (saison.langzeitRabatt) {
+      PREISE.rabatte.langzeit.forEach((r) => { if (naechte >= r.abNaechte) rabatt = r.prozent; });
+    }
     const naechtePreis = Math.round(saison.preis * naechte * (1 - rabatt / 100));
     const abgabe = PREISE.ortstaxe.betrag * personen * naechte;
     return {

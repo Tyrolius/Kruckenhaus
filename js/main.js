@@ -226,18 +226,26 @@ if (contactForm) {
     const anreise = contactForm.querySelector('#anreise')?.value;
     const abreise = contactForm.querySelector('#abreise')?.value;
 
-    if (!name || !email || !message) {
-      showFormMessage('Bitte füllen Sie alle Pflichtfelder aus.', 'error');
+    // Nachricht ist nur Pflicht, wenn kein Zeitraum gewählt wurde
+    // (reine Terminanfrage über den Buchungskalender braucht keinen Text)
+    const mitZeitraum = Boolean(anreise && abreise);
+    if (!name || !email || (!message && !mitZeitraum)) {
+      showFormMessage(
+        mitZeitraum || contactForm.querySelector('#anreise')
+          ? 'Bitte gebt euren Namen, eure E-Mail-Adresse und entweder einen Zeitraum oder eine Nachricht an.'
+          : 'Bitte füllt alle Pflichtfelder aus.',
+        'error'
+      );
       return;
     }
 
     if (!isValidEmail(email)) {
-      showFormMessage('Bitte geben Sie eine gültige E-Mail-Adresse ein.', 'error');
+      showFormMessage('Bitte gebt eine gültige E-Mail-Adresse ein.', 'error');
       return;
     }
 
-    if (message.length < 10) {
-      showFormMessage('Bitte beschreiben Sie Ihr Anliegen etwas ausführlicher (mind. 10 Zeichen).', 'error');
+    if (message && message.length < 10 && !mitZeitraum) {
+      showFormMessage('Bitte beschreibt euer Anliegen etwas ausführlicher (mind. 10 Zeichen).', 'error');
       return;
     }
 
@@ -263,14 +271,16 @@ if (contactForm) {
         const data = await response.json().catch(() => ({}));
         if (!response.ok || !data.ok) throw new Error(data.error || 'Netzwerkfehler');
         showFormMessage(
-          'Vielen Dank für Ihre Nachricht! Wir melden uns innerhalb von 24 Stunden.',
+          'Danke, eure Anfrage ist bei uns angekommen! Wir melden uns innerhalb von 24 Stunden per E-Mail.',
           'success'
         );
         contactForm.reset();
+        // Kalenderauswahl (preise.html) ebenfalls zurücksetzen
+        contactForm.querySelector('#anreise')?.dispatchEvent(new Event('change'));
       })
       .catch(() => {
         showFormMessage(
-          'Das Senden hat leider nicht funktioniert. Bitte schreiben Sie uns direkt an info@kruckenhaus.at oder rufen Sie an.',
+          'Das Senden hat leider nicht funktioniert. Bitte schreibt uns direkt an info@kruckenhaus.at oder ruft an.',
           'error'
         );
       })
@@ -288,26 +298,20 @@ function isValidEmail(email) {
 }
 
 function showFormMessage(text, type) {
-  const existing = document.querySelector('.form-message');
+  const existing = contactForm.querySelector('.form-message');
   if (existing) existing.remove();
 
+  // Meldung bleibt stehen (kein automatisches Ausblenden) und wird von
+  // Screenreadern sofort vorgelesen: Fehler als "alert", Erfolg als "status".
   const msg = document.createElement('div');
   msg.className = `form-message form-message--${type}`;
+  msg.setAttribute('role', type === 'error' ? 'alert' : 'status');
+  msg.setAttribute('tabindex', '-1');
   msg.textContent = text;
-  msg.style.cssText = `
-    padding: 0.85rem 1rem;
-    border-radius: 8px;
-    margin-top: 1rem;
-    font-weight: 700;
-    font-size: 0.9rem;
-    background-color: ${type === 'success' ? '#e8f5e9' : '#fdecea'};
-    color: ${type === 'success' ? '#2e7d32' : '#c62828'};
-    border-left: 4px solid ${type === 'success' ? '#4caf50' : '#ef5350'};
-  `;
 
   contactForm.appendChild(msg);
-
-  setTimeout(() => msg.remove(), 6000);
+  msg.focus({ preventScroll: true });
+  msg.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
 
 /* ============================================================

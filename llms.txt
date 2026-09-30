@@ -8,12 +8,17 @@
 ## Standort
 
 - Adresse: Oberberg 70, 6252 Breitenbach am Inn, Tirol, Österreich
-- Lage: Alleinlage am Berg, keine direkten Nachbarn, Bergpanorama (Rofangebirge)
+- Lage: Alleinlage am Berg, keine direkten Nachbarn, Blick auf die Tiroler Bergwelt;
+  Zufahrt endet am Hof (kein Durchgangsverkehr); Wanderweg zum Reintalersee
+  (Moosen) führt hinter dem Haus vorbei
 - Nächste Bahnhöfe: Brixlegg und Kundl, je ca. 6 km
-- Region: Alpbachtal / Tiroler Seenland, Bezirk Kufstein
-- Berglsteiner See: ca. 15 Gehminuten
-- Alpbachtal-Seenland-Card für Gäste inklusive (gratis Bergbahnen, Schwimmbäder
-  Brixlegg und Münster, Liegewiesen an den Badeseen)
+- Region: Tiroler Unterinntal, Bezirk Kufstein (touristisch Tourismusverband
+  Alpbachtal)
+- Berglsteiner See: ca. 15 Gehminuten (zum Spazieren; zum Baden empfehlen wir den
+  Reintalersee, ca. 25 Gehminuten)
+- Alpbachtal Card für Gäste inklusive (im Sommer vier Bergbahnen, Badeseen und
+  Freibäder der Region, Regiobus; Leistungen im Winter abweichend, Bergbahnen nur
+  in ihren Betriebszeiten)
 
 ## Unterkunft
 
@@ -26,30 +31,31 @@
 - Internet: Starlink, 200+ Mbit/s – stabil für Videokonferenzen
 - Check-in 17:00–20:00 Uhr, Check-out bis 10:00 Uhr
 
-## Preise (Stand September 2026)
+## Preise (Stand Oktober 2026)
 
 Alle Preise sind Endpreise inklusive 10 % Umsatzsteuer und gelten pauschal für
 die ganze Wohnung (bis 4 Personen), inklusive Bettwäsche, Handtücher und
-Alpbachtal-Seenland-Card.
+Alpbachtal Card.
 
-- Ruhige Saison (November bis Mitte Dezember, nach Ostern bis Mitte Mai):
+- Nebensaison (März bis Mai, September bis Mitte Dezember, außer Ostern):
   125 € pro Nacht, Mindestaufenthalt 2 Nächte
-- Zwischensaison (Mitte Mai bis Juni, September bis Oktober, Jänner nach
-  Dreikönig bis März): 145 € pro Nacht, Mindestaufenthalt 3 Nächte
-- Hauptsaison (Juli, August, Semesterferien, Ostern): 175 € pro Nacht,
-  Mindestaufenthalt 5 Nächte
-- Weihnachten und Silvester (20. Dezember bis 6. Jänner): 210 € pro Nacht,
+- Frühsommer (Juni): 150 € pro Nacht, Mindestaufenthalt 3 Nächte
+- Winter (7. Jänner bis Ende Februar, inkl. Semesterferien): 175 € pro Nacht,
+  Mindestaufenthalt 4 Nächte
+- Sommer (Juli, August, Ostern): 185 € pro Nacht, Mindestaufenthalt 5 Nächte
+- Weihnachten und Silvester (20. Dezember bis 6. Jänner): 225 € pro Nacht,
   Mindestaufenthalt 7 Nächte
 - Endreinigung: 80 € einmalig, verpflichtend
 - Aufenthaltsabgabe: 3,50 € pro Person und Nacht (ab 15 Jahren), gesetzliche
   Abgabe, wird zusätzlich verrechnet
-- Langzeitrabatt: ab 7 Nächten 7 %, ab 14 Nächten 12 % auf den Nachtpreis
-- Haustier: 20 € pro Aufenthalt nach Absprache | Babybett und Hochstuhl kostenlos
+- Langzeitrabatt (nur Nebensaison): ab 7 Nächten 7 %, ab 14 Nächten 12 % auf
+  den Nachtpreis; ab 28 Nächten Monatspreis auf Anfrage
+- Haustier: 20 € pro Aufenthalt nach Absprache
 - Anzahlung 30 % bei Buchung, Rest 14 Tage vor Anreise oder bar vor Ort
 - Direktbuchung: Bestpreis (nie teurer als auf Portalen) und Begrüßungskorb
   aus dem Hofladen
 
-Beispiel: 2 Personen, 3 Nächte Zwischensaison = 3 × 145 € + 80 € + 21 € = 536 €.
+Beispiel: 2 Personen, 3 Nächte Nebensaison = 3 × 125 € + 80 € + 21 € = 476 €.
 
 Verbindliche Preise ergeben sich ausschließlich aus der schriftlichen
 Buchungsbestätigung.
@@ -82,7 +88,7 @@ Gastgeber: Kathrin und Florian Häusler.
 - [Bauernhof](https://www.kruckenhaus.at/bauernhof.html): Alpakas, Hofladen, Landwirtschaft
 - [Berglsteiner See](https://www.kruckenhaus.at/berglsteiner-see.html): Der See und die Wanderroute
 - [Workation](https://www.kruckenhaus.at/workation.html): Arbeiten mit Starlink-Internet
-- [Umgebung](https://www.kruckenhaus.at/umgebung.html): Ausflugsziele in der Region
+- [Umgebung](https://www.kruckenhaus.at/lage.html#umgebung): Ausflugsziele in der Region (Teil der Seite Lage & Umgebung)
 - [Lage & Anfahrt](https://www.kruckenhaus.at/lage.html): Anreise mit Auto und Bahn
 - [Kontakt](https://www.kruckenhaus.at/kontakt.html): Anfrageformular und Kontaktdaten
 

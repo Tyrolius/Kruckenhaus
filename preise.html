@@ -19,6 +19,7 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Zum Inhalt springen</a>
 
   <!-- HEADER -->
   <header class="site-header scrolled" role="banner">
@@ -34,15 +35,13 @@
         </div>
       </a>
       <nav class="nav-menu" role="navigation" aria-label="Hauptnavigation">
-        <a href="index.html" class="nav-link">Home</a>
         <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
-        <a href="preise.html" class="nav-link active" aria-current="page">Preise</a>
         <a href="bauernhof.html" class="nav-link">Bauernhof</a>
         <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
         <a href="workation.html" class="nav-link">Workation</a>
-        <a href="umgebung.html" class="nav-link">Umgebung</a>
-        <a href="lage.html" class="nav-link">Lage</a>
+        <a href="lage.html" class="nav-link">Lage &amp; Umgebung</a>
         <a href="kontakt.html" class="nav-link">Kontakt</a>
+        <a href="preise.html" class="nav-link nav-cta active" aria-current="page">Preise &amp; Buchung</a>
       </nav>
       <button class="hamburger" aria-label="Menü öffnen" aria-expanded="false" aria-controls="nav-overlay">
         <span></span><span></span><span></span>
@@ -57,12 +56,11 @@
     <a href="bauernhof.html" class="nav-link">Bauernhof</a>
     <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
     <a href="workation.html" class="nav-link">Workation</a>
-    <a href="umgebung.html" class="nav-link">Umgebung</a>
-    <a href="lage.html" class="nav-link">Lage</a>
+    <a href="lage.html" class="nav-link">Lage &amp; Umgebung</a>
     <a href="kontakt.html" class="nav-link">Kontakt</a>
   </nav>
 
-  <main id="main-content">
+  <main id="main-content" tabindex="-1">
 
     <!-- PAGE HERO -->
     <section class="page-hero" aria-label="Preise und Buchung">
@@ -88,81 +86,107 @@
           <h2>Mietpreise</h2>
           <div class="divider"></div>
           <p>Ein Preis für die ganze Wohnung, bis 4 Personen. Alle Preise in Euro inkl. 10&thinsp;% USt.,
-             inklusive Bettwäsche, Handtücher und Alpbachtal-Seenland-Card.</p>
+             inklusive Bettwäsche, Handtücher und Alpbachtal Card.</p>
         </div>
 
-        <div class="preise-grid preise-grid--vier">
-          <div class="preis-card slide-up">
+        <div class="preise-grid preise-grid--fuenf">
+          <div class="preis-card featured">
             <div class="preis-header">
-              <h3>Ruhige Saison</h3>
-              <span class="preis-badge" data-preis="saison-ruhig-zeitraum"></span>
+              <span class="preis-tipp">Unser Tipp</span>
+              <h3>Nebensaison</h3>
+              <span class="preis-badge" data-preis="saison-neben-zeitraum">März bis Mai · September bis Mitte Dezember (außer Ostern)</span>
             </div>
             <div class="preis-body">
               <div class="preis-amount">
-                <div class="amount"><span data-preis="saison-ruhig-preis"></span></div>
+                <div class="amount"><span data-preis="saison-neben-preis">€ 125</span></div>
                 <div class="unit">pro Nacht · ganze Wohnung · bis <span data-preis="belegung-max">4 Personen</span></div>
               </div>
               <ul class="preis-details">
-                <li>Mindestaufenthalt: <strong data-preis="saison-ruhig-mindest"></strong></li>
+                <li>Mindestaufenthalt: <strong data-preis="saison-neben-mindest">2 Nächte</strong></li>
+                <li><strong>Langzeitrabatt</strong> ab 7 Nächten – ideal für Workation</li>
+                <li><a href="index.html#herbst-fruehling">Herbst &amp; Frühling am Hof</a></li>
                 <li>Bettwäsche &amp; Handtücher inklusive</li>
-                <li>Alpbachtal-Seenland-Card inklusive</li>
+                <li>Alpbachtal Card inklusive</li>
                 <li>zzgl. Endreinigung <strong data-preis="endreinigung">€ 80</strong> einmalig</li>
                 <li>zzgl. Aufenthaltsabgabe <strong data-preis="ortstaxe">3,50 € / Person / Nacht</strong></li>
               </ul>
             </div>
           </div>
-          <div class="preis-card slide-up">
+          <div class="preis-card">
             <div class="preis-header">
-              <h3>Zwischensaison</h3>
-              <span class="preis-badge" data-preis="saison-mittel-zeitraum"></span>
+              
+              <h3>Frühsommer</h3>
+              <span class="preis-badge" data-preis="saison-fruehsommer-zeitraum">Juni</span>
             </div>
             <div class="preis-body">
               <div class="preis-amount">
-                <div class="amount"><span data-preis="saison-mittel-preis"></span></div>
+                <div class="amount"><span data-preis="saison-fruehsommer-preis">€ 150</span></div>
                 <div class="unit">pro Nacht · ganze Wohnung · bis <span data-preis="belegung-max">4 Personen</span></div>
               </div>
               <ul class="preis-details">
-                <li>Mindestaufenthalt: <strong data-preis="saison-mittel-mindest"></strong></li>
+                <li>Mindestaufenthalt: <strong data-preis="saison-fruehsommer-mindest">3 Nächte</strong></li>
                 <li>Bettwäsche &amp; Handtücher inklusive</li>
-                <li>Alpbachtal-Seenland-Card inklusive</li>
+                <li>Alpbachtal Card inklusive</li>
                 <li>zzgl. Endreinigung <strong data-preis="endreinigung">€ 80</strong> einmalig</li>
                 <li>zzgl. Aufenthaltsabgabe <strong data-preis="ortstaxe">3,50 € / Person / Nacht</strong></li>
               </ul>
             </div>
           </div>
-          <div class="preis-card featured slide-up">
+          <div class="preis-card">
             <div class="preis-header">
-              <h3>Hauptsaison</h3>
-              <span class="preis-badge" data-preis="saison-hoch-zeitraum"></span>
+              
+              <h3>Winter</h3>
+              <span class="preis-badge" data-preis="saison-winter-zeitraum">7. Jänner bis Ende Februar · inkl. Semesterferien</span>
             </div>
             <div class="preis-body">
               <div class="preis-amount">
-                <div class="amount"><span data-preis="saison-hoch-preis"></span></div>
+                <div class="amount"><span data-preis="saison-winter-preis">€ 175</span></div>
                 <div class="unit">pro Nacht · ganze Wohnung · bis <span data-preis="belegung-max">4 Personen</span></div>
               </div>
               <ul class="preis-details">
-                <li>Mindestaufenthalt: <strong data-preis="saison-hoch-mindest"></strong></li>
+                <li>Mindestaufenthalt: <strong data-preis="saison-winter-mindest">4 Nächte</strong></li>
                 <li>Bettwäsche &amp; Handtücher inklusive</li>
-                <li>Alpbachtal-Seenland-Card inklusive</li>
+                <li>Alpbachtal Card inklusive</li>
                 <li>zzgl. Endreinigung <strong data-preis="endreinigung">€ 80</strong> einmalig</li>
                 <li>zzgl. Aufenthaltsabgabe <strong data-preis="ortstaxe">3,50 € / Person / Nacht</strong></li>
               </ul>
             </div>
           </div>
-          <div class="preis-card slide-up">
+          <div class="preis-card">
             <div class="preis-header">
+              
+              <h3>Sommer</h3>
+              <span class="preis-badge" data-preis="saison-sommer-zeitraum">Juli und August · Ostern</span>
+            </div>
+            <div class="preis-body">
+              <div class="preis-amount">
+                <div class="amount"><span data-preis="saison-sommer-preis">€ 185</span></div>
+                <div class="unit">pro Nacht · ganze Wohnung · bis <span data-preis="belegung-max">4 Personen</span></div>
+              </div>
+              <ul class="preis-details">
+                <li>Mindestaufenthalt: <strong data-preis="saison-sommer-mindest">5 Nächte</strong></li>
+                <li>Bettwäsche &amp; Handtücher inklusive</li>
+                <li>Alpbachtal Card inklusive</li>
+                <li>zzgl. Endreinigung <strong data-preis="endreinigung">€ 80</strong> einmalig</li>
+                <li>zzgl. Aufenthaltsabgabe <strong data-preis="ortstaxe">3,50 € / Person / Nacht</strong></li>
+              </ul>
+            </div>
+          </div>
+          <div class="preis-card">
+            <div class="preis-header">
+              
               <h3>Weihnachten &amp; Silvester</h3>
-              <span class="preis-badge" data-preis="saison-spitze-zeitraum"></span>
+              <span class="preis-badge" data-preis="saison-weihnachten-zeitraum">20. Dezember bis 6. Jänner</span>
             </div>
             <div class="preis-body">
               <div class="preis-amount">
-                <div class="amount"><span data-preis="saison-spitze-preis"></span></div>
+                <div class="amount"><span data-preis="saison-weihnachten-preis">€ 225</span></div>
                 <div class="unit">pro Nacht · ganze Wohnung · bis <span data-preis="belegung-max">4 Personen</span></div>
               </div>
               <ul class="preis-details">
-                <li>Mindestaufenthalt: <strong data-preis="saison-spitze-mindest"></strong></li>
+                <li>Mindestaufenthalt: <strong data-preis="saison-weihnachten-mindest">7 Nächte</strong></li>
                 <li>Bettwäsche &amp; Handtücher inklusive</li>
-                <li>Alpbachtal-Seenland-Card inklusive</li>
+                <li>Alpbachtal Card inklusive</li>
                 <li>zzgl. Endreinigung <strong data-preis="endreinigung">€ 80</strong> einmalig</li>
                 <li>zzgl. Aufenthaltsabgabe <strong data-preis="ortstaxe">3,50 € / Person / Nacht</strong></li>
               </ul>
@@ -176,7 +200,7 @@
           <h3 style="margin-bottom: 0.5rem;">Was kostet der Aufenthalt insgesamt?</h3>
           <p style="margin-bottom: 1rem;">Zwei Rechenbeispiele – so seht ihr den Endpreis, bevor ihr anfragt. Für euren Wunschzeitraum nennen wir euch den Gesamtpreis in der Antwort auf eure Anfrage.</p>
           <div class="beispiel-grid">
-          <div class="beispiel-card" data-beispiel="mittel:3:2">
+          <div class="beispiel-card" data-beispiel="neben:7:2">
             <h4 class="bsp-titel"></h4>
             <table class="beispiel-table" aria-label="Gesamtpreis-Rechnung">
               <tbody>
@@ -188,7 +212,7 @@
             </table>
             <p class="bsp-pro-nacht"></p>
           </div>
-          <div class="beispiel-card" data-beispiel="hoch:7:4">
+          <div class="beispiel-card" data-beispiel="sommer:7:4">
             <h4 class="bsp-titel"></h4>
             <table class="beispiel-table" aria-label="Gesamtpreis-Rechnung">
               <tbody>
@@ -237,22 +261,12 @@
                 <tr>
                   <td>Langzeitrabatt</td>
                   <td><strong><span data-preis="langzeit-7">7 %</span> / <span data-preis="langzeit-14">12 %</span></strong></td>
-                  <td>Ab 7 bzw. 14 Nächten auf den Nachtpreis; ab 28 Nächten Monatspreis auf Anfrage</td>
+                  <td>Nur in der Nebensaison: ab 7 bzw. 14 Nächten auf den Nachtpreis; ab 28 Nächten Monatspreis auf Anfrage</td>
                 </tr>
                 <tr>
                   <td>Haustier</td>
                   <td><strong data-preis="haustier">€ 20</strong> / Aufenthalt</td>
                   <td>Nur nach Vorabgenehmigung</td>
-                </tr>
-                <tr>
-                  <td>Babybett</td>
-                  <td><strong>kostenlos</strong></td>
-                  <td>Steht in Schlafzimmer 1 bereit</td>
-                </tr>
-                <tr>
-                  <td>Hochstuhl</td>
-                  <td><strong>kostenlos</strong></td>
-                  <td>Bitte bei Buchung anfragen</td>
                 </tr>
                 <tr>
                   <td>Späterer Check-out (bis 14:00)</td>
@@ -269,7 +283,7 @@
           <p style="margin: 0; font-size: 0.9rem;">
             <strong>Bitte beachten:</strong> Alle Preise verstehen sich inklusive 10&thinsp;% Umsatzsteuer.
             Die Aufenthaltsabgabe ist eine gesetzliche Abgabe, die wir für das Land Tirol einheben.
-            Ostern und die Semesterferien zählen zur Hauptsaison; den verbindlichen Gesamtpreis für
+            Ostern zählt zum Sommer-Preis, die Semesterferien zum Winter-Preis; den verbindlichen Gesamtpreis für
             euren Zeitraum nennen wir in der Buchungsbestätigung.
           </p>
         </div>
@@ -279,21 +293,90 @@
     <!-- ========================================================
          VERFÜGBARKEIT (Airbnb-iCal-Sync, siehe ferienwohnung.html)
          ======================================================== -->
-    <section class="section section-alt" id="buchung" aria-label="Verfügbarkeit und Buchung">
+    <section class="section section-alt" id="buchung" aria-labelledby="buchung-titel">
       <div class="container">
-        <div class="section-header slide-up">
-          <span class="section-label">Direkt buchen &amp; sparen</span>
-          <h2>Verfügbarkeit &amp; Buchung</h2>
-          <div class="divider"></div>
-          <p>Bucht direkt bei uns – Bestpreis, persönlicher Kontakt, Begrüßungskorb aus dem Hofladen</p>
+        <div class="section-header">
+          <span class="section-label">Direkt bei uns anfragen</span>
+          <h2 id="buchung-titel">Verfügbarkeit &amp; Anfrage</h2>
+          <p>Wählt im Kalender euren Zeitraum und schickt uns die Anfrage. Wir melden uns innerhalb von 24 Stunden mit einer verbindlichen Bestätigung – ohne Portalgebühren.</p>
         </div>
-        <div style="background:var(--color-white);border-radius:16px;padding:2rem;box-shadow:var(--shadow-md);" class="slide-up">
-          <div id="verfuegbarkeits-kalender" aria-label="Belegungskalender der Ferienwohnung" aria-live="polite"></div>
-          <p style="text-align:center;margin:2rem 0 1.5rem;font-size:1.05rem;">Euer Wunschtermin ist frei? Dann schreibt uns – wir bestätigen innerhalb von 24 Stunden.</p>
-          <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-            <a href="kontakt.html" class="btn btn-primary">Buchungsanfrage senden</a>
-            <a href="https://wa.me/436642166181?text=Hallo%2C%20ich%20m%C3%B6chte%20die%20Ferienwohnung%20Kruckenhaus%20buchen." class="btn btn-green" target="_blank" rel="noopener">Per WhatsApp buchen</a>
-            <a href="tel:+436642166181" class="btn btn-outline" style="color:var(--color-primary);border-color:var(--color-primary);">+43 664 2166181 anrufen</a>
+
+        <div class="buchung-grid">
+          <!-- Schritt 1: Kalender -->
+          <div class="buchung-karte">
+            <h3 class="buchung-schritt"><span aria-hidden="true">1</span> Zeitraum wählen</h3>
+            <div id="verfuegbarkeits-kalender" aria-label="Belegungskalender der Ferienwohnung"></div>
+            <p id="kalender-auswahl" class="kalender-auswahl" role="status" aria-live="polite"></p>
+            <p class="buchung-hinweis">Mindestaufenthalt je nach Saison 2 bis 7 Nächte – siehe Mietpreise oben.</p>
+          </div>
+
+          <!-- Schritt 2: Anfrageformular -->
+          <div class="buchung-karte">
+            <h3 class="buchung-schritt"><span aria-hidden="true">2</span> Anfrage senden</h3>
+            <form class="contact-form" id="contact-form" novalidate
+                  method="POST"
+                  action="/api/kontakt"
+                  name="buchungsanfrage">
+              <!-- Spam-Schutz: Bots füllen dieses versteckte Feld aus -->
+              <p style="display: none;" aria-hidden="true">
+                <label>Nicht ausfüllen: <input name="bot-field" tabindex="-1" autocomplete="off" /></label>
+              </p>
+
+              <div class="form-zeile">
+                <div class="form-group">
+                  <label for="anreise">Anreise</label>
+                  <input type="date" id="anreise" name="anreise" />
+                </div>
+                <div class="form-group">
+                  <label for="abreise">Abreise</label>
+                  <input type="date" id="abreise" name="abreise" />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="personen">Anzahl Personen</label>
+                <select id="personen" name="personen">
+                  <option value="">Bitte wählen</option>
+                  <option value="1">1 Person</option>
+                  <option value="2">2 Personen</option>
+                  <option value="3">3 Personen</option>
+                  <option value="4">4 Personen</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="name">Name <span class="pflicht">(Pflichtfeld)</span></label>
+                <input type="text" id="name" name="name" required aria-required="true"
+                       autocomplete="name" />
+              </div>
+
+              <div class="form-group">
+                <label for="email">E-Mail-Adresse <span class="pflicht">(Pflichtfeld)</span></label>
+                <input type="email" id="email" name="email" required aria-required="true"
+                       autocomplete="email" />
+              </div>
+
+              <div class="form-group">
+                <label for="phone">Telefonnummer <span class="optional">(optional, für Rückfragen)</span></label>
+                <input type="tel" id="phone" name="phone" autocomplete="tel" />
+              </div>
+
+              <div class="form-group">
+                <label for="message">Nachricht <span class="optional">(optional)</span></label>
+                <textarea id="message" name="message" rows="4"
+                          placeholder="Anreisezeit, Haustier, Fragen …"></textarea>
+              </div>
+
+              <div class="form-dsgvo">
+                Eure Daten verwenden wir nur für die Bearbeitung eurer Anfrage.
+                Mehr dazu in der <a href="datenschutz.html">Datenschutzerklärung</a>.
+              </div>
+
+              <button type="submit" class="btn btn-primary buchung-senden">Anfrage senden</button>
+              <p class="buchung-hinweis">Die Anfrage ist unverbindlich. Lieber persönlich?
+                <a href="tel:+436642166181">+43 664 2166181</a> oder
+                <a href="https://wa.me/436642166181?text=Hallo%2C%20ich%20m%C3%B6chte%20die%20Ferienwohnung%20Kruckenhaus%20anfragen." target="_blank" rel="noopener">WhatsApp</a>.</p>
+            </form>
           </div>
         </div>
       </div>
@@ -413,13 +496,13 @@
     <section class="section text-center">
       <div class="container slide-up">
         <span class="section-label">Bereit für Tirol?</span>
-        <h2>Jetzt Ihren Urlaub planen</h2>
+        <h2>Jetzt euren Urlaub planen</h2>
         <div class="divider"></div>
         <p style="max-width: 550px; margin: 0 auto 1.5rem;">
-          Haben Sie noch Fragen zu Preisen oder Verfügbarkeit?
-          Kontaktieren Sie uns – wir helfen Ihnen gerne weiter!
+          Habt ihr noch Fragen zu Preisen oder Verfügbarkeit?
+          Meldet euch – wir helfen gerne weiter!
         </p>
-        <a href="kontakt.html" class="btn btn-primary">Anfrage senden</a>
+        <a href="#buchung" class="btn btn-primary">Anfrage senden</a>
       </div>
     </section>
 
@@ -431,7 +514,7 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <span class="footer-logo">Kruckenhaus<span>Hof &amp; Ferienwohnung</span></span>
-          <p class="footer-tagline">Ferienwohnung in Alleinlage mit Bergpanorama.<br>Breitenbach am Inn, Alpbachtal Tirol.</p>
+          <p class="footer-tagline">Ferienwohnung in Alleinlage mit Bergpanorama.<br>Breitenbach am Inn, Unterinntal, Tirol.</p>
         </div>
         <div class="footer-nav">
           <h4>Navigation</h4>
@@ -442,8 +525,7 @@
             <li><a href="bauernhof.html">Bauernhof &amp; Alpakas</a></li>
             <li><a href="berglsteiner-see.html">Berglsteiner See</a></li>
             <li><a href="workation.html">Workation</a></li>
-            <li><a href="umgebung.html">Umgebung</a></li>
-            <li><a href="lage.html">Lage &amp; Anfahrt</a></li>
+            <li><a href="lage.html">Lage &amp; Umgebung</a></li>
             <li><a href="kontakt.html">Kontakt</a></li>
           </ul>
         </div>
@@ -479,32 +561,30 @@
       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
     </svg>
   </a>
-  <button class="back-to-top" aria-label="Zurueck nach oben" title="Zurueck nach oben">&#8593;</button>
-
-  <!-- FLOATING ACTION BUTTON "Jetzt buchen" (Mobile) -->
-  <a href="kontakt.html" class="fab-book" aria-label="Jetzt buchen">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-    Jetzt buchen
-  </a>
+  <button class="back-to-top" aria-label="Zurück nach oben" title="Zurück nach oben">&#8593;</button>
 
   <!-- BOTTOM TAB BAR (Mobile) -->
-  <nav class="bottom-tab-bar" id="bottomTabBar" role="navigation" aria-label="Schnellnavigation">
+  <nav class="bottom-tab-bar" id="bottomTabBar" aria-label="Schnellnavigation">
     <div class="bottom-tab-bar-inner">
-      <a href="ferienwohnung.html" class="bottom-tab-item" aria-label="Ferienwohnung">
+      <a href="ferienwohnung.html" class="bottom-tab-item">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-        Fewo
+        Wohnung
       </a>
-      <a href="preise.html" class="bottom-tab-item" aria-label="Preise">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 7.756a4.5 4.5 0 100 8.488M7.5 10.5h5.25m-5.25 3h5.25M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        Preise
-      </a>
-      <a href="bauernhof.html" class="bottom-tab-item" aria-label="Bauernhof &amp; Alpakas">
+      <a href="bauernhof.html" class="bottom-tab-item">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
         Hof
       </a>
-      <a href="lage.html" class="bottom-tab-item" aria-label="Lage &amp; Umgebung">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <a href="lage.html" class="bottom-tab-item">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         Lage
+      </a>
+      <a href="https://wa.me/436642166181" class="bottom-tab-item" target="_blank" rel="noopener">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"/></svg>
+        WhatsApp
+      </a>
+      <a href="#buchung" class="bottom-tab-item bottom-tab-item--buchen">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Anfragen
       </a>
     </div>
   </nav>
@@ -512,6 +592,6 @@
   <!-- Preiskonfiguration wird VOR main.js geladen -->
   <script src="js/preise-config.js"></script>
   <script src="js/main.js"></script>
-  <script src="js/verfuegbarkeit.js?v=1"></script>
+  <script src="js/verfuegbarkeit.js?v=2"></script>
 </body>
 </html>

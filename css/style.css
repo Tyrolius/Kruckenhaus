@@ -224,11 +224,14 @@
   --color-cream:      #F5F0EB;  /* Section Alt – leicht dunkleres Cloud Dancer */
   --color-terracotta: #964F33;  /* Terracotta – aktive Links, Icons, Heritage */
   --color-text:       #464646;  /* Alpine Slate – Haupttext */
-  --color-text-light: #7A7067;  /* Sekundärer Text, Bildunterschriften */
+  --color-text-light: #6B6158;  /* Sekundärer Text – dunkler für Kontrast ≥ 4,5:1 auf Creme */
   --color-white:      #FFFFFF;
   --color-black:      #2C2420;  /* Footer */
   --color-border:     #D4CBC3;  /* Subtile Trennlinien */
   --color-overlay:    rgba(47, 88, 72, 0.50);
+  --color-scrim-oben: rgba(20, 34, 28, 0.45);  /* Hero: Abdunkelung hinter der Navigation */
+  --color-scrim-unten: rgba(20, 34, 28, 0.72); /* Hero: Abdunkelung hinter dem Text */
+  --color-weiss-90:   rgba(255, 255, 255, 0.90); /* Fließtext auf dunklem Grund */
 
   /* Typografie – Destillierte Natur */
   --font-heading:     'Playfair Display', 'Libre Baskerville', Georgia, serif;
@@ -273,7 +276,8 @@
 }
 
 html {
-  font-size: 16px;
+  /* 17 px Grundschrift: besser lesbar für ältere Gäste (vorher 16 px) */
+  font-size: 17px;
   scroll-behavior: smooth;
 }
 
@@ -318,8 +322,8 @@ ul {
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading);
   color: var(--color-dark);
-  line-height: 1.3;
-  font-weight: 700;
+  line-height: 1.25;
+  font-weight: 600;
 }
 
 h1 { font-size: clamp(2rem, 5vw, 3.5rem); }
@@ -340,12 +344,15 @@ p {
 }
 
 .section-label {
-  font-family: var(--font-accent);
+  /* Schlichte Versal-Überzeile wie auf der Startseite (vorher Cormorant kursiv) */
+  font-family: var(--font-body);
   color: var(--color-terracotta);
-  font-size: 1.1rem;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: uppercase;
   display: block;
-  margin-bottom: 0.5rem;
-  letter-spacing: 0.05em;
+  margin-bottom: 0.75rem;
+  letter-spacing: 0.16em;
 }
 
 /* ============================================================
@@ -389,22 +396,22 @@ p {
 
 .section-header {
   margin-bottom: var(--spacing-md);
-  text-align: center;
+  text-align: left;
 }
+
+/* Abschluss-Aufrufe (Klasse text-center) bleiben zentriert */
+.text-center .section-header { text-align: center; }
 
 .section-header p {
   max-width: 700px;
-  margin-inline: auto;
+  margin-inline: 0;
   color: var(--color-text);
   font-size: 1.05rem;
 }
 
 .divider {
-  width: 60px;
-  height: 3px;
-  background: linear-gradient(90deg, var(--color-primary), var(--color-green));
-  border-radius: 2px;
-  margin: var(--spacing-sm) auto;
+  /* Zierstrich unter Überschriften – im neuen Design bewusst ausgeblendet */
+  display: none;
 }
 
 /* ============================================================
@@ -2007,13 +2014,15 @@ p {
    25. PAGE HERO (Unterseiten)
    ============================================================ */
 .page-hero {
-  background-color: var(--color-dark);
-  background-image: url('../images/hero-background.jpg');
+  /* Luftbild vom Hof als gemeinsamer Seitenkopf; eigene Fotos je Seite
+     können später per Inline-Style oder eigener Klasse gesetzt werden. */
+  background-color: var(--color-primary);
+  background-image: url('../images/hof/hof-luftbild-tal.jpg');
   background-size: cover;
-  background-position: center;
-  padding-top: calc(var(--header-height) + 3rem);
+  background-position: center 40%;
+  padding-top: calc(var(--header-height) + 4.5rem);
   padding-bottom: 3rem;
-  text-align: center;
+  text-align: left;
   position: relative;
   overflow: hidden;
 }
@@ -2022,7 +2031,10 @@ p {
   content: '';
   position: absolute;
   inset: 0;
-  background: linear-gradient(to bottom, rgba(115,82,62,0.55), rgba(115,82,62,0.70));
+  background: linear-gradient(180deg,
+    var(--color-scrim-oben) 0%,
+    var(--color-overlay) 45%,
+    var(--color-scrim-unten) 100%);
 }
 
 .page-hero-content {
@@ -2032,19 +2044,22 @@ p {
 
 .page-hero h1 {
   color: var(--color-white);
-  margin-bottom: 0.5rem;
+  font-size: clamp(2.2rem, 5vw, 3.75rem);
+  line-height: 1.08;
+  margin-bottom: 0.75rem;
 }
 
 .page-hero p {
-  color: var(--color-beige);
+  color: var(--color-weiss-90);
   font-size: 1.1rem;
+  max-width: 640px;
   margin: 0;
 }
 
 .breadcrumb {
   display: flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 0.5rem;
   font-size: 0.85rem;
   color: rgba(253,250,247,0.7);
@@ -2263,7 +2278,7 @@ body.season-winter .winter-image { display: block; }
    28. DESKTOP: >= 1024px
    ============================================================ */
 /* Horizontale Hauptnavigation erst ab 1200px – darunter das Hamburger-Menü,
-   damit die 9 Navigationspunkte nicht mit dem Logo kollidieren oder umbrechen. */
+   damit die Navigationspunkte samt Buchungs-Button nicht mit dem Logo kollidieren. */
 @media (min-width: 1200px) {
   .hamburger {
     display: none;
@@ -2279,9 +2294,9 @@ body.season-winter .winter-image { display: block; }
   }
 
   .gallery-grid {
-    /* 4 Spalten × 2 Zeilen */
+    /* 4 Spalten; Zeilen ergeben sich aus der Anzahl der Fotos
+       (feste 2 Zeilen ließen bei nur 3 Fotos eine leere Zeile stehen) */
     grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(2, 1fr);
   }
 
   .testimonials-grid {
@@ -2967,7 +2982,7 @@ body.season-winter .winter-image { display: block; }
    36. SPEEDTEST BOX (Workation)
    ============================================================ */
 .speedtest-box {
-  background: linear-gradient(135deg, #1a2a4a, #2a3a6a);
+  background-color: var(--color-primary);
   color: #fff;
   border-radius: var(--border-radius-lg);
   padding: var(--spacing-md);
@@ -4374,4 +4389,706 @@ body.season-winter .winter-image { display: block; }
   .hl-bankdaten dd { margin: 0; }
   .hl-zweispaltig { grid-template-columns: 1fr 1fr; }
   .hl-formular { padding: var(--spacing-md); }
+}
+
+/* ============================================================
+   42. STARTSEITE – Hero, Intro, Hofchronik, Karten, Stimmen
+   Neues Startseiten-Design (Herbst 2026): Text links statt zentriert,
+   keine Wellen-Trenner, Fotokarten statt Emoji-Kacheln.
+   ============================================================ */
+
+/* Buchungs-Button in der Desktop-Navigation (alle Seiten) */
+.nav-link.nav-cta {
+  background-color: var(--color-white);
+  color: var(--color-primary);
+  text-shadow: none;
+  padding: 0.6rem 1rem;
+  border-radius: var(--border-radius);
+}
+.nav-link.nav-cta::after { display: none; }
+.nav-link.nav-cta:hover,
+.nav-link.nav-cta.active {
+  background-color: var(--color-beige);
+  color: var(--color-primary);
+}
+.site-header.scrolled .nav-link.nav-cta {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+.site-header.scrolled .nav-link.nav-cta:hover,
+.site-header.scrolled .nav-link.nav-cta.active {
+  background-color: var(--color-terracotta);
+  color: var(--color-white);
+}
+
+/* Kleine Überzeile in Versalien */
+.start-label {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-terracotta);
+  margin-bottom: 0.75rem;
+}
+
+/* --- Hero --- */
+.start-hero {
+  position: relative;
+  min-height: 560px;
+  height: 92svh;
+  max-height: 860px;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+.start-hero-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.start-hero-overlay {
+  position: absolute;
+  inset: 0;
+  /* Am Handy steht der Text weiter oben im Bild – daher früher abdunkeln */
+  background: linear-gradient(180deg,
+    var(--color-scrim-oben) 0%,
+    transparent 22%,
+    var(--color-scrim-unten) 55%,
+    var(--color-scrim-unten) 100%);
+}
+.start-hero-inhalt {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+  padding-bottom: var(--spacing-lg);
+}
+.start-hero-text { max-width: 760px; }
+.start-hero-label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-weiss-90);
+  margin-bottom: 1rem;
+}
+.start-hero h1 {
+  color: var(--color-white);
+  font-size: clamp(2.3rem, 6.4vw, 5rem);
+  font-weight: 600;
+  line-height: 1.04;
+  margin-bottom: 1rem;
+}
+.start-hero-text p {
+  font-size: clamp(1rem, 1.6vw, 1.25rem);
+  line-height: 1.5;
+  color: var(--color-weiss-90);
+  max-width: 620px;
+}
+.start-hero-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+.start-hero-bewertung {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  color: var(--color-white);
+  font-size: 0.85rem;
+}
+.start-hero-bewertung:hover { color: var(--color-beige); }
+.start-hero-note {
+  font-family: var(--font-heading);
+  font-size: 2rem;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* --- Intro --- */
+.start-intro { padding-block: var(--spacing-lg); }
+.start-intro-grid {
+  display: grid;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+.start-intro h2 {
+  font-size: clamp(2rem, 4vw, 3.25rem);
+  font-weight: 600;
+  line-height: 1.1;
+  margin-bottom: 1.25rem;
+}
+.start-intro-text p { font-size: 1.05rem; line-height: 1.7; }
+.start-fakten {
+  list-style: none;
+  padding: 0;
+  margin: 1.25rem 0 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.7rem 1.5rem;
+}
+.start-fakten li {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  font-size: 0.95rem;
+}
+.start-fakten li::before {
+  content: '';
+  flex: none;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+}
+.start-intro-bild {
+  width: 100%;
+  height: 100%;
+  min-height: 280px;
+  max-height: 600px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+/* --- Hofchronik --- */
+.hofchronik-rahmen {
+  border-top: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  padding-block: var(--spacing-lg);
+}
+.hofchronik-kopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 1.5rem;
+  margin-bottom: var(--spacing-md);
+}
+.hofchronik-kopf .start-label { margin-bottom: 0; }
+.hofchronik-kopf h2,
+.start-erwartet-kopf h2 {
+  font-size: clamp(1.8rem, 3.2vw, 2.75rem);
+  font-weight: 600;
+  margin: 0;
+}
+.hofchronik-liste {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--spacing-md);
+}
+.hofchronik-liste li {
+  border-top: 2px solid var(--color-primary);
+  padding-top: 1.1rem;
+}
+.hofchronik-jahr {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: clamp(2.4rem, 4vw, 3.25rem);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--color-primary);
+  margin-bottom: 0.75rem;
+}
+.hofchronik-liste h3 {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+.hofchronik-liste p { font-size: 1rem; line-height: 1.65; margin: 0; }
+.hofchronik-liste .hofchronik-neu { border-top-color: var(--color-terracotta); }
+.hofchronik-neu .hofchronik-jahr { color: var(--color-terracotta); }
+
+/* --- Was euch erwartet --- */
+.start-erwartet-kopf {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.5rem 1.5rem;
+  margin-bottom: var(--spacing-md);
+}
+.start-textlink {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.start-textlink:hover { color: var(--color-terracotta); }
+.start-karten {
+  display: grid;
+  gap: var(--spacing-md) 1.5rem;
+}
+.start-karte {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  color: var(--color-text);
+}
+.start-karte img,
+.start-karte-platzhalter {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+  transition: transform var(--transition-med);
+}
+.start-karte-platzhalter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  text-align: center;
+  background-color: var(--color-cream);
+  border: 1px dashed var(--color-border);
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+}
+.start-karte h3 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin: 0.25rem 0 0;
+}
+.start-karte p { margin: 0; font-size: 1rem; line-height: 1.6; }
+.start-karte:hover h3 { color: var(--color-primary); }
+.start-karte:hover img,
+.start-karte:hover .start-karte-platzhalter { transform: translateY(-3px); }
+
+/* --- Gästestimmen --- */
+.start-stimmen-kopf { max-width: 640px; margin-bottom: var(--spacing-md); }
+.start-stimmen-kopf h2 {
+  font-size: clamp(1.8rem, 3.2vw, 2.75rem);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.start-stimmen-kopf p { margin: 0; color: var(--color-text-light); }
+.start-stimmen-grid { display: grid; gap: 1.5rem; }
+.start-stimme {
+  margin: 0;
+  background-color: var(--color-white);
+  border-radius: 6px;
+  padding: 1.75rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.25rem;
+}
+.start-stimme blockquote {
+  margin: 0;
+  font-family: var(--font-heading);
+  font-style: italic;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--color-dark);
+}
+.start-stimme figcaption {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-light);
+}
+
+/* --- Direkt buchen --- */
+.start-cta {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  padding-block: var(--spacing-lg);
+}
+.start-cta-inhalt {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+.start-cta h2 {
+  color: var(--color-white);
+  font-size: clamp(1.7rem, 3vw, 2.5rem);
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+.start-cta p { margin: 0; color: var(--color-weiss-90); }
+.start-cta-buttons { display: flex; flex-wrap: wrap; gap: 0.75rem; }
+.start-btn-hell {
+  background-color: var(--color-white);
+  color: var(--color-primary);
+  border-color: var(--color-white);
+}
+.start-btn-hell:hover {
+  background-color: var(--color-beige);
+  border-color: var(--color-beige);
+  color: var(--color-primary);
+}
+
+@media (min-width: 768px) {
+  .start-hero-overlay {
+    background: linear-gradient(180deg,
+      var(--color-scrim-oben) 0%,
+      transparent 30%,
+      transparent 50%,
+      var(--color-scrim-unten) 100%);
+  }
+  .start-hero-inhalt {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: space-between;
+    padding-bottom: 4.5rem;
+  }
+  .start-hero-bewertung {
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.3rem;
+    text-align: right;
+    flex: none;
+  }
+  .start-hero-note { font-size: 2.75rem; }
+  .start-karten,
+  .start-stimmen-grid,
+  .hofchronik-liste { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (min-width: 1024px) {
+  .start-intro { padding-block: var(--spacing-xl); }
+  .start-intro-grid { grid-template-columns: 1fr 1fr; gap: var(--spacing-xl); }
+  .start-karten,
+  .start-stimmen-grid,
+  .hofchronik-liste { grid-template-columns: repeat(4, 1fr); }
+  .hofchronik-liste { gap: 2.5rem; }
+  .start-erwartet { padding-block: var(--spacing-xl); }
+  .start-cta-inhalt {
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .start-cta-buttons { flex: none; }
+  .start-hero h1 { font-size: clamp(3rem, 5.6vw, 4.5rem); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .start-karte img,
+  .start-karte-platzhalter { transition: none; }
+}
+
+/* ============================================================
+   43. LINIEN-ICONS & KLEINE ERGÄNZUNGEN
+   Ersetzen die früheren Emojis (Bauernhof, See, Umgebung, Workation).
+   Größe über die font-size des umgebenden Elements (1em).
+   ============================================================ */
+.linien-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  vertical-align: -0.125em;
+  color: var(--color-primary);
+}
+/* Auf farbigen Kacheln (Jahreszeiten am See) weiß lassen */
+.saison-item .linien-icon,
+[style*="color:white"] > .linien-icon { color: inherit; }
+.highlight-icon .linien-icon { font-size: 2.5rem; }
+.tagesplan-icon .linien-icon { font-size: 1.35rem; vertical-align: -0.2em; }
+
+.alpbachtal-card-hinweis {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--color-text-light);
+}
+
+.see-route-bild {
+  width: 100%;
+  height: 320px;
+  object-fit: cover;
+  border-radius: var(--border-radius-lg);
+}
+
+/* Foto-Platzhalter neutral statt bunter Farbverläufe – überschreibt die
+   Inline-Farben, bis echte Fotos eingesetzt sind */
+.img-placeholder {
+  background: var(--color-cream) !important;
+  border: 1px dashed var(--color-border);
+  color: var(--color-text-light);
+}
+.img-placeholder strong { color: var(--color-dark); }
+
+/* Überschriften: etwas Luft zum Text darunter, seit der Zierstrich fehlt */
+.section-header h2 { margin-bottom: 0.75rem; }
+
+/* Sagen-Kasten und Alpbachtal-Card-Kasten: ruhiger, bündig mit der Überschrift */
+.legende-box {
+  background: var(--color-white);
+  border-left-color: var(--color-terracotta);
+  max-width: 820px;
+  margin-inline: 0;
+}
+.alpbachtal-card-box h3 { color: var(--color-primary); }
+.alpbachtal-card-box {
+  background: var(--color-white);
+  border-left-color: var(--color-primary);
+}
+
+/* ============================================================
+   44. BARRIEREFREIHEIT & BUCHUNGSBEREICH (Herbst 2026)
+   - Mindestschriftgrößen für Fließ- und Hinweistexte
+   - Türkis nur noch als Flächen-/Akzentfarbe, nicht für Text
+   - Sichtbarer Tastatur-Fokus, „Zum Inhalt springen“-Link
+   - Buchungsbereich auf preise.html: Kalender + Anfrageformular
+   ============================================================ */
+
+/* Kleine Texte: nicht unter ~15 px (0.9rem bei 17 px Grundschrift) */
+.testimonial-origin, .equipment-item span:last-child, .room-card p,
+.sehens-info p, .sehens-distance, .zahlung-item p, .form-hint, .form-dsgvo,
+.footer-bottom p, .footer-links a, .breadcrumb, .usp-kachel-link,
+.speedtest-sub, .legende-box cite, .cal-legend-item, .cal-hint,
+.beispiel-card .bsp-pro-nacht, .start-hero-bewertung, .start-stimme figcaption,
+.alpbachtal-card-hinweis, .preis-badge {
+  font-size: 0.9rem;
+}
+.cal-day { font-size: 0.95rem; }
+.cal-weekday { font-size: 0.8rem; }
+.form-group label { font-size: 1rem; }
+.form-group input,
+.form-group textarea,
+.form-group select { font-size: 1rem; min-height: 48px; }
+.form-hint { opacity: 1; color: var(--color-text-light); }
+
+/* Türkis-Text auf hellem Grund war zu kontrastarm (unter 2:1) */
+.testimonial-author,
+.zimmer-subtitle,
+.vergleich-ideal,
+.legende-box cite { color: var(--color-primary); }
+.detail-list li::before,
+.alpbachtal-card-features li::before { color: var(--color-primary); }
+
+/* Sichtbarer Fokus für Tastaturbedienung – überall gleich */
+:focus-visible {
+  outline: 3px solid var(--color-terracotta);
+  outline-offset: 3px;
+  border-radius: 4px;
+}
+.page-hero :focus-visible,
+.start-hero :focus-visible,
+.start-cta :focus-visible,
+.site-footer :focus-visible,
+.site-header:not(.scrolled) :focus-visible {
+  outline-color: var(--color-white);
+}
+
+/* „Zum Inhalt springen“ – erscheint erst beim Tabben */
+.skip-link {
+  position: absolute;
+  left: 1rem;
+  top: -100px;
+  z-index: 2000;
+  background: var(--color-primary);
+  color: var(--color-white);
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--border-radius);
+  font-weight: 700;
+}
+.skip-link:focus { top: 1rem; color: var(--color-white); }
+
+/* Formular-Meldungen: bleiben stehen, klar lesbar */
+.form-message {
+  margin-top: 1rem;
+  padding: 1rem 1.1rem;
+  border-radius: var(--border-radius);
+  font-weight: 700;
+  font-size: 1rem;
+  line-height: 1.5;
+  border-left: 5px solid;
+}
+.form-message:focus { outline: none; }
+.form-message--success { background: #E8F1EC; color: var(--color-primary); border-left-color: var(--color-primary); }
+.form-message--error   { background: #FBEDEA; color: #8A2E1C; border-left-color: #B3432A; }
+
+/* Pflicht-/Optional-Kennzeichnung in Worten statt nur „*“ */
+.form-group label .pflicht,
+.form-group label .optional {
+  font-weight: 400;
+  color: var(--color-text-light);
+  font-size: 0.9rem;
+}
+
+/* --- Buchungsbereich (preise.html#buchung) --- */
+.buchung-grid {
+  display: grid;
+  gap: var(--spacing-md);
+  align-items: start;
+}
+.buchung-karte {
+  background: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  padding: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+.buchung-schritt {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 1.35rem;
+  margin-bottom: 1.25rem;
+}
+.buchung-schritt span {
+  flex: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: var(--color-white);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.buchung-hinweis {
+  font-size: 0.9rem;
+  color: var(--color-text-light);
+  margin: 1rem 0 0;
+}
+.buchung-senden { width: 100%; margin-top: 1.25rem; padding: 1rem; font-size: 1rem; }
+.form-zeile { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+
+.kalender-auswahl {
+  margin: 1rem 0 0;
+  padding: 0.85rem 1rem;
+  border-radius: var(--border-radius);
+  background: var(--color-cream);
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.kalender-auswahl:empty { display: none; }
+.kalender-auswahl--fehler { background: #FBEDEA; color: #8A2E1C; }
+
+/* Kalendertage als Schaltflächen (Auswahlmodus) */
+button.cal-day {
+  border: 0;
+  width: 100%;
+  font-family: var(--font-body);
+  cursor: pointer;
+  min-height: 40px;
+}
+button.cal-day--free:hover { background: rgba(47, 88, 72, 0.18); }
+button.cal-day--booked { cursor: not-allowed; }
+.cal-day--free { background: rgba(121, 192, 188, 0.22); color: var(--color-primary); }
+.cal-day--booked { color: var(--color-text-light); }
+.cal-day--zwischen { background: rgba(47, 88, 72, 0.18); color: var(--color-primary); text-decoration: none; }
+.cal-day--anreise,
+.cal-day--abreise { background: var(--color-primary) !important; color: var(--color-white) !important; text-decoration: none; }
+.cal-dot--gewaehlt { background: var(--color-primary); }
+.cal-nav-label { font-weight: 700; }
+
+@media (min-width: 1024px) {
+  .buchung-grid { grid-template-columns: 1.15fr 1fr; }
+  .buchung-karte { padding: 2rem; }
+}
+
+/* --- Handy: eine Leiste statt drei schwebender Elemente --- */
+.bottom-tab-bar-inner { grid-template-columns: repeat(5, 1fr); }
+.bottom-tab-item { font-size: 0.72rem; text-transform: none; letter-spacing: 0; min-height: 48px; }
+.bottom-tab-item--buchen {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+.bottom-tab-item--buchen:hover,
+.bottom-tab-item--buchen:focus-visible { color: var(--color-white); background-color: var(--color-terracotta); }
+@media (max-width: 767px) {
+  /* WhatsApp steckt am Handy in der Leiste – der runde Knopf würde Inhalt verdecken */
+  .whatsapp-btn { display: none; }
+  /* Platz für die Leiste, damit der Footer nicht verdeckt wird */
+  body { padding-bottom: 64px; }
+}
+
+/* Buchungsbereich: nichts darf am Handy seitlich überstehen */
+.buchung-grid { grid-template-columns: minmax(0, 1fr); }
+.buchung-karte { min-width: 0; }
+.buchung-karte .cal-grid { grid-template-columns: repeat(7, minmax(0, 1fr)); }
+.buchung-karte .contact-form { padding: 0; background: none; box-shadow: none; border: 0; }
+@media (max-width: 767px) {
+  .buchung-karte { padding: 1rem; }
+  button.cal-day { min-height: 38px; }
+}
+@media (min-width: 1024px) {
+  .buchung-grid { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); }
+}
+@media (max-width: 767px) {
+  /* Gebührentabelle am Handy seitlich scrollbar statt über den Rand */
+  .zusatz-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+/* Einblend-Animationen (slide-left/right) dürfen keinen Querscroll erzeugen */
+html, body { overflow-x: clip; }
+.form-zeile { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.form-zeile input { min-width: 0; }
+.buchung-karte .cal-nav-label { font-size: 1rem; text-align: center; }
+
+/* ============================================================
+   45. PREISSEITE – fünf Saisonen & Abschnitt „Herbst & Frühling“
+   ============================================================ */
+.preise-grid--fuenf .preis-card { margin: 0; }
+.preise-grid--fuenf { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 768px) {
+  .preise-grid--fuenf { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (min-width: 1024px) {
+  .preise-grid--fuenf { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+.preis-tipp {
+  display: inline-block;
+  margin-bottom: 0.4rem;
+  padding: 0.2rem 0.7rem;
+  border-radius: 999px;
+  background: var(--color-terracotta);
+  color: var(--color-white);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.preis-details a { font-weight: 700; color: var(--color-primary); }
+
+/* Startseite: Herbst & Frühling am Hof */
+.jahreszeiten {
+  background-color: var(--color-cream);
+  padding-block: var(--spacing-lg);
+}
+.jahreszeiten-grid {
+  display: grid;
+  gap: var(--spacing-md);
+  margin-top: var(--spacing-md);
+}
+.jahreszeit {
+  background: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  padding: 1.75rem;
+  border-top: 4px solid var(--color-primary);
+}
+.jahreszeit--herbst { border-top-color: var(--color-terracotta); }
+.jahreszeit h3 { font-size: 1.5rem; margin-bottom: 0.25rem; }
+.jahreszeit-monate {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-text-light);
+  margin-bottom: 1rem;
+}
+.jahreszeit ul { padding-left: 1.1rem; margin: 0; }
+.jahreszeit li { margin-bottom: 0.5rem; line-height: 1.6; }
+.jahreszeiten-angebot {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-top: var(--spacing-md);
+  padding: 1.5rem;
+  border-radius: var(--border-radius-lg);
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+.jahreszeiten-angebot p { margin: 0; color: var(--color-weiss-90); }
+.jahreszeiten-angebot strong { color: var(--color-white); font-size: 1.25rem; }
+@media (min-width: 768px) {
+  .jahreszeiten-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .jahreszeiten-angebot { flex-direction: row; align-items: center; justify-content: space-between; }
 }

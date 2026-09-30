@@ -17,6 +17,7 @@
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
+  <a class="skip-link" href="#main-content">Zum Inhalt springen</a>
 
   <header class="site-header scrolled" role="banner">
     <div class="nav-container">
@@ -31,15 +32,13 @@
         </div>
       </a>
       <nav class="nav-menu" role="navigation" aria-label="Hauptnavigation">
-        <a href="index.html" class="nav-link">Home</a>
         <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
-        <a href="preise.html" class="nav-link">Preise</a>
         <a href="bauernhof.html" class="nav-link active" aria-current="page">Bauernhof</a>
         <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
         <a href="workation.html" class="nav-link">Workation</a>
-        <a href="umgebung.html" class="nav-link">Umgebung</a>
-        <a href="lage.html" class="nav-link">Lage</a>
+        <a href="lage.html" class="nav-link">Lage &amp; Umgebung</a>
         <a href="kontakt.html" class="nav-link">Kontakt</a>
+        <a href="preise.html" class="nav-link nav-cta">Preise &amp; Buchung</a>
       </nav>
       <button class="hamburger" aria-label="Menü öffnen" aria-expanded="false" aria-controls="nav-overlay">
         <span></span><span></span><span></span>
@@ -54,17 +53,16 @@
     <a href="bauernhof.html" class="nav-link active" aria-current="page">Bauernhof</a>
     <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
     <a href="workation.html" class="nav-link">Workation</a>
-    <a href="umgebung.html" class="nav-link">Umgebung</a>
-    <a href="lage.html" class="nav-link">Lage</a>
+    <a href="lage.html" class="nav-link">Lage &amp; Umgebung</a>
     <a href="kontakt.html" class="nav-link">Kontakt</a>
   </nav>
 
-  <main id="main-content">
+  <main id="main-content" tabindex="-1">
 
     <section class="page-hero" aria-label="Bauernhof und Alpakas">
       <!-- TODO: Foto Alpakas auf Weide mit Bergpanorama (1920x600) -->
       <div class="page-hero-content container">
-        <nav class="breadcrumb" aria-label="Brotkruemelpfad">
+        <nav class="breadcrumb" aria-label="Brotkrümelpfad">
           <a href="index.html">Home</a>
           <span class="breadcrumb-sep" aria-hidden="true">›</span>
           <span aria-current="page">Bauernhof</span>
@@ -91,15 +89,16 @@
             <h2>Leben auf dem Bergbauernhof</h2>
             <div class="divider" style="margin-left:0;"></div>
             <p>Der Hof Kruckenhaus ist ein lebendiger Bergbauernhof inmitten der Tiroler Alpen. Als Gäste wohnt ihr mittendrin: Die Tiere auf den Weiden rund ums Haus gehören zur Kulisse eures Urlaubs, und im Hofladen warten frische Produkte aus eigener Erzeugung.</p>
-            <p>Kathrin und Florian Häusler bewirtschaften den Hof mit Leidenschaft und Herzblut. Der Kruckenhaus ist dabei ein echter, arbeitender Hof und kein Erlebnisbauernhof – Hofführungen oder Mitarbeit am Hof bieten wir nicht an. Dafür bekommt ihr das, was hier am wertvollsten ist: Ruhe, Natur und den Blick auf ein Stück gelebte Tiroler Landwirtschaft. Der Selbstbedienungs-Kühlschrank am Weg zum Berglsteiner See ist ein beliebter Stopp für Einheimische und Gäste gleichermaßen.</p>
+            <p>Kathrin und Florian Häusler bewirtschaften den Hof mit Leidenschaft und Herzblut. Das Kruckenhaus ist dabei ein echter, arbeitender Hof und kein Erlebnisbauernhof – Hofführungen oder Mitarbeit am Hof bieten wir nicht an. Dafür bekommt ihr das, was hier am wertvollsten ist: Ruhe, Natur und den Blick auf ein Stück gelebte Tiroler Landwirtschaft. Der Selbstbedienungs-Kühlschrank am Weg zum Berglsteiner See ist ein beliebter Stopp für Einheimische und Gäste gleichermaßen.</p>
+            <p><strong>Gut zu wissen:</strong> Das Kruckenhaus ist ein arbeitender Hof, auf dem auch unsere Kinder groß werden. Im Sommer wird Heu gemacht und der Traktor ist unterwegs, tagsüber hört man auch einmal Kinderstimmen. Hinter dem Haus führt der Wanderweg zum Reintalersee vorbei – vor allem im Sommer und Herbst grüßen dort am Tag einige Wanderer. Autos fahren keine vorbei, die Zufahrt endet bei uns am Hof. Wer echtes Hofleben mag, ist bei uns richtig.</p>
             <div style="display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;margin:1.5rem 0;">
               <div style="background:var(--color-cream);padding:1rem;border-radius:8px;text-align:center;">
                 <strong style="font-size:2rem;color:var(--color-primary);font-family:var(--font-heading);">500</strong>
-                <div style="font-size:0.85rem;">Legehennen</div>
+                <div style="font-size:0.95rem;">Legehennen</div>
               </div>
               <div style="background:var(--color-cream);padding:1rem;border-radius:8px;text-align:center;">
                 <strong style="font-size:2rem;color:var(--color-primary);font-family:var(--font-heading);">3</strong>
-                <div style="font-size:0.85rem;">Alpaka-Stuten</div>
+                <div style="font-size:0.95rem;">Alpaka-Stuten</div>
               </div>
             </div>
           </div>
@@ -118,7 +117,7 @@
 
         <div class="intro-grid" style="margin-bottom:2rem;">
           <div class="intro-text slide-left">
-            <p>Seit März 2026 leben drei Alpaka-Stuten bei uns am Hof. Die neugierigen Tiere weiden direkt neben dem Haus – ihr leises Summen und ihre sanfte Art gehören mittlerweile genauso zum Kruckenhaus wie der Blick aufs Rofangebirge.</p>
+            <p>Seit März 2026 leben drei Alpaka-Stuten bei uns am Hof. Die neugierigen Tiere weiden direkt neben dem Haus – ihre ruhige, sanfte Art gehört mittlerweile genauso zum Kruckenhaus wie der Blick auf die Tiroler Bergwelt.</p>
             <p>Beobachten könnt ihr sie ganz bequem von der Terrasse der Ferienwohnung aus oder im Vorbeigehen am Weg zum Berglsteiner See.</p>
             <!-- TODO: Neuigkeiten-Kasten wieder einsetzen, sobald es etwas Aktuelles gibt
                  (z. B. Jungtiere, Namen der Stuten). Der alte Text „Jungtiere im April
@@ -161,26 +160,26 @@
       <div class="container">
         <div class="section-header slide-up">
           <span class="section-label">Viel Leben auf dem Hof</span>
-          <h2>Weitere Tiere am Kruckenhaus</h2>
+          <h2>Weitere Tiere beim Kruckenhaus</h2>
           <div class="divider"></div>
         </div>
         <div class="features-list">
           <article class="feature-item slide-up delay-1">
-            <span class="feature-icon" aria-hidden="true" style="font-size:2rem;">&#128020;</span>
+            <span class="feature-icon" aria-hidden="true" style="font-size:2rem;"><svg class="linien-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c-3.5 0-6 5.2-6 9.5a6 6 0 0012 0C18 8.2 15.5 3 12 3z"/></svg></span>
             <div>
               <h4>500 Legehennen</h4>
               <p>Frische Eier täglich – direkt aus dem Hofladen am Weg zum Berglsteiner See. Die Hühner liefern täglich frische Eier.</p>
             </div>
           </article>
           <article class="feature-item slide-up delay-2">
-            <span class="feature-icon" aria-hidden="true" style="font-size:2rem;">&#128017;</span>
+            <span class="feature-icon" aria-hidden="true" style="font-size:2rem;"><svg class="linien-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15a4.5 4.5 0 004.5 4.5H18a3.75 3.75 0 001.332-7.257 3 3 0 00-3.758-3.848 5.25 5.25 0 00-10.233 2.33A4.502 4.502 0 002.25 15z"/></svg></span>
             <div>
               <h4>Schafe</h4>
               <p>Die Schafe weiden auf den saftigen Almwiesen rund um den Hof. Im Frühling und Sommer sind sie ein zauberhafter Anblick auf den Bergwiesen.</p>
             </div>
           </article>
           <article class="feature-item slide-up delay-3">
-            <span class="feature-icon" aria-hidden="true" style="font-size:2rem;">&#128004;</span>
+            <span class="feature-icon" aria-hidden="true" style="font-size:2rem;"><svg class="linien-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M2.25 19.5l6.75-12 4.5 7.5 3-4.5 5.25 9H2.25z"/></svg></span>
             <div>
               <h4>Rinder</h4>
               <p>Echte Tiroler Almwirtschaft – unsere Rinder geniessen die frische Bergluft und die saftigen Kräuterwiesen rund um Breitenbach am Inn.</p>
@@ -201,29 +200,29 @@
             <p>Am Weg zum Berglsteiner See befindet sich unser Selbstbedienungs-Kühlschrank – ein beliebter Stopp für alle, die auf dem Wanderweg vorbeikommen. Rund um die Uhr geöffnet, bezahlt wird nach Vertrauensprinzip.</p>
             <ul style="list-style:none;padding:0;margin:1.5rem 0;display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
               <li style="background:var(--color-white);padding:1rem;border-radius:8px;text-align:center;box-shadow:var(--shadow-sm);">
-                <span style="font-size:1.8rem;display:block;">&#129381;</span>
+                <span style="font-size:1.8rem;display:block;"><svg class="linien-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c-3.5 0-6 5.2-6 9.5a6 6 0 0012 0C18 8.2 15.5 3 12 3z"/></svg></span>
                 <strong>Frische Eier</strong>
-                <div style="font-size:0.85rem;">Direkt von unseren 500 Legehennen</div>
+                <div style="font-size:0.95rem;">Direkt von unseren 500 Legehennen</div>
               </li>
               <li style="background:var(--color-white);padding:1rem;border-radius:8px;text-align:center;box-shadow:var(--shadow-sm);">
-                <span style="font-size:1.8rem;display:block;">&#127837;</span>
+                <span style="font-size:1.8rem;display:block;"><svg class="linien-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 11.25h18a9 9 0 01-18 0zM8.25 7.5c0-1.2 1.2-2 1.2-3.25M12 7.5c0-1.2 1.2-2 1.2-3.25M15.75 7.5c0-1.2 1.2-2 1.2-3.25"/></svg></span>
                 <strong>Nudeln</strong>
-                <div style="font-size:0.85rem;">Hausgemacht nach Tiroler Rezept</div>
+                <div style="font-size:0.95rem;">Hausgemacht nach Tiroler Rezept</div>
               </li>
               <li style="background:var(--color-white);padding:1rem;border-radius:8px;text-align:center;box-shadow:var(--shadow-sm);">
-                <span style="font-size:1.8rem;display:block;">&#127822;</span>
+                <span style="font-size:1.8rem;display:block;"><svg class="linien-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 7.5c-3-2-7.5-1-7.5 4 0 5 3 9 5.25 9 1.1 0 1.5-.6 2.25-.6s1.15.6 2.25.6c2.25 0 5.25-4 5.25-9 0-5-4.5-6-7.5-4zM12 7.5c0-2 1-3.75 3-4.5"/></svg></span>
                 <strong>Marmeladen</strong>
-                <div style="font-size:0.85rem;">Aus heimischem Obst</div>
+                <div style="font-size:0.95rem;">Aus heimischem Obst</div>
               </li>
               <li style="background:var(--color-white);padding:1rem;border-radius:8px;text-align:center;box-shadow:var(--shadow-sm);">
-                <span style="font-size:1.8rem;display:block;">&#127864;</span>
+                <span style="font-size:1.8rem;display:block;"><svg class="linien-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M5.25 4.5h13.5L12 12 5.25 4.5zM12 12v7.5M8.25 19.5h7.5"/></svg></span>
                 <strong>Liköre &amp; Schnäpse</strong>
-                <div style="font-size:0.85rem;">Traditionelle Tiroler Destillate</div>
+                <div style="font-size:0.95rem;">Traditionelle Tiroler Destillate</div>
               </li>
               <li style="background:var(--color-white);padding:1rem;border-radius:8px;text-align:center;box-shadow:var(--shadow-sm);">
-                <span style="font-size:1.8rem;display:block;">&#129385;</span>
+                <span style="font-size:1.8rem;display:block;"><svg class="linien-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M15.362 5.214A8.252 8.252 0 0112 21 8.25 8.25 0 016.038 7.048 8.287 8.287 0 009 9.6a8.983 8.983 0 013.361-6.867 8.21 8.21 0 003 2.48zM12 18a3.75 3.75 0 00.495-7.467 5.99 5.99 0 00-1.925 3.546 5.974 5.974 0 01-2.133-1A3.75 3.75 0 0012 18z"/></svg></span>
                 <strong>Fleisch vom Hof</strong>
-                <div style="font-size:0.85rem;">Steaks und Hühnerfilet, tiefgekühlt</div>
+                <div style="font-size:0.95rem;">Steaks und Hühnerfilet, tiefgekühlt</div>
               </li>
             </ul>
             <p style="font-size:0.9rem;">Eier und Nudeln gibt es das ganze Jahr. Marmeladen,
@@ -252,17 +251,17 @@
         </div>
         <div class="highlights-grid" style="grid-template-columns:repeat(auto-fit,minmax(280px,1fr));">
           <article class="highlight-card slide-up delay-1">
-            <span class="highlight-icon" aria-hidden="true">&#129381;</span>
+            <span class="highlight-icon" aria-hidden="true"><svg class="linien-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c-3.5 0-6 5.2-6 9.5a6 6 0 0012 0C18 8.2 15.5 3 12 3z"/></svg></span>
             <h3>Frische Eier</h3>
             <p>Jeden Morgen frische Eier von unseren Hennen – rund um die Uhr im Selbstbedienungs-Hofladen erhältlich. Frischer geht Frühstück nicht.</p>
           </article>
           <article class="highlight-card slide-up delay-2">
-            <span class="highlight-icon" aria-hidden="true">&#129422;</span>
+            <span class="highlight-icon" aria-hidden="true"><svg class="linien-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z"/></svg></span>
             <h3>Alpakas auf der Weide</h3>
             <p>Die Alpakas weiden direkt am Hof. Wer mag, schaut ihnen beim Morgenkaffee von der Terrasse aus zu oder grüßt im Vorbeigehen auf dem Weg zum See.</p>
           </article>
           <article class="highlight-card slide-up delay-3">
-            <span class="highlight-icon" aria-hidden="true">&#127807;</span>
+            <span class="highlight-icon" aria-hidden="true"><svg class="linien-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M4.5 19.5c0-8.25 5.25-13.5 15-15-1.5 9.75-6.75 15-15 15zm0 0l7.5-7.5"/></svg></span>
             <h3>Frische Hofluft</h3>
             <p>Morgens aufwachen, frische Bergluft atmen, den Blick über Weiden und Berge schweifen lassen – der perfekte Start in einen Urlaubstag in den Tiroler Alpen.</p>
           </article>
@@ -279,7 +278,7 @@
           <div class="divider"></div>
           <p style="max-width:600px;margin:0 auto var(--spacing-md);">Urlaub in Alleinlage am Tiroler Bergbauernhof – mit frischen Hofprodukten, Alpakas auf der Weide und dem Berglsteiner See nur 15 Gehminuten entfernt.</p>
           <a href="ferienwohnung.html" class="btn btn-primary" style="margin-right:1rem;">Ferienwohnung ansehen</a>
-          <a href="kontakt.html" class="btn btn-green">Anfrage senden</a>
+          <a href="preise.html#buchung" class="btn btn-green">Anfrage senden</a>
         </div>
       </div>
     </section>
@@ -291,7 +290,7 @@
       <div class="footer-grid">
         <div class="footer-brand">
           <span class="footer-logo">Kruckenhaus<span>Hof &amp; Ferienwohnung</span></span>
-          <p class="footer-tagline">Ferienwohnung in Alleinlage mit Bergpanorama.<br>Breitenbach am Inn, Alpbachtal Tirol.</p>
+          <p class="footer-tagline">Ferienwohnung in Alleinlage mit Bergpanorama.<br>Breitenbach am Inn, Unterinntal, Tirol.</p>
         </div>
         <div class="footer-nav">
           <h4>Navigation</h4>
@@ -302,8 +301,7 @@
             <li><a href="bauernhof.html">Bauernhof &amp; Alpakas</a></li>
             <li><a href="berglsteiner-see.html">Berglsteiner See</a></li>
             <li><a href="workation.html">Workation</a></li>
-            <li><a href="umgebung.html">Umgebung</a></li>
-            <li><a href="lage.html">Lage &amp; Anfahrt</a></li>
+            <li><a href="lage.html">Lage &amp; Umgebung</a></li>
             <li><a href="kontakt.html">Kontakt</a></li>
           </ul>
         </div>
@@ -339,34 +337,32 @@
       <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
     </svg>
   </a>
-  <button class="back-to-top" aria-label="Zurueck nach oben" title="Zurueck nach oben">&#8593;</button>
+  <button class="back-to-top" aria-label="Zurück nach oben" title="Zurück nach oben">&#8593;</button>
 
   <script src="js/main.js"></script>
 
-  <!-- FLOATING ACTION BUTTON "Jetzt buchen" (Mobile) -->
-  <a href="kontakt.html" class="fab-book" aria-label="Jetzt buchen">
-    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
-    Jetzt buchen
-  </a>
-
   <!-- BOTTOM TAB BAR (Mobile) -->
-  <nav class="bottom-tab-bar" id="bottomTabBar" role="navigation" aria-label="Schnellnavigation">
+  <nav class="bottom-tab-bar" id="bottomTabBar" aria-label="Schnellnavigation">
     <div class="bottom-tab-bar-inner">
-      <a href="ferienwohnung.html" class="bottom-tab-item" aria-label="Ferienwohnung">
+      <a href="ferienwohnung.html" class="bottom-tab-item">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
-        Fewo
+        Wohnung
       </a>
-      <a href="preise.html" class="bottom-tab-item" aria-label="Preise">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M14.25 7.756a4.5 4.5 0 100 8.488M7.5 10.5h5.25m-5.25 3h5.25M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-        Preise
-      </a>
-      <a href="bauernhof.html" class="bottom-tab-item" aria-label="Bauernhof &amp; Alpakas">
+      <a href="bauernhof.html" class="bottom-tab-item">
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
         Hof
       </a>
-      <a href="lage.html" class="bottom-tab-item" aria-label="Lage &amp; Umgebung">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+      <a href="lage.html" class="bottom-tab-item">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
         Lage
+      </a>
+      <a href="https://wa.me/436642166181" class="bottom-tab-item" target="_blank" rel="noopener">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8.625 12a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H8.25m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0H12m4.125 0a.375.375 0 11-.75 0 .375.375 0 01.75 0zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 01-2.555-.337A5.972 5.972 0 015.41 20.97a5.969 5.969 0 01-.474-.065 4.48 4.48 0 00.978-2.025c.09-.457-.133-.901-.467-1.226C3.93 16.178 3 14.189 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25z"/></svg>
+        WhatsApp
+      </a>
+      <a href="preise.html#buchung" class="bottom-tab-item bottom-tab-item--buchen">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+        Anfragen
       </a>
     </div>
   </nav>
