@@ -93,7 +93,24 @@ async function sendEmail(env, data) {
     }),
   });
 
+  if (!res.ok) await resendFehlerProtokollieren(res);
   return { sent: res.ok, reason: res.ok ? null : `resend-http-${res.status}` };
+}
+
+// Abgelehnte Mails sichtbar machen (Cloudflare → Deployments → Functions →
+// Real-time Logs). Nur Statuscode und Resend-Fehlertext, keine Gastdaten.
+async function resendFehlerProtokollieren(res) {
+  let fehler = {};
+  try {
+    fehler = await res.json();
+  } catch {
+    // Antwort war kein JSON – Statuscode reicht dann
+  }
+  console.error(
+    `Resend hat die E-Mail abgelehnt: HTTP ${res.status}` +
+      (fehler.name ? ` (${fehler.name})` : '') +
+      (fehler.message ? ` – ${String(fehler.message).slice(0, 200)}` : '')
+  );
 }
 
 export async function onRequestPost({ request, env }) {
