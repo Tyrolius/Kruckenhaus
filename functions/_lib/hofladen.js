@@ -356,6 +356,16 @@ export async function mailSenden(env, { an, betreff, html, antwortAn }) {
         ...(antwortAn ? { reply_to: antwortAn } : {}),
       }),
     });
+    if (!antwort.ok) {
+      // Abgelehnte Mails sichtbar machen (Real-time Logs der Functions).
+      // Nur Statuscode und Resend-Fehlertext, keine Kundendaten.
+      const fehler = await antwort.json().catch(() => ({}));
+      console.error(
+        `Resend hat die E-Mail abgelehnt: HTTP ${antwort.status}` +
+          (fehler.name ? ` (${fehler.name})` : '') +
+          (fehler.message ? ` – ${String(fehler.message).slice(0, 200)}` : '')
+      );
+    }
     return { gesendet: antwort.ok, grund: antwort.ok ? null : `resend-http-${antwort.status}` };
   } catch (fehler) {
     console.error('E-Mail-Versand fehlgeschlagen:', fehler);
