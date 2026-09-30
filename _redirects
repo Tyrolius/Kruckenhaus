@@ -5,6 +5,31 @@
 # öffentlich unter kruckenhaus.at/docs/... abrufbar sein. Cloudflare
 # Pages wendet Redirects vor statischen Dateien an, daher greift die
 # Regel auch, wenn die Datei existiert.
+# ------------------------------------------------------------
+# VORSCHAU-MODUS (solange Fotos fehlen)
+# Die Startseite zeigt vorschau.html, alle Inhaltsseiten leiten
+# vorübergehend (302) dorthin. Impressum, Datenschutz, Hofladen,
+# Verwaltung und /api bleiben erreichbar.
+# LIVEGANG DER GANZEN WEBSITE: diesen Block bis zur Linie unten löschen.
+/ /vorschau 200
+/index.html / 302
+/index / 302
+/ferienwohnung.html / 302
+/ferienwohnung / 302
+/preise.html / 302
+/preise / 302
+/bauernhof.html / 302
+/bauernhof / 302
+/berglsteiner-see.html / 302
+/berglsteiner-see / 302
+/workation.html / 302
+/workation / 302
+/lage.html / 302
+/lage / 302
+/kontakt.html / 302
+/kontakt / 302
+# ------------------------------------------------------------
+
 # Gilt auch für Anleitungen, Konfiguration und Datenbankschemata im
 # Projektstamm: Sie werden mit veröffentlicht, sind aber nur für die Arbeit
 # am Projekt gedacht (Pläne, DNS-Einträge, Datenbank-Kennung).

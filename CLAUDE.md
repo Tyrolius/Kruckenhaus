@@ -51,6 +51,8 @@ functions/_lib/zugang.js   Prüfung der Cloudflare-Access-Anmeldung
 functions/api/verwaltung/  Schnittstelle der Verwaltung (_middleware.js = Zugang)
 verwaltung/                Hofladen-Verwaltung; ?entwurf = Beispielmodus
 hofladen.html + js/hofladen.js   Bestellseite für Kunden (noch noindex, nicht verlinkt)
+vorschau.html              Übergangs-Startseite, solange Fotos fehlen; aktiv über den
+                           Block „VORSCHAU-MODUS“ in _redirects (zum Livegang löschen)
 meine-bestellungen.html + js/meine-bestellungen.js   Ansicht zum persönlichen Link
 functions/api/hofladen/    öffentliche Schnittstelle: Angebot, Bestellung, Voranmeldung, „meine"
 js/qrcode.js               Überweisungs-QR-Code (EPC-QR), eigener Kodierer ohne Bibliothek
@@ -89,7 +91,7 @@ nach sich. Vor dem Abschließen jeweils prüfen:
 
 | Änderung | Überall anpassen |
 |---|---|
-| **Preis** | `js/preise-config.js` (Quelle der Wahrheit) **und** die hartkodierten „ab 120 €"-Stellen in `index.html` (Text, `priceRange`, `makesOffer`-JSON-LD), `ferienwohnung.html`, `preise.html` (og:description), `workation.html` (og:description) **und** `llms.txt` |
+| **Preis** | `js/preise-config.js` (Quelle der Wahrheit) **und** die hartkodierten „ab 120 €"-Stellen in `index.html` (Text, `priceRange`, `makesOffer`-JSON-LD), `ferienwohnung.html`, `preise.html` (og:description), `workation.html` (og:description), `vorschau.html` (solange es sie gibt) **und** `llms.txt` |
 | **Telefon / E-Mail** | alle `.html` (E-Mail steht in 11 Dateien) und `js/main.js` |
 | **Navigationspunkt** | in *jeder* `.html` zweimal: `.nav-menu` (Desktop) und `.nav-overlay` (Mobile); ggf. zusätzlich `.bottom-tab-bar`; dazu `sitemap.xml` |
 | **FAQ-Text** | `kontakt.html` **zweimal**: sichtbar als `<details>` und im FAQPage-JSON-LD im `<head>` – beide identisch halten |

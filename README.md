@@ -238,6 +238,21 @@ inklusive gewünschtem Motiv.
 
 ---
 
+## Vorschau-Modus (solange die Fotos fehlen)
+
+Unter der Startadresse erscheint derzeit **`vorschau.html`**: Drohnenvideo,
+das Wichtigste zur Wohnung, „ab 125 €“ und das Anfrageformular (landet wie
+gewohnt in D1 und per E-Mail bei info@). Alle anderen Inhaltsseiten leiten
+vorübergehend (302) auf die Startseite um; Impressum, Datenschutz, Hofladen,
+Verwaltung und die Schnittstellen bleiben erreichbar.
+
+**Ganze Website live schalten:** In `_redirects` den Block „VORSCHAU-MODUS“
+löschen (von der Linie bis zur Linie) und committen – nach 1–2 Minuten ist die
+richtige Startseite online. `vorschau.html` und der CSS-Abschnitt 46 können
+danach ebenfalls weg.
+
+---
+
 ## Schritt 6: Checkliste vor dem Livegang
 
 - [ ] Testanfrage über das Kontaktformular kommt per E-Mail an (Schritt 2)
