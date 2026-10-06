@@ -125,6 +125,10 @@ async function sendBestaetigung(env, data) {
   const antwortAn = env.CONTACT_TO || 'info@kruckenhaus.at';
   const from = env.CONTACT_FROM || 'Kruckenhaus Website <website@kruckenhaus.at>';
   const name = data.name.slice(0, 60);
+  // Terminanfrage (mit Zeitraum) oder allgemeine Frage, z. B. zum Hof oder Hofladen
+  const mitZeitraum = Boolean(data.anreise && data.abreise);
+  const art = mitZeitraum ? 'Anfrage' : 'Nachricht';
+  const terminHinweis = 'Die Anfrage ist unverbindlich – fix reserviert ist euer Termin erst mit unserer Bestätigung.';
 
   const zeilen = [
     ['Anreise', datumDeutsch(data.anreise)],
@@ -143,9 +147,9 @@ async function sendBestaetigung(env, data) {
   const html =
     `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#2F5848;max-width:560px">` +
     `<p>Hallo ${escapeHtml(name)},</p>` +
-    `<p>danke für eure Anfrage! Sie ist gut bei uns angekommen. Wir melden uns innerhalb von 24 Stunden persönlich bei euch.</p>` +
+    `<p>danke für eure ${art}! Sie ist gut bei uns angekommen. Wir melden uns innerhalb von 24 Stunden persönlich bei euch.</p>` +
     tabelle +
-    `<p>Die Anfrage ist unverbindlich – fix reserviert ist euer Termin erst mit unserer Bestätigung.</p>` +
+    (mitZeitraum ? `<p>${terminHinweis}</p>` : '') +
     `<p>Etwas vergessen oder eilig? Antwortet einfach auf diese E-Mail oder ruft uns an: ` +
     `<a href="tel:+436642166181">+43 664 2166181</a> (auch WhatsApp).</p>` +
     `<p>Liebe Grüße vom Hof<br />Kathrin und Florian Häusler</p>` +
@@ -156,9 +160,9 @@ async function sendBestaetigung(env, data) {
 
   const text =
     `Hallo ${name},\n\n` +
-    `danke für eure Anfrage! Sie ist gut bei uns angekommen. Wir melden uns innerhalb von 24 Stunden persönlich bei euch.\n\n` +
+    `danke für eure ${art}! Sie ist gut bei uns angekommen. Wir melden uns innerhalb von 24 Stunden persönlich bei euch.\n\n` +
     (zeilen.length ? `Eure Angaben:\n${zeilen.map(([k, v]) => `${k}: ${v}`).join('\n')}\n\n` : '') +
-    `Die Anfrage ist unverbindlich – fix reserviert ist euer Termin erst mit unserer Bestätigung.\n\n` +
+    (mitZeitraum ? `${terminHinweis}\n\n` : '') +
     `Etwas vergessen oder eilig? Antwortet einfach auf diese E-Mail oder ruft uns an: +43 664 2166181 (auch WhatsApp).\n\n` +
     `Liebe Grüße vom Hof\nKathrin und Florian Häusler\n\n` +
     `Hof Kruckenhaus · Oberberg 70 · 6252 Breitenbach am Inn · www.kruckenhaus.at\n` +
@@ -168,7 +172,7 @@ async function sendBestaetigung(env, data) {
     from,
     to: data.email,
     reply_to: antwortAn,
-    subject: 'Eure Anfrage beim Hof Kruckenhaus ist angekommen',
+    subject: `Eure ${art} an den Hof Kruckenhaus ist angekommen`,
     html,
     text,
   });
