@@ -261,8 +261,8 @@ danach ebenfalls weg.
 
 - [x] Testanfrage über das Kontaktformular kommt per E-Mail an (Schritt 2)
 - [x] Belegungskalender zeigt die Airbnb-Buchungen (Schritt 3)
-- [ ] `https://www.kruckenhaus.at` lädt mit Schloss-Symbol (Schritt 4)
-- [ ] E-Mail-Empfang (info@kruckenhaus.at) funktioniert nach dem DNS-Umzug noch
+- [x] `https://www.kruckenhaus.at` lädt mit Schloss-Symbol (Schritt 4)
+- [x] E-Mail-Empfang (info@kruckenhaus.at) funktioniert nach dem DNS-Umzug noch
 - [ ] Fotos eingefügt (Schritt 5)
 - [ ] Website einmal komplett am **Handy** durchklicken
 - [ ] **Gästestimmen ersetzen:** Die vier Bewertungen auf der Startseite sind
