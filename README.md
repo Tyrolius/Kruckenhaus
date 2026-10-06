@@ -571,6 +571,9 @@ Startbildschirm hinzufügen – dann wirkt sie wie eine App.
 3. *Übergabe*: beim Kunden Gewichte vom Etikett eintippen, ein Knopf für
    „übergeben + bar kassiert" bzw. „zahlt per Überweisung" (zeigt QR-Code).
    Kunde ohne Bestellung: *+ Verkauf am Hof*. Liefertour mit ↑ ↓ sortieren.
+   Mehrere Abholtage: oben den Tag wählen. Ohne Internet (Schlachthaus):
+   *Abholliste zum Mitnehmen drucken* – Gewichte in die Kästchen schreiben
+   und später bei der Übergabe eintippen.
 4. Überweisungen in der *Übersicht → „übergeben, Geld noch nicht da"* abhaken.
 5. Neue Produkte (z. B. Eier) unter *Sortiment* anlegen.
 

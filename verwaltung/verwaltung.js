@@ -36,6 +36,7 @@ const zustand = {
   produktForm: null,         // Arbeitskopie im Formular „Produkt" (Sortiment)
   stueck: {},                // Übergabe: getippte Gewichte je Position { posId: ['1,85', …] }
   abgabeId: null,            // Übergabe: gerade geöffneter Kunde
+  uebergabeTermin: null,     // Übergabe: nur dieser Termin (null = alle Tage)
   reihenfolge: false,        // Liefertour: Reihenfolge-Modus mit ↑ ↓
   hof: { mengen: {}, stueck: {}, name: '' }, // Verkauf am Hof (Formular)
 };
@@ -517,6 +518,7 @@ function ansichtUebersicht() {
         ${mehr('<a href="#charge-neu">Neue Verkaufsrunde anlegen</a>')}
         ${mehr('<a href="#sortiment">Sortiment – Produkte anlegen und ändern</a>')}
         ${mehr('<button type="button" data-aktion="ankuendigung">Ankündigung für WhatsApp</button>')}
+        ${mehr('<button type="button" data-aktion="listen-drucken">Abhol- und Lieferlisten drucken (alle Tage)</button>')}
         ${mehr('<a href="#zahlungen">Alle Zahlungen</a>')}
         ${mehr(hatGewichtsware ? '<a href="#wiegen">Vorab wiegen und Packzettel drucken</a>' : '<button type="button" data-aktion="drucken">Packzettel drucken</button>')}
         ${mehr('<button type="button" data-aktion="export">Liste für Excel herunterladen</button>')}
@@ -905,9 +907,20 @@ function ansichtUebergabe() {
   const aktiv = bestellungenDerCharge(ch).filter(istAktiv);
   const anzahl = (art) => aktiv.filter((b) => terminArt(b) === art && !b.uebergeben).length;
   const lieferung = zustand.uebergabeArt === 'lieferung';
-  const auswahl = aktiv.filter((b) => terminArt(b) === zustand.uebergabeArt);
-  const ohneTermin = aktiv.filter(ohneTerminOffen).length;
   const termine = ch.termine.filter((t) => t.art === zustand.uebergabeArt);
+  // Mehrere Abhol- bzw. Liefertage: nach Tag auswählbar
+  if (!termine.some((t) => t.id === zustand.uebergabeTermin)) zustand.uebergabeTermin = null;
+  const auswahl = aktiv.filter((b) => terminArt(b) === zustand.uebergabeArt
+    && (!zustand.uebergabeTermin || b.terminId === zustand.uebergabeTermin));
+  const ohneTermin = aktiv.filter(ohneTerminOffen).length;
+  const offenAm = (t) => aktiv.filter((b) => b.terminId === t.id && !b.uebergeben).length;
+  const tage = termine.length > 1
+    ? `<div class="vw-chips" role="group" aria-label="Tag wählen">
+        <button type="button" class="vw-chip" data-aktion="uebergabe-tag" data-wert="" aria-pressed="${!zustand.uebergabeTermin}">Alle Tage</button>
+        ${termine.map((t) => `<button type="button" class="vw-chip" data-aktion="uebergabe-tag" data-wert="${t.id}"
+          aria-pressed="${zustand.uebergabeTermin === t.id}">${datumKurz(t.datum)} (${offenAm(t)})</button>`).join('')}
+      </div>`
+    : '';
 
   const sortiert = lieferung
     ? tourSortieren(auswahl)
@@ -949,13 +962,15 @@ function ansichtUebergabe() {
         <button type="button" data-aktion="uebergabe-art" data-wert="abholung" aria-pressed="${!lieferung}">Abholung <span class="vw-anzahl">${anzahl('abholung')}</span></button>
         <button type="button" data-aktion="uebergabe-art" data-wert="lieferung" aria-pressed="${lieferung}">Liefertour <span class="vw-anzahl">${anzahl('lieferung')}</span></button>
       </div>
-      ${termine.length ? `<p class="vw-klein">${termine.map(terminText).join(' · ')}</p>` : ''}
+      ${tage || (termine.length ? `<p class="vw-klein">${termine.map(terminText).join(' · ')}</p>` : '')}
       ${ohneTermin ? `<p><button type="button" class="vw-link" data-aktion="filter" data-wert="termin-offen">${ohneTermin} Bestellungen ohne Termin ›</button></p>` : ''}
     </div>
     ${routen.map((r) => `<a class="vw-knopf vw-knopf--voll vw-knopf--breit" href="${r.url}" target="_blank" rel="noopener">${esc(r.text)}</a>`).join('')}
     <div class="vw-liste">${liste}</div>
     ${lieferung && offen.length > 1 ? `<p><button type="button" class="vw-link" data-aktion="reihenfolge">${zustand.reihenfolge ? 'Fertig sortiert' : 'Reihenfolge ändern'}</button></p>` : ''}
     ${!lieferung ? '<p><a class="vw-link" href="#hofverkauf">Kunde ohne Bestellung? Verkauf am Hof ›</a></p>' : ''}
+    ${offen.length ? `<p><button type="button" class="vw-link" data-aktion="liste-drucken">${lieferung ? 'Liefertour' : 'Abholliste'} zum Mitnehmen drucken</button>
+      <br><span class="vw-klein">Für Orte ohne Internet: Gewichte auf Papier notieren und später hier eintippen.</span></p>` : ''}
     ${erledigt.length ? `<details class="vw-erledigt"><summary>Erledigt (${erledigt.length})</summary>
       <div class="vw-liste">${erledigt.map((b) => `<button type="button" class="vw-zeile vw-zeile--grau vw-zeile--pfeil" data-aktion="abgabe" data-id="${b.id}">
         <span class="vw-zeile-name">✓ ${esc(kundeVon(b).name)}</span>
@@ -1960,6 +1975,67 @@ function ueberweisungsQr(b, bank, zweck) {
   }
 }
 
+/* Abhol- und Lieferlisten zum Ausdrucken – je Termin eine Seite.
+   Für Orte ohne Internetempfang (Schlachthaus): Gewichte werden in die
+   Kästchen geschrieben und später bei der Übergabe eingetippt. */
+function terminListeHtml(ch, t, bestellungen) {
+  const lieferung = t && t.art === 'lieferung';
+  const liste = lieferung
+    ? tourSortieren(bestellungen)
+    : [...bestellungen].sort((x, y) => kundeVon(x).name.localeCompare(kundeVon(y).name, 'de'));
+  // Summe je Artikel – zum Herrichten
+  const summen = ch.artikel.map((a) => [a, liste.reduce((s, b) => s + b.positionen
+    .filter((p) => p.artikelId === a.id).reduce((x, p) => x + p.menge, 0), 0)]).filter(([, n]) => n);
+  const zeilen = liste.map((b, i) => {
+    const k = kundeVon(b);
+    const artikel = b.positionen.map((p) => {
+      const a = artikelVon(ch, p.artikelId);
+      if (a.art !== 'gewicht') return `<div>${p.menge}× ${esc(a.name)} <span class="vw-druck-klein">(${euro(preisVon(ch, p) * p.menge)})</span></div>`;
+      if (p.gewichtG) return `<div>${p.menge}× ${esc(a.name)} <span class="vw-druck-klein">gewogen ${kg(p.gewichtG)} × ${euro(preisVon(ch, p))}/kg</span></div>`;
+      const kaestchen = Array.from({ length: p.menge }, () => '<span class="vw-druck-kasten"></span>').join('');
+      return `<div>${p.menge}× ${esc(a.name)} <span class="vw-druck-klein">${euro(preisVon(ch, p))}/kg</span>
+        <div class="vw-druck-kaesten">${kaestchen}<span class="vw-druck-klein">kg</span></div></div>`;
+    }).join('');
+    const betrag = bestellBetrag(b);
+    return `<tr>
+      <td class="vw-druck-nr">${lieferung ? i + 1 : '<span class="vw-druck-haken"></span>'}</td>
+      <td><strong>${esc(k.name)}</strong><br><span class="vw-druck-klein">${esc(b.nummer)}${k.telefon ? ` · ${esc(k.telefon)}` : ''}</span>
+        ${lieferung ? `<br>${esc(adresseVon(k))}` : ''}${b.anmerkung ? `<br><em>„${esc(b.anmerkung)}"</em>` : ''}</td>
+      <td>${artikel}</td>
+      <td class="vw-druck-betrag">${betrag.geschaetzt ? '<span class="vw-druck-linie"></span> €' : euro(betrag.cent)}</td>
+      <td>${b.bezahlt ? 'bezahlt' : `${ZAHLARTEN[b.zahlart]}<br><span class="vw-druck-haken"></span> erhalten`}</td>
+    </tr>`;
+  }).join('');
+  return `<section class="vw-druckliste">
+    <h2>${t ? esc(terminText(t)) : 'Ohne Termin'} – ${esc(ch.titel)}</h2>
+    <p class="vw-druck-klein">${liste.length} Bestellungen · Herrichten: ${summen.map(([a, n]) => `${n}× ${esc(a.name)}`).join(' · ')}</p>
+    <table class="vw-druck-tabelle">
+      <thead><tr><th>${lieferung ? 'Nr.' : '✓'}</th><th>Kunde</th><th>Artikel (Gewichte je Stück eintragen)</th><th>Betrag</th><th>Zahlung</th></tr></thead>
+      <tbody>${zeilen}</tbody>
+    </table>
+    <p class="vw-druck-klein">Gedruckt ${new Date().toLocaleString('de-AT', { dateStyle: 'short', timeStyle: 'short' })} – später übergeben/kassiert in der Verwaltung nachtragen.</p>
+  </section>`;
+}
+
+// Druckt die Listen: nur die gerade gewählte Art/den gewählten Tag oder alle Termine
+function listenDrucken(nurAuswahl) {
+  const ch = aktiveCharge();
+  const druck = document.getElementById('vw-druck');
+  if (!druck) return;
+  const offen = bestellungenDerCharge(ch).filter((b) => istAktiv(b) && !b.uebergeben && !istHofverkauf(b));
+  const termine = ch.termine.filter((t) => !nurAuswahl
+    || (t.art === zustand.uebergabeArt && (!zustand.uebergabeTermin || t.id === zustand.uebergabeTermin)));
+  const teile = termine
+    .map((t) => [t, offen.filter((b) => b.terminId === t.id)])
+    .filter(([, liste]) => liste.length)
+    .map(([t, liste]) => terminListeHtml(ch, t, liste));
+  const ohne = offen.filter((b) => !b.terminId);
+  if (!nurAuswahl && ohne.length) teile.push(terminListeHtml(ch, null, ohne));
+  if (!teile.length) return meldung('Keine offenen Bestellungen zum Drucken.');
+  druck.innerHTML = teile.join('');
+  window.print();
+}
+
 function packzettelDrucken() {
   const ch = aktiveCharge();
   const druck = document.getElementById('vw-druck');
@@ -2199,6 +2275,16 @@ function initKlicks() {
       case 'abgabe':
         zustand.abgabeId = el.dataset.id;
         location.hash = '#abgabe';
+        break;
+      case 'uebergabe-tag':
+        zustand.uebergabeTermin = el.dataset.wert || null;
+        zeigen();
+        break;
+      case 'liste-drucken':
+        listenDrucken(true);
+        break;
+      case 'listen-drucken':
+        listenDrucken(false);
         break;
       case 'reihenfolge':
         zustand.reihenfolge = !zustand.reihenfolge;

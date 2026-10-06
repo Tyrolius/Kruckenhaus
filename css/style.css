@@ -4143,6 +4143,33 @@ body.season-winter .winter-image { display: block; }
   }
   .vw-packzettel-qr { flex: 0 0 auto; text-align: center; font-size: 8pt; }
   .vw-packzettel-qr svg { display: block; width: 3.2cm; height: 3.2cm; }
+
+  /* Abhol- und Lieferliste: je Termin eine Seite, Kästchen zum Eintragen */
+  .vw-druckliste { break-after: page; font-size: 10pt; color: var(--color-black); }
+  .vw-druckliste:last-child { break-after: auto; }
+  .vw-druckliste h2 { font-size: 14pt; margin: 0 0 0.2rem; }
+  .vw-druck { width: 100%; max-width: 100%; }
+  .vw-druck-tabelle { width: calc(100% - 2px); border-collapse: collapse; table-layout: fixed; }
+  .vw-druck-tabelle th:nth-child(1) { width: 0.9cm; }
+  .vw-druck-tabelle th:nth-child(2) { width: 4.3cm; }
+  .vw-druck-tabelle th:nth-child(4) { width: 2.3cm; }
+  .vw-druck-tabelle th:nth-child(5) { width: 2.5cm; }
+  .vw-druck-tabelle th,
+  .vw-druck-tabelle td {
+    border: 1px solid var(--color-dark);
+    padding: 0.3rem 0.4rem;
+    vertical-align: top;
+    text-align: left;
+  }
+  .vw-druck-tabelle th { font-size: 9pt; background-color: var(--color-beige); }
+  .vw-druck-tabelle tr { break-inside: avoid; }
+  .vw-druck-nr { width: 1.6rem; text-align: center !important; font-weight: 700; }
+  .vw-druck-betrag { white-space: nowrap; }
+  .vw-druck-klein { font-size: 8.5pt; color: var(--color-text-light); }
+  .vw-druck-kaesten { display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: flex-end; margin: 0.15rem 0 0.3rem; }
+  .vw-druck-kasten { display: inline-block; width: 1.4cm; height: 0.7cm; border: 1px solid var(--color-dark); }
+  .vw-druck-haken { display: inline-block; width: 0.45cm; height: 0.45cm; border: 1px solid var(--color-dark); vertical-align: middle; }
+  .vw-druck-linie { display: inline-block; width: 1.4cm; border-bottom: 1px solid var(--color-dark); }
 }
 
 /* ============================================================

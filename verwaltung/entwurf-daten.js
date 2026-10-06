@@ -45,6 +45,7 @@ const ENTWURF_DATEN = {
       termine: [
         { id: 't1', art: 'lieferung', datum: '2026-10-09', von: '14:00', bis: '18:00' },
         { id: 't2', art: 'abholung', datum: '2026-10-10', von: '09:00', bis: '12:00' },
+        { id: 't5', art: 'abholung', datum: '2026-10-11', von: '16:00', bis: '18:00' },
       ],
       artikel: [
         { id: 'a1', produktId: 'p1', name: 'Masthuhn ganz', art: 'gewicht', preisCent: 1200, kontingent: 40, richtVonG: 1800, richtBisG: 2400 },
@@ -125,11 +126,11 @@ const ENTWURF_DATEN = {
       positionen: [{ artikelId: 'a1', menge: 3 }, { artikelId: 'a10', menge: 2 }] },
     { id: 'b8', nummer: '2026-008', chargeId: 'c1', kundeId: 'k8', quelle: 'web', neu: true, erstellt: '2026-09-19', status: 'vorgemerkt', terminId: 't1', zahlart: 'bar', bezahlt: null, uebergeben: false, anmerkung: 'Lieferung bitte nach 16 Uhr.',
       positionen: [{ artikelId: 'a1', menge: 4 }] },
-    { id: 'b9', nummer: '2026-009', chargeId: 'c1', kundeId: 'k9', quelle: 'persoenlich', erstellt: '2026-09-20', status: 'vorgemerkt', terminId: 't2', zahlart: 'bar', bezahlt: null, uebergeben: false, anmerkung: '',
+    { id: 'b9', nummer: '2026-009', chargeId: 'c1', kundeId: 'k9', quelle: 'persoenlich', erstellt: '2026-09-20', status: 'vorgemerkt', terminId: 't5', zahlart: 'bar', bezahlt: null, uebergeben: false, anmerkung: '',
       positionen: [{ artikelId: 'a1', menge: 2 }, { artikelId: 'a2', menge: 1 }] },
     { id: 'b10', nummer: '2026-010', chargeId: 'c1', kundeId: 'k10', quelle: 'web', erstellt: '2026-09-21', status: 'vorgemerkt', terminId: 't1', zahlart: 'ueberweisung', bezahlt: null, uebergeben: false, anmerkung: '',
       positionen: [{ artikelId: 'a1', menge: 3 }, { artikelId: 'a3', menge: 2 }] },
-    { id: 'b11', nummer: '2026-011', chargeId: 'c1', kundeId: 'k11', quelle: 'whatsapp', erstellt: '2026-09-22', status: 'vorgemerkt', terminId: 't2', zahlart: 'bar', bezahlt: null, uebergeben: false, anmerkung: '',
+    { id: 'b11', nummer: '2026-011', chargeId: 'c1', kundeId: 'k11', quelle: 'whatsapp', erstellt: '2026-09-22', status: 'vorgemerkt', terminId: 't5', zahlart: 'bar', bezahlt: null, uebergeben: false, anmerkung: '',
       positionen: [{ artikelId: 'a1', menge: 4 }, { artikelId: 'a9', menge: 4 }] },
     { id: 'b12', nummer: '2026-012', chargeId: 'c1', kundeId: 'k12', quelle: 'web', neu: true, erstellt: '2026-09-23', status: 'vorgemerkt', terminId: 't2', zahlart: 'ueberweisung', bezahlt: null, uebergeben: false, anmerkung: '',
       positionen: [{ artikelId: 'a1', menge: 3 }, { artikelId: 'a8', menge: 2 }] },
