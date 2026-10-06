@@ -4,7 +4,9 @@
  * Spielt einen typischen Ablauf gegen functions/api/verwaltung/[[pfad]].js
  * durch – so, wie ihn die Oberfläche auslöst: Charge anlegen, Bestellungen
  * erfassen (neuer und bekannter Kunde), Warteliste, wiegen, übergeben,
- * bezahlen, Termin setzen, Voranmeldungen übernehmen, Charge bearbeiten.
+ * bezahlen, Termin setzen, Voranmeldungen übernehmen, Charge bearbeiten,
+ * Neu-Markierung, Übergabe in einem Schritt, Verkauf am Hof, Liefertour,
+ * Sortiment.
  * Die Zugangsprüfung ist in test-hofladen-zugang.mjs getestet.
  *
  * Aufruf (Node 22 oder neuer):  node scripts/test-hofladen-api.mjs
@@ -14,6 +16,7 @@ import { readFileSync } from 'node:fs';
 import assert from 'node:assert/strict';
 import { d1Nachbau } from './_d1-nachbau.mjs';
 import { onRequest } from '../functions/api/verwaltung/[[pfad]].js';
+import { bestellungAnlegen } from '../functions/_lib/hofladen.js';
 
 const { roh, db } = d1Nachbau();
 roh.exec(readFileSync(new URL('../schema-hofladen.sql', import.meta.url), 'utf8'));
@@ -153,6 +156,104 @@ assert.match(r.error, /schon bestellt/);
 r = await api('POST', `charge/${chargeId}`, { ...neu, artikel: [...neu.artikel, { produktId: huhn, preisCent: 1, kontingent: 1 }] });
 assert.match(r.error, /doppelt/);
 console.log('✓ Charge bearbeiten: Preisänderung nur für neue Bestellungen, Termin ergänzt, Schutz vor Löschen/Doppelten');
+
+// Neu-Markierung: nur Website-Bestellungen, bis sie gesehen wurden
+const vorher = ok(await api('GET', 'stand'));
+assert.ok(vorher.bestellungen.every((b) => !b.neu), 'selbst erfasste und übernommene sind nicht neu');
+const webKunde = roh.prepare("INSERT INTO kunden (name) VALUES ('Wera Web') RETURNING id").get().id;
+const web = await bestellungAnlegen(db, { chargeId: Number(chargeId), kundeId: webKunde, quelle: 'web', terminId: Number(tAbh), positionen: [{ chargeArtikelId: Number(aNudeln), menge: 1 }] });
+s = ok(await api('GET', 'stand'));
+assert.equal(s.bestellungen.find((b) => b.id === String(web.id)).neu, true);
+ok(await api('POST', 'gesehen', { ids: [String(web.id)] }));
+s = ok(await api('GET', 'stand'));
+assert.equal(s.bestellungen.find((b) => b.id === String(web.id)).neu, false);
+r = ok(await api('POST', 'voranmeldung', { kunde: { name: 'Willi Web' }, produktId: nudeln, menge: 1, zeitraum: 'naechste', quelle: 'telefon' }));
+roh.prepare("UPDATE voranmeldungen SET quelle = 'web' WHERE id = ?").run(Number(r.voranmeldungId));
+r = ok(await api('POST', 'voranmeldungen/uebernehmen', { chargeId, ids: [r.voranmeldungId] }));
+s = ok(await api('GET', 'stand'));
+assert.equal(s.bestellungen.find((b) => b.id === String(r.bestellungen[0].id)).neu, false, 'übernommene Website-Voranmeldung ist nicht neu');
+console.log('✓ Neu-Markierung: nur Website-Bestellungen, „gesehen" hebt sie auf');
+
+// Menge bei der Übergabe ändern, Artikel dazu, Gewicht wird zurückgesetzt
+const bMaria = s.bestellungen.find((b) => b.kundeId === maria.id && b.status === 'vorgemerkt');
+const posMaria = bMaria.positionen.find((p) => p.artikelId === aHuhn);
+ok(await api('POST', `bestellung/${bMaria.id}`, { aktion: 'gewicht', positionId: posMaria.id, gewichtG: 6000 }));
+const freiHuhn = () => roh.prepare('SELECT frei FROM v_bestand WHERE charge_artikel_id = ?').get(Number(aHuhn)).frei;
+assert.equal(freiHuhn(), 1);
+ok(await api('POST', `bestellung/${bMaria.id}`, { aktion: 'position', artikelId: aHuhn, menge: 4 }));
+assert.equal(freiHuhn(), 0);
+assert.equal(roh.prepare('SELECT gewicht_g FROM bestell_positionen WHERE id = ?').get(Number(posMaria.id)).gewicht_g, null, 'Gewicht passt nicht mehr zur Stückzahl');
+r = await api('POST', `bestellung/${bMaria.id}`, { aktion: 'position', artikelId: aHuhn, menge: 6 });
+assert.deepEqual([r.status, r.error], [400, 'Nicht genug frei – noch 0 verfügbar.']);
+ok(await api('POST', `bestellung/${bMaria.id}`, { aktion: 'position', artikelId: aNudeln, menge: 2 }));
+ok(await api('POST', `bestellung/${bMaria.id}`, { aktion: 'position', artikelId: aNudeln, menge: 0 }));
+assert.equal(roh.prepare('SELECT COUNT(*) AS n FROM bestell_positionen WHERE bestellung_id = ?').get(Number(bMaria.id)).n, 1);
+r = await api('POST', `bestellung/${bMaria.id}`, { aktion: 'position', artikelId: aHuhn, menge: 0 });
+assert.match(r.error, /letzte Artikel/);
+console.log('✓ Menge ändern und Artikel dazu – nie mehr als frei, Gewicht wird zurückgesetzt');
+
+// Übergabe in einem Schritt: Gewichte, übergeben, bar kassiert
+r = await api('POST', `bestellung/${bMaria.id}`, { aktion: 'abschliessen', zahlung: 'bar', gewichte: [] });
+assert.deepEqual([r.status, r.error], [400, 'Bitte alle Gewichte eintragen.']);
+ok(await api('POST', `bestellung/${bMaria.id}`, { aktion: 'abschliessen', zahlung: 'bar', gewichte: [{ positionId: posMaria.id, gewichtG: 7400 }] }));
+let zeileB = roh.prepare('SELECT uebergeben_am, bezahlt_art, zahlart, bezahlt_betrag_cent FROM bestellungen WHERE id = ?').get(Number(bMaria.id));
+assert.ok(zeileB.uebergeben_am);
+assert.deepEqual([zeileB.bezahlt_art, zeileB.zahlart, zeileB.bezahlt_betrag_cent], ['bar', 'bar', 8880], '7,4 kg × 12 €');
+ok(await api('POST', `bestellung/${bVoran}`, { aktion: 'abschliessen', zahlung: 'ueberweisung', gewichte: [] }));
+zeileB = roh.prepare('SELECT uebergeben_am, bezahlt_art, zahlart FROM bestellungen WHERE id = ?').get(Number(bVoran));
+assert.ok(zeileB.uebergeben_am);
+assert.deepEqual([zeileB.bezahlt_art, zeileB.zahlart], [null, 'ueberweisung']);
+r = await api('POST', `bestellung/${b3}`, { aktion: 'abschliessen', zahlung: 'bar', gewichte: [{ positionId: posNudeln.id, gewichtG: 100 }] });
+assert.equal(r.status, 400, 'fremde Position');
+console.log('✓ Übergabe in einem Schritt: Gewichte Pflicht, bar kassiert mit Betrag, Überweisung bleibt offen');
+
+// Verkauf am Hof ohne Vorbestellung
+r = await api('POST', 'hofverkauf', { chargeId, positionen: [{ artikelId: aHuhn, menge: 1 }], zahlung: 'bar' });
+assert.deepEqual([r.status, r.error], [400, 'Bitte alle Gewichte eintragen.']);
+r = await api('POST', 'hofverkauf', { chargeId, positionen: [{ artikelId: aHuhn, menge: 1, gewichtG: 2000 }], zahlung: 'bar' });
+assert.deepEqual([r.status, r.error], [400, 'Nicht genug frei – noch 0 verfügbar.']);
+const freiNudeln = () => roh.prepare('SELECT frei FROM v_bestand WHERE charge_artikel_id = ?').get(Number(aNudeln)).frei;
+const nudelnVorher = freiNudeln();
+r = ok(await api('POST', 'hofverkauf', { chargeId, positionen: [{ artikelId: aNudeln, menge: 2 }], zahlung: 'bar' }));
+const hof1 = roh.prepare(`SELECT b.*, k.name FROM bestellungen b JOIN kunden k ON k.id = b.kunde_id WHERE b.id = ?`).get(Number(r.bestellung.id));
+assert.deepEqual([hof1.name, hof1.quelle, hof1.termin_id, hof1.interne_notiz, hof1.bezahlt_art, hof1.bezahlt_betrag_cent],
+  ['Verkauf am Hof (ohne Namen)', 'persoenlich', null, 'Verkauf am Hof', 'bar', 800]);
+assert.ok(hof1.uebergeben_am);
+assert.equal(freiNudeln(), nudelnVorher - 2);
+r = ok(await api('POST', 'hofverkauf', { chargeId, kunde: { name: 'Lisa Laden' }, positionen: [{ artikelId: aNudeln, menge: 1 }], zahlung: 'ueberweisung' }));
+ok(await api('POST', 'hofverkauf', { chargeId, positionen: [{ artikelId: aNudeln, menge: 1 }], zahlung: 'bar' }));
+s = ok(await api('GET', 'stand'));
+assert.equal(s.kunden.filter((k) => k.name === 'Verkauf am Hof (ohne Namen)').length, 1, 'ein Sammelkunde');
+const lisa = s.bestellungen.find((b) => b.id === String(r.bestellung.id));
+assert.deepEqual([lisa.bezahlt, lisa.zahlart, lisa.uebergeben, lisa.neu], [null, 'ueberweisung', true, false]);
+console.log('✓ Verkauf am Hof: Gewichte Pflicht, nie mehr als frei, Sammelkunde ohne Namen, Überweisung bleibt offen');
+
+// Liefertour-Reihenfolge
+const hans = s.kunden.find((k) => k.name === 'Hans Test');
+ok(await api('POST', 'tour', { kundeIds: [hans.id, maria.id] }));
+s = ok(await api('GET', 'stand'));
+assert.deepEqual([s.kunden.find((k) => k.id === hans.id).tourRang, s.kunden.find((k) => k.id === maria.id).tourRang], [10, 20]);
+ok(await api('POST', 'tour', { kundeIds: [maria.id, hans.id] }));
+s = ok(await api('GET', 'stand'));
+assert.deepEqual([s.kunden.find((k) => k.id === hans.id).tourRang, s.kunden.find((k) => k.id === maria.id).tourRang], [20, 10]);
+console.log('✓ Liefertour-Reihenfolge wird gespeichert und geändert');
+
+// Sortiment: Produkt anlegen, bearbeiten, ausblenden
+r = ok(await api('POST', 'produkt', { name: 'Freilandeier 10 Stück', art: 'stueck', kategorie: 'saison', startpreisCent: 450, allergene: 'Ei' }));
+const eier = r.produktId;
+s = ok(await api('GET', 'stand'));
+assert.deepEqual((({ name, art, kategorie, aktiv, allergene, verwendet }) => ({ name, art, kategorie, aktiv, allergene, verwendet }))(s.produkte.find((p) => p.id === eier)),
+  { name: 'Freilandeier 10 Stück', art: 'stueck', kategorie: 'saison', aktiv: true, allergene: 'Ei', verwendet: false });
+assert.ok(s.preisVorschlaege.some((v) => v.produktId === eier && v.preisCent === 450));
+assert.match((await api('POST', 'produkt', { name: 'freilandeier 10 stück', art: 'stueck' })).error, /gibt es schon/);
+assert.equal((await api('POST', 'produkt', { name: 'Ente', art: 'gewicht' })).status, 400, 'Gewichtsware braucht Richtgewicht');
+ok(await api('POST', 'produkt', { name: 'Ente', art: 'gewicht', kategorie: 'fleisch', richtVonG: 1800, richtBisG: 2500 }));
+assert.match((await api('POST', `produkt/${huhn}`, { name: 'Masthuhn ganz', art: 'stueck', kategorie: 'fleisch' })).error, /schon verkauft/);
+ok(await api('POST', `produkt/${eier}`, { name: 'Freilandeier 6 Stück', art: 'stueck', kategorie: 'saison', startpreisCent: 300, aktiv: false }));
+s = ok(await api('GET', 'stand'));
+assert.deepEqual([s.produkte.find((p) => p.id === eier).name, s.produkte.find((p) => p.id === eier).aktiv], ['Freilandeier 6 Stück', false]);
+assert.ok(!s.preisVorschlaege.some((v) => v.produktId === eier), 'ausgeblendet = kein Vorschlag für neue Verkaufsrunden');
+console.log('✓ Sortiment: anlegen, doppelte Namen, Richtgewicht, Art bei verkauften Produkten gesperrt, ausblenden');
 
 // Schutz und Fehler
 r = await api('POST', 'bestellung', { chargeId }, { typ: 'text/plain' });

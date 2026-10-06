@@ -468,6 +468,8 @@ Liefergebiet ein; sie überspringt Einträge, die es schon gibt.
 | `v_positionen`, `v_bestand`, `v_bestellsummen` | berechnete Beträge, freie Mengen, Summen |
 | `v_letzter_preis` | Preisvorschlag für neue Chargen (Werte der letzten Charge je Produkt) |
 | `voranmeldungen`, `v_voranmeldungen_summe` | unverbindliche Vormerkungen für spätere Chargen und ihre Summe je Zeitraum |
+| `tour_reihenfolge` | selbst festgelegte Reihenfolge der Liefertour je Kunde |
+| `bestellung_gesehen` | Website-Bestellungen, die in der Verwaltung schon geöffnet wurden (sonst „neu") |
 
 Nach Änderungen an Schema, Helfern oder Schnittstelle die Tests laufen lassen
 (Node 22, berühren die echte Datenbank nicht):
@@ -545,6 +547,19 @@ Danach unter *Deployments* die letzte Veröffentlichung erneut ausführen
 **4. Testen:** https://www.kruckenhaus.at/verwaltung/ öffnen → E-Mail-Adresse
 eingeben → Code aus dem Postfach eintragen. Am Handy die Seite zum
 Startbildschirm hinzufügen – dann wirkt sie wie eine App.
+
+**So läuft eine Verkaufsrunde** (in der Verwaltung heißt eine Charge
+„Verkaufsrunde"):
+
+1. *Übersicht → + Neue Verkaufsrunde*: Produkte, Preise, Mengen, Abhol- und
+   Liefertermine; Status „In Vorbereitung", zum Freigeben „Offen".
+2. Website-Bestellungen kommen von selbst (E-Mail an info@ und Markierung
+   „neu"); WhatsApp-/Telefonbestellungen unter *Erfassen*.
+3. *Übergabe*: beim Kunden Gewichte vom Etikett eintippen, ein Knopf für
+   „übergeben + bar kassiert" bzw. „zahlt per Überweisung" (zeigt QR-Code).
+   Kunde ohne Bestellung: *+ Verkauf am Hof*. Liefertour mit ↑ ↓ sortieren.
+4. Überweisungen in der *Übersicht → „übergeben, Geld noch nicht da"* abhaken.
+5. Neue Produkte (z. B. Eier) unter *Sortiment* anlegen.
 
 **Weitere Person freischalten:** Adresse in der Access-Policy (Schritt 2.3)
 **und** in `VERWALTUNG_EMAILS` ergänzen. **Jemanden aussperren:** an beiden

@@ -5137,3 +5137,106 @@ html, body { overflow-x: clip; }
 @media (min-width: 768px) {
   .vorschau-marke { top: var(--spacing-md); left: var(--spacing-md); font-size: 1.75rem; }
 }
+
+/* ============================================================
+   47. VERWALTUNG – Übergabe mit Gewichten, Verkauf am Hof, Sortiment
+   Ergänzt Abschnitt 40. Mobil fünf Menüpunkte (Sortiment nur am PC
+   in der Seitenleiste, am Handy über die Übersicht erreichbar).
+   ============================================================ */
+.vw-nav { grid-template-columns: repeat(5, 1fr); }
+.vw-nav a span { hyphens: manual; line-height: 1.15; }
+
+/* Neue Website-Bestellungen */
+.vw-marke--neu { background-color: var(--color-green); color: var(--color-dark); font-weight: 700; }
+.vw-aufgaben .vw-aufgabe--neu { font-weight: 700; color: var(--color-primary); }
+
+/* Größerer Hauptknopf (Übergeben, Kassieren) */
+.vw-knopf--gross { min-height: 52px; font-size: 1rem; flex: 1 1 100%; }
+.vw-knopfreihe--klein { margin-top: 0.5rem; gap: 0.35rem; }
+
+/* Artikel einer Bestellung bei der Übergabe bzw. beim Verkauf am Hof */
+.vw-pos {
+  border-top: 1px solid var(--color-beige);
+  padding: 0.6rem 0;
+}
+
+.vw-pos-kopf {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.vw-pos .vw-zaehler output { min-width: 1.6rem; text-align: center; font-weight: 700; font-size: 1.1rem; }
+
+/* Ein Feld je Stück für das Gewicht vom Etikett */
+.vw-stueck {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(5.2rem, 1fr));
+  gap: 0.4rem;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.vw-stueck input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  font-size: 1.05rem;
+  text-align: center;
+  background-color: var(--color-white);
+}
+
+.vw-stueck input:focus { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+
+.vw-dazu {
+  width: 100%;
+  min-height: 44px;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px dashed var(--color-primary);
+  border-radius: var(--border-radius);
+  background-color: var(--color-white);
+  color: var(--color-primary);
+  font-size: 0.95rem;
+}
+
+/* Zahlungsinfo mit QR-Code (Dialog) */
+.vw-gross-betrag {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0.25rem 0 0.75rem;
+}
+
+.vw-zahlungsinfo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.vw-zahlungsinfo .vw-packzettel-qr { text-align: center; font-size: 0.75rem; color: var(--color-text-light); }
+.vw-zahlungsinfo .vw-packzettel-qr svg { display: block; width: 180px; height: 180px; }
+
+/* Sortiment */
+.vw-produkt-zeile {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--color-beige);
+}
+
+.vw-zwei-felder { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+#vw-richtgewicht[hidden] { display: none; }
+.vw-auswahl label:has(input:disabled) { opacity: 0.45; }
+
+@media (min-width: 768px) {
+  .vw-produkt-zeile { grid-template-columns: 1fr auto; align-items: center; }
+  .vw-knopf--gross { flex: 1 1 auto; }
+}
+
+@media (min-width: 1024px) {
+  .vw-nav a span { line-height: 1.5; }
+}

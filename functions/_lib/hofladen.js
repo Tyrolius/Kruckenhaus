@@ -111,6 +111,12 @@ const SQL_UEBERBUCHT_ZUR_WARTELISTE =
      WHERE b.nummer = ?1 AND v.frei < 0
    )`;
 
+// Bestellung mit dieser Nummer gilt in der Verwaltung nicht mehr als „neu"
+// (für alles, was die Verwaltung selbst anlegt).
+export const SQL_ALS_GESEHEN =
+  `INSERT OR IGNORE INTO bestellung_gesehen (bestellung_id)
+   SELECT id FROM bestellungen WHERE nummer = ?`;
+
 export class EingabeFehler extends Error {}
 
 /**
@@ -205,7 +211,7 @@ export async function bestellungNachruecken(db, bestellungId) {
    bis sie in eine Charge übernommen werden.
    ------------------------------------------------------------ */
 export const ZEITRAEUME = {
-  naechste: 'nächste Charge',
+  naechste: 'nächste Gelegenheit',
   fruehjahr: 'Frühjahr',
   sommer: 'Sommer',
   herbst: 'Herbst',
@@ -291,7 +297,7 @@ export async function voranmeldungenUebernehmen(db, chargeId, voranmeldungIds) {
          SET status = 'uebernommen', geaendert_am = datetime('now'),
              bestellung_id = (SELECT id FROM bestellungen WHERE nummer = ?)
          WHERE status = 'offen' AND id IN (${k.ids.map(() => '?').join(', ')})`
-      ).bind(nummer, ...k.ids)],
+      ).bind(nummer, ...k.ids), db.prepare(SQL_ALS_GESEHEN).bind(nummer)],
     });
     bestellungen.push({ kundeId, ...erg });
   }

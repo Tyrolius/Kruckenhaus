@@ -167,7 +167,7 @@ function angebotZeigen(daten) {
   if (!daten.chargen.length) {
     ziel.innerHTML = `<div class="hl-leer">
       <p><strong>Gerade ist keine Vorbestellung offen.</strong></p>
-      <p>Die nächste Charge kommt bestimmt – lasst euch gleich <a href="#vormerken">unverbindlich vormerken</a>,
+      <p>Die nächste Gelegenheit kommt bestimmt – lasst euch gleich <a href="#vormerken">unverbindlich vormerken</a>,
         dann melden wir uns, sobald es so weit ist.</p></div>`;
     return;
   }
@@ -351,7 +351,7 @@ function initVoranmeldung() {
       });
       form.outerHTML = `<div class="hl-erfolg">
         <h4>Danke – ihr seid vorgemerkt!</h4>
-        <p>Die Bestätigung ist per E-Mail unterwegs. Sobald die passende Charge feststeht, melden wir uns mit Preis und Termin.</p>
+        <p>Die Bestätigung ist per E-Mail unterwegs. Sobald der passende Termin feststeht, melden wir uns mit Preis und Termin.</p>
         ${erg.link ? `<p><a class="btn btn-primary" href="${esc(erg.link)}">Meine Bestellungen ansehen</a></p>` : ''}
       </div>`;
     } catch (f) {

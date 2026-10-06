@@ -292,6 +292,38 @@ Im Entwurf (Abschnitt 0.1) schon zum Durchklicken: Start, Charge,
 Bestellung erfassen, Wiegen, Packzettel, Abholung, Liefertour, Zahlungen,
 Warteliste, Voranmeldungen, Termin offen, Export.
 
+**Stand Oktober 2026 (nach Rückmeldung von Florian):** In der Oberfläche
+heißt eine Charge **„Verkaufsrunde"**, das Kontingent **„Menge"**. Unten am
+Handy fünf Punkte: *Übersicht · Bestellungen · Erfassen · Übergabe ·
+Voranmeldungen*; *Sortiment* in der PC-Seitenleiste bzw. über die Übersicht.
+
+- **Übergabe in einem Schritt:** Vakuumierte Stücke werden oft erst beim
+  Abholen einem Kunden zugeordnet. Deshalb tippt Kathrin bei der Übergabe die
+  Gewichte vom Etikett ab (ein Feld je Stück), der Betrag erscheint sofort,
+  und **ein** Knopf erledigt „übergeben + bar kassiert" bzw. „übergeben,
+  zahlt per Überweisung" (dann Zahlungsinfo mit QR-Code zum Scannen oder per
+  WhatsApp). Stückzahl ±1 und „Artikel dazu" direkt in der Karte – nie mehr
+  als frei. Vorab wiegen (Ansicht „Wiegen") bleibt optional, z. B. für
+  Packzettel der Liefertour. „Zahlungen" ist nur noch über die Übersicht
+  erreichbar („übergeben, Geld noch nicht da").
+- **Verkauf am Hof:** Kunde ohne Vorbestellung – Stücke wählen, Gewichte
+  eintippen, kassieren. Zählt von der Menge ab; ohne Namen landet er beim
+  Sammelkunden „Verkauf am Hof (ohne Namen)". Kein Bestand nach Gewicht
+  (bewusst, zu viel Aufwand).
+- **Liefertour:** nach Ort (Liefergebiet), dann eigene Reihenfolge (↑ ↓,
+  gespeichert je Kunde in `tour_reihenfolge`, gilt auch für spätere Touren),
+  sonst nach Straße und Hausnummer. Erledigte rutschen nach unten. Knopf
+  „Route in Google Maps" mit allen offenen Stopps (je 10 Stopps ein Link).
+- **Neue Website-Bestellungen** sind markiert („neu", Hinweis in der
+  Übersicht), bis jemand sie öffnet oder „Alle als gesehen" tippt
+  (`bestellung_gesehen`). Zusätzlich kommt wie bisher eine E-Mail an
+  info@kruckenhaus.at.
+- **Sortiment:** Produkte anlegen, ändern, aus- und einblenden (nie löschen).
+  „Nach Gewicht" bzw. „Fixpreis" ist nach dem ersten Verkauf gesperrt.
+  Eier, Marmelade u. Ä. unter „Sonstiges".
+
+Ursprünglicher Plan der Ansichten:
+
 | Ansicht | Inhalt |
 |---|---|
 | **Start** | Offene Chargen mit Ampel: bestellt / Kontingent, Tage bis Bestellschluss, offene Zahlungen gesamt |
