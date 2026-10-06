@@ -37,6 +37,8 @@ const zustand = {
   stueck: {},                // Übergabe: getippte Gewichte je Position { posId: ['1,85', …] }
   abgabeId: null,            // Übergabe: gerade geöffneter Kunde
   uebergabeTermin: null,     // Übergabe: nur dieser Termin (null = alle Tage)
+  alleRunden: false,         // Bestellungen: alle laufenden Verkaufsrunden zusammen
+  auswertung: null,          // geladene Jahresauswertung { jahr, jahre, runden, bestellungen }
   reihenfolge: false,        // Liefertour: Reihenfolge-Modus mit ↑ ↓
   hof: { mengen: {}, stueck: {}, name: '' }, // Verkauf am Hof (Formular)
 };
@@ -95,7 +97,7 @@ const zeitraumText = (v) => (v.zeitraum === 'naechste' ? ZEITRAEUME.naechste : `
    3. DATEN UND BERECHNUNGEN
    ------------------------------------------------------------ */
 const aktiveCharge = () => daten.chargen.find((c) => c.id === zustand.chargeId);
-const chargeVon = (b) => daten.chargen.find((c) => c.id === b.chargeId);
+const chargeVon = (b) => daten.chargen.concat(daten.archiv || []).find((c) => c.id === b.chargeId);
 const kundeVon = (b) => daten.kunden.find((k) => k.id === b.kundeId);
 const artikelVon = (ch, id) => ch.artikel.find((a) => a.id === id);
 // Übernommene Voranmeldungen haben anfangs keinen Termin (null)
@@ -275,11 +277,18 @@ const CHARGE_KURZ = {
   geschlossen: 'Bestellschluss vorbei', archiviert: 'Abgeschlossen',
 };
 
-function chargeWahl() {
+function chargeWahl({ alle = false } = {}) {
   const ch = aktiveCharge();
   if (!ch) return '';
+  const mitAlle = alle && daten.chargen.length > 1;
+  if (mitAlle && zustand.alleRunden) {
+    return `<div class="vw-runde"><select class="vw-runde-wahl" data-wahl="charge" aria-label="Verkaufsrunde wählen">
+      <option value="*" selected>Alle laufenden Verkaufsrunden</option>
+      ${daten.chargen.map((c) => `<option value="${c.id}">${esc(c.titel)}</option>`).join('')}</select>
+      <span class="vw-klein">${daten.chargen.length} Verkaufsrunden zusammen</span></div>`;
+  }
   const auswahl = daten.chargen.length > 1
-    ? `<select class="vw-runde-wahl" data-wahl="charge" aria-label="Verkaufsrunde wählen">${daten.chargen
+    ? `<select class="vw-runde-wahl" data-wahl="charge" aria-label="Verkaufsrunde wählen">${mitAlle ? '<option value="*">Alle laufenden Verkaufsrunden</option>' : ''}${daten.chargen
       .map((c) => `<option value="${c.id}" ${c.id === ch.id ? 'selected' : ''}>${esc(c.titel)}</option>`).join('')}</select>`
     : `<strong class="vw-runde-name">${esc(ch.titel)}</strong>`;
   return `<div class="vw-runde">${auswahl}
@@ -325,7 +334,7 @@ function bestellZeile(b) {
     <span class="vw-zeile-name">${marke}${esc(k.name)}</span>
     <span class="vw-zeile-betrag">${betragText(bestellBetrag(b))}</span>
     <span class="vw-zeile-info">${esc(artikelKurz(b))}</span>
-    <span class="vw-zeile-stand${offen ? ' vw-warnung' : ''}">${esc(standText(b))} · ${esc(b.nummer)}</span>
+    <span class="vw-zeile-stand${offen ? ' vw-warnung' : ''}">${esc(standText(b))} · ${esc(b.nummer)}${zustand.alleRunden && aktuelleAnsicht() === 'bestellungen' ? ` · ${esc(chargeVon(b).titel)}` : ''}</span>
   </button>`;
 }
 
@@ -506,6 +515,9 @@ function ansichtUebersicht() {
     <div class="vw-kopf"><h1>Übersicht</h1>${chargeWahl()}</div>
     <section class="vw-karte" aria-label="Zu tun"><h2>Zu tun</h2>
       ${aufgaben ? `<ul class="vw-aufgaben">${aufgaben}</ul>` : '<p class="vw-erledigt-hinweis">Alles erledigt ✓</p>'}
+      ${aktiv.length && aktiv.every((b) => b.uebergeben && b.bezahlt) && !warteliste
+        ? `<p class="vw-klein">Alles übergeben und bezahlt. Abgeschlossene Runden verschwinden aus dem Alltag, bleiben aber in der Auswertung.</p>
+          <button type="button" class="vw-knopf vw-knopf--breit" data-aktion="runde-status" data-id="${ch.id}" data-wert="archiviert">Verkaufsrunde abschließen</button>` : ''}
     </section>
     <div class="vw-kennzahlen vw-kennzahlen--zwei">
       <div class="vw-kennzahl"><strong>${aktiv.length}</strong><span>Bestellungen</span></div>
@@ -518,6 +530,7 @@ function ansichtUebersicht() {
         ${mehr('<a href="#charge-neu">Neue Verkaufsrunde anlegen</a>')}
         ${mehr('<a href="#sortiment">Sortiment – Produkte anlegen und ändern</a>')}
         ${mehr('<button type="button" data-aktion="ankuendigung">Ankündigung für WhatsApp</button>')}
+        ${mehr('<a href="#auswertung">Auswertung für die Buchhaltung (Jahr, Excel)</a>')}
         ${mehr('<button type="button" data-aktion="listen-drucken">Abhol- und Lieferlisten drucken (alle Tage)</button>')}
         ${mehr('<a href="#zahlungen">Alle Zahlungen</a>')}
         ${mehr(hatGewichtsware ? '<a href="#wiegen">Vorab wiegen und Packzettel drucken</a>' : '<button type="button" data-aktion="drucken">Packzettel drucken</button>')}
@@ -555,9 +568,12 @@ function passtZumFilter(b) {
   }
 }
 
+// Bestellungen der gewählten Runde – oder aller laufenden Runden zusammen
+const listenBestellungen = () => (zustand.alleRunden ? daten.bestellungen.filter((b) => chargeVon(b) && daten.chargen.includes(chargeVon(b)))
+  : bestellungenDerCharge());
+
 function ansichtBestellungen() {
-  const ch = aktiveCharge();
-  const alle = bestellungenDerCharge(ch);
+  const alle = listenBestellungen();
   const anzahl = (wert) => {
     const vorher = zustand.filter;
     zustand.filter = wert;
@@ -568,7 +584,7 @@ function ansichtBestellungen() {
   // „Neu" nur anbieten, wenn es etwas Neues gibt
   const filter = FILTER.filter(([wert]) => wert !== 'neu' || anzahl('neu') || zustand.filter === 'neu');
   inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Bestellungen</h1>${chargeWahl()}
+    <div class="vw-kopf"><h1>Bestellungen</h1>${chargeWahl({ alle: true })}
       <div class="vw-such-zeile">
         <input type="search" class="vw-suche" id="vw-suche" placeholder="Suchen …"
           aria-label="Bestellungen durchsuchen" value="${esc(zustand.suche)}" />
@@ -586,7 +602,7 @@ function listeAktualisieren() {
   const liste = document.getElementById('vw-liste');
   if (!liste) return;
   const suche = zustand.suche.trim().toLowerCase();
-  const treffer = bestellungenDerCharge()
+  const treffer = listenBestellungen()
     .filter(passtZumFilter)
     .filter((b) => {
       if (!suche) return true;
@@ -1657,6 +1673,159 @@ async function chargeSpeichern() {
   meldung(`Verkaufsrunde gespeichert.${passend ? ` ${passend} Voranmeldungen passen dazu.` : ''}`);
 }
 
+// 5.8a Auswertung für die Buchhaltung
+// Gezählt wird nach dem Tag der Übergabe – erst dann ist verkauft. Enthält
+// auch abgeschlossene Verkaufsrunden (die Daten kommen deshalb eigens von
+// /api/verwaltung/auswertung, nicht aus dem Tagesstand).
+
+// Beispielmodus: dieselbe Form aus den Beispieldaten (übergeben = heute)
+function auswertungBeispiel() {
+  const jahr = String(new Date().getFullYear());
+  const runden = daten.chargen.concat(daten.archiv || []);
+  const bestellungen = daten.bestellungen.filter((b) => istAktiv(b) && b.uebergeben).map((b) => {
+    const ch = chargeVon(b);
+    const positionen = b.positionen.map((p) => {
+      const a = artikelVon(ch, p.artikelId);
+      const produkt = produktVon(a.produktId) || {};
+      return { produkt: a.name, kategorie: produkt.kategorie || 'saison', art: a.art, menge: p.menge,
+        gewichtG: p.gewichtG || null, cent: positionBetrag(ch, p).cent };
+    });
+    return { id: b.id, nummer: b.nummer, chargeId: b.chargeId, kunde: kundeVon(b).name, quelle: b.quelle,
+      hofverkauf: istHofverkauf(b), zahlart: b.zahlart, bezahlt: b.bezahlt, bezahltAm: b.bezahlt ? new Date().toISOString().slice(0, 10) : null,
+      uebergebenAm: new Date().toISOString().slice(0, 10), cent: positionen.reduce((x, p) => x + p.cent, 0), positionen };
+  });
+  return { jahr, jahre: [jahr], bestellungen, runden: runden.map((c) => ({
+    id: c.id, titel: c.titel, status: c.status || 'offen', bestellschluss: c.bestellschluss,
+    nichtUebergeben: daten.bestellungen.filter((b) => b.chargeId === c.id && istAktiv(b) && !b.uebergeben).length,
+  })) };
+}
+
+async function auswertungLaden(jahr) {
+  zustand.auswertung = { laedt: true, jahr };
+  if (aktuelleAnsicht() === 'auswertung') zeigen();
+  try {
+    if (BEISPIEL) {
+      zustand.auswertung = auswertungBeispiel();
+    } else {
+      const antwort = await fetch(`/api/verwaltung/auswertung${jahr ? `?jahr=${encodeURIComponent(jahr)}` : ''}`,
+        { headers: { Accept: 'application/json' }, cache: 'no-store' });
+      const erg = await antwort.json().catch(() => ({}));
+      if (!antwort.ok || !erg.ok) throw new Error(erg.error || 'Auswertung konnte nicht geladen werden.');
+      zustand.auswertung = erg;
+    }
+  } catch (fehler) {
+    zustand.auswertung = { fehler: fehler.message || 'Keine Verbindung – bitte Seite neu laden.' };
+  }
+  if (aktuelleAnsicht() === 'auswertung') zeigen();
+}
+
+function ansichtAuswertung() {
+  const aw = zustand.auswertung;
+  if (!aw) { auswertungLaden(null); return; }
+  if (aw.laedt) { inhalt().innerHTML = '<div class="vw-kopf"><h1>Auswertung</h1></div><p class="vw-klein">Wird geladen …</p>'; return; }
+  if (aw.fehler) {
+    inhalt().innerHTML = `<div class="vw-kopf"><h1>Auswertung</h1></div><section class="vw-karte"><p>${esc(aw.fehler)}</p>
+      <button type="button" class="vw-knopf" data-aktion="auswertung-neu">Noch einmal versuchen</button></section>`;
+    return;
+  }
+  const summe = (liste) => liste.reduce((x, b) => x + b.cent, 0);
+  const bar = aw.bestellungen.filter((b) => b.bezahlt === 'bar');
+  const ueberwiesen = aw.bestellungen.filter((b) => b.bezahlt === 'ueberweisung');
+  const offen = aw.bestellungen.filter((b) => !b.bezahlt);
+
+  // Je Bereich und je Produkt
+  const jeProdukt = new Map();
+  aw.bestellungen.forEach((b) => b.positionen.forEach((p) => {
+    const e = jeProdukt.get(p.produkt) || { produkt: p.produkt, kategorie: p.kategorie, art: p.art, menge: 0, gramm: 0, cent: 0 };
+    e.menge += p.menge;
+    e.gramm += p.gewichtG || 0;
+    e.cent += p.cent;
+    jeProdukt.set(p.produkt, e);
+  }));
+  const produkte = [...jeProdukt.values()].sort((x, y) =>
+    Object.keys(KATEGORIEN).indexOf(x.kategorie) - Object.keys(KATEGORIEN).indexOf(y.kategorie) || y.cent - x.cent);
+  const bereiche = Object.keys(KATEGORIEN)
+    .map((kat) => [kat, produkte.filter((p) => p.kategorie === kat).reduce((x, p) => x + p.cent, 0)])
+    .filter(([, cent]) => cent);
+
+  const runden = aw.runden.map((r) => {
+    const liste = aw.bestellungen.filter((b) => b.chargeId === r.id);
+    const offenCent = summe(liste.filter((b) => !b.bezahlt));
+    const fertig = !r.nichtUebergeben && !offenCent;
+    return `<div class="vw-runden-zeile">
+      <div><strong>${esc(r.titel)}</strong><br>
+        <span class="vw-klein">${r.status === 'archiviert' ? 'abgeschlossen' : (CHARGE_KURZ[r.status] || 'laufend')}
+        · ${liste.length} übergeben${r.nichtUebergeben ? ` · ${r.nichtUebergeben} noch offen` : ''}${offenCent ? ` · ${euro(offenCent)} nicht bezahlt` : ''}</span></div>
+      <strong class="vw-zahl">${euro(summe(liste))}</strong>
+      ${r.status === 'archiviert'
+        ? `<button type="button" class="vw-link vw-link--leise" data-aktion="runde-status" data-id="${r.id}" data-wert="geschlossen">wieder öffnen</button>`
+        : fertig && liste.length ? `<button type="button" class="vw-knopf vw-knopf--klein" data-aktion="runde-status" data-id="${r.id}" data-wert="archiviert">Abschließen</button>` : '<span></span>'}
+    </div>`;
+  }).join('');
+
+  inhalt().innerHTML = `
+    <div class="vw-kopf"><h1>Auswertung</h1>
+      <div class="vw-runde"><select class="vw-runde-wahl" data-wahl="jahr" aria-label="Jahr">${aw.jahre.map((j) =>
+        `<option ${j === aw.jahr ? 'selected' : ''}>${esc(j)}</option>`).join('')}</select>
+      <span class="vw-klein">Gezählt nach dem Tag der Übergabe (Abholung, Lieferung, Verkauf am Hof).</span></div></div>
+    <div class="vw-kennzahlen vw-kennzahlen--zwei">
+      <div class="vw-kennzahl"><strong>${euro(summe(aw.bestellungen))}</strong><span>Umsatz ${esc(aw.jahr)} (${aw.bestellungen.length} Verkäufe)</span></div>
+      <div class="vw-kennzahl${offen.length ? ' vw-kennzahl--achtung' : ''}"><strong>${euro(summe(offen))}</strong><span>davon noch nicht bezahlt (${offen.length})</span></div>
+      <div class="vw-kennzahl"><strong>${euro(summe(bar))}</strong><span>bar bezahlt</span></div>
+      <div class="vw-kennzahl"><strong>${euro(summe(ueberwiesen))}</strong><span>per Überweisung bezahlt</span></div>
+    </div>
+    <section class="vw-karte"><h2>Nach Bereich</h2>
+      ${bereiche.length ? bereiche.map(([kat, cent]) => `<div class="vw-zeile-kopf vw-auswertung-zeile"><span>${KATEGORIEN[kat]}</span><strong>${euro(cent)}</strong></div>`).join('')
+        : '<p class="vw-klein">In diesem Jahr wurde noch nichts übergeben.</p>'}
+    </section>
+    ${produkte.length ? `<section class="vw-karte"><h2>Nach Produkt</h2>
+      <table class="vw-tabelle vw-auswertung-tabelle"><thead><tr><th>Produkt</th><th class="vw-zahl">Menge</th><th class="vw-zahl">kg</th><th class="vw-zahl">Umsatz</th></tr></thead>
+      <tbody>${produkte.map((p) => `<tr><td>${esc(p.produkt)}</td><td class="vw-zahl">${p.menge}</td>
+        <td class="vw-zahl">${p.art === 'gewicht' ? kgFormat.format(p.gramm / 1000) : ''}</td><td class="vw-zahl">${euro(p.cent)}</td></tr>`).join('')}</tbody></table>
+    </section>` : ''}
+    <section class="vw-karte"><h2>Verkaufsrunden</h2>${runden || '<p class="vw-klein">Keine.</p>'}
+      <p class="vw-klein">Abgeschlossene Runden verschwinden aus Übersicht, Bestellungen und Übergabe, bleiben hier aber erhalten.</p></section>
+    <button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit" data-aktion="auswertung-export" ${aw.bestellungen.length ? '' : 'disabled'}>Für die Buchhaltung herunterladen (Excel)</button>
+    <p class="vw-klein">Eine Zeile je verkauftem Artikel mit Datum, Bestellnummer, Kunde, Bereich, Menge, Gewicht, Betrag und Zahlung – zum Weitergeben an die Buchhaltung.
+      Die Einordnung für Steuer und Pauschalierung bitte mit der Buchhaltung klären.</p>`;
+}
+
+function auswertungExport() {
+  const aw = zustand.auswertung;
+  const runde = (id) => (aw.runden.find((r) => r.id === id) || {}).titel || '';
+  const zeilen = [['Übergabe am', 'Bestellnr.', 'Verkaufsrunde', 'Kunde', 'Art', 'Bereich', 'Produkt', 'Menge',
+    'Gewicht kg', 'Betrag €', 'Zahlart', 'Bezahlt am']];
+  aw.bestellungen.forEach((b) => b.positionen.forEach((p) => {
+    zeilen.push([b.uebergebenAm, b.nummer, runde(b.chargeId), b.kunde,
+      b.hofverkauf ? 'Verkauf am Hof' : `Vorbestellung (${QUELLEN[b.quelle] || b.quelle})`,
+      KATEGORIEN[p.kategorie] || p.kategorie, p.produkt, p.menge, p.gewichtG ? p.gewichtG / 1000 : '', p.cent / 100,
+      b.bezahlt ? ZAHLARTEN[b.bezahlt] : `offen (${ZAHLARTEN[b.zahlart]})`, b.bezahltAm || '']);
+  }));
+  csvHerunterladen(zeilen, `hofladen-auswertung-${aw.jahr}.csv`);
+}
+
+// Verkaufsrunde abschließen bzw. wieder öffnen
+async function rundeStatus(id, status) {
+  const erg = await speichern(`charge/${id}/status`, { status }, () => {
+    if (status === 'archiviert') {
+      const ch = daten.chargen.find((c) => c.id === id);
+      ch.status = 'archiviert';
+      daten.archiv = (daten.archiv || []).concat(ch);
+      daten.chargen = daten.chargen.filter((c) => c !== ch);
+    } else {
+      const ch = (daten.archiv || []).find((c) => c.id === id);
+      ch.status = status;
+      daten.archiv = daten.archiv.filter((c) => c !== ch);
+      daten.chargen.push(ch);
+    }
+    if (!daten.chargen.some((c) => c.id === zustand.chargeId)) zustand.chargeId = daten.chargen.length ? daten.chargen[0].id : null;
+    return {};
+  }, { neuZeichnen: false, erfolg: status === 'archiviert' ? 'Verkaufsrunde abgeschlossen – sie bleibt in der Auswertung.' : 'Verkaufsrunde wieder geöffnet.' });
+  if (!erg) return;
+  if (aktuelleAnsicht() === 'auswertung') auswertungLaden(zustand.auswertung && zustand.auswertung.jahr);
+  else zeigen();
+}
+
 // 5.9 Sortiment – Produkte anlegen, ändern, aus- und einblenden
 // Ausgeblendete Produkte stehen beim Anlegen einer Verkaufsrunde nicht zur
 // Wahl, alte Bestellungen bleiben unberührt. Gelöscht wird nie.
@@ -1905,17 +2074,30 @@ function dialogAktualisieren() {
    ------------------------------------------------------------ */
 // CSV mit Semikolon, Dezimalkomma und BOM – öffnet sich im deutschsprachigen
 // Excel per Doppelklick korrekt mit Umlauten und Spalten.
-function exportieren() {
-  const ch = aktiveCharge();
-  // Zahlen ohne Anführungszeichen mit Dezimalkomma, damit Excel rechnen kann.
-  // Text, der mit = + - @ beginnt, bekommt ein ' davor (sonst hält Excel ihn
-  // für eine Formel); Telefonnummern werden als 0043 … geschrieben.
+// Zahlen ohne Anführungszeichen mit Dezimalkomma, damit Excel rechnen kann.
+// Text, der mit = + - @ beginnt, bekommt ein ' davor (sonst hält Excel ihn
+// für eine Formel); Telefonnummern werden als 0043 … geschrieben.
+function csvHerunterladen(zeilen, dateiname) {
   const zelle = (v) => {
     if (typeof v === 'number') return String(v).replace('.', ',');
     let text = String(v == null ? '' : v);
     if (/^[=+\-@]/.test(text)) text = `'${text}`;
     return `"${text.replace(/"/g, '""')}"`;
   };
+  const csv = '\ufeff' + zeilen.map((z) => z.map(zelle).join(';')).join('\r\n');
+  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = dateiname;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  meldung('Liste für Excel wurde heruntergeladen.');
+}
+
+function exportieren() {
+  const ch = aktiveCharge();
   const kopf = ['Bestellnr.', 'Datum', 'Kunde', 'Telefon', 'Adresse', 'Ort', 'Quelle', 'Status',
     'Übergabe', 'Termin', 'Artikel', 'Menge', 'Gewicht kg', 'Preis €', 'Preis je', 'Betrag €',
     'geschätzt', 'Zahlart', 'Bezahlt', 'Übergeben', 'Anmerkung'];
@@ -1937,16 +2119,7 @@ function exportieren() {
           b.bezahlt ? ZAHLARTEN[b.bezahlt] : 'offen', b.uebergeben ? 'ja' : 'nein', b.anmerkung]);
       });
     });
-  const csv = '﻿' + zeilen.map((z) => z.map(zelle).join(';')).join('\r\n');
-  const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = `hofladen-${ch.titel.toLowerCase().replace(/[^a-z0-9äöüß]+/g, '-')}.csv`;
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-  meldung('Liste für Excel wurde heruntergeladen.');
+  csvHerunterladen(zeilen, `hofladen-${ch.titel.toLowerCase().replace(/[^a-z0-9äöüß]+/g, '-')}.csv`);
 }
 
 // Überweisungsdaten auf dem Packzettel (Bankverbindung aus den Cloudflare-
@@ -2089,12 +2262,13 @@ const ANSICHTEN = {
   zahlungen: ansichtZahlungen,
   voranmeldungen: ansichtVoranmeldungen,
   sortiment: ansichtSortiment,
+  auswertung: ansichtAuswertung,
   produkt: ansichtProdukt,
   charge: () => ansichtCharge(false),
   'charge-neu': () => ansichtCharge(true),
 };
 // Diese Ansichten funktionieren auch ohne laufende Charge
-const OHNE_CHARGE = ['voranmeldungen', 'charge-neu', 'sortiment', 'produkt'];
+const OHNE_CHARGE = ['voranmeldungen', 'charge-neu', 'sortiment', 'produkt', 'auswertung'];
 
 function aktuelleAnsicht() {
   const name = location.hash.slice(1);
@@ -2276,6 +2450,15 @@ function initKlicks() {
         zustand.abgabeId = el.dataset.id;
         location.hash = '#abgabe';
         break;
+      case 'runde-status':
+        rundeStatus(el.dataset.id, el.dataset.wert);
+        break;
+      case 'auswertung-export':
+        auswertungExport();
+        break;
+      case 'auswertung-neu':
+        auswertungLaden(null);
+        break;
       case 'uebergabe-tag':
         zustand.uebergabeTermin = el.dataset.wert || null;
         zeigen();
@@ -2356,10 +2539,15 @@ function initEingaben() {
     if (e.target.dataset.gewicht) gewichtSpeichern(e.target);
     if (e.target.name === 'termin') adresseUmschalten();
     if (e.target.dataset.wahl === 'charge') {
+      zustand.alleRunden = e.target.value === '*';
+      if (zustand.alleRunden) { zeigen(); return; }
       zustand.chargeId = e.target.value;
       zustand.chargeForm = null;
       zustand.hof = { mengen: {}, stueck: {}, name: '' };
       zeigen();
+    }
+    if (e.target.dataset.wahl === 'jahr') {
+      auswertungLaden(e.target.value);
     }
     if (e.target.dataset.wahl === 'filter') {
       zustand.filter = e.target.value;
@@ -2423,6 +2611,9 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('hashchange', () => {
     zustand.chargeForm = null;
     if (aktuelleAnsicht() !== 'produkt') zustand.produktForm = null;
+    if (aktuelleAnsicht() === 'auswertung') zustand.auswertung = null;
+    const dialog = document.getElementById('vw-dialog');
+    if (dialog && dialog.open) dialog.close();
     zeigen();
     window.scrollTo(0, 0);
   });

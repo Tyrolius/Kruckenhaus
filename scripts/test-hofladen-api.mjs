@@ -29,7 +29,7 @@ async function api(methode, pfad, eingabe, { typ = 'application/json' } = {}) {
     headers: eingabe ? { 'Content-Type': typ } : {},
     body: eingabe ? JSON.stringify(eingabe) : undefined,
   });
-  const antwort = await onRequest({ request, env, params: { pfad: pfad.split('/') }, data: { nutzer: 'test@example.at' } });
+  const antwort = await onRequest({ request, env, params: { pfad: pfad.split('?')[0].split('/') }, data: { nutzer: 'test@example.at' } });
   return { status: antwort.status, ...(await antwort.json()) };
 }
 const ok = (r) => { assert.equal(r.ok, true, r.error); return r; };
@@ -254,6 +254,27 @@ s = ok(await api('GET', 'stand'));
 assert.deepEqual([s.produkte.find((p) => p.id === eier).name, s.produkte.find((p) => p.id === eier).aktiv], ['Freilandeier 6 Stück', false]);
 assert.ok(!s.preisVorschlaege.some((v) => v.produktId === eier), 'ausgeblendet = kein Vorschlag für neue Verkaufsrunden');
 console.log('✓ Sortiment: anlegen, doppelte Namen, Richtgewicht, Art bei verkauften Produkten gesperrt, ausblenden');
+
+// Auswertung für die Buchhaltung: nach Tag der Übergabe, auch abgeschlossene Runden
+const diesesJahr = String(new Date().getUTCFullYear());
+let a = ok(await api('GET', 'auswertung'));
+assert.equal(a.jahr, diesesJahr);
+const erwartet = roh.prepare(`SELECT COUNT(*) AS n, SUM(s.gesamt_cent) AS cent FROM bestellungen b
+  JOIN v_bestellsummen s ON s.bestellung_id = b.id WHERE b.status = 'vorgemerkt' AND b.uebergeben_am IS NOT NULL`).get();
+assert.equal(a.bestellungen.length, erwartet.n);
+assert.equal(a.bestellungen.reduce((x, b) => x + b.cent, 0), erwartet.cent);
+assert.ok(a.bestellungen.every((b) => b.positionen.reduce((x, p) => x + p.cent, 0) === b.cent), 'Positionen ergeben die Summe');
+assert.ok(a.bestellungen.some((b) => b.hofverkauf && b.bezahlt === 'bar'));
+assert.ok(a.bestellungen.some((b) => b.kunde === 'Maria Test' && b.cent === 8880));
+assert.equal(ok(await api('GET', 'auswertung?jahr=1999')).bestellungen.length, 0);
+ok(await api('POST', `charge/${chargeId}/status`, { status: 'archiviert' }));
+assert.equal(ok(await api('GET', 'stand')).chargen.length, 0, 'abgeschlossen = aus den Tagesansichten verschwunden');
+a = ok(await api('GET', `auswertung?jahr=${diesesJahr}`));
+assert.equal(a.runden.find((r) => r.id === chargeId).status, 'archiviert');
+assert.equal(a.bestellungen.length, erwartet.n, 'bleibt in der Auswertung');
+assert.equal((await api('POST', `charge/${chargeId}/status`, { status: 'weg' })).status, 400);
+ok(await api('POST', `charge/${chargeId}/status`, { status: 'geschlossen' }));
+console.log('✓ Auswertung: nach Übergabejahr, Summen stimmen, abgeschlossene Runden bleiben drin');
 
 // Schutz und Fehler
 r = await api('POST', 'bestellung', { chargeId }, { typ: 'text/plain' });

@@ -5,6 +5,7 @@
  * Zugangsprüfung (_middleware.js im selben Ordner).
  *
  *   GET  /api/verwaltung/stand                    alles, was die Oberfläche braucht
+ *   GET  /api/verwaltung/auswertung?jahr=2026     Jahresauswertung (auch abgeschlossene Runden)
  *   POST /api/verwaltung/bestellung               Bestellung erfassen
  *   POST /api/verwaltung/bestellung/<id>          Bestellung ändern ({ aktion, … }):
  *        uebergeben, bezahlt, zahlart, termin, kontakt, notiz, stornieren,
@@ -17,6 +18,7 @@
  *   POST /api/verwaltung/produkt/<id>             Produkt bearbeiten / aus- und einblenden
  *   POST /api/verwaltung/charge                   Charge (Verkaufsrunde) anlegen
  *   POST /api/verwaltung/charge/<id>              Charge bearbeiten
+ *   POST /api/verwaltung/charge/<id>/status       nur den Status ändern (abschließen, wieder öffnen)
  *   POST /api/verwaltung/voranmeldung             Voranmeldung erfassen
  *   POST /api/verwaltung/voranmeldung/<id>/absagen
  *   POST /api/verwaltung/voranmeldungen/uebernehmen
@@ -690,6 +692,66 @@ async function chargeBearbeiten(db, chargeId, e) {
 }
 
 /* ------------------------------------------------------------
+   5a. AUSWERTUNG FÜR DIE BUCHHALTUNG
+   Zugeordnet wird nach dem Tag der Übergabe (Lieferung/Abholung). Was
+   noch nicht übergeben ist, zählt noch zu keinem Jahr. Enthält auch
+   abgeschlossene (archivierte) Verkaufsrunden. Die Rechnung je Position
+   kommt aus v_positionen – dieselbe wie in der Oberfläche.
+   ------------------------------------------------------------ */
+async function auswertung(db, jahrText) {
+  const { results: jahre } = await db.prepare(
+    `SELECT DISTINCT substr(uebergeben_am, 1, 4) AS jahr FROM bestellungen
+     WHERE uebergeben_am IS NOT NULL AND status = 'vorgemerkt' ORDER BY jahr DESC`
+  ).all();
+  const jahr = /^\d{4}$/.test(String(jahrText || '')) ? String(jahrText) : (jahre[0] ? jahre[0].jahr : String(new Date().getUTCFullYear()));
+  const [bestellungen, positionen, runden] = (await db.batch([
+    db.prepare(`SELECT b.id, b.nummer, b.charge_id, b.quelle, b.zahlart, b.bezahlt_art, b.bezahlt_am,
+                       b.bezahlt_betrag_cent, b.uebergeben_am, b.erstellt_am, b.interne_notiz,
+                       k.name AS kunde, s.gesamt_cent
+                FROM bestellungen b JOIN kunden k ON k.id = b.kunde_id
+                JOIN v_bestellsummen s ON s.bestellung_id = b.id
+                WHERE b.status = 'vorgemerkt' AND substr(b.uebergeben_am, 1, 4) = ?
+                ORDER BY b.uebergeben_am, b.id`).bind(jahr),
+    db.prepare(`SELECT v.bestellung_id, v.produkt_name, v.art, v.menge, v.gewicht_g, v.betrag_cent, p.kategorie
+                FROM v_positionen v JOIN produkte p ON p.id = v.produkt_id
+                JOIN bestellungen b ON b.id = v.bestellung_id
+                WHERE b.status = 'vorgemerkt' AND substr(b.uebergeben_am, 1, 4) = ?
+                ORDER BY v.bestellung_id, v.id`).bind(jahr),
+    // Runden mit Übergaben in diesem Jahr oder noch offene
+    db.prepare(`SELECT c.id, c.titel, c.status, c.bestellschluss,
+                       (SELECT COUNT(*) FROM bestellungen b WHERE b.charge_id = c.id AND b.status = 'vorgemerkt'
+                          AND b.uebergeben_am IS NULL) AS nicht_uebergeben
+                FROM chargen c
+                WHERE c.status <> 'archiviert' OR EXISTS (SELECT 1 FROM bestellungen b WHERE b.charge_id = c.id
+                  AND substr(b.uebergeben_am, 1, 4) = ?)
+                ORDER BY c.bestellschluss, c.id`).bind(jahr),
+  ])).map((r) => r.results);
+
+  const jePos = new Map();
+  for (const p of positionen) {
+    if (!jePos.has(p.bestellung_id)) jePos.set(p.bestellung_id, []);
+    jePos.get(p.bestellung_id).push({
+      produkt: p.produkt_name, kategorie: p.kategorie, art: p.art, menge: p.menge,
+      gewichtG: p.gewicht_g ?? null, cent: p.betrag_cent,
+    });
+  }
+  return {
+    jahr,
+    jahre: [...new Set([jahr, ...jahre.map((j) => j.jahr)])].sort().reverse(),
+    runden: runden.map((c) => ({
+      id: id(c.id), titel: c.titel, status: c.status, bestellschluss: c.bestellschluss, nichtUebergeben: c.nicht_uebergeben,
+    })),
+    bestellungen: bestellungen.map((b) => ({
+      id: id(b.id), nummer: b.nummer, chargeId: id(b.charge_id), kunde: b.kunde, quelle: b.quelle,
+      hofverkauf: b.interne_notiz === 'Verkauf am Hof', zahlart: b.zahlart, bezahlt: b.bezahlt_art || null,
+      bezahltAm: b.bezahlt_am ? String(b.bezahlt_am).slice(0, 10) : null,
+      uebergebenAm: String(b.uebergeben_am).slice(0, 10), cent: b.gesamt_cent,
+      positionen: jePos.get(b.id) || [],
+    })),
+  };
+}
+
+/* ------------------------------------------------------------
    6. VORANMELDUNGEN
    ------------------------------------------------------------ */
 async function voranmeldungErfassen(db, e) {
@@ -721,6 +783,9 @@ export async function onRequest({ request, env, params, data }) {
     if (request.method === 'GET' && bereich === 'stand' && pfad.length === 1) {
       return json({ ok: true, nutzer: data.nutzer, ...(await standLaden(db, bankAusEnv(env))) });
     }
+    if (request.method === 'GET' && bereich === 'auswertung' && pfad.length === 1) {
+      return json({ ok: true, ...(await auswertung(db, new URL(request.url).searchParams.get('jahr'))) });
+    }
     if (request.method !== 'POST') return json({ ok: false, error: 'Nicht gefunden.' }, 404);
     if (!(request.headers.get('content-type') || '').includes('application/json')) {
       return json({ ok: false, error: 'Nur JSON-Anfragen.' }, 415);
@@ -734,6 +799,12 @@ export async function onRequest({ request, env, params, data }) {
     else if (bereich === 'bestellung' && pfad.length === 2) ergebnis = await bestellungAendern(db, teilId, eingabe);
     else if (bereich === 'charge' && pfad.length === 1) ergebnis = await chargeAnlegen(db, eingabe);
     else if (bereich === 'charge' && pfad.length === 2) ergebnis = await chargeBearbeiten(db, teilId, eingabe);
+    else if (bereich === 'charge' && unteraktion === 'status' && pfad.length === 3) {
+      const r = await db.prepare('UPDATE chargen SET status = ? WHERE id = ?')
+        .bind(auswahl(eingabe.status, CHARGE_STATUS, 'Status'), nummer(teilId, 'Charge')).run();
+      if (!r.meta.changes) throw new EingabeFehler('Verkaufsrunde nicht gefunden.');
+      ergebnis = {};
+    }
     else if (bereich === 'voranmeldung' && pfad.length === 1) ergebnis = await voranmeldungErfassen(db, eingabe);
     else if (bereich === 'hofverkauf' && pfad.length === 1) ergebnis = await hofverkauf(db, eingabe);
     else if (bereich === 'gesehen' && pfad.length === 1) ergebnis = await alsGesehen(db, eingabe);

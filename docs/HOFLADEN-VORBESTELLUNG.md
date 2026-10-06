@@ -322,6 +322,17 @@ Voranmeldungen*; *Sortiment* in der PC-Seitenleiste bzw. über die Übersicht.
   „Nach Gewicht" bzw. „Fixpreis" ist nach dem ersten Verkauf gesperrt.
   Eier, Marmelade u. Ä. unter „Sonstiges".
 
+- **Mehrere Abholtage** je Verkaufsrunde, in der Übergabe nach Tag wählbar;
+  **Abhol- und Lieferlisten zum Ausdrucken** (je Termin eine Seite, Kästchen
+  für Gewichte) für Orte ohne Internet.
+- **Gesamtübersicht:** Bestellungen über alle laufenden Runden.
+- **Abschließen und Auswertung:** Runde abschließen (= `archiviert`), Jahres-
+  auswertung nach Übergabedatum über alle Runden inkl. abgeschlossener
+  (`GET /api/verwaltung/auswertung?jahr=`), Excel-Liste je verkauftem
+  Artikel für die Buchhaltung.
+- **Ersetzt die WhatsApp-Gruppen als Bestellliste;** die Gruppen bleiben nur
+  noch für Ankündigungen (Knopf „Ankündigung für WhatsApp").
+
 Ursprünglicher Plan der Ansichten:
 
 | Ansicht | Inhalt |

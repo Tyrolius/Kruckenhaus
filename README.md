@@ -576,6 +576,13 @@ Startbildschirm hinzufügen – dann wirkt sie wie eine App.
    und später bei der Übergabe eintippen.
 4. Überweisungen in der *Übersicht → „übergeben, Geld noch nicht da"* abhaken.
 5. Neue Produkte (z. B. Eier) unter *Sortiment* anlegen.
+6. Alles übergeben und bezahlt: *Übersicht → Verkaufsrunde abschließen*. Sie
+   verschwindet aus dem Alltag, bleibt aber in der **Auswertung** (*Übersicht →
+   Mehr → Auswertung*): Umsatz je Jahr nach Tag der Übergabe, bar/Überweisung,
+   offen, je Bereich und Produkt, und **Excel-Liste für die Buchhaltung**.
+
+Gesamtübersicht über alle laufenden Runden: *Bestellungen* → oben „Alle
+laufenden Verkaufsrunden" wählen; die Suche findet dort jeden Kunden.
 
 **Weitere Person freischalten:** Adresse in der Access-Policy (Schritt 2.3)
 **und** in `VERWALTUNG_EMAILS` ergänzen. **Jemanden aussperren:** an beiden

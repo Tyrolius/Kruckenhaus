@@ -5447,6 +5447,20 @@ html, body { overflow-x: clip; }
 .vw-kontakt-zeile a,
 .vw-kontakt-zeile .vw-link { color: var(--color-primary); font-weight: 700; padding: 0.5rem 0; text-decoration: none; }
 
+/* Auswertung */
+.vw-auswertung-zeile { padding: 0.35rem 0; border-top: 1px solid var(--color-beige); }
+.vw-auswertung-tabelle th { font-size: 0.8rem; color: var(--color-text-light); text-align: left; }
+.vw-runden-zeile {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem 0.75rem;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--color-beige);
+}
+.vw-runden-zeile > :last-child { grid-column: 1 / -1; justify-self: start; }
+.vw-knopf:disabled { opacity: 0.4; cursor: default; }
+
 @media (min-width: 768px) {
   .vw-produkt-zeile { grid-template-columns: 1fr auto; align-items: center; }
   .vw-knopf--gross { flex: 1 1 auto; }
