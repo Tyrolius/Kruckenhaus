@@ -36,6 +36,7 @@ const zustand = {
   produktForm: null,         // Arbeitskopie im Formular „Produkt" (Sortiment)
   stueck: {},                // Übergabe: getippte Gewichte je Position { posId: ['1,85', …] }
   abgabeId: null,            // Übergabe: gerade geöffneter Kunde
+  zahlungsinfoDanach: null,  // Übergabe: Zahlungsinfo nach dem Wechsel zur Liste zeigen
   uebergabeTermin: null,     // Übergabe: nur dieser Termin (null = alle Tage)
   alleRunden: false,         // Bestellungen: alle laufenden Verkaufsrunden zusammen
   auswertung: null,          // geladene Jahresauswertung { jahr, jahre, runden, bestellungen }
@@ -1117,10 +1118,16 @@ async function uebergabeAbschliessen(b, zahlung) {
   }, { erfolg: `${kundeVon(b).name}: übergeben${zahlung === 'bar' ? ' und bar kassiert' : ''}.` });
   if (!erg) return;
   b.positionen.forEach((p) => { delete zustand.stueck[p.id]; });
-  if (aktuelleAnsicht() === 'abgabe') location.hash = '#uebergabe';
-  // Bei Überweisung gleich die Zahlungsinfo zeigen – zum Scannen oder per WhatsApp
+  // Bei Überweisung gleich die Zahlungsinfo zeigen – zum Scannen oder per WhatsApp.
+  // Beim Zurückwechseln zur Liste erst nach dem Seitenwechsel öffnen.
   const aktuell = bestellungVon(b.id);
-  if (zahlung === 'ueberweisung' && aktuell && !aktuell.bezahlt) zahlungsinfoOeffnen(aktuell);
+  const info = zahlung === 'ueberweisung' && aktuell && !aktuell.bezahlt ? aktuell.id : null;
+  if (aktuelleAnsicht() === 'abgabe') {
+    zustand.zahlungsinfoDanach = info;
+    location.hash = '#uebergabe';
+  } else if (info) {
+    zahlungsinfoOeffnen(aktuell);
+  }
 }
 
 // Menge eines Artikels ändern bzw. Artikel dazu (bei der Übergabe)
@@ -2614,6 +2621,11 @@ document.addEventListener('DOMContentLoaded', () => {
     if (aktuelleAnsicht() === 'auswertung') zustand.auswertung = null;
     const dialog = document.getElementById('vw-dialog');
     if (dialog && dialog.open) dialog.close();
+    if (zustand.zahlungsinfoDanach) {
+      const b = bestellungVon(zustand.zahlungsinfoDanach);
+      zustand.zahlungsinfoDanach = null;
+      if (b) setTimeout(() => zahlungsinfoOeffnen(b), 0);
+    }
     zeigen();
     window.scrollTo(0, 0);
   });
