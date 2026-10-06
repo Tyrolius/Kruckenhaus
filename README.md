@@ -81,6 +81,10 @@ In Cloudflare Pages muss die Datenbank nur mit der Website verbunden sein:
 5. Danach einmal neu veröffentlichen: **Deployments → … → Retry deployment**.
 6. **Testen:** Auf der Website eine Testanfrage über das Kontaktformular schicken
    und prüfen, ob sie per E-Mail bei info@kruckenhaus.at ankommt (auch Spam-Ordner).
+   Der Gast bekommt zusätzlich sofort eine **Eingangsbestätigung** („Anfrage ist
+   angekommen, wir melden uns innerhalb von 24 Stunden"). Antwortet er darauf,
+   landet die Antwort bei info@kruckenhaus.at. Abschalten lässt sie sich mit der
+   Cloudflare-Variable `CONTACT_BESTAETIGUNG` = `aus`.
 
 > **Ohne `RESEND_API_KEY`** funktioniert das Formular trotzdem – die Anfrage
 > wird dann nur in der Datenbank gespeichert, aber es geht keine E-Mail raus.
@@ -255,7 +259,7 @@ danach ebenfalls weg.
 
 ## Schritt 6: Checkliste vor dem Livegang
 
-- [ ] Testanfrage über das Kontaktformular kommt per E-Mail an (Schritt 2)
+- [x] Testanfrage über das Kontaktformular kommt per E-Mail an (Schritt 2)
 - [ ] Belegungskalender zeigt die Airbnb-Buchungen (Schritt 3)
 - [ ] `https://www.kruckenhaus.at` lädt mit Schloss-Symbol (Schritt 4)
 - [ ] E-Mail-Empfang (info@kruckenhaus.at) funktioniert nach dem DNS-Umzug noch
