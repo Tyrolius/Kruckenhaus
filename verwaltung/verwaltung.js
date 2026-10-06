@@ -35,6 +35,8 @@ const zustand = {
   chargeForm: null,          // Arbeitskopie im Formular „Charge"
   produktForm: null,         // Arbeitskopie im Formular „Produkt" (Sortiment)
   stueck: {},                // Übergabe: getippte Gewichte je Position { posId: ['1,85', …] }
+  abgabeId: null,            // Übergabe: gerade geöffneter Kunde
+  reihenfolge: false,        // Liefertour: Reihenfolge-Modus mit ↑ ↓
   hof: { mengen: {}, stueck: {}, name: '' }, // Verkauf am Hof (Formular)
 };
 
@@ -266,11 +268,21 @@ async function speichern(pfad, eingabe, beispielAenderung, optionen = {}) {
 /* ------------------------------------------------------------
    4. BAUSTEINE (wiederkehrende HTML-Teile)
    ------------------------------------------------------------ */
+// Verkaufsrunde: eine kompakte Auswahl oben auf jeder Seite
+const CHARGE_KURZ = {
+  entwurf: 'In Vorbereitung', stammkunden: 'Nur Stammkunden', offen: 'Offen für Bestellungen',
+  geschlossen: 'Bestellschluss vorbei', archiviert: 'Abgeschlossen',
+};
+
 function chargeWahl() {
-  return `<div class="vw-chips" role="group" aria-label="Verkaufsrunde wählen">${daten.chargen
-    .map((c) => `<button type="button" class="vw-chip" data-aktion="charge" data-id="${c.id}"
-      aria-pressed="${c.id === zustand.chargeId}">${esc(c.titel)}</button>`)
-    .join('')}</div>`;
+  const ch = aktiveCharge();
+  if (!ch) return '';
+  const auswahl = daten.chargen.length > 1
+    ? `<select class="vw-runde-wahl" data-wahl="charge" aria-label="Verkaufsrunde wählen">${daten.chargen
+      .map((c) => `<option value="${c.id}" ${c.id === ch.id ? 'selected' : ''}>${esc(c.titel)}</option>`).join('')}</select>`
+    : `<strong class="vw-runde-name">${esc(ch.titel)}</strong>`;
+  return `<div class="vw-runde">${auswahl}
+    <span class="vw-klein">${[CHARGE_KURZ[ch.status], `Bestellschluss ${datumKurz(ch.bestellschluss)}`].filter(Boolean).join(' · ')}</span></div>`;
 }
 
 function marken(b) {
@@ -292,14 +304,27 @@ function marken(b) {
   return `<div class="vw-marken">${teile.join('')}</div>`;
 }
 
+// Kurzer Stand einer Bestellung als Text, z. B. „Abholung Sa., 10.10. · bar, offen"
+function standText(b) {
+  if (b.status === 'storniert') return 'storniert';
+  const t = terminVon(b);
+  const wo = istHofverkauf(b) ? 'Verkauf am Hof' : t ? `${t.art === 'abholung' ? 'Abholung' : 'Lieferung'} ${datumKurz(t.datum)}` : 'Termin offen';
+  if (b.status === 'warteliste') return wo;
+  const zahlung = b.bezahlt ? `bezahlt (${ZAHLARTEN[b.bezahlt]})` : `${ZAHLARTEN[b.zahlart]}, offen`;
+  return `${wo} · ${b.uebergeben ? 'übergeben · ' : ''}${zahlung}`;
+}
+
 function bestellZeile(b) {
   const k = kundeVon(b);
   const grau = !istAktiv(b) || b.uebergeben ? ' vw-zeile--grau' : '';
+  const marke = b.neu ? '<span class="vw-marke vw-marke--neu">neu</span> '
+    : b.status === 'warteliste' ? '<span class="vw-marke vw-marke--info">Warteliste</span> ' : '';
+  const offen = istAktiv(b) && (!terminVon(b) && !istHofverkauf(b));
   return `<button type="button" class="vw-zeile${grau}" data-aktion="oeffnen" data-id="${b.id}">
-    <span class="vw-zeile-name">${esc(k.name)}</span>
+    <span class="vw-zeile-name">${marke}${esc(k.name)}</span>
     <span class="vw-zeile-betrag">${betragText(bestellBetrag(b))}</span>
-    <span class="vw-zeile-info">${esc(artikelKurz(b))}<br>${[b.nummer, k.ort, QUELLEN[b.quelle]].filter(Boolean).map(esc).join(' · ')}</span>
-    ${marken(b)}
+    <span class="vw-zeile-info">${esc(artikelKurz(b))}</span>
+    <span class="vw-zeile-stand${offen ? ' vw-warnung' : ''}">${esc(standText(b))} · ${esc(b.nummer)}</span>
   </button>`;
 }
 
@@ -435,79 +460,70 @@ function zahlungsinfoOeffnen(b) {
 const inhalt = () => document.getElementById('vw-inhalt');
 
 // 5.1 Übersicht
+// Oben nur, was zu tun ist; darunter, was noch frei ist; alles Seltene
+// (Verkaufsrunde bearbeiten, Sortiment, Export …) eingeklappt unter „Mehr".
 function ansichtUebersicht() {
   const ch = aktiveCharge();
   const alle = bestellungenDerCharge(ch);
   const aktiv = alle.filter(istAktiv);
-  const warteliste = alle.filter((b) => b.status === 'warteliste');
+  const warteliste = alle.filter((b) => b.status === 'warteliste').length;
   const offen = aktiv.filter((b) => !b.bezahlt);
   const offenCent = offen.reduce((s, b) => s + bestellBetrag(b).cent, 0);
-  const nichtUebergeben = aktiv.filter((b) => !b.uebergeben).length;
+  const nichtUebergeben = aktiv.filter((b) => !b.uebergeben && !ohneTerminOffen(b)).length;
   const geldFehlt = aktiv.filter((b) => b.uebergeben && !b.bezahlt).length;
-  const geschaetzt = offen.some((b) => bestellBetrag(b).geschaetzt);
   const neue = alle.filter((b) => b.neu).length;
+  const ohneTermin = aktiv.filter(ohneTerminOffen).length;
+  const passendeVa = passendeVoranmeldungen(ch).length;
   const hatGewichtsware = ch.artikel.some((a) => a.art === 'gewicht');
-  const tage = tageBis(ch.bestellschluss);
-  const schlussText = tage > 1 ? `in ${tage} Tagen` : tage === 1 ? 'morgen' : tage === 0 ? 'heute' : 'vorbei';
 
-  const artikelHtml = ch.artikel.map((a) => {
-    const bestellt = bestellteMenge(ch, a.id);
-    const anteil = a.kontingent ? Math.min(100, Math.round((bestellt / a.kontingent) * 100)) : 100;
-    const preis = a.art === 'gewicht' ? `${euro(a.preisCent)}/kg` : euro(a.preisCent);
-    const frei = a.kontingent - bestellt;
-    return `<div class="vw-artikel-zeile">
-      <div class="vw-zeile-kopf"><strong>${esc(a.name)}</strong><span class="vw-klein">${preis}</span></div>
-      <div class="vw-balken${frei <= 0 ? ' vw-balken--voll' : ''}"><span style="width:${anteil}%"></span></div>
-      <div class="vw-zeile-kopf vw-klein"><span>${bestellt} von ${a.kontingent} vergeben</span>
-        <span>${frei > 0 ? `noch ${frei} frei` : 'ausverkauft'}</span></div>
+  // Zu tun: nur Einträge mit Anzahl > 0, jeder mit Zahl rechts
+  const aufgabe = (anzahl, text, ziel) => (anzahl
+    ? `<li>${ziel.startsWith('#') ? `<a href="${ziel}">` : `<button type="button" data-aktion="filter" data-wert="${ziel}">`}
+        <span>${text}</span><span class="vw-anzahl">${anzahl}</span>${ziel.startsWith('#') ? '</a>' : '</button>'}</li>`
+    : '');
+  const aufgaben = [
+    aufgabe(neue, 'Neue Bestellungen über die Website', 'neu'),
+    aufgabe(ohneTermin, 'Termin mit dem Kunden klären', 'termin-offen'),
+    aufgabe(passendeVa, 'Voranmeldungen übernehmen', '#voranmeldungen'),
+    aufgabe(warteliste, 'Auf der Warteliste', 'warteliste'),
+    aufgabe(nichtUebergeben, 'Noch abzuholen bzw. zu liefern', '#uebergabe'),
+    aufgabe(geldFehlt, 'Übergeben, Geld noch nicht da', '#zahlungen'),
+  ].join('');
+
+  const freiHtml = ch.artikel.map((a) => {
+    const frei = freieMenge(ch, a.id);
+    const anteil = a.kontingent ? Math.min(100, Math.round(((a.kontingent - frei) / a.kontingent) * 100)) : 100;
+    return `<div class="vw-frei-zeile">
+      <span class="vw-frei-name">${esc(a.name)}</span>
+      <span class="vw-balken${frei <= 0 ? ' vw-balken--voll' : ''}" aria-hidden="true"><span style="width:${anteil}%"></span></span>
+      <strong class="vw-frei-zahl">${frei > 0 ? `${frei} frei` : 'aus'}</strong>
     </div>`;
   }).join('');
 
-  const aufgaben = [];
-  const ohneTermin = aktiv.filter(ohneTerminOffen).length;
-  const passendeVa = passendeVoranmeldungen(ch).length;
-  const offeneVa = daten.voranmeldungen.filter((v) => v.status === 'offen').length;
-  const zeile = (inhaltHtml) => `<li>${inhaltHtml}</li>`;
-  const pfeil = '<span class="vw-pfeil">›</span>';
-  if (neue) aufgaben.push(zeile(`<button type="button" class="vw-aufgabe--neu" data-aktion="filter" data-wert="neu">${neue} neue ${neue === 1 ? 'Bestellung' : 'Bestellungen'} über die Website ${pfeil}</button>`));
-  if (ohneTermin) aufgaben.push(zeile(`<button type="button" data-aktion="filter" data-wert="termin-offen">${ohneTermin} ohne Termin – mit dem Kunden klären ${pfeil}</button>`));
-  if (warteliste.length) aufgaben.push(zeile(`<button type="button" data-aktion="filter" data-wert="warteliste">${warteliste.length} auf der Warteliste ${pfeil}</button>`));
-  aufgaben.push(zeile(`<a href="#voranmeldungen">${passendeVa
-    ? `${passendeVa} Voranmeldungen passen zu dieser Verkaufsrunde`
-    : `Voranmeldungen (${offeneVa} offen)`} ${pfeil}</a>`));
-  if (nichtUebergeben) aufgaben.push(zeile(`<a href="#uebergabe">${nichtUebergeben} noch nicht abgeholt bzw. geliefert ${pfeil}</a>`));
-  if (geldFehlt) aufgaben.push(zeile(`<a href="#zahlungen">${geldFehlt} übergeben, Geld noch nicht da ${pfeil}</a>`));
-  aufgaben.push(zeile(`<a href="#zahlungen">Alle Zahlungen ${pfeil}</a>`));
-  aufgaben.push(zeile(`<button type="button" data-aktion="ankuendigung">Ankündigung für WhatsApp ${pfeil}</button>`));
-  if (hatGewichtsware) aufgaben.push(zeile(`<a href="#wiegen">Vorab wiegen und Packzettel drucken (optional) ${pfeil}</a>`));
-  else aufgaben.push(zeile(`<button type="button" data-aktion="drucken">Packzettel drucken ${pfeil}</button>`));
-  aufgaben.push(zeile(`<button type="button" data-aktion="export">Liste für Excel herunterladen ${pfeil}</button>`));
-
+  const mehr = (inhaltHtml) => `<li>${inhaltHtml}</li>`;
   inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Übersicht</h1>${chargeWahl()}
-      <div class="vw-knopfreihe">
-        <a class="vw-knopf vw-knopf--voll" href="#hofverkauf">+ Verkauf am Hof</a>
-        <a class="vw-knopf" href="#charge">Verkaufsrunde bearbeiten</a>
-        <a class="vw-knopf" href="#charge-neu">+ Neue Verkaufsrunde</a>
-        <a class="vw-knopf" href="#sortiment">Sortiment</a>
-      </div></div>
-    <div class="vw-kennzahlen">
-      <div class="vw-kennzahl"><strong>${aktiv.length}</strong><span>Bestellungen${warteliste.length ? ` · ${warteliste.length} Warteliste` : ''}</span></div>
-      <div class="vw-kennzahl${offenCent ? ' vw-kennzahl--achtung' : ''}"><strong>${euro(offenCent)}</strong><span>noch nicht bezahlt${geschaetzt ? ' (teils geschätzt)' : ''}</span></div>
-      <div class="vw-kennzahl"><strong>${nichtUebergeben}</strong><span>noch zu übergeben</span></div>
-      <div class="vw-kennzahl${tage >= 0 && tage <= 3 ? ' vw-kennzahl--achtung' : ''}"><strong>${schlussText}</strong><span>Bestellschluss ${datumKurz(ch.bestellschluss)}</span></div>
+    <div class="vw-kopf"><h1>Übersicht</h1>${chargeWahl()}</div>
+    <section class="vw-karte" aria-label="Zu tun"><h2>Zu tun</h2>
+      ${aufgaben ? `<ul class="vw-aufgaben">${aufgaben}</ul>` : '<p class="vw-erledigt-hinweis">Alles erledigt ✓</p>'}
+    </section>
+    <div class="vw-kennzahlen vw-kennzahlen--zwei">
+      <div class="vw-kennzahl"><strong>${aktiv.length}</strong><span>Bestellungen</span></div>
+      <div class="vw-kennzahl${offenCent ? ' vw-kennzahl--achtung' : ''}"><strong>${euro(offenCent)}</strong><span>noch nicht bezahlt</span></div>
     </div>
-    <div class="vw-spalten">
-      <section class="vw-karte" aria-label="Artikel"><h2>Was ist noch frei?</h2>${artikelHtml}</section>
-      <div>
-        <section class="vw-karte" aria-label="Zu erledigen"><h2>Zu erledigen</h2><ul class="vw-aufgaben">${aufgaben.join('')}</ul></section>
-        <section class="vw-karte" aria-label="Termine"><h2>Termine</h2>
-          ${ch.termine.length ? ch.termine.map((t) => `<p>${terminText(t)}</p>`).join('') : '<p class="vw-klein">Noch keine Termine – unter „Verkaufsrunde bearbeiten" ergänzen.</p>'}
-          <p class="vw-klein">Status: ${esc(CHARGE_STATUS[ch.status] || ch.status || '')}</p>
-        </section>
-        ${nutzerZeile()}
-      </div>
-    </div>`;
+    <section class="vw-karte" aria-label="Noch frei"><h2>Noch frei</h2>${freiHtml}</section>
+    <details class="vw-karte vw-mehr"><summary>Mehr: Verkaufsrunde, Sortiment, Export …</summary>
+      <ul class="vw-aufgaben">
+        ${mehr('<a href="#charge">Verkaufsrunde bearbeiten (Preise, Mengen, Termine)</a>')}
+        ${mehr('<a href="#charge-neu">Neue Verkaufsrunde anlegen</a>')}
+        ${mehr('<a href="#sortiment">Sortiment – Produkte anlegen und ändern</a>')}
+        ${mehr('<button type="button" data-aktion="ankuendigung">Ankündigung für WhatsApp</button>')}
+        ${mehr('<a href="#zahlungen">Alle Zahlungen</a>')}
+        ${mehr(hatGewichtsware ? '<a href="#wiegen">Vorab wiegen und Packzettel drucken</a>' : '<button type="button" data-aktion="drucken">Packzettel drucken</button>')}
+        ${mehr('<button type="button" data-aktion="export">Liste für Excel herunterladen</button>')}
+      </ul>
+      <p class="vw-klein">Termine: ${ch.termine.length ? ch.termine.map(terminText).join(' · ') : 'noch keine'}</p>
+    </details>
+    ${nutzerZeile()}`;
 }
 
 // 5.2 Bestellungen
@@ -539,16 +555,26 @@ function passtZumFilter(b) {
 
 function ansichtBestellungen() {
   const ch = aktiveCharge();
+  const alle = bestellungenDerCharge(ch);
+  const anzahl = (wert) => {
+    const vorher = zustand.filter;
+    zustand.filter = wert;
+    const n = alle.filter(passtZumFilter).length;
+    zustand.filter = vorher;
+    return n;
+  };
+  // „Neu" nur anbieten, wenn es etwas Neues gibt
+  const filter = FILTER.filter(([wert]) => wert !== 'neu' || anzahl('neu') || zustand.filter === 'neu');
   inhalt().innerHTML = `
     <div class="vw-kopf"><h1>Bestellungen</h1>${chargeWahl()}
-      <input type="search" class="vw-suche" id="vw-suche" placeholder="Name, Ort oder Nummer suchen …"
-        aria-label="Bestellungen durchsuchen" value="${esc(zustand.suche)}" />
-      <div class="vw-chips" role="group" aria-label="Filter">${FILTER.map(([wert, text]) =>
-        `<button type="button" class="vw-chip" data-aktion="filter" data-wert="${wert}"
-          aria-pressed="${zustand.filter === wert}">${text}</button>`).join('')}</div>
-      <p class="vw-summen">Vergeben: ${ch.artikel.map((a) => `${bestellteMenge(ch, a.id)}× ${esc(a.name)}`).join(' · ')}</p>
-      ${zustand.filter === 'neu' && bestellungenDerCharge(ch).some((b) => b.neu)
-        ? '<button type="button" class="vw-knopf" data-aktion="alle-gesehen">Alle als gesehen markieren</button>' : ''}
+      <div class="vw-such-zeile">
+        <input type="search" class="vw-suche" id="vw-suche" placeholder="Suchen …"
+          aria-label="Bestellungen durchsuchen" value="${esc(zustand.suche)}" />
+        <select class="vw-filter-wahl" data-wahl="filter" aria-label="Anzeigen">${filter.map(([wert, text]) =>
+          `<option value="${wert}" ${zustand.filter === wert ? 'selected' : ''}>${text} (${anzahl(wert)})</option>`).join('')}</select>
+      </div>
+      ${zustand.filter === 'neu' && alle.some((b) => b.neu)
+        ? '<button type="button" class="vw-knopf vw-knopf--klein" data-aktion="alle-gesehen">Alle als gesehen markieren</button>' : ''}
     </div>
     <div class="vw-liste" id="vw-liste"></div>`;
   listeAktualisieren();
@@ -574,15 +600,21 @@ function listeAktualisieren() {
     : '<p class="vw-klein">Keine Bestellungen gefunden.</p>';
 }
 
+// Erfassen: zwei Arten, oben umschaltbar
+function erfassenUmschalter(aktiv) {
+  return `<div class="vw-segment" role="group" aria-label="Was erfassen?">
+    <a href="#neu" aria-pressed="${aktiv === 'neu'}">Vorbestellung</a>
+    <a href="#hofverkauf" aria-pressed="${aktiv === 'hof'}">Verkauf am Hof</a>
+  </div>`;
+}
+
 // 5.3 Bestellung erfassen (Telefon, WhatsApp, persönlich)
 function ansichtNeu() {
   const ch = aktiveCharge();
   inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Bestellung erfassen</h1>
-      <p class="vw-klein">Für Bestellungen per Telefon, WhatsApp oder persönlich. Zählt genauso von der Menge ab wie eine Bestellung über die Website.
-        Für eine spätere Verkaufsrunde ohne Preis und Termin: <a href="#voranmeldungen">Voranmeldung erfassen</a>.</p>
-      <a class="vw-knopf vw-knopf--breit" href="#hofverkauf">Kunde steht am Hof ohne Bestellung? → Verkauf am Hof</a>
-      ${chargeWahl()}</div>
+    <div class="vw-kopf"><h1>Erfassen</h1>${erfassenUmschalter('neu')}${chargeWahl()}
+      <p class="vw-klein">Bestellung per Telefon, WhatsApp oder persönlich – für einen späteren Termin.
+        Ohne Preis und Termin? <a href="#voranmeldungen">Voranmeldung</a>.</p></div>
     <form class="vw-karte" id="vw-formular" novalidate>
       <fieldset class="vw-feldgruppe"><legend>Wie kam die Bestellung?</legend>
         <div class="vw-auswahl vw-auswahl--reihe">
@@ -866,6 +898,8 @@ function tourSortieren(liste) {
   });
 }
 
+// Liste: je Kunde eine ruhige Zeile. Antippen öffnet den Kunden allein
+// (Ansicht „abgabe") mit Gewichten, Betrag und einem Hauptknopf.
 function ansichtUebergabe() {
   const ch = aktiveCharge();
   const aktiv = bestellungenDerCharge(ch).filter(istAktiv);
@@ -881,115 +915,144 @@ function ansichtUebergabe() {
   const offen = sortiert.filter((b) => !b.uebergeben);
   const erledigt = sortiert.filter((b) => b.uebergeben);
 
-  let liste;
-  if (lieferung) {
-    const orte = [...new Set(offen.map((b) => kundeVon(b).ort))];
-    const routen = routenLinks(offen.filter((b) => kundeVon(b).strasse));
-    liste = (routen.length ? `<div class="vw-knopfreihe">${routen.map((r) =>
-      `<a class="vw-knopf vw-knopf--voll" href="${r.url}" target="_blank" rel="noopener">${esc(r.text)}</a>`).join('')}</div>` : '')
-      + orte.map((ort) => {
-        const imOrt = offen.filter((b) => kundeVon(b).ort === ort);
-        return `<h2 class="vw-ort-titel">${esc(ort)}</h2>${imOrt.map((b, i) =>
-          stoppKarte(b, { lieferung: true, hoch: i > 0, runter: i < imOrt.length - 1 })).join('')}`;
-      }).join('');
-  } else {
-    liste = offen.map((b) => stoppKarte(b, {})).join('');
-  }
-  if (!offen.length) liste = `<p class="vw-klein">${erledigt.length ? 'Alles übergeben.' : 'Keine Bestellungen.'}</p>`;
+  const zeile = (b, extra = '') => {
+    const k = kundeVon(b);
+    return `<div class="vw-stopp-zeile">
+      <button type="button" class="vw-zeile vw-zeile--pfeil" data-aktion="abgabe" data-id="${b.id}">
+        <span class="vw-zeile-name">${esc(k.name)}</span>
+        <span class="vw-zeile-betrag">${betragText(uebergabeBetrag(b))}</span>
+        <span class="vw-zeile-info">${esc(artikelKurz(b))}</span>
+        ${lieferung ? `<span class="vw-zeile-stand">${k.strasse ? esc(k.strasse) : '<span class="vw-warnung">Adresse fehlt</span>'}</span>` : ''}
+      </button>${extra}</div>`;
+  };
 
+  let liste = '';
+  if (lieferung) {
+    let orte = [...new Set(offen.map((b) => kundeVon(b).ort))];
+    liste = orte.map((ort) => {
+      const imOrt = offen.filter((b) => kundeVon(b).ort === ort);
+      return `<h2 class="vw-ort-titel">${esc(ort)}</h2>${imOrt.map((b, i) => zeile(b, zustand.reihenfolge
+        ? `<div class="vw-pfeile">
+            <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="tour" data-id="${b.id}" data-wert="-1" ${i ? '' : 'disabled'} aria-label="${esc(kundeVon(b).name)} früher">↑</button>
+            <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="tour" data-id="${b.id}" data-wert="1" ${i < imOrt.length - 1 ? '' : 'disabled'} aria-label="${esc(kundeVon(b).name)} später">↓</button>
+          </div>` : '')).join('')}`;
+    }).join('');
+  } else {
+    liste = offen.map((b) => zeile(b)).join('');
+  }
+  if (!offen.length) liste = `<p class="vw-erledigt-hinweis">${erledigt.length ? 'Alles übergeben ✓' : 'Keine Bestellungen.'}</p>`;
+
+  const routen = lieferung && !zustand.reihenfolge ? routenLinks(offen.filter((b) => kundeVon(b).strasse)) : [];
   inhalt().innerHTML = `
     <div class="vw-kopf"><h1>Übergabe</h1>${chargeWahl()}
-      <div class="vw-chips" role="group" aria-label="Abholung oder Lieferung">
-        <button type="button" class="vw-chip" data-aktion="uebergabe-art" data-wert="abholung" aria-pressed="${!lieferung}">Abholung am Hof (${anzahl('abholung')} offen)</button>
-        <button type="button" class="vw-chip" data-aktion="uebergabe-art" data-wert="lieferung" aria-pressed="${lieferung}">Liefertour (${anzahl('lieferung')} offen)</button>
+      <div class="vw-segment" role="group" aria-label="Abholung oder Lieferung">
+        <button type="button" data-aktion="uebergabe-art" data-wert="abholung" aria-pressed="${!lieferung}">Abholung <span class="vw-anzahl">${anzahl('abholung')}</span></button>
+        <button type="button" data-aktion="uebergabe-art" data-wert="lieferung" aria-pressed="${lieferung}">Liefertour <span class="vw-anzahl">${anzahl('lieferung')}</span></button>
       </div>
-      ${termine.map((t) => `<p class="vw-klein">${terminText(t)}</p>`).join('')}
-      ${lieferung ? '<p class="vw-klein">Reihenfolge mit ↑ ↓ anpassen – sie bleibt für die nächsten Touren gespeichert.</p>'
-        : '<a class="vw-knopf vw-knopf--breit" href="#hofverkauf">+ Verkauf am Hof (Kunde ohne Bestellung)</a>'}
-      ${ohneTermin ? `<p><button type="button" class="vw-knopf vw-knopf--warnung" data-aktion="filter" data-wert="termin-offen">${ohneTermin} Bestellungen ohne Termin</button></p>` : ''}
+      ${termine.length ? `<p class="vw-klein">${termine.map(terminText).join(' · ')}</p>` : ''}
+      ${ohneTermin ? `<p><button type="button" class="vw-link" data-aktion="filter" data-wert="termin-offen">${ohneTermin} Bestellungen ohne Termin ›</button></p>` : ''}
     </div>
-    ${liste}
-    ${erledigt.length ? `<h2 class="vw-ort-titel">Erledigt (${erledigt.length})</h2>${erledigt.map(erledigtKarte).join('')}` : ''}`;
+    ${routen.map((r) => `<a class="vw-knopf vw-knopf--voll vw-knopf--breit" href="${r.url}" target="_blank" rel="noopener">${esc(r.text)}</a>`).join('')}
+    <div class="vw-liste">${liste}</div>
+    ${lieferung && offen.length > 1 ? `<p><button type="button" class="vw-link" data-aktion="reihenfolge">${zustand.reihenfolge ? 'Fertig sortiert' : 'Reihenfolge ändern'}</button></p>` : ''}
+    ${!lieferung ? '<p><a class="vw-link" href="#hofverkauf">Kunde ohne Bestellung? Verkauf am Hof ›</a></p>' : ''}
+    ${erledigt.length ? `<details class="vw-erledigt"><summary>Erledigt (${erledigt.length})</summary>
+      <div class="vw-liste">${erledigt.map((b) => `<button type="button" class="vw-zeile vw-zeile--grau vw-zeile--pfeil" data-aktion="abgabe" data-id="${b.id}">
+        <span class="vw-zeile-name">✓ ${esc(kundeVon(b).name)}</span>
+        <span class="vw-zeile-betrag">${betragText(bestellBetrag(b))}</span>
+        <span class="vw-zeile-stand${b.bezahlt ? '' : ' vw-warnung'}">${b.bezahlt ? `bezahlt (${ZAHLARTEN[b.bezahlt]})` : 'Geld noch nicht da'}</span>
+      </button>`).join('')}</div></details>` : ''}`;
 }
 
-function positionUebergabe(b, p) {
+// Ein Kunde bei der Übergabe: Gewichte, Betrag, ein Hauptknopf
+function ansichtAbgabe() {
+  const b = bestellungVon(zustand.abgabeId);
+  if (!b) { location.hash = '#uebergabe'; return; }
   const ch = chargeVon(b);
-  const a = artikelVon(ch, p.artikelId);
-  const preis = preisVon(ch, p);
-  const gewicht = a.art === 'gewicht';
-  return `<div class="vw-pos">
-    <div class="vw-pos-kopf">
-      <div><strong>${esc(a.name)}</strong><br><span class="vw-klein">${gewicht ? `${euro(preis)}/kg` : `je ${euro(preis)}`}</span></div>
-      <div class="vw-zaehler">
-        <button type="button" data-aktion="pos-menge" data-id="${b.id}" data-artikel="${a.id}" data-wert="${p.menge - 1}" aria-label="${esc(a.name)} eins weniger">−</button>
-        <output>${p.menge}</output>
-        <button type="button" data-aktion="pos-menge" data-id="${b.id}" data-artikel="${a.id}" data-wert="${p.menge + 1}" aria-label="${esc(a.name)} eins mehr">+</button>
-      </div>
-    </div>
-    ${gewicht ? `<div class="vw-stueck">${stueckTexte(p).map((t, i) => `<input type="text" inputmode="decimal" autocomplete="off"
-        placeholder="kg" value="${esc(t)}" data-stueck="${p.id}" data-bestellung="${b.id}" data-nr="${i}"
-        aria-label="${esc(a.name)} Stück ${i + 1}, Gewicht in kg" />`).join('')}</div>
-      ${p.gewichtG ? `<p class="vw-klein">Vorab gewogen: ${kg(p.gewichtG)} – Felder nur ausfüllen, wenn es andere Stücke werden.</p>`
-        : '<p class="vw-klein">Gewichte vom Etikett eintippen (kg).</p>'}` : ''}
-  </div>`;
-}
-
-function stoppKarte(b, { lieferung = false, hoch = false, runter = false }) {
   const k = kundeVon(b);
-  const ch = chargeVon(b);
+  const t = terminVon(b);
+  const lieferung = terminArt(b) === 'lieferung';
   const betrag = betragText(uebergabeBetrag(b));
-  const dazu = ch.artikel.filter((a) => !b.positionen.some((p) => p.artikelId === a.id) && freieMenge(ch, a.id) > 0);
-  let knoepfe;
-  if (b.bezahlt) {
-    knoepfe = `<button type="button" class="vw-knopf vw-knopf--voll vw-knopf--gross" data-aktion="abschliessen" data-id="${b.id}" data-wert="">Übergeben (schon bezahlt)</button>`;
-  } else if (b.zahlart === 'ueberweisung') {
-    knoepfe = `<button type="button" class="vw-knopf vw-knopf--voll vw-knopf--gross" data-aktion="abschliessen" data-id="${b.id}" data-wert="ueberweisung">Übergeben · zahlt per Überweisung</button>
-      <button type="button" class="vw-knopf" data-aktion="abschliessen" data-id="${b.id}" data-wert="bar">Doch bar kassiert <span data-betrag="${b.id}">${betrag}</span></button>`;
-  } else {
-    knoepfe = `<button type="button" class="vw-knopf vw-knopf--voll vw-knopf--gross" data-aktion="abschliessen" data-id="${b.id}" data-wert="bar">Übergeben · bar kassiert <span data-betrag="${b.id}">${betrag}</span></button>
-      <button type="button" class="vw-knopf" data-aktion="abschliessen" data-id="${b.id}" data-wert="ueberweisung">Zahlt per Überweisung</button>`;
-  }
-  return `<article class="vw-karte vw-stopp">
-    <div class="vw-dialog-kopf">
-      <div><strong>${esc(k.name)}</strong> <span class="vw-klein">${esc(b.nummer)}</span></div>
-      <strong data-betrag="${b.id}">${betrag}</strong>
-    </div>
-    ${lieferung ? `<p class="vw-klein">${k.strasse ? esc(adresseVon(k)) : '<span class="vw-warnung">Adresse fehlt</span>'}</p>` : ''}
-    ${b.anmerkung ? `<p class="vw-klein">„${esc(b.anmerkung)}"</p>` : ''}
-    ${b.positionen.map((p) => positionUebergabe(b, p)).join('')}
-    ${dazu.length ? `<select class="vw-dazu" data-dazu="${b.id}" aria-label="Artikel dazu">
-      <option value="">+ Artikel dazu …</option>
-      ${dazu.map((a) => `<option value="${a.id}">${esc(a.name)} (noch ${freieMenge(ch, a.id)} frei)</option>`).join('')}</select>` : ''}
-    <div class="vw-knopfreihe">${knoepfe}</div>
-    <div class="vw-knopfreihe vw-knopfreihe--klein">
-      ${k.telefon ? `<a class="vw-knopf vw-knopf--klein" href="tel:${esc(k.telefon.replace(/\s/g, ''))}">Anrufen</a>
-      <a class="vw-knopf vw-knopf--klein" href="${whatsappLink(b, bereitText(b))}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
-      ${lieferung && k.strasse ? `<a class="vw-knopf vw-knopf--klein" href="${navLink(b)}" target="_blank" rel="noopener">Navi</a>` : ''}
-      ${hoch ? `<button type="button" class="vw-knopf vw-knopf--klein" data-aktion="tour" data-id="${b.id}" data-wert="-1" aria-label="${esc(k.name)} früher anfahren">↑</button>` : ''}
-      ${runter ? `<button type="button" class="vw-knopf vw-knopf--klein" data-aktion="tour" data-id="${b.id}" data-wert="1" aria-label="${esc(k.name)} später anfahren">↓</button>` : ''}
-      <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="oeffnen" data-id="${b.id}">Details</button>
-    </div>
-  </article>`;
-}
+  const zurueck = '<a class="vw-zurueck" href="#uebergabe">‹ Übergabe</a>';
+  const kontakt = `<div class="vw-kontakt-zeile">
+    ${k.telefon ? `<a href="tel:${esc(k.telefon.replace(/\s/g, ''))}">Anrufen</a>
+      <a href="${whatsappLink(b, bereitText(b))}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
+    ${lieferung && k.strasse ? `<a href="${navLink(b)}" target="_blank" rel="noopener">Navi</a>` : ''}
+    <button type="button" class="vw-link" data-aktion="oeffnen" data-id="${b.id}">Details</button>
+  </div>`;
+  const kopf = `<div class="vw-kopf">${zurueck}<h1>${esc(k.name)}</h1>
+    <p class="vw-klein">${esc(b.nummer)}${t ? ` · ${terminText(t)}` : ''}${lieferung && k.strasse ? ` · ${esc(adresseVon(k))}` : ''}</p>
+    ${b.anmerkung ? `<p class="vw-hinweis">„${esc(b.anmerkung)}"</p>` : ''}</div>`;
 
-function erledigtKarte(b) {
-  const k = kundeVon(b);
-  const zahlung = b.bezahlt
-    ? `bezahlt (${ZAHLARTEN[b.bezahlt]})`
-    : `<span class="vw-warnung">${b.zahlart === 'ueberweisung' ? 'Überweisung noch nicht am Konto' : 'noch nicht bezahlt'}</span>`;
-  return `<article class="vw-karte vw-stopp vw-stopp--erledigt">
-    <div class="vw-dialog-kopf">
-      <div><strong>✓ ${esc(k.name)}</strong> <span class="vw-klein">${esc(b.nummer)}</span></div>
-      <strong>${betragText(bestellBetrag(b))}</strong>
-    </div>
-    <p class="vw-klein">${esc(artikelKurz(b))} · ${zahlung}</p>
-    <div class="vw-knopfreihe vw-knopfreihe--klein">
-      ${!b.bezahlt ? `<button type="button" class="vw-knopf vw-knopf--klein" data-aktion="zahlungsinfo" data-id="${b.id}">Zahlungsinfo</button>
-        <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="bezahlt" data-wert="${b.zahlart}" data-id="${b.id}">${b.zahlart === 'bar' ? 'Bar erhalten' : 'Geld am Konto'}</button>` : ''}
-      <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="uebergeben" data-id="${b.id}">Rückgängig</button>
-      <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="oeffnen" data-id="${b.id}">Details</button>
-    </div>
-  </article>`;
+  // Schon übergeben: Stand und das, was noch zu tun sein kann
+  if (b.uebergeben) {
+    inhalt().innerHTML = `${kopf}
+      <section class="vw-karte">
+        <p>${esc(artikelKurz(b))}</p>
+        <div class="vw-summe"><span>Summe</span><strong>${betragText(bestellBetrag(b))}</strong></div>
+        <p class="${b.bezahlt ? '' : 'vw-warnung'}">✓ Übergeben · ${b.bezahlt ? `bezahlt (${ZAHLARTEN[b.bezahlt]})` : 'Geld noch nicht da'}</p>
+        ${b.bezahlt ? '' : `<button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit vw-knopf--gross" data-aktion="bezahlt" data-wert="${b.zahlart}" data-id="${b.id}">${b.zahlart === 'bar' ? 'Bar erhalten' : 'Geld ist am Konto'}</button>
+          <button type="button" class="vw-link" data-aktion="zahlungsinfo" data-id="${b.id}">Zahlungsinfo mit QR-Code zeigen</button>`}
+      </section>
+      ${kontakt}
+      <p><button type="button" class="vw-link vw-link--leise" data-aktion="uebergeben" data-id="${b.id}">Übergabe rückgängig machen</button></p>`;
+    return;
+  }
+
+  const dazu = ch.artikel.filter((a) => !b.positionen.some((p) => p.artikelId === a.id) && freieMenge(ch, a.id) > 0);
+  const positionen = b.positionen.map((p) => {
+    const a = artikelVon(ch, p.artikelId);
+    const gewicht = a.art === 'gewicht';
+    return `<div class="vw-pos">
+      <div class="vw-pos-kopf"><strong>${p.menge}× ${esc(a.name)}</strong>
+        <span class="vw-klein">${gewicht ? `${euro(preisVon(ch, p))}/kg` : `je ${euro(preisVon(ch, p))}`}</span></div>
+      ${gewicht ? `<div class="vw-stueck">${stueckTexte(p).map((txt, i) => `<input type="text" inputmode="decimal" autocomplete="off"
+          placeholder="Stück ${i + 1}" value="${esc(txt)}" data-stueck="${p.id}" data-bestellung="${b.id}" data-nr="${i}"
+          aria-label="${esc(a.name)} Stück ${i + 1}, Gewicht in kg" />`).join('')}</div>
+        ${p.gewichtG ? `<p class="vw-klein">Vorab gewogen: ${kg(p.gewichtG)} – nur ausfüllen, wenn es andere Stücke werden.</p>` : ''}` : ''}
+    </div>`;
+  }).join('');
+  const hatGewicht = b.positionen.some((p) => artikelVon(ch, p.artikelId).art === 'gewicht');
+
+  let haupt;
+  let neben;
+  if (b.bezahlt) {
+    haupt = `<button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit vw-knopf--gross" data-aktion="abschliessen" data-id="${b.id}" data-wert="">Übergeben (schon bezahlt)</button>`;
+    neben = '';
+  } else if (b.zahlart === 'ueberweisung') {
+    haupt = `<button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit vw-knopf--gross" data-aktion="abschliessen" data-id="${b.id}" data-wert="ueberweisung">Übergeben · zahlt per Überweisung</button>`;
+    neben = `<button type="button" class="vw-link" data-aktion="abschliessen" data-id="${b.id}" data-wert="bar">Zahlt doch bar</button>`;
+  } else {
+    haupt = `<button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit vw-knopf--gross" data-aktion="abschliessen" data-id="${b.id}" data-wert="bar">Übergeben · bar kassiert</button>`;
+    neben = `<button type="button" class="vw-link" data-aktion="abschliessen" data-id="${b.id}" data-wert="ueberweisung">Zahlt lieber per Überweisung</button>`;
+  }
+
+  inhalt().innerHTML = `${kopf}
+    <section class="vw-karte">
+      ${hatGewicht ? '<p class="vw-klein">Gewichte vom Etikett eintippen (kg).</p>' : ''}
+      ${positionen}
+      <details class="vw-aendern"><summary>Menge ändern oder Artikel dazu</summary>
+        ${b.positionen.map((p) => {
+          const a = artikelVon(ch, p.artikelId);
+          return `<div class="vw-pos-kopf vw-pos-aendern"><span>${esc(a.name)}</span>
+            <div class="vw-zaehler">
+              <button type="button" data-aktion="pos-menge" data-id="${b.id}" data-artikel="${a.id}" data-wert="${p.menge - 1}" aria-label="${esc(a.name)} eins weniger">−</button>
+              <output>${p.menge}</output>
+              <button type="button" data-aktion="pos-menge" data-id="${b.id}" data-artikel="${a.id}" data-wert="${p.menge + 1}" aria-label="${esc(a.name)} eins mehr">+</button>
+            </div></div>`;
+        }).join('')}
+        ${dazu.length ? `<select class="vw-dazu" data-dazu="${b.id}" aria-label="Artikel dazu">
+          <option value="">+ Artikel dazu …</option>
+          ${dazu.map((a) => `<option value="${a.id}">${esc(a.name)} (noch ${freieMenge(ch, a.id)} frei)</option>`).join('')}</select>` : ''}
+      </details>
+      <div class="vw-summe"><span>Summe</span><strong data-betrag="${b.id}">${betrag}</strong></div>
+      ${haupt}
+      ${neben ? `<p class="vw-mitte">${neben}</p>` : ''}
+    </section>
+    ${kontakt}`;
+  // Erstes leeres Gewichtsfeld gleich bereit zum Tippen
+  const erstes = [...inhalt().querySelectorAll('[data-stueck]')].find((f) => !f.value);
+  if (erstes && window.matchMedia('(pointer: fine)').matches) erstes.focus();
 }
 
 // Betrag in der Karte nach jeder Gewichtseingabe aktualisieren
@@ -1023,6 +1086,7 @@ async function uebergabeAbschliessen(b, zahlung) {
   }, { erfolg: `${kundeVon(b).name}: übergeben${zahlung === 'bar' ? ' und bar kassiert' : ''}.` });
   if (!erg) return;
   b.positionen.forEach((p) => { delete zustand.stueck[p.id]; });
+  if (aktuelleAnsicht() === 'abgabe') location.hash = '#uebergabe';
   // Bei Überweisung gleich die Zahlungsinfo zeigen – zum Scannen oder per WhatsApp
   const aktuell = bestellungVon(b.id);
   if (zahlung === 'ueberweisung' && aktuell && !aktuell.bezahlt) zahlungsinfoOeffnen(aktuell);
@@ -1088,19 +1152,18 @@ function ansichtHofverkauf() {
   const ch = aktiveCharge();
   const betrag = betragText(hofBetrag(ch));
   inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Verkauf am Hof</h1>
-      <p class="vw-klein">Für Kunden ohne Vorbestellung: Stücke wählen, Gewichte vom Etikett eintippen, kassieren. Zählt von der Menge der Verkaufsrunde ab.</p>
-      ${chargeWahl()}</div>
+    <div class="vw-kopf"><h1>Erfassen</h1>${erfassenUmschalter('hof')}${chargeWahl()}
+      <p class="vw-klein">Kunde ohne Vorbestellung: Stücke wählen, Gewichte vom Etikett eintippen, kassieren.</p></div>
     <section class="vw-karte">
       <label class="vw-feld"><span>Name (optional)</span>
         <input id="vw-hof-name" list="vw-kundenliste-hof" autocomplete="off" value="${esc(zustand.hof.name)}" placeholder="leer lassen, wenn unbekannt" /></label>
       <datalist id="vw-kundenliste-hof">${daten.kunden.map((k) => `<option value="${esc(k.name)}">${esc(k.ort)}</option>`).join('')}</datalist>
-      ${ch.artikel.map((a) => {
+      ${ch.artikel.filter((a) => freieMenge(ch, a.id) > 0 || zustand.hof.mengen[a.id]).map((a) => {
         const menge = zustand.hof.mengen[a.id] || 0;
         const frei = Math.max(0, freieMenge(ch, a.id));
         return `<div class="vw-pos">
           <div class="vw-pos-kopf">
-            <div><strong>${esc(a.name)}</strong><br><span class="vw-klein">${a.art === 'gewicht' ? `${euro(a.preisCent)}/kg` : euro(a.preisCent)} · noch ${frei} frei</span></div>
+            <div><strong>${esc(a.name)}</strong><br><span class="vw-klein">${a.art === 'gewicht' ? `${euro(a.preisCent)}/kg` : euro(a.preisCent)} · ${frei} frei</span></div>
             <div class="vw-zaehler">
               <button type="button" data-aktion="hof-menge" data-id="${a.id}" data-wert="${menge - 1}" aria-label="${esc(a.name)} weniger">−</button>
               <output>${menge}</output>
@@ -1112,11 +1175,9 @@ function ansichtHofverkauf() {
             aria-label="${esc(a.name)} Stück ${i + 1}, Gewicht in kg" />`).join('')}</div>` : ''}
         </div>`;
       }).join('')}
-      <div class="vw-gesamt"><span>Summe</span><span data-hofbetrag>${betrag}</span></div>
-      <div class="vw-knopfreihe">
-        <button type="button" class="vw-knopf vw-knopf--voll vw-knopf--gross" data-aktion="hof-speichern" data-wert="bar">Bar kassiert <span data-hofbetrag>${betrag}</span></button>
-        <button type="button" class="vw-knopf" data-aktion="hof-speichern" data-wert="ueberweisung">Zahlt per Überweisung</button>
-      </div>
+      <div class="vw-summe"><span>Summe</span><strong data-hofbetrag>${betrag}</strong></div>
+      <button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit vw-knopf--gross" data-aktion="hof-speichern" data-wert="bar">Verkauft · bar kassiert</button>
+      <p class="vw-mitte"><button type="button" class="vw-link" data-aktion="hof-speichern" data-wert="ueberweisung">Zahlt per Überweisung</button></p>
     </section>`;
 }
 
@@ -1948,6 +2009,7 @@ const ANSICHTEN = {
   hofverkauf: ansichtHofverkauf,
   wiegen: ansichtWiegen,
   uebergabe: ansichtUebergabe,
+  abgabe: ansichtAbgabe,
   zahlungen: ansichtZahlungen,
   voranmeldungen: ansichtVoranmeldungen,
   sortiment: ansichtSortiment,
@@ -1976,7 +2038,10 @@ function zeigen() {
   } else {
     ANSICHTEN[name]();
   }
-  const menuepunkt = { hofverkauf: 'uebergabe', produkt: 'sortiment', wiegen: 'uebersicht', zahlungen: 'uebersicht' }[name] || name;
+  const menuepunkt = {
+    hofverkauf: 'neu', abgabe: 'uebergabe', produkt: 'sortiment', wiegen: 'uebersicht', zahlungen: 'uebersicht',
+    charge: 'uebersicht', 'charge-neu': 'uebersicht',
+  }[name] || name;
   document.querySelectorAll('.vw-nav a[data-ansicht]').forEach((a) => {
     if (a.dataset.ansicht === menuepunkt) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
@@ -2015,6 +2080,7 @@ function initKlicks() {
         break;
       case 'uebergabe-art':
         zustand.uebergabeArt = el.dataset.wert;
+        zustand.reihenfolge = false;
         zeigen();
         break;
       case 'oeffnen':
@@ -2130,6 +2196,14 @@ function initKlicks() {
           meldung('Alle als gesehen markiert.');
         });
         break;
+      case 'abgabe':
+        zustand.abgabeId = el.dataset.id;
+        location.hash = '#abgabe';
+        break;
+      case 'reihenfolge':
+        zustand.reihenfolge = !zustand.reihenfolge;
+        zeigen();
+        break;
       case 'abschliessen':
         uebergabeAbschliessen(b, el.dataset.wert || null);
         break;
@@ -2195,6 +2269,16 @@ function initEingaben() {
   document.addEventListener('change', (e) => {
     if (e.target.dataset.gewicht) gewichtSpeichern(e.target);
     if (e.target.name === 'termin') adresseUmschalten();
+    if (e.target.dataset.wahl === 'charge') {
+      zustand.chargeId = e.target.value;
+      zustand.chargeForm = null;
+      zustand.hof = { mengen: {}, stueck: {}, name: '' };
+      zeigen();
+    }
+    if (e.target.dataset.wahl === 'filter') {
+      zustand.filter = e.target.value;
+      zeigen();
+    }
     if (e.target.dataset.dazu && e.target.value) {
       positionMengeSetzen(bestellungVon(e.target.dataset.dazu), e.target.value, 1);
     }
