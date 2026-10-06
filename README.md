@@ -350,6 +350,19 @@ Minuten online. Drei Wege, vom einfachsten zum flexibelsten:
    ändern → **Commit changes**. Gut für kleine Textänderungen.
 3. **Lokal am Computer:** Repository klonen, ändern, `git push`.
 
+### Änderungen vorab ansehen (Vorschau)
+
+Änderungen auf einem Arbeitszweig (nicht `master`) gehen **nicht** live,
+sondern bekommen von Cloudflare eine eigene Vorschau-Adresse:
+
+1. Einmalig einschalten: *Workers & Pages → kruckenhaus → Settings → Builds &
+   deployments → Preview deployments* → **All non-production branches**.
+2. Nach jedem Push auf den Zweig: *Deployments* → Eintrag „Preview" mit dem
+   Zweignamen → Link öffnen (Form: `https://<zweig>.kruckenhaus.pages.dev`).
+3. Hofladen-Verwaltung zum Ausprobieren: an die Adresse
+   `/verwaltung/?entwurf` anhängen – Übungsmodus mit erfundenen Daten,
+   es wird nichts gespeichert.
+
 ### Häufige Anpassungen – wo finde ich was?
 
 | Was ändern? | Wo? |
