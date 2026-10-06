@@ -499,7 +499,8 @@ Schnittstelle prüft diese Anmeldung zusätzlich selbst. **Solange die
 Schritte 2 und 3 nicht erledigt sind, ist die Verwaltung gesperrt** – es
 kann also nichts versehentlich offen stehen.
 
-**1. Tabellen in der Datenbank anlegen** (falls noch nicht geschehen):
+**1. Tabellen in der Datenbank anlegen** (erledigt am 06.10.2026; nur nach
+Schemaänderungen erneut nötig, beide Dateien sind mehrfach ausführbar):
 Cloudflare-Dashboard → *Storage & Databases → D1 → kruckenhaus → Console*,
 nacheinander den Inhalt von `schema-hofladen.sql` und `hofladen-produkte.sql`
 einfügen und ausführen.
