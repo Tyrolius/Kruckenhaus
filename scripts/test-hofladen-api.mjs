@@ -282,21 +282,56 @@ assert.deepEqual([s.kunden.find((k) => k.id === hans.id).tourRang, s.kunden.find
 console.log('✓ Liefertour-Reihenfolge wird gespeichert und geändert');
 
 // Sortiment: Produkt anlegen, bearbeiten, ausblenden
-r = ok(await api('POST', 'produkt', { name: 'Freilandeier 10 Stück', art: 'stueck', kategorie: 'saison', startpreisCent: 450, allergene: 'Ei' }));
+s = ok(await api('GET', 'stand'));
+assert.deepEqual(s.bereiche.map((b) => b.name), ['Fleisch', 'Eiernudeln', 'Honig', 'Alpakaseife', 'Saisonprodukte']);
+const bereich = (name) => s.bereiche.find((b) => b.name === name).id;
+const [bFleisch, bSaison] = [bereich('Fleisch'), bereich('Saisonprodukte')];
+assert.equal(s.produkte.find((p) => p.name === 'Masthuhn ganz').bereichId, bFleisch, 'Katalog dem Bereich zugeordnet');
+r = ok(await api('POST', 'produkt', { name: 'Freilandeier 10 Stück', art: 'stueck', bereichId: bSaison, startpreisCent: 450, allergene: 'Ei' }));
 const eier = r.produktId;
 s = ok(await api('GET', 'stand'));
-assert.deepEqual((({ name, art, kategorie, aktiv, allergene, verwendet }) => ({ name, art, kategorie, aktiv, allergene, verwendet }))(s.produkte.find((p) => p.id === eier)),
-  { name: 'Freilandeier 10 Stück', art: 'stueck', kategorie: 'saison', aktiv: true, allergene: 'Ei', verwendet: false });
+assert.deepEqual((({ name, art, bereichId, aktiv, allergene, verwendet }) => ({ name, art, bereichId, aktiv, allergene, verwendet }))(s.produkte.find((p) => p.id === eier)),
+  { name: 'Freilandeier 10 Stück', art: 'stueck', bereichId: bSaison, aktiv: true, allergene: 'Ei', verwendet: false });
 assert.ok(s.preisVorschlaege.some((v) => v.produktId === eier && v.preisCent === 450));
-assert.match((await api('POST', 'produkt', { name: 'freilandeier 10 stück', art: 'stueck' })).error, /gibt es schon/);
-assert.equal((await api('POST', 'produkt', { name: 'Ente', art: 'gewicht' })).status, 400, 'Gewichtsware braucht Richtgewicht');
-ok(await api('POST', 'produkt', { name: 'Ente', art: 'gewicht', kategorie: 'fleisch', richtVonG: 1800, richtBisG: 2500 }));
-assert.match((await api('POST', `produkt/${huhn}`, { name: 'Masthuhn ganz', art: 'stueck', kategorie: 'fleisch' })).error, /schon verkauft/);
-ok(await api('POST', `produkt/${eier}`, { name: 'Freilandeier 6 Stück', art: 'stueck', kategorie: 'saison', startpreisCent: 300, aktiv: false }));
+assert.match((await api('POST', 'produkt', { name: 'freilandeier 10 stück', art: 'stueck', bereichId: bSaison })).error, /gibt es schon/);
+assert.match((await api('POST', 'produkt', { name: 'Ohne', art: 'stueck', bereichId: 99999 })).error, /Bereich/);
+assert.equal((await api('POST', 'produkt', { name: 'Ente', art: 'gewicht', bereichId: bFleisch })).status, 400, 'Gewichtsware braucht Richtgewicht');
+ok(await api('POST', 'produkt', { name: 'Ente', art: 'gewicht', bereichId: bFleisch, richtVonG: 1800, richtBisG: 2500 }));
+assert.match((await api('POST', `produkt/${huhn}`, { name: 'Masthuhn ganz', art: 'stueck', bereichId: bFleisch })).error, /schon verkauft/);
+ok(await api('POST', `produkt/${eier}`, { name: 'Freilandeier 6 Stück', art: 'stueck', bereichId: bSaison, startpreisCent: 300, aktiv: false }));
 s = ok(await api('GET', 'stand'));
 assert.deepEqual([s.produkte.find((p) => p.id === eier).name, s.produkte.find((p) => p.id === eier).aktiv], ['Freilandeier 6 Stück', false]);
 assert.ok(!s.preisVorschlaege.some((v) => v.produktId === eier), 'ausgeblendet = kein Vorschlag für neue Bestellrunden');
 console.log('✓ Sortiment: anlegen, doppelte Namen, Richtgewicht, Art bei verkauften Produkten gesperrt, ausblenden');
+
+// Bereiche: anlegen, umbenennen, Produkt umhängen, ordnen, leere löschen
+r = ok(await api('POST', 'bereich', { name: 'Eier & Marmelade' }));
+const bEier = r.bereichId;
+assert.match((await api('POST', 'bereich', { name: 'eier & marmelade' })).error, /gibt es schon/);
+assert.equal((await api('POST', 'bereich', { name: '  ' })).status, 400);
+ok(await api('POST', `bereich/${bEier}`, { name: 'Eier' }));
+ok(await api('POST', `produkt/${eier}`, { name: 'Freilandeier 6 Stück', art: 'stueck', bereichId: bEier, aktiv: true }));
+assert.equal(roh.prepare('SELECT kategorie FROM produkte WHERE id = ?').get(Number(eier)).kategorie, 'saison', 'neue Bereiche: alte Spalte bleibt gültig');
+s = ok(await api('GET', 'stand'));
+assert.deepEqual(s.bereiche.find((b) => b.id === bEier), { id: bEier, name: 'Eier', produkte: 1 });
+assert.equal(s.produkte.find((p) => p.id === eier).bereichId, bEier);
+assert.match((await api('POST', `bereich/${bEier}/loeschen`, {})).error, /noch 1 Produkt/);
+const ids = s.bereiche.map((b) => b.id);
+ok(await api('POST', 'bereiche/reihenfolge', { ids: [bEier, ...ids.filter((x) => x !== bEier)] }));
+assert.match((await api('POST', 'bereiche/reihenfolge', { ids: ids.slice(1) })).error, /passt nicht/);
+s = ok(await api('GET', 'stand'));
+assert.equal(s.bereiche[0].name, 'Eier');
+assert.equal(s.produkte[0].bereichId, bEier, 'Produkte folgen der Reihenfolge der Bereiche');
+const bSeife = bereich('Alpakaseife');
+const seife = s.produkte.find((p) => p.bereichId === bSeife);
+ok(await api('POST', `produkt/${seife.id}`, { name: seife.name, art: seife.art, bereichId: bSaison, aktiv: true }));
+ok(await api('POST', `bereich/${bSeife}/loeschen`, {}));
+s = ok(await api('GET', 'stand'));
+assert.ok(!s.bereiche.some((b) => b.id === bSeife));
+assert.equal(s.produkte.find((p) => p.id === seife.id).bereichId, bSaison);
+// Auswertung zeigt den Namen des Bereichs
+assert.ok(ok(await api('GET', 'auswertung')).bestellungen.every((b) => b.positionen.every((p) => typeof p.bereich === 'string')));
+console.log('✓ Bereiche: anlegen, doppelte Namen, umbenennen, Produkt umhängen, ordnen, nur leere löschen');
 
 // Auswertung für die Buchhaltung: nach Tag der Übergabe, auch abgeschlossene Runden
 const diesesJahr = String(new Date().getUTCFullYear());

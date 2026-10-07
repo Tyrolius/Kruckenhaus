@@ -100,3 +100,7 @@ INSERT OR IGNORE INTO liefergebiet (plz, ort, liefergebuehr_cent, gratis_ab_cent
   ('6233', 'Kramsach',           0, NULL, 20),
   ('6230', 'Brixlegg',           0, NULL, 30),
   ('6250', 'Kundl',              0, NULL, 40);
+
+-- Neu eingespielte Produkte ihrem Bereich zuordnen (siehe schema-hofladen.sql)
+UPDATE produkte SET bereich_id = (SELECT b.id FROM bereiche b WHERE b.kennung = produkte.kategorie)
+WHERE bereich_id IS NULL;

@@ -5,8 +5,8 @@
  * meine-bestellungen.html (Plan: docs/HOFLADEN-VORBESTELLUNG.md, Phase 4).
  *
  *   GET  /api/hofladen/angebot       offene Bestellrunden mit freier Menge, Termine,
- *                                    Liefergebiet, Sortiment (alle eingeblendeten
- *                                    Produkte, auch für Voranmeldungen)
+ *                                    Liefergebiet, Bereiche, Sortiment (alle
+ *                                    eingeblendeten Produkte, auch für Voranmeldungen)
  *   POST /api/hofladen/bestellung    verbindliche Vorbestellung
  *   POST /api/hofladen/voranmeldung  unverbindliche Voranmeldung
  *   GET  /api/hofladen/meine         Bestellungen zum persönlichen Link
@@ -115,23 +115,24 @@ const linkAdresse = (request, schluessel) => `${new URL(request.url).origin}/mei
 async function angebotLaden(db) {
   const heute = heuteInTirol();
   const offen = `SELECT id FROM chargen WHERE status = 'offen' AND bestellschluss >= ?`;
-  const [chargen, artikel, termine, liefergebiet, produkte] = (await db.batch([
+  const [chargen, artikel, termine, liefergebiet, produkte, bereiche] = (await db.batch([
     db.prepare(`SELECT id, titel, beschreibung, bestellschluss FROM chargen
                 WHERE status = 'offen' AND bestellschluss >= ? ORDER BY bestellschluss, id`).bind(heute),
     db.prepare(`SELECT ca.id, ca.charge_id, ca.produkt_id, ca.preis_cent, ca.max_pro_bestellung, v.frei,
-                       p.name, p.art, p.kategorie, p.beschreibung, p.pflichtangaben, p.allergene,
+                       p.name, p.art, p.bereich, p.beschreibung, p.pflichtangaben, p.allergene,
                        p.richtgewicht_von_g, p.richtgewicht_bis_g
                 FROM charge_artikel ca
-                JOIN produkte p ON p.id = ca.produkt_id
+                JOIN v_produkte p ON p.id = ca.produkt_id
                 JOIN v_bestand v ON v.charge_artikel_id = ca.id
                 WHERE ca.charge_id IN (${offen})
-                ORDER BY p.kategorie, ca.reihenfolge, p.reihenfolge, p.name`).bind(heute),
+                ORDER BY p.bereich_reihenfolge, ca.reihenfolge, p.reihenfolge, p.name`).bind(heute),
     db.prepare(`SELECT id, charge_id, art, datum, von, bis, hinweis FROM termine
                 WHERE charge_id IN (${offen}) ORDER BY datum, von`).bind(heute),
     db.prepare('SELECT plz, ort FROM liefergebiet ORDER BY tour_reihenfolge, ort'),
-    db.prepare(`SELECT id, name, art, kategorie, beschreibung, pflichtangaben, allergene,
+    db.prepare(`SELECT id, name, art, bereich, beschreibung, pflichtangaben, allergene,
                        richtgewicht_von_g, richtgewicht_bis_g, bild
-                FROM produkte WHERE aktiv = 1 ORDER BY kategorie, reihenfolge, name`),
+                FROM v_produkte WHERE aktiv = 1 ORDER BY bereich_reihenfolge, reihenfolge, name`),
+    db.prepare('SELECT id, name FROM bereiche ORDER BY reihenfolge, id'),
   ])).map((r) => r.results);
 
   return {
@@ -148,7 +149,7 @@ async function angebotLaden(db) {
         produktId: a.produkt_id,
         name: a.name,
         art: a.art,
-        kategorie: a.kategorie,
+        bereichId: a.bereich,
         preisCent: a.preis_cent,
         frei: Math.max(0, a.frei),
         maxProBestellung: a.max_pro_bestellung,
@@ -160,11 +161,12 @@ async function angebotLaden(db) {
       })),
     })),
     liefergebiet,
+    bereiche,
     produkte: produkte.map((p) => ({
       id: p.id,
       name: p.name,
       art: p.art,
-      kategorie: p.kategorie,
+      bereichId: p.bereich,
       beschreibung: p.beschreibung || '',
       pflichtangaben: p.pflichtangaben || '',
       allergene: p.allergene || '',

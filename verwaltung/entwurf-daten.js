@@ -15,23 +15,32 @@ const ENTWURF_DATEN = {
   // (Vorschlag, wie in hofladen-produkte.sql). Andere Orte: nur Abholung.
   tourReihenfolge: ['Breitenbach am Inn', 'Kramsach', 'Brixlegg', 'Kundl'],
 
+  // Bereiche des Sortiments (wie die Standard-Bereiche in schema-hofladen.sql)
+  bereiche: [
+    { id: 'b1', name: 'Fleisch' },
+    { id: 'b2', name: 'Eiernudeln' },
+    { id: 'b3', name: 'Honig' },
+    { id: 'b4', name: 'Alpakaseife' },
+    { id: 'b5', name: 'Saisonprodukte' },
+  ],
+
   // Produktkatalog (Preise stehen je Bestellrunde) – echtes Sortiment, Stand 09/2026
   // Gleiche Felder wie /api/verwaltung/stand
   produkte: [
-    { id: 'p1', name: 'Masthuhn ganz', art: 'gewicht', kategorie: 'fleisch', richtVonG: 1800, richtBisG: 2400, startpreisCent: 1200 },
-    { id: 'p8', name: 'Masthuhn halbiert', art: 'gewicht', kategorie: 'fleisch', richtVonG: 900, richtBisG: 1200, startpreisCent: 1200 },
-    { id: 'p7', name: 'Pute ganz, zerlegt', art: 'gewicht', kategorie: 'fleisch', richtVonG: 6000, richtBisG: 9000, startpreisCent: 1750 },
-    { id: 'p5', name: 'Rindfleischpaket 5 kg', art: 'paket', kategorie: 'fleisch', startpreisCent: 7500 },
-    { id: 'p6', name: 'Rindfleischpaket 10 kg', art: 'paket', kategorie: 'fleisch', startpreisCent: 14000 },
-    { id: 'p4', name: 'Gans', art: 'gewicht', kategorie: 'fleisch', richtVonG: 3000, richtBisG: 4500, startpreisCent: 1900 },
-    { id: 'p9', name: 'Eiernudeln Spaghetti 500 g', art: 'stueck', kategorie: 'nudeln', startpreisCent: 400 },
-    { id: 'p11', name: 'Eiernudeln Hörnchen 500 g', art: 'stueck', kategorie: 'nudeln', startpreisCent: 400 },
-    { id: 'p10', name: 'Eiernudeln Spirelli 500 g', art: 'stueck', kategorie: 'nudeln', startpreisCent: 400 },
-    { id: 'p12', name: 'Eiernudeln Rotunde 500 g', art: 'stueck', kategorie: 'nudeln', startpreisCent: 400 },
-    { id: 'p13', name: 'Eiernudeln Pappardelle 500 g', art: 'stueck', kategorie: 'nudeln', startpreisCent: 400 },
-    { id: 'p2', name: 'Eiernudeln Bandnudeln 500 g', art: 'stueck', kategorie: 'nudeln', startpreisCent: 400 },
-    { id: 'p3', name: 'Raphaels Wald- & Blütenhonig 500 g', art: 'stueck', kategorie: 'honig', startpreisCent: 1200 },
-    { id: 'p14', name: 'Alpakaseife', art: 'stueck', kategorie: 'seife', startpreisCent: 450 },
+    { id: 'p1', name: 'Masthuhn ganz', art: 'gewicht', bereichId: 'b1', richtVonG: 1800, richtBisG: 2400, startpreisCent: 1200 },
+    { id: 'p8', name: 'Masthuhn halbiert', art: 'gewicht', bereichId: 'b1', richtVonG: 900, richtBisG: 1200, startpreisCent: 1200 },
+    { id: 'p7', name: 'Pute ganz, zerlegt', art: 'gewicht', bereichId: 'b1', richtVonG: 6000, richtBisG: 9000, startpreisCent: 1750 },
+    { id: 'p5', name: 'Rindfleischpaket 5 kg', art: 'paket', bereichId: 'b1', startpreisCent: 7500 },
+    { id: 'p6', name: 'Rindfleischpaket 10 kg', art: 'paket', bereichId: 'b1', startpreisCent: 14000 },
+    { id: 'p4', name: 'Gans', art: 'gewicht', bereichId: 'b1', richtVonG: 3000, richtBisG: 4500, startpreisCent: 1900 },
+    { id: 'p9', name: 'Eiernudeln Spaghetti 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400 },
+    { id: 'p11', name: 'Eiernudeln Hörnchen 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400 },
+    { id: 'p10', name: 'Eiernudeln Spirelli 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400 },
+    { id: 'p12', name: 'Eiernudeln Rotunde 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400 },
+    { id: 'p13', name: 'Eiernudeln Pappardelle 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400 },
+    { id: 'p2', name: 'Eiernudeln Bandnudeln 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400 },
+    { id: 'p3', name: 'Raphaels Wald- & Blütenhonig 500 g', art: 'stueck', bereichId: 'b3', startpreisCent: 1200 },
+    { id: 'p14', name: 'Alpakaseife', art: 'stueck', bereichId: 'b4', startpreisCent: 450 },
   ],
 
   // Termine, Mengen und Bestellungen sind erfunden; Preise wie angegeben.

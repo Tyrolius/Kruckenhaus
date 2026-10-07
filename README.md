@@ -467,6 +467,10 @@ npx wrangler d1 execute kruckenhaus --remote --file=./schema-hofladen.sql
 npx wrangler d1 execute kruckenhaus --remote --file=./hofladen-produkte.sql
 ```
 
+Eine Datenbank, die schon vor Oktober 2026 bestand, braucht vorher einmal
+`migration-2026-10-bereiche.sql` (Bereiche des Sortiments; in der
+Live-Datenbank bereits erledigt).
+
 Die zweite Datei spielt Produktkatalog (Startpreise, Richtgewichte) und
 Liefergebiet ein; sie überspringt Einträge, die es schon gibt. Danach
 werden Produkte in der Verwaltung unter **Produkte** angelegt und
@@ -578,7 +582,9 @@ Startbildschirm hinzufügen – dann wirkt sie wie eine App.
    *Abholliste zum Mitnehmen drucken* – Gewichte in die Kästchen schreiben
    und später bei der Übergabe eintippen.
 4. Überweisungen in der *Übersicht → „übergeben, Geld noch nicht da"* abhaken.
-5. Neue Produkte (z. B. Eier) unter *Sortiment* anlegen.
+5. Neue Produkte (z. B. Eier) unter *Sortiment* anlegen. Die Gliederung (Fleisch, Eiernudeln, Honig …)
+   ändert ihr unter *Sortiment → Bereiche bearbeiten*: anlegen, umbenennen,
+   Reihenfolge, leere Bereiche löschen.
 6. Alles übergeben und bezahlt: *Übersicht → Bestellrunde abschließen*. Sie
    verschwindet aus dem Alltag, bleibt aber in der **Auswertung** (*Übersicht →
    Mehr → Auswertung*): Umsatz je Jahr nach Tag der Übergabe, bar/Überweisung,
