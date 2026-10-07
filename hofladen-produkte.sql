@@ -8,12 +8,16 @@
 -- mit gleichem Namen werden übersprungen, nicht überschrieben):
 --   npx wrangler d1 execute kruckenhaus --remote --file=./hofladen-produkte.sql
 --
+-- Danach werden Produkte in der Verwaltung unter „Produkte" gepflegt.
+-- Achtung: Wurde dort ein Produkt umbenannt, legt ein erneutes Einspielen
+-- dieser Datei es unter dem alten Namen noch einmal an.
+--
 -- startpreis_cent ist nur der Vorschlag für die erste Bestellrunde. Der Preis,
 -- der gilt, wird je Bestellrunde in der Verwaltung festgelegt; danach wird der
 -- Preis der letzten Bestellrunde vorgeschlagen.
 -- Beträge in Cent, Richtgewichte in Gramm.
 --
--- Noch offen (später in der Verwaltung ergänzen):
+-- Noch offen (in der Verwaltung unter „Produkte" ergänzen):
 --   TODO: Sorten der Alpakaseife (derzeit ein Sammelartikel)
 --   Richtgewicht „Masthuhn halbiert" = halbes Richtgewicht des ganzen
 --   Huhns (0,9–1,2 kg), bestätigt.

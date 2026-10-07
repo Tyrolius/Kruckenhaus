@@ -4,7 +4,8 @@
  * Spielt einen typischen Ablauf gegen functions/api/verwaltung/[[pfad]].js
  * durch – so, wie ihn die Oberfläche auslöst: Bestellrunde anlegen, Bestellungen
  * erfassen (neuer und bekannter Kunde), Warteliste, wiegen, übergeben,
- * bezahlen, Termin setzen, Voranmeldungen übernehmen, Bestellrunde bearbeiten.
+ * bezahlen, Termin setzen, Voranmeldungen übernehmen, Bestellrunde bearbeiten,
+ * Produkte anlegen, bearbeiten und ausblenden.
  * Die Zugangsprüfung ist in test-hofladen-zugang.mjs getestet.
  *
  * Aufruf (Node 22 oder neuer):  node scripts/test-hofladen-api.mjs
@@ -153,6 +154,36 @@ assert.match(r.error, /schon bestellt/);
 r = await api('POST', `charge/${chargeId}`, { ...neu, artikel: [...neu.artikel, { produktId: huhn, preisCent: 1, kontingent: 1 }] });
 assert.match(r.error, /doppelt/);
 console.log('✓ Bestellrunde bearbeiten: Preisänderung nur für neue Bestellungen, Termin ergänzt, Schutz vor Löschen/Doppelten');
+
+// Produkte: anlegen, bearbeiten, ausblenden
+r = ok(await api('POST', 'produkt', {
+  name: 'Honig 250 g', kategorie: 'honig', art: 'stueck', startpreisCent: 700,
+  beschreibung: 'Kleines Glas.', pflichtangaben: 'Herkunft: Tirol', allergene: '', bild: 'images/hofladen/honig.jpg',
+}));
+const honigKlein = r.produktId;
+s = ok(await api('GET', 'stand'));
+let pNeu = s.produkte.find((p) => p.id === honigKlein);
+assert.deepEqual([pNeu.name, pNeu.art, pNeu.aktiv, pNeu.verwendet, pNeu.bild], ['Honig 250 g', 'stueck', true, false, 'images/hofladen/honig.jpg']);
+assert.ok(roh.prepare('SELECT reihenfolge FROM produkte WHERE id = ?').get(honigKlein).reihenfolge > 210, 'ans Ende des Bereichs');
+r = await api('POST', 'produkt', { name: 'honig 250 G', kategorie: 'honig', art: 'stueck' });
+assert.match(r.error, /gibt es schon/);
+r = await api('POST', 'produkt', { name: 'Suppenhuhn', kategorie: 'fleisch', art: 'gewicht' });
+assert.match(r.error, /Richtgewicht/);
+r = await api('POST', 'produkt', { name: 'Bild', kategorie: 'seife', art: 'stueck', bild: 'https://fremd.example/x.jpg' });
+assert.match(r.error, /Foto/);
+// Art darf sich ändern, solange das Produkt nie angeboten wurde
+ok(await api('POST', `produkt/${honigKlein}`, { name: 'Honig 250 g', kategorie: 'honig', art: 'paket', aktiv: false }));
+s = ok(await api('GET', 'stand'));
+pNeu = s.produkte.find((p) => p.id === honigKlein);
+assert.deepEqual([pNeu.art, pNeu.aktiv, pNeu.bild], ['paket', false, '']);
+// Bereits angeboten: Art fix, Name und Angaben änderbar (gilt auch in Bestellungen)
+r = await api('POST', `produkt/${nudeln}`, { name: 'Spaghetti 500 g', kategorie: 'nudeln', art: 'gewicht', richtVonG: 1, richtBisG: 2 });
+assert.match(r.error, /Art lässt sich nicht mehr ändern/);
+ok(await api('POST', `produkt/${nudeln}`, { name: 'Spaghetti 500 g', kategorie: 'nudeln', art: 'stueck', allergene: 'Ei, Gluten' }));
+s = ok(await api('GET', 'stand'));
+assert.ok(s.chargen[0].artikel.some((a) => a.name === 'Spaghetti 500 g'));
+assert.equal((await api('POST', 'produkt/99999', { name: 'X', kategorie: 'seife', art: 'stueck' })).error, 'Produkt nicht gefunden.');
+console.log('✓ Produkte: anlegen, doppelte Namen, Richtgewicht, Foto-Pfad, ausblenden, Art fix nach Angebot');
 
 // Schutz und Fehler
 r = await api('POST', 'bestellung', { chargeId }, { typ: 'text/plain' });

@@ -2,8 +2,9 @@
  * HOFLADEN – Vorbestellung und Voranmeldung (hofladen.html)
  * ============================================================
  * Lädt das Angebot von /api/hofladen/angebot, zeigt je offener Bestellrunde ein
- * Bestellformular und schickt Bestellungen bzw. Voranmeldungen an
- * /api/hofladen/bestellung und /api/hofladen/voranmeldung.
+ * Bestellformular, darunter das ganze Sortiment (was gerade bestellbar ist
+ * und was man sich vormerken lassen kann), und schickt Bestellungen bzw.
+ * Voranmeldungen an /api/hofladen/bestellung und /api/hofladen/voranmeldung.
  * Keine Cookies, kein localStorage (siehe CLAUDE.md).
  *
  * Aufbau:
@@ -11,6 +12,7 @@
  *   2. Angebot anzeigen
  *   3. Bestellformular (Mengen, Summe, Termin, Absenden)
  *   4. Voranmeldung
+ *   4a. Sortiment
  *   5. Start
  * ============================================================ */
 
@@ -32,6 +34,13 @@ function esc(wert) {
 
 function datumLang(iso) {
   return new Date(`${iso}T12:00:00`).toLocaleDateString('de-AT', { weekday: 'long', day: 'numeric', month: 'long' });
+}
+
+// Bestellschluss weit weg (z. B. Runde für Lagerware): „laufend bestellbar"
+function tageBis(iso) {
+  const heute = new Date();
+  heute.setHours(0, 0, 0, 0);
+  return Math.round((new Date(`${iso}T00:00:00`) - heute) / 86400000);
 }
 
 function terminText(t) {
@@ -106,7 +115,7 @@ function chargeFormular(ch, liefergebiet) {
     <header class="hl-charge-kopf">
       <h3>${esc(ch.titel)}</h3>
       ${ch.beschreibung ? `<p>${esc(ch.beschreibung)}</p>` : ''}
-      <p class="hl-schluss">Bestellschluss: ${datumLang(ch.bestellschluss)}</p>
+      <p class="hl-schluss">${tageBis(ch.bestellschluss) > 60 ? 'Laufend bestellbar' : `Bestellschluss: ${datumLang(ch.bestellschluss)}`}</p>
     </header>
     <form class="hl-bestellung contact-form hl-formular" data-charge="${ch.id}" novalidate>
       <p style="display:none;" aria-hidden="true">
@@ -363,6 +372,74 @@ function initVoranmeldung() {
 }
 
 /* ------------------------------------------------------------
+   4a. SORTIMENT
+   Alle eingeblendeten Produkte. Ist ein Produkt in einer offenen
+   Bestellrunde, führt der Knopf zum Bestellformular, sonst zur
+   Voranmeldung (Produkt ist dort schon ausgewählt).
+   ------------------------------------------------------------ */
+function sortimentKarte(p, daten) {
+  const angebote = daten.chargen
+    .map((ch) => ({ ch, a: ch.artikel.find((x) => x.produktId === p.id) }))
+    .filter((x) => x.a);
+  const frei = angebote.find((x) => x.a.frei > 0);
+  const gewicht = p.art === 'gewicht' && p.richtVonG
+    ? `<span class="hl-sortiment-gewicht">ca. ${hlKg.format(p.richtVonG / 1000)}–${hlKg.format(p.richtBisG / 1000)} kg je Stück</span>` : '';
+  const infos = [
+    p.pflichtangaben && `<p>${esc(p.pflichtangaben)}</p>`,
+    p.allergene && `<p><strong>Allergene: ${esc(p.allergene)}</strong></p>`,
+  ].filter(Boolean).join('');
+
+  let stand;
+  if (frei) {
+    const preis = frei.a.art === 'gewicht' ? `${euro(frei.a.preisCent)}/kg` : euro(frei.a.preisCent);
+    stand = `<p class="hl-sortiment-stand hl-sortiment-stand--da">Jetzt bestellbar · ${preis}</p>
+      <a class="btn btn-primary hl-sortiment-knopf" href="#charge-${frei.ch.id}">Zur Bestellung</a>`;
+  } else {
+    stand = `<p class="hl-sortiment-stand">${angebote.length ? 'Gerade ausverkauft' : 'Derzeit nicht vorrätig'}</p>
+      <button type="button" class="btn btn-outline hl-sortiment-knopf" data-vormerken="${p.id}">Vormerken lassen</button>`;
+  }
+
+  return `<article class="hl-sortiment-karte">
+    ${p.bild ? `<img src="${esc(p.bild)}" alt="${esc(p.name)}" loading="lazy" decoding="async" />` : ''}
+    <div class="hl-sortiment-text">
+      <h4>${esc(p.name)}</h4>
+      ${gewicht}
+      ${p.beschreibung ? `<p>${esc(p.beschreibung)}</p>` : ''}
+      ${infos ? `<details class="hl-angaben"><summary>Zutaten &amp; Angaben</summary>${infos}</details>` : ''}
+    </div>
+    <div class="hl-sortiment-fuss">${stand}</div>
+  </article>`;
+}
+
+function sortimentZeigen(daten) {
+  const bereich = document.getElementById('sortiment');
+  const ziel = document.getElementById('hl-sortiment');
+  if (!bereich || !ziel || !daten.produkte.length) return;
+  ziel.innerHTML = Object.keys(hlKategorien).map((kat) => {
+    const liste = daten.produkte.filter((p) => p.kategorie === kat);
+    return liste.length
+      ? `<div class="hl-kategorie"><h3>${hlKategorien[kat]}</h3>
+          <div class="hl-sortiment-raster">${liste.map((p) => sortimentKarte(p, daten)).join('')}</div></div>`
+      : '';
+  }).join('');
+  bereich.hidden = false;
+}
+
+function initSortiment() {
+  const ziel = document.getElementById('hl-sortiment');
+  if (!ziel) return;
+  ziel.addEventListener('click', (e) => {
+    const knopf = e.target.closest('[data-vormerken]');
+    if (!knopf) return;
+    const form = document.getElementById('hl-voranmeldung');
+    if (!form) return;
+    form.elements.namedItem('produktId').value = knopf.dataset.vormerken;
+    document.getElementById('vormerken').scrollIntoView({ behavior: 'smooth' });
+    form.elements.namedItem('menge').focus({ preventScroll: true });
+  });
+}
+
+/* ------------------------------------------------------------
    5. START
    ------------------------------------------------------------ */
 async function initAngebot() {
@@ -375,6 +452,7 @@ async function initAngebot() {
     hlAngebot = daten;
     angebotZeigen(daten);
     voranmeldungVorbereiten(daten);
+    sortimentZeigen(daten);
   } catch {
     ziel.innerHTML = `<div class="hl-leer"><p>Das Angebot kann gerade nicht geladen werden. Bitte später noch einmal
       versuchen – oder direkt anrufen: <a href="tel:+436642166181">+43 664 2166181</a>.</p></div>`;
@@ -384,5 +462,6 @@ async function initAngebot() {
 document.addEventListener('DOMContentLoaded', () => {
   initBestellung();
   initVoranmeldung();
+  initSortiment();
   initAngebot();
 });

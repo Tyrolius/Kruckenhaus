@@ -455,7 +455,10 @@ npx wrangler d1 execute kruckenhaus --remote --file=./hofladen-produkte.sql
 ```
 
 Die zweite Datei spielt Produktkatalog (Startpreise, Richtgewichte) und
-Liefergebiet ein; sie überspringt Einträge, die es schon gibt.
+Liefergebiet ein; sie überspringt Einträge, die es schon gibt. Danach
+werden Produkte in der Verwaltung unter **Produkte** angelegt und
+bearbeitet (nicht mehr über die Datei – umbenannte Produkte würden sonst
+unter dem alten Namen noch einmal angelegt).
 
 | Tabelle / Ansicht | Zweck |
 |---|---|
@@ -556,6 +559,20 @@ Vorschauen aktivieren und deren AUD-Tag mit Komma an `ACCESS_AUD` anhängen.
 
 **Beispielmodus zum Ausprobieren/Einschulen:** `…/verwaltung/?entwurf` zeigt
 die Verwaltung mit erfundenen Daten; dabei wird nichts gespeichert.
+
+**Produkte und Bestellrunden im Alltag:**
+- *Produkte* (Menüpunkt in der Verwaltung, am Handy über die Übersicht):
+  alles, was es grundsätzlich gibt – Name, Beschreibung, Zutaten/Allergene,
+  optional ein Foto (`images/hofladen/…`). Eingeblendete Produkte erscheinen
+  auf der Hofladen-Seite im Abschnitt „Unser Sortiment"; nicht mehr
+  erhältliche Produkte ausblenden statt löschen.
+- *Bestellrunde*: was gerade bestellbar ist, mit Preis, Menge und Terminen.
+- *Ware, die immer da ist* (Seife, manche Nudelsorten, Honig): eine eigene
+  Bestellrunde, z. B. „Hofladen-Lager", Status „Offen", Bestellschluss weit in
+  der Zukunft (z. B. 31.12.), einige Abholtermine. Liegt der Bestellschluss
+  mehr als 60 Tage entfernt, steht auf der Seite „Laufend bestellbar". Menge =
+  Lagerstand; bei Nachschub die Menge erhöhen. Dieselben Produkte können
+  zusätzlich in einer Fleisch-Bestellrunde angeboten werden.
 
 **Lokal testen** (mit Test-Datenbank, ohne Anmeldung – wirkt nur auf
 localhost):

@@ -67,7 +67,16 @@ assert.equal(nudelArtikel.allergene, 'Weizen (Gluten), Ei');
 assert.equal(r.chargen[0].artikel.find((a) => a.id === aHuhn).frei, 4);
 assert.equal(r.liefergebiet.length, 4);
 assert.ok(r.produkte.length >= 14);
-console.log('✓ Angebot: nur offene Bestellrunden, freie Menge, Pflichtangaben der Nudeln, Liefergebiet');
+assert.equal(r.chargen[0].artikel.find((a) => a.id === aNudeln).produktId, nudeln);
+const sortimentNudeln = r.produkte.find((p) => p.id === nudeln);
+assert.deepEqual([sortimentNudeln.art, sortimentNudeln.kategorie], ['stueck', 'nudeln']);
+assert.match(sortimentNudeln.pflichtangaben, /Hartweizengrieß/);
+assert.deepEqual([r.produkte.find((p) => p.id === huhn).richtVonG, r.produkte.find((p) => p.id === huhn).richtBisG], [1800, 2400]);
+// Ausgeblendete Produkte erscheinen nicht im Sortiment
+roh.prepare(`UPDATE produkte SET aktiv = 0 WHERE name = 'Alpakaseife'`).run();
+assert.ok(!ok(await api('GET', 'angebot')).produkte.some((p) => p.name === 'Alpakaseife'));
+roh.prepare(`UPDATE produkte SET aktiv = 1 WHERE name = 'Alpakaseife'`).run();
+console.log('✓ Angebot: nur offene Bestellrunden, freie Menge, Pflichtangaben der Nudeln, Liefergebiet, Sortiment');
 
 // Bestellung – Pflichtfelder und Regeln
 const basis = {

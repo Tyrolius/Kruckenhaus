@@ -5,7 +5,8 @@
  * meine-bestellungen.html (Plan: docs/HOFLADEN-VORBESTELLUNG.md, Phase 4).
  *
  *   GET  /api/hofladen/angebot       offene Bestellrunden mit freier Menge, Termine,
- *                                    Liefergebiet, Produkte für Voranmeldungen
+ *                                    Liefergebiet, Sortiment (alle eingeblendeten
+ *                                    Produkte, auch für Voranmeldungen)
  *   POST /api/hofladen/bestellung    verbindliche Vorbestellung
  *   POST /api/hofladen/voranmeldung  unverbindliche Voranmeldung
  *   GET  /api/hofladen/meine         Bestellungen zum persönlichen Link
@@ -122,7 +123,7 @@ async function angebotLaden(db) {
   const [chargen, artikel, termine, liefergebiet, produkte] = (await db.batch([
     db.prepare(`SELECT id, titel, beschreibung, bestellschluss FROM chargen
                 WHERE status = 'offen' AND bestellschluss >= ? ORDER BY bestellschluss, id`).bind(heute),
-    db.prepare(`SELECT ca.id, ca.charge_id, ca.preis_cent, ca.max_pro_bestellung, v.frei,
+    db.prepare(`SELECT ca.id, ca.charge_id, ca.produkt_id, ca.preis_cent, ca.max_pro_bestellung, v.frei,
                        p.name, p.art, p.kategorie, p.beschreibung, p.pflichtangaben, p.allergene,
                        p.richtgewicht_von_g, p.richtgewicht_bis_g
                 FROM charge_artikel ca
@@ -133,7 +134,9 @@ async function angebotLaden(db) {
     db.prepare(`SELECT id, charge_id, art, datum, von, bis, hinweis FROM termine
                 WHERE charge_id IN (${offen}) ORDER BY datum, von`).bind(heute),
     db.prepare('SELECT plz, ort FROM liefergebiet ORDER BY tour_reihenfolge, ort'),
-    db.prepare(`SELECT id, name, kategorie FROM produkte WHERE aktiv = 1 ORDER BY kategorie, reihenfolge, name`),
+    db.prepare(`SELECT id, name, art, kategorie, beschreibung, pflichtangaben, allergene,
+                       richtgewicht_von_g, richtgewicht_bis_g, bild
+                FROM produkte WHERE aktiv = 1 ORDER BY kategorie, reihenfolge, name`),
   ])).map((r) => r.results);
 
   return {
@@ -147,6 +150,7 @@ async function angebotLaden(db) {
       })),
       artikel: artikel.filter((a) => a.charge_id === c.id).map((a) => ({
         id: a.id,
+        produktId: a.produkt_id,
         name: a.name,
         art: a.art,
         kategorie: a.kategorie,
@@ -161,7 +165,18 @@ async function angebotLaden(db) {
       })),
     })),
     liefergebiet,
-    produkte,
+    produkte: produkte.map((p) => ({
+      id: p.id,
+      name: p.name,
+      art: p.art,
+      kategorie: p.kategorie,
+      beschreibung: p.beschreibung || '',
+      pflichtangaben: p.pflichtangaben || '',
+      allergene: p.allergene || '',
+      richtVonG: p.richtgewicht_von_g,
+      richtBisG: p.richtgewicht_bis_g,
+      bild: p.bild || '',
+    })),
     zeitraeume: ZEITRAEUME,
   };
 }

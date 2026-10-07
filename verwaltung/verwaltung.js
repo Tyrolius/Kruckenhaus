@@ -12,7 +12,8 @@
  *
  * Ansichten (Adresse hinter #):
  *   uebersicht · bestellungen · neu · wiegen · uebergabe · zahlungen ·
- *   voranmeldungen · charge (bearbeiten) · charge-neu
+ *   voranmeldungen · charge (bearbeiten) · charge-neu · produkte ·
+ *   produkt=<id> bzw. produkt=neu
  * ============================================================ */
 
 'use strict';
@@ -408,6 +409,7 @@ function ansichtUebersicht() {
   aufgaben.push('<li><button type="button" data-aktion="ankuendigung">Ankündigung für WhatsApp <span class="vw-pfeil">›</span></button></li>');
   aufgaben.push('<li><button type="button" data-aktion="drucken">Packzettel drucken <span class="vw-pfeil">›</span></button></li>');
   aufgaben.push('<li><button type="button" data-aktion="export">Liste für Excel herunterladen <span class="vw-pfeil">›</span></button></li>');
+  aufgaben.push('<li><a href="#produkte">Produkte anlegen und bearbeiten <span class="vw-pfeil">›</span></a></li>');
 
   inhalt().innerHTML = `
     <div class="vw-kopf"><h1>Übersicht</h1>${chargeWahl()}
@@ -1116,7 +1118,8 @@ function ansichtCharge(neu) {
         </div>
       </section>
       <section class="vw-karte"><h2>Was wird angeboten?</h2>
-        <p class="vw-klein">Häkchen setzen, Preis (bei Gewichtsware pro kg) und vorhandene Menge eintragen. Höchstmenge pro Bestellung ist optional.</p>
+        <p class="vw-klein">Häkchen setzen, Preis (bei Gewichtsware pro kg) und vorhandene Menge eintragen. Höchstmenge pro Bestellung ist optional.
+          Ein Produkt fehlt? Unter <a href="#produkte">Produkte</a> anlegen – die Eingaben hier gehen dabei verloren.</p>
         ${gruppen.map(([kat, liste]) => `<h3 class="vw-ort-titel">${KATEGORIEN[kat]}</h3>
           ${liste.map((a) => `<div class="vw-artikel-form" data-produkt="${a.produkt.id}">
             <label class="vw-artikel-name"><input type="checkbox" name="a-an" ${a.an ? 'checked' : ''} /> ${esc(a.produkt.name)}
@@ -1194,9 +1197,127 @@ function ansichtLeer() {
       <div class="vw-knopfreihe">
         <a class="vw-knopf vw-knopf--voll" href="#charge-neu">+ Neue Bestellrunde</a>
         <a class="vw-knopf" href="#voranmeldungen">Voranmeldungen</a>
+        <a class="vw-knopf" href="#produkte">Produkte</a>
       </div>
     </section>
     ${nutzerZeile()}`;
+}
+
+// 5.9 Produkte (Katalog: was es grundsätzlich gibt – Preise je Bestellrunde)
+const ARTEN = { gewicht: 'nach Gewicht (Preis pro kg)', paket: 'Paket (Fixpreis)', stueck: 'Stück (Fixpreis)' };
+const ARTEN_KURZ = { gewicht: 'pro kg', paket: 'Paket', stueck: 'Stück' };
+
+// Im Beispielmodus fehlt „verwendet" – dann aus den Bestellrunden ableiten
+const produktVerwendet = (p) => p.verwendet ?? daten.chargen.some((c) => c.artikel.some((a) => a.produktId === p.id));
+
+function ansichtProdukte() {
+  const gruppen = Object.keys(KATEGORIEN)
+    .map((kat) => [kat, daten.produkte.filter((p) => (p.kategorie || 'saison') === kat)])
+    .filter(([, liste]) => liste.length);
+  inhalt().innerHTML = `
+    <div class="vw-kopf"><h1>Produkte</h1>
+      <p class="vw-klein">Alles, was es bei euch grundsätzlich gibt. Eingeblendete Produkte erscheinen im Sortiment auf der
+        Hofladen-Seite. Bestellen kann man sie erst, wenn sie in einer offenen Bestellrunde angeboten werden – dort
+        stehen auch Preis und Menge.</p>
+      <div class="vw-knopfreihe"><a class="vw-knopf vw-knopf--voll" href="#produkt=neu">+ Neues Produkt</a></div></div>
+    ${gruppen.map(([kat, liste]) => `<section class="vw-karte"><h2>${KATEGORIEN[kat]}</h2><div class="vw-liste">
+      ${liste.map((p) => `<a class="vw-zeile${p.aktiv === false ? ' vw-zeile--grau' : ''}" href="#produkt=${esc(p.id)}">
+        <span class="vw-zeile-name">${esc(p.name)}</span>
+        <span class="vw-zeile-betrag">${p.startpreisCent != null ? `${euro(p.startpreisCent)}${p.art === 'gewicht' ? '/kg' : ''}` : ''}</span>
+        <span class="vw-marken"><span class="vw-marke">${ARTEN_KURZ[p.art]}</span>
+          ${p.aktiv === false ? '<span class="vw-marke vw-marke--offen">ausgeblendet</span>' : ''}
+          ${p.kategorie !== 'fleisch' && !p.pflichtangaben ? '<span class="vw-marke">Angaben fehlen</span>' : ''}</span>
+      </a>`).join('')}</div></section>`).join('')}
+    ${nutzerZeile()}`;
+}
+
+function ansichtProdukt() {
+  const param = ansichtParameter();
+  const p = param === 'neu' ? null : produktVon(param);
+  if (param !== 'neu' && !p) {
+    location.hash = '#produkte';
+    return;
+  }
+  const art = p ? p.art : 'stueck';
+  const gesperrt = p && produktVerwendet(p);
+  const kgText = (g) => (g ? String(g / 1000).replace('.', ',') : '');
+  inhalt().innerHTML = `
+    <div class="vw-kopf"><h1>${p ? 'Produkt bearbeiten' : 'Neues Produkt'}</h1>
+      ${p ? '<p class="vw-klein">Änderungen an Name und Angaben gelten auch für bestehende Bestellungen. Preise ändert ihr in der Bestellrunde.</p>' : ''}</div>
+    <form id="vw-produkt-formular" data-id="${p ? esc(p.id) : ''}" novalidate>
+      <section class="vw-karte">
+        <label class="vw-feld"><span>Name (mit Größe, z. B. „Honig 250 g")</span><input name="name" value="${esc(p ? p.name : '')}" required /></label>
+        <label class="vw-feld"><span>Bereich</span><select name="kategorie">${Object.entries(KATEGORIEN).map(([wert, text]) =>
+          `<option value="${wert}" ${(p ? p.kategorie : 'nudeln') === wert ? 'selected' : ''}>${text}</option>`).join('')}</select></label>
+        <label class="vw-feld"><span>Verkauft …</span><select name="art" ${gesperrt ? 'disabled' : ''}>${Object.entries(ARTEN).map(([wert, text]) =>
+          `<option value="${wert}" ${art === wert ? 'selected' : ''}>${text}</option>`).join('')}</select>
+          ${gesperrt ? '<small class="vw-klein">Wurde schon angeboten – die Art bleibt deshalb fix.</small>' : ''}</label>
+        <div class="vw-zweispaltig" data-richtgewicht ${art === 'gewicht' ? '' : 'hidden'}>
+          <label class="vw-feld"><span>Richtgewicht von (kg)</span><input name="richtVon" inputmode="decimal" value="${kgText(p && p.richtVonG)}" placeholder="z. B. 1,8" /></label>
+          <label class="vw-feld"><span>bis (kg)</span><input name="richtBis" inputmode="decimal" value="${kgText(p && p.richtBisG)}" placeholder="z. B. 2,4" /></label>
+        </div>
+        <label class="vw-feld"><span>Preisvorschlag für die erste Bestellrunde (€, optional)</span>
+          <input name="startpreis" inputmode="decimal" value="${esc(p ? textAusCent(p.startpreisCent) : '')}" /></label>
+      </section>
+      <section class="vw-karte"><h2>Für die Kunden</h2>
+        <label class="vw-feld"><span>Beschreibung</span><textarea name="beschreibung" rows="3" placeholder="z. B. Wald- und Blütenhonig von unserem Sohn Raphael.">${esc(p ? p.beschreibung : '')}</textarea></label>
+        <label class="vw-feld"><span>Zutaten &amp; Angaben (Herkunft, Haltbarkeit, Lagerung)</span><textarea name="pflichtangaben" rows="3">${esc(p ? p.pflichtangaben : '')}</textarea></label>
+        <label class="vw-feld"><span>Allergene (z. B. „Ei, Gluten")</span><input name="allergene" value="${esc(p ? p.allergene : '')}" /></label>
+        <label class="vw-feld"><span>Foto (optional, z. B. images/hofladen/honig.jpg)</span><input name="bild" value="${esc(p ? p.bild : '')}" placeholder="images/hofladen/…" /></label>
+        <label class="vw-feld vw-haken"><input type="checkbox" name="aktiv" ${!p || p.aktiv !== false ? 'checked' : ''} />
+          <span>Im Sortiment zeigen (ohne Häkchen: ausgeblendet, z. B. wenn es das Produkt nicht mehr gibt)</span></label>
+      </section>
+      <div class="vw-knopfreihe">
+        <button type="submit" class="vw-knopf vw-knopf--voll">${p ? 'Änderungen speichern' : 'Produkt anlegen'}</button>
+        <a class="vw-knopf" href="#produkte">Abbrechen</a>
+      </div>
+    </form>`;
+}
+
+async function produktSpeichern(form) {
+  const wert = (name) => feld(form, name).value.trim();
+  const id = form.dataset.id;
+  const alt = id ? produktVon(id) : null;
+  const art = alt && produktVerwendet(alt) ? alt.art : wert('art');
+  const gramm = (text) => {
+    const kilo = parseFloat(text.replace(',', '.'));
+    return Number.isFinite(kilo) && kilo > 0 ? Math.round(kilo * 1000) : null;
+  };
+  const eingabe = {
+    name: wert('name'),
+    kategorie: wert('kategorie'),
+    art,
+    richtVonG: art === 'gewicht' ? gramm(wert('richtVon')) : null,
+    richtBisG: art === 'gewicht' ? gramm(wert('richtBis')) : null,
+    startpreisCent: wert('startpreis') ? centAusText(wert('startpreis')) : null,
+    beschreibung: wert('beschreibung'),
+    pflichtangaben: wert('pflichtangaben'),
+    allergene: wert('allergene'),
+    bild: wert('bild'),
+    aktiv: feld(form, 'aktiv').checked,
+  };
+  if (!eingabe.name) return meldung('Bitte einen Namen eintragen.');
+  if (art === 'gewicht' && (!eingabe.richtVonG || !eingabe.richtBisG)) return meldung('Bitte das Richtgewicht (von–bis) in kg eintragen.');
+  if (wert('startpreis') && eingabe.startpreisCent == null) return meldung('Bitte den Preis als Zahl eintragen, z. B. 4,50.');
+
+  const erg = await speichern(id ? `produkt/${id}` : 'produkt', eingabe, () => {
+    const felder = {
+      name: eingabe.name, kategorie: eingabe.kategorie, art, richtVonG: eingabe.richtVonG, richtBisG: eingabe.richtBisG,
+      startpreisCent: eingabe.startpreisCent, beschreibung: eingabe.beschreibung, pflichtangaben: eingabe.pflichtangaben,
+      allergene: eingabe.allergene, bild: eingabe.bild, aktiv: eingabe.aktiv,
+    };
+    if (alt) {
+      Object.assign(alt, felder);
+      daten.chargen.forEach((c) => c.artikel.filter((a) => a.produktId === id).forEach((a) => { a.name = felder.name; }));
+      return { produktId: id };
+    }
+    const neu = { id: `p${Date.now()}`, ...felder };
+    daten.produkte.push(neu);
+    return { produktId: neu.id };
+  }, { neuZeichnen: false });
+  if (!erg) return;
+  location.hash = '#produkte';
+  meldung(id ? 'Produkt gespeichert.' : `„${eingabe.name}" angelegt – jetzt in einer Bestellrunde anbieten.`);
 }
 
 function nutzerZeile() {
@@ -1433,14 +1554,21 @@ const ANSICHTEN = {
   voranmeldungen: ansichtVoranmeldungen,
   charge: () => ansichtCharge(false),
   'charge-neu': () => ansichtCharge(true),
+  produkte: ansichtProdukte,
+  produkt: ansichtProdukt,
 };
 // Diese Ansichten funktionieren auch ohne laufende Bestellrunde
-const OHNE_CHARGE = ['voranmeldungen', 'charge-neu'];
+const OHNE_CHARGE = ['voranmeldungen', 'charge-neu', 'produkte', 'produkt'];
+// Formulare: nicht neu zeichnen, sonst gehen Eingaben verloren
+const FORMULARE = ['neu', 'charge', 'charge-neu', 'produkt'];
 
+// Adresse hinter #: Ansicht, optional mit Wert (z. B. #produkt=12)
 function aktuelleAnsicht() {
-  const name = location.hash.slice(1);
+  const name = location.hash.slice(1).split('=')[0];
   return ANSICHTEN[name] ? name : 'uebersicht';
 }
+
+const ansichtParameter = () => location.hash.split('=')[1] || '';
 
 function zeigen() {
   const name = aktuelleAnsicht();
@@ -1455,15 +1583,15 @@ function zeigen() {
   } else {
     ANSICHTEN[name]();
   }
+  const navName = name === 'produkt' ? 'produkte' : name;
   document.querySelectorAll('.vw-nav a[data-ansicht]').forEach((a) => {
-    if (a.dataset.ansicht === name) a.setAttribute('aria-current', 'page');
+    if (a.dataset.ansicht === navName) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   });
 }
 
 function neuZeichnen() {
-  // Formulare nicht neu zeichnen, sonst gehen Eingaben verloren
-  if (!['neu', 'charge', 'charge-neu'].includes(aktuelleAnsicht())) zeigen();
+  if (!FORMULARE.includes(aktuelleAnsicht())) zeigen();
   dialogAktualisieren();
 }
 
@@ -1624,6 +1752,9 @@ function initEingaben() {
   document.addEventListener('change', (e) => {
     if (e.target.dataset.gewicht) gewichtSpeichern(e.target);
     if (e.target.name === 'termin') adresseUmschalten();
+    if (e.target.name === 'art' && e.target.form && e.target.form.id === 'vw-produkt-formular') {
+      e.target.form.querySelector('[data-richtgewicht]').hidden = e.target.value !== 'gewicht';
+    }
     if (e.target.name === 'zeitraum') {
       const jahr = document.getElementById('vw-va-jahr');
       if (jahr) jahr.hidden = e.target.value === 'naechste';
@@ -1635,6 +1766,11 @@ function initEingaben() {
     if (id === 'vw-kontakt-formular') {
       e.preventDefault();
       kontaktSpeichern(e.target);
+      return;
+    }
+    if (id === 'vw-produkt-formular') {
+      e.preventDefault();
+      produktSpeichern(e.target);
       return;
     }
     if (!['vw-va-formular', 'vw-formular', 'vw-charge-formular'].includes(id)) return;
