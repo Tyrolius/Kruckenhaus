@@ -4143,6 +4143,33 @@ body.season-winter .winter-image { display: block; }
   }
   .vw-packzettel-qr { flex: 0 0 auto; text-align: center; font-size: 8pt; }
   .vw-packzettel-qr svg { display: block; width: 3.2cm; height: 3.2cm; }
+
+  /* Abhol- und Lieferliste: je Termin eine Seite, Kästchen zum Eintragen */
+  .vw-druckliste { break-after: page; font-size: 10pt; color: var(--color-black); }
+  .vw-druckliste:last-child { break-after: auto; }
+  .vw-druckliste h2 { font-size: 14pt; margin: 0 0 0.2rem; }
+  .vw-druck { width: 100%; max-width: 100%; }
+  .vw-druck-tabelle { width: calc(100% - 2px); border-collapse: collapse; table-layout: fixed; }
+  .vw-druck-tabelle th:nth-child(1) { width: 0.9cm; }
+  .vw-druck-tabelle th:nth-child(2) { width: 4.3cm; }
+  .vw-druck-tabelle th:nth-child(4) { width: 2.3cm; }
+  .vw-druck-tabelle th:nth-child(5) { width: 2.5cm; }
+  .vw-druck-tabelle th,
+  .vw-druck-tabelle td {
+    border: 1px solid var(--color-dark);
+    padding: 0.3rem 0.4rem;
+    vertical-align: top;
+    text-align: left;
+  }
+  .vw-druck-tabelle th { font-size: 9pt; background-color: var(--color-beige); }
+  .vw-druck-tabelle tr { break-inside: avoid; }
+  .vw-druck-nr { width: 1.6rem; text-align: center !important; font-weight: 700; }
+  .vw-druck-betrag { white-space: nowrap; }
+  .vw-druck-klein { font-size: 8.5pt; color: var(--color-text-light); }
+  .vw-druck-kaesten { display: flex; flex-wrap: wrap; gap: 0.25rem; align-items: flex-end; margin: 0.15rem 0 0.3rem; }
+  .vw-druck-kasten { display: inline-block; width: 1.4cm; height: 0.7cm; border: 1px solid var(--color-dark); }
+  .vw-druck-haken { display: inline-block; width: 0.45cm; height: 0.45cm; border: 1px solid var(--color-dark); vertical-align: middle; }
+  .vw-druck-linie { display: inline-block; width: 1.4cm; border-bottom: 1px solid var(--color-dark); }
 }
 
 /* ============================================================
@@ -5139,9 +5166,313 @@ html, body { overflow-x: clip; }
 }
 
 /* ============================================================
-   47. HOFLADEN-SORTIMENT UND PRODUKTE IN DER VERWALTUNG
-   hofladen.html (#sortiment, Präfix .hl-sortiment-) und die Ansicht
-   „Produkte" der Verwaltung (Präfix .vw-).
+   47. VERWALTUNG – Übergabe mit Gewichten, Verkauf am Hof, Sortiment
+   Ergänzt Abschnitt 40. Mobil fünf Menüpunkte (Sortiment nur am PC
+   in der Seitenleiste, am Handy über die Übersicht erreichbar).
+   ============================================================ */
+.vw-nav { grid-template-columns: repeat(5, 1fr); }
+.vw-nav a span { hyphens: manual; line-height: 1.15; }
+
+/* Neue Website-Bestellungen */
+.vw-marke--neu { background-color: var(--color-green); color: var(--color-dark); font-weight: 700; }
+.vw-aufgaben .vw-aufgabe--neu { font-weight: 700; color: var(--color-primary); }
+
+/* Größerer Hauptknopf (Übergeben, Kassieren) */
+.vw-knopf--gross { min-height: 52px; font-size: 1rem; flex: 1 1 100%; }
+.vw-knopfreihe--klein { margin-top: 0.5rem; gap: 0.35rem; }
+
+/* Artikel einer Bestellung bei der Übergabe bzw. beim Verkauf am Hof */
+.vw-pos {
+  border-top: 1px solid var(--color-beige);
+  padding: 0.6rem 0;
+}
+
+.vw-pos-kopf {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.vw-pos .vw-zaehler output { min-width: 1.6rem; text-align: center; font-weight: 700; font-size: 1.1rem; }
+
+/* Ein Feld je Stück für das Gewicht vom Etikett */
+.vw-stueck {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(6rem, 1fr));
+  gap: 0.4rem;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.vw-stueck input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  font-size: 1.05rem;
+  text-align: center;
+  background-color: var(--color-white);
+}
+
+.vw-stueck input:focus { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+
+.vw-dazu {
+  width: 100%;
+  min-height: 44px;
+  margin: 0.25rem 0 0.5rem;
+  padding: 0.4rem 0.6rem;
+  border: 1px dashed var(--color-primary);
+  border-radius: var(--border-radius);
+  background-color: var(--color-white);
+  color: var(--color-primary);
+  font-size: 0.95rem;
+}
+
+/* Zahlungsinfo mit QR-Code (Dialog) */
+.vw-gross-betrag {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin: 0.25rem 0 0.75rem;
+}
+
+.vw-zahlungsinfo {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--spacing-sm);
+}
+
+.vw-zahlungsinfo .vw-packzettel-qr { text-align: center; font-size: 0.75rem; color: var(--color-text-light); }
+.vw-zahlungsinfo .vw-packzettel-qr svg { display: block; width: 180px; height: 180px; }
+
+/* Sortiment */
+.vw-produkt-zeile {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--color-beige);
+}
+
+.vw-zwei-felder { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+#vw-richtgewicht[hidden] { display: none; }
+.vw-auswahl label:has(input:disabled) { opacity: 0.45; }
+
+/* --- Aufgeräumte Bedienung: eine Hauptaktion je Bildschirm --- */
+
+/* Bestellrunde: eine Zeile oben statt Knopfreihe */
+.vw-runde {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  margin: 0.25rem 0 0.75rem;
+}
+
+.vw-runde-wahl,
+.vw-filter-wahl {
+  font: inherit;
+  font-weight: 700;
+  color: var(--color-primary);
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: 0.5rem 0.7rem;
+  min-height: 44px;
+  max-width: 100%;
+}
+
+.vw-runde-name { color: var(--color-primary); font-size: 1.05rem; }
+
+/* Umschalter mit zwei, drei Möglichkeiten (Abholung/Liefertour, Erfassen) */
+.vw-segment {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  background-color: var(--color-beige);
+  border-radius: var(--border-radius);
+  padding: 3px;
+  margin: 0.5rem 0;
+}
+
+.vw-segment button,
+.vw-segment a {
+  font: inherit;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: 0;
+  border-radius: calc(var(--border-radius) - 2px);
+  background: none;
+  color: var(--color-text-light);
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.vw-segment [aria-pressed="true"] {
+  background-color: var(--color-white);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+/* Anzahl als kleine Zahl rechts */
+.vw-anzahl {
+  display: inline-block;
+  min-width: 1.6rem;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.vw-segment [aria-pressed="false"] .vw-anzahl { background-color: var(--color-text-light); }
+
+.vw-erledigt-hinweis { color: var(--color-primary); font-weight: 700; margin: 0.25rem 0; }
+
+.vw-kennzahlen.vw-kennzahlen--zwei { grid-template-columns: 1fr 1fr; }
+
+/* Noch frei: eine Zeile je Artikel */
+.vw-frei-zeile {
+  display: grid;
+  grid-template-columns: 1fr 4.5rem auto;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.45rem 0;
+  font-size: 0.95rem;
+}
+
+.vw-frei-zeile + .vw-frei-zeile { border-top: 1px solid var(--color-beige); }
+.vw-frei-zeile .vw-balken { margin: 0; }
+.vw-frei-zahl { white-space: nowrap; font-size: 0.9rem; min-width: 3.6rem; text-align: right; }
+
+/* Eingeklappte Bereiche */
+.vw-mehr summary,
+.vw-erledigt summary,
+.vw-aendern summary {
+  cursor: pointer;
+  font-weight: 700;
+  color: var(--color-primary);
+  padding: 0.25rem 0;
+}
+
+.vw-mehr[open] summary { margin-bottom: 0.25rem; }
+.vw-erledigt { margin-top: var(--spacing-sm); }
+.vw-erledigt .vw-liste { margin-top: 0.5rem; }
+.vw-aendern { margin: 0.5rem 0; padding-top: 0.5rem; border-top: 1px solid var(--color-beige); }
+.vw-pos-aendern { padding: 0.4rem 0; }
+
+/* Bestellungen: Suche und Filter in einer Zeile */
+.vw-such-zeile { display: grid; grid-template-columns: 1fr auto; gap: 0.5rem; margin-bottom: 0.5rem; }
+.vw-filter-wahl { font-weight: 400; color: var(--color-text); max-width: 11rem; }
+
+.vw-zeile-stand { grid-column: 1 / -1; font-size: 0.82rem; color: var(--color-text-light); }
+
+/* Zeile mit Pfeil rechts: „antippen zum Öffnen" */
+.vw-zeile--pfeil { position: relative; padding-right: 2rem; }
+.vw-zeile--pfeil::after {
+  content: '›';
+  position: absolute;
+  right: 0.8rem;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 1.5rem;
+  color: var(--color-primary);
+}
+
+.vw-stopp-zeile { display: flex; gap: 0.4rem; align-items: stretch; }
+.vw-stopp-zeile > .vw-zeile { flex: 1 1 auto; }
+.vw-pfeile { display: flex; flex-direction: column; gap: 0.3rem; }
+.vw-pfeile .vw-knopf { min-width: 44px; flex: 1; }
+.vw-pfeile .vw-knopf:disabled { opacity: 0.3; }
+
+/* Textknopf für Nebenaktionen */
+.vw-link {
+  font: inherit;
+  background: none;
+  border: 0;
+  padding: 0.5rem 0;
+  color: var(--color-primary);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.vw-link--leise { color: var(--color-text-light); font-weight: 400; }
+.vw-mitte { text-align: center; margin: 0.25rem 0 0; }
+
+/* Ein Kunde bei der Übergabe */
+.vw-zurueck {
+  display: inline-block;
+  color: var(--color-primary);
+  font-weight: 700;
+  padding: 0.25rem 0;
+  margin-bottom: 0.25rem;
+  text-decoration: none;
+}
+
+.vw-hinweis {
+  background-color: var(--color-cream);
+  border-left: 3px solid var(--color-green);
+  padding: 0.4rem 0.6rem;
+  border-radius: 4px;
+}
+
+.vw-summe {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 0.75rem 0;
+  margin: 0.5rem 0 0.75rem;
+  border-top: 2px solid var(--color-beige);
+}
+
+.vw-summe strong { font-size: 1.6rem; color: var(--color-primary); font-variant-numeric: tabular-nums; }
+
+.vw-kontakt-zeile {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1.25rem;
+  margin: 0.5rem 0;
+}
+
+.vw-kontakt-zeile a,
+.vw-kontakt-zeile .vw-link { color: var(--color-primary); font-weight: 700; padding: 0.5rem 0; text-decoration: none; }
+
+/* Auswertung */
+.vw-auswertung-zeile { padding: 0.35rem 0; border-top: 1px solid var(--color-beige); }
+.vw-auswertung-tabelle th { font-size: 0.8rem; color: var(--color-text-light); text-align: left; }
+.vw-runden-zeile {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.25rem 0.75rem;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--color-beige);
+}
+.vw-runden-zeile > :last-child { grid-column: 1 / -1; justify-self: start; }
+.vw-knopf:disabled { opacity: 0.4; cursor: default; }
+
+@media (min-width: 768px) {
+  .vw-produkt-zeile { grid-template-columns: 1fr auto; align-items: center; }
+  .vw-knopf--gross { flex: 1 1 auto; }
+}
+
+@media (min-width: 1024px) {
+  .vw-nav a span { line-height: 1.5; }
+}
+
+/* ============================================================
+   48. HOFLADEN-SORTIMENT FÜR KUNDEN
+   hofladen.html (#sortiment, Präfix .hl-sortiment-).
    ============================================================ */
 .hl-sortiment-einleitung { max-width: 640px; margin-bottom: var(--spacing-sm); }
 
@@ -5221,28 +5552,9 @@ html, body { overflow-x: clip; }
   .hl-sortiment-raster { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
-/* Verwaltung: Produktliste und -formular */
-a.vw-zeile { text-decoration: none; }
-
-.vw-zweispaltig {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-  gap: 0 0.75rem;
-}
-
-.vw-zweispaltig[hidden] { display: none; }
-
-.vw-feld.vw-haken {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.6rem;
-}
-
-.vw-feld.vw-haken input { width: auto; margin-top: 0.2rem; }
-.vw-feld.vw-haken span { font-weight: 400; margin: 0; }
 
 /* ============================================================
-   48. WIDERRUF („Vertrag widerrufen", § 13a FAGG)
+   49. WIDERRUF („Vertrag widerrufen", § 13a FAGG)
    hofladen.html (#widerrufen), meine-bestellungen.html und die
    Widerrufs-Karte der Verwaltung.
    ============================================================ */
