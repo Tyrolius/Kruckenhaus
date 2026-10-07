@@ -196,6 +196,53 @@ roh.exec(`UPDATE kunden_links SET gesperrt_am = datetime('now')`);
 assert.equal((await api('GET', 'meine', null, { 'X-Link-Schluessel': schluessel1 })).status, 404, 'gesperrter Link');
 console.log('✓ Meine Bestellungen: eigener Kunde, Voranmeldungen, falsche und gesperrte Links abgelehnt');
 
+// Vertrag widerrufen (§ 13a FAGG)
+roh.exec(`UPDATE kunden_links SET gesperrt_am = NULL`);
+const mariaNr = roh.prepare(`SELECT nummer FROM bestellungen WHERE status = 'vorgemerkt' ORDER BY id LIMIT 1`).get().nummer;
+mails.length = 0;
+// a) über „Meine Bestellungen": Kunde aus dem Link, ganze Bestellung
+r = ok(await api('POST', 'widerruf', { bestellnummer: mariaNr, umfang: 'ganz' }, { 'X-Link-Schluessel': schluessel1 }));
+assert.equal(r.umfang, 'Ganze Bestellung');
+assert.match(r.eingegangen, /^\d{2}\.\d{2}\.\d{4},? \d{2}:\d{2}$/);
+assert.equal(mails.length, 2);
+assert.equal(mails[0].to, 'maria@example.at');
+assert.match(mails[0].subject, /Eingangsbestätigung/);
+assert.match(mails[0].html, new RegExp(mariaNr));
+assert.match(mails[0].html, /Eingegangen am/);
+let w = roh.prepare('SELECT * FROM widerrufe ORDER BY id DESC').get();
+assert.deepEqual([w.quelle, w.status, w.name, w.bestellung_id != null], ['link', 'offen', 'Maria Web', true]);
+assert.equal(roh.prepare('SELECT status FROM bestellungen WHERE nummer = ?').get(mariaNr).status, 'vorgemerkt', 'storniert nicht selbst');
+r = ok(await api('GET', 'meine', null, { 'X-Link-Schluessel': schluessel1 }));
+assert.equal(r.bestellungen.find((b) => b.nummer === mariaNr).widerrufe[0].umfang, 'Ganze Bestellung');
+// fremde Bestellnummer über den Link → abgelehnt
+assert.equal((await api('POST', 'widerruf', { bestellnummer: '1999-999', umfang: 'ganz' }, { 'X-Link-Schluessel': schluessel1 })).status, 400);
+// b) über das Formular: passende E-Mail (andere Schreibweise), nur Teile
+mails.length = 0;
+r = ok(await api('POST', 'widerruf', { name: 'Maria Web', email: 'MARIA@example.at', bestellnummer: mariaNr, umfang: 'teil', produkte: '1× Nudeln' }));
+assert.equal(r.umfang, '1× Nudeln');
+w = roh.prepare('SELECT * FROM widerrufe ORDER BY id DESC').get();
+assert.deepEqual([w.quelle, w.bestellung_id != null, w.email], ['formular', true, 'maria@example.at']);
+// c) Formular mit falscher Nummer: trotzdem gespeichert und bestätigt, Hof wird gewarnt
+mails.length = 0;
+ok(await api('POST', 'widerruf', { name: 'Jemand', email: 'jemand@example.at', bestellnummer: '2026-999', umfang: 'ganz' }));
+assert.equal(roh.prepare('SELECT bestellung_id FROM widerrufe ORDER BY id DESC').get().bestellung_id, null);
+assert.match(mails[1].html, /passen zu keiner Bestellung/);
+// Pflichtfelder und Spam-Falle
+for (const [eingabe, muster] of [
+  [{ email: 'a@b.at', bestellnummer: '1', umfang: 'ganz' }, /Namen/],
+  [{ name: 'Max', email: 'x', bestellnummer: '1', umfang: 'ganz' }, /E-Mail/],
+  [{ name: 'Max', email: 'a@b.at', umfang: 'ganz' }, /Bestellnummer/],
+  [{ name: 'Max', email: 'a@b.at', bestellnummer: '1', umfang: 'teil', produkte: '' }, /welche Produkte/],
+]) {
+  const x = await api('POST', 'widerruf', eingabe);
+  assert.equal(x.status, 400);
+  assert.match(x.error, muster);
+}
+const vorher = roh.prepare('SELECT COUNT(*) n FROM widerrufe').get().n;
+ok(await api('POST', 'widerruf', { name: 'Bot', email: 'b@b.at', bestellnummer: '1', umfang: 'ganz', 'bot-field': 'x' }));
+assert.equal(roh.prepare('SELECT COUNT(*) n FROM widerrufe').get().n, vorher);
+console.log('✓ Widerruf: über Link und Formular, Eingangsbestätigung mit Zeitpunkt, falsche Nummer trotzdem gespeichert, Pflichtfelder');
+
 // Ohne Mail-Schlüssel wird trotzdem gespeichert
 delete env.RESEND_API_KEY;
 mails.length = 0;

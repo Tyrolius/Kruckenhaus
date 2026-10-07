@@ -368,6 +368,30 @@ function navLink(b) {
    ------------------------------------------------------------ */
 const inhalt = () => document.getElementById('vw-inhalt');
 
+// Widerrufe (aus „Vertrag widerrufen" auf der Website) – über alle Bestellrunden
+function zeitpunktKurz(sqlZeit) {
+  return new Date(`${sqlZeit.replace(' ', 'T')}Z`).toLocaleString('de-AT', {
+    timeZone: 'Europe/Vienna', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+}
+
+function widerrufeKarte() {
+  const liste = daten.widerrufe || [];
+  if (!liste.length) return '';
+  return `<section class="vw-karte vw-karte--achtung" aria-label="Widerrufe"><h2>Widerrufe (${liste.length})</h2>
+    <p class="vw-klein">Eingang wurde dem Kunden automatisch bestätigt. Bestellung ggf. stornieren bzw. Positionen klären,
+      bezahlte Beträge innerhalb von 14 Tagen erstatten, dann als erledigt markieren.</p>
+    ${liste.map((w) => `<div class="vw-widerruf">
+      <p><strong>${esc(w.name)}</strong> · Nr. ${esc(w.nummer)} · ${zeitpunktKurz(w.eingegangen)} Uhr<br>
+        Widerrufen: ${esc(w.umfang)}${w.email ? ` · <a href="mailto:${esc(w.email)}">${esc(w.email)}</a>` : ''}
+        ${w.bestellungId ? '' : '<br><span class="vw-warnung">Passt zu keiner Bestellung (Nummer oder E-Mail falsch) – bitte klären.</span>'}</p>
+      <div class="vw-knopfreihe">
+        ${w.bestellungId && bestellungVon(w.bestellungId) ? `<button type="button" class="vw-knopf vw-knopf--klein" data-aktion="oeffnen" data-id="${w.bestellungId}">Bestellung öffnen</button>` : ''}
+        <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="widerruf-erledigt" data-id="${w.id}">Erledigt</button>
+      </div></div>`).join('')}
+  </section>`;
+}
+
 // 5.1 Übersicht
 function ansichtUebersicht() {
   const ch = aktiveCharge();
@@ -417,6 +441,7 @@ function ansichtUebersicht() {
         <a class="vw-knopf" href="#charge">Bestellrunde bearbeiten</a>
         <a class="vw-knopf" href="#charge-neu">+ Neue Bestellrunde</a>
       </div></div>
+    ${widerrufeKarte()}
     <div class="vw-kennzahlen">
       <div class="vw-kennzahl"><strong>${aktiv.length}</strong><span>Bestellungen${warteliste.length ? ` · ${warteliste.length} Warteliste` : ''}</span></div>
       <div class="vw-kennzahl${offenCent ? ' vw-kennzahl--achtung' : ''}"><strong>${euro(offenCent)}</strong><span>noch offen${ungewogen ? ' (teils geschätzt)' : ''}</span></div>
@@ -1191,6 +1216,7 @@ async function chargeSpeichern() {
 function ansichtLeer() {
   inhalt().innerHTML = `
     <div class="vw-kopf"><h1>Hofladen</h1></div>
+    ${widerrufeKarte()}
     <section class="vw-karte">
       <h2>Noch keine laufende Bestellrunde</h2>
       <p>Legt die erste Bestellrunde an – Produkte, Preise und Termine. Voranmeldungen könnt ihr jederzeit erfassen.</p>
@@ -1371,7 +1397,9 @@ function detailOeffnen(id) {
         <span class="vw-klein">${esc(b.nummer)} · ${QUELLEN[b.quelle]} · ${datumKurz(b.erstellt)}${k.stammkunde ? ' · Stammkunde' : ''}</span></div>
       <button type="button" class="vw-schliessen" data-aktion="schliessen" aria-label="Schließen">×</button>
     </div>
-    <div class="vw-abschnitt">${marken(b)}</div>
+    <div class="vw-abschnitt">${marken(b)}
+      ${(daten.widerrufe || []).filter((w) => w.bestellungId === b.id).map((w) =>
+        `<p class="vw-warnung">Widerruf am ${zeitpunktKurz(w.eingegangen)} Uhr: ${esc(w.umfang)}</p>`).join('')}</div>
     <div class="vw-abschnitt">
       ${t ? `<p><strong>${terminText(t)}</strong></p>` : `<p><strong>Termin noch offen</strong> – mit dem Kunden klären und hier wählen:</p>
         <div class="vw-knopfreihe">${ch.termine.map((x) => `<button type="button" class="vw-knopf" data-aktion="termin-setzen" data-id="${b.id}" data-wert="${x.id}">${terminText(x)}</button>`).join('')}</div>`}
@@ -1711,6 +1739,14 @@ function initKlicks() {
           daten.voranmeldungen = daten.voranmeldungen.filter((v) => v.id !== id);
           return {};
         }, { erfolg: 'Voranmeldung abgesagt.' });
+        break;
+      }
+      case 'widerruf-erledigt': {
+        const id = el.dataset.id;
+        speichern(`widerruf/${id}/erledigt`, {}, () => {
+          daten.widerrufe = daten.widerrufe.filter((w) => w.id !== id);
+          return {};
+        }, { erfolg: 'Widerruf erledigt.' });
         break;
       }
       case 'termin-dazu':

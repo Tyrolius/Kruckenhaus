@@ -490,9 +490,13 @@ Keine Rechtsberatung – bitte mit der **Landwirtschaftskammer Tirol**
       der Bestellung auf der Seite stehen – Zutaten, Allergene (Eiernudeln:
       Ei, Gluten), Füllmenge, Herkunft, Betrieb.
 - [ ] **Rücktrittsrecht:** Für schnell verderbliche Lebensmittel besteht
-      kein 14-tägiges Rücktrittsrecht (FAGG § 18 Abs. 1 Z 4). Honig und
-      Nudeln sind nicht schnell verderblich – klären, ob für diese ein
-      Rücktrittsrecht bzw. eine Widerrufsbelehrung nötig ist.
+      kein 14-tägiges Rücktrittsrecht (FAGG § 18 Abs. 1 Z 4). Für Honig,
+      Nudeln und Seife gilt es – Belehrung und Muster-Widerrufsformular
+      stehen in den Bestellbedingungen (Entwurf, prüfen lassen).
+- [x] **Widerrufsbutton (§ 13a FAGG, Pflicht seit 2026):** „Vertrag
+      widerrufen" in „Meine Bestellungen" und als Formular auf
+      `hofladen.html` (#widerrufen), Eingangsbestätigung per E-Mail mit
+      Zeitpunkt, Anzeige in der Verwaltung – umgesetzt.
 - [ ] **Kurze Bestellbedingungen** (Vorbestellung verbindlich, Endpreis
       nach Gewicht, Stornierung bis Bestellschluss, Lieferbedingungen,
       Zahlung) – als eigener Abschnitt auf `hofladen.html`.

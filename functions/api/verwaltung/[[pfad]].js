@@ -16,6 +16,7 @@
  *   POST /api/verwaltung/voranmeldung             Voranmeldung erfassen
  *   POST /api/verwaltung/voranmeldung/<id>/absagen
  *   POST /api/verwaltung/voranmeldungen/uebernehmen
+ *   POST /api/verwaltung/widerruf/<id>/erledigt   Widerruf als erledigt markieren
  *
  * POST nur mit Content-Type application/json – fremde Seiten können so
  * keine Änderungen im Namen eines angemeldeten Nutzers auslösen.
@@ -83,7 +84,7 @@ const id = (wert) => (wert == null ? null : String(wert));
 
 async function standLaden(db, bank = null) {
   const aktiv = `SELECT id FROM chargen WHERE status <> 'archiviert'`;
-  const [chargen, artikel, termine, bestellungen, positionen, kunden, produkte, voranmeldungen, liefergebiet] =
+  const [chargen, artikel, termine, bestellungen, positionen, kunden, produkte, voranmeldungen, liefergebiet, widerrufe] =
     (await db.batch([
       db.prepare(`SELECT id, titel, status, bestellschluss FROM chargen
                   WHERE status <> 'archiviert' ORDER BY bestellschluss, id`),
@@ -108,6 +109,8 @@ async function standLaden(db, bank = null) {
       db.prepare(`SELECT id, kunde_id, produkt_id, menge, zeitraum, jahr, quelle, status, notiz, erstellt_am
                   FROM voranmeldungen WHERE status = 'offen' ORDER BY erstellt_am, id`),
       db.prepare(`SELECT plz, ort, liefergebuehr_cent, gratis_ab_cent FROM liefergebiet ORDER BY tour_reihenfolge, ort`),
+      db.prepare(`SELECT id, bestellung_id, bestellnummer, name, email, umfang, quelle, eingegangen_am
+                  FROM widerrufe WHERE status = 'offen' ORDER BY eingegangen_am, id`),
     ])).map((r) => r.results);
 
   const jePos = new Map();
@@ -157,6 +160,10 @@ async function standLaden(db, bank = null) {
       plz: l.plz, ort: l.ort, liefergebuehrCent: l.liefergebuehr_cent, gratisAbCent: l.gratis_ab_cent,
     })),
     tourReihenfolge: liefergebiet.map((l) => l.ort),
+    widerrufe: widerrufe.map((w) => ({
+      id: id(w.id), bestellungId: id(w.bestellung_id), nummer: w.bestellnummer, name: w.name, email: w.email,
+      umfang: w.umfang, quelle: w.quelle, eingegangen: w.eingegangen_am,
+    })),
     bank,
     preisVorschlaege: (await preisVorschlaege(db)).map((v) => ({
       produktId: id(v.produktId), preisCent: v.preisCent, kontingent: v.kontingent,
@@ -542,6 +549,12 @@ export async function onRequest({ request, env, params, data }) {
         `UPDATE voranmeldungen SET status = 'abgesagt', geaendert_am = datetime('now') WHERE id = ? AND status = 'offen'`
       ).bind(nummer(teilId, 'Voranmeldung')).run();
       if (!r.meta.changes) throw new EingabeFehler('Voranmeldung nicht gefunden oder nicht mehr offen.');
+      ergebnis = {};
+    } else if (bereich === 'widerruf' && unteraktion === 'erledigt' && pfad.length === 3) {
+      const r = await db.prepare(
+        `UPDATE widerrufe SET status = 'erledigt', erledigt_am = datetime('now') WHERE id = ? AND status = 'offen'`
+      ).bind(nummer(teilId, 'Widerruf')).run();
+      if (!r.meta.changes) throw new EingabeFehler('Widerruf nicht gefunden oder schon erledigt.');
       ergebnis = {};
     } else if (bereich === 'voranmeldungen' && teilId === 'uebernehmen' && pfad.length === 2) {
       const erg = await voranmeldungenUebernehmen(db, nummer(eingabe.chargeId, 'Bestellrunde'), eingabe.ids || []);

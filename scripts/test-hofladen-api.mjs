@@ -185,6 +185,17 @@ assert.ok(s.chargen[0].artikel.some((a) => a.name === 'Spaghetti 500 g'));
 assert.equal((await api('POST', 'produkt/99999', { name: 'X', kategorie: 'seife', art: 'stueck' })).error, 'Produkt nicht gefunden.');
 console.log('✓ Produkte: anlegen, doppelte Namen, Richtgewicht, Foto-Pfad, ausblenden, Art fix nach Angebot');
 
+// Widerrufe: im Stand sichtbar, als erledigt markieren
+roh.prepare(`INSERT INTO widerrufe (bestellung_id, bestellnummer, name, email, umfang, quelle)
+             VALUES (?, '2026-001', 'Maria Test', 'm@example.at', 'Ganze Bestellung', 'link')`).run(b1);
+s = ok(await api('GET', 'stand'));
+assert.equal(s.widerrufe.length, 1);
+assert.deepEqual([s.widerrufe[0].bestellungId, s.widerrufe[0].umfang], [String(b1), 'Ganze Bestellung']);
+ok(await api('POST', `widerruf/${s.widerrufe[0].id}/erledigt`, {}));
+assert.equal(ok(await api('GET', 'stand')).widerrufe.length, 0);
+assert.equal((await api('POST', `widerruf/${s.widerrufe[0].id}/erledigt`, {})).status, 400, 'nur einmal');
+console.log('✓ Widerrufe: im Stand, erledigt markieren');
+
 // Schutz und Fehler
 r = await api('POST', 'bestellung', { chargeId }, { typ: 'text/plain' });
 assert.equal(r.status, 415, 'nur JSON');

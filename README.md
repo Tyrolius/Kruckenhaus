@@ -574,6 +574,15 @@ die Verwaltung mit erfundenen Daten; dabei wird nichts gespeichert.
   Lagerstand; bei Nachschub die Menge erhöhen. Dieselben Produkte können
   zusätzlich in einer Fleisch-Bestellrunde angeboten werden.
 
+**Widerrufe („Vertrag widerrufen", § 13a FAGG):** Kunden widerrufen über
+„Meine Bestellungen" oder das Formular am Ende der Hofladen-Seite. Der Eingang
+wird automatisch per E-Mail mit Zeitpunkt bestätigt; in der Verwaltung
+erscheint er oben in der Übersicht. Storniert wird nicht automatisch (für
+Fleisch gibt es kein Rücktrittsrecht) – Bestellung bzw. Positionen klären,
+bezahlte Beträge innerhalb von 14 Tagen erstatten, dann „Erledigt". Die
+Tabelle `widerrufe` steht in `schema-hofladen.sql`; nach dem Update die
+Datei einmal erneut in der D1-Konsole ausführen.
+
 **Lokal testen** (mit Test-Datenbank, ohne Anmeldung – wirkt nur auf
 localhost):
 

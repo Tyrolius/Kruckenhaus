@@ -12,6 +12,11 @@
  *   GET  /api/hofladen/meine         Bestellungen zum persönlichen Link
  *                                    (Schlüssel im Header X-Link-Schluessel),
  *                                    bei offener Überweisung mit Bankverbindung
+ *   POST /api/hofladen/widerruf      „Vertrag widerrufen" (§ 13a FAGG): mit
+ *                                    persönlichem Link (Header wie oben) oder
+ *                                    über das Formular (Name, E-Mail, Bestellnummer).
+ *                                    Wird gespeichert und per E-Mail mit
+ *                                    Zeitpunkt bestätigt; storniert nicht selbst.
  *
  * Ablauf einer Bestellung:
  *   1. Spam-Falle (Feld „bot-field"), Pflichtfelder, Zustimmung prüfen
@@ -266,7 +271,9 @@ async function bestellMailsSenden(env, d) {
     <p><a href="${escapeHtml(d.link)}">Meine Bestellungen ansehen</a><br>
       <small style="color:#7A7067">Euer persönlicher Link – bitte nicht weitergeben.</small></p>
     <p>Etwas ändern oder stornieren? Einfach anrufen oder per WhatsApp melden:
-      <a href="tel:+436642166181">+43 664 2166181</a>.</p>
+      <a href="tel:+436642166181">+43 664 2166181</a>.<br>
+      <small style="color:#7A7067">Für Nudeln, Honig und Seife habt ihr ein 14-tägiges Rücktrittsrecht –
+      widerrufen könnt ihr direkt unter „Meine Bestellungen" (Link oben).</small></p>
     <p>Liebe Grüße<br>Kathrin &amp; Florian<br>Hof Kruckenhaus, Oberberg 70, 6252 Breitenbach am Inn</p>`;
 
   const hofHtml = `
@@ -347,7 +354,7 @@ async function voranmeldungAufnehmen(db, env, request, e) {
 async function meineLaden(db, schluessel) {
   const kundeId = await kundeAusLink(db, schluessel);
   if (!kundeId) return null;
-  const [kunden, bestellungen, positionen, voranmeldungen] = (await db.batch([
+  const [kunden, bestellungen, positionen, voranmeldungen, widerrufe] = (await db.batch([
     db.prepare('SELECT name FROM kunden WHERE id = ?').bind(kundeId),
     db.prepare(`SELECT b.id, b.nummer, b.status, b.zahlart, b.bezahlt_art, b.uebergeben_am, b.lieferadresse,
                        b.erstellt_am, c.titel, t.art, t.datum, t.von, t.bis, s.gesamt_cent, s.geschaetzt
@@ -365,6 +372,9 @@ async function meineLaden(db, schluessel) {
                 FROM voranmeldungen v JOIN produkte p ON p.id = v.produkt_id
                 WHERE v.kunde_id = ? AND v.status = 'offen'
                 ORDER BY v.erstellt_am DESC`).bind(kundeId),
+    db.prepare(`SELECT w.bestellung_id, w.umfang, w.eingegangen_am FROM widerrufe w
+                JOIN bestellungen b ON b.id = w.bestellung_id
+                WHERE b.kunde_id = ? ORDER BY w.id`).bind(kundeId),
   ])).map((r) => r.results);
 
   return {
@@ -380,6 +390,8 @@ async function meineLaden(db, schluessel) {
       uebergeben: Boolean(b.uebergeben_am),
       summeCent: b.gesamt_cent,
       geschaetzt: Boolean(b.geschaetzt),
+      widerrufe: widerrufe.filter((w) => w.bestellung_id === b.id)
+        .map((w) => ({ umfang: w.umfang, eingegangen: zeitpunktText(w.eingegangen_am) })),
       positionen: positionen.filter((p) => p.bestellung_id === b.id).map((p) => ({
         name: p.produkt_name,
         art: p.art,
@@ -399,6 +411,85 @@ async function meineLaden(db, schluessel) {
 // Genauer Betrag steht fest (alles gewogen), Zahlung per Überweisung offen
 function istUeberweisungFaellig(b) {
   return b.status === 'vorgemerkt' && b.zahlart === 'ueberweisung' && !b.bezahlt && !b.geschaetzt && b.summeCent > 0;
+}
+
+/* ------------------------------------------------------------
+   5a. WIDERRUF („Vertrag widerrufen", § 13a FAGG)
+   Zwei Wege: aus „Meine Bestellungen" (Kunde über den Link bekannt) oder
+   über das Formular auf hofladen.html. Jeder Eingang wird gespeichert –
+   auch wenn Bestellnummer und E-Mail nicht zusammenpassen, dann klärt der
+   Hof das. Der Kunde bekommt sofort eine Eingangsbestätigung mit Inhalt,
+   Datum und Uhrzeit per E-Mail und auf der Seite.
+   ------------------------------------------------------------ */
+function zeitpunktText(sqlZeit) {
+  return new Date(`${sqlZeit.replace(' ', 'T')}Z`).toLocaleString('de-AT', {
+    timeZone: 'Europe/Vienna', day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit',
+  });
+}
+
+async function widerrufAufnehmen(db, env, schluessel, e) {
+  const umfang = e.umfang === 'teil' ? text(e.produkte, 500) : 'Ganze Bestellung';
+  if (!umfang) throw new EingabeFehler('Bitte angeben, welche Produkte ihr widerrufen wollt.');
+  const nummer = text(e.bestellnummer, 20);
+
+  let name;
+  let email;
+  let bestellung;
+  let quelle;
+  if (schluessel) {
+    const kundeId = await kundeAusLink(db, schluessel);
+    if (!kundeId) throw new EingabeFehler('Dieser Link ist ungültig – bitte das Formular auf der Hofladen-Seite verwenden.');
+    bestellung = await db.prepare(
+      `SELECT b.id, b.nummer, k.name, k.email FROM bestellungen b JOIN kunden k ON k.id = b.kunde_id
+       WHERE b.nummer = ? AND b.kunde_id = ?`
+    ).bind(nummer, kundeId).first();
+    if (!bestellung) throw new EingabeFehler('Bestellung nicht gefunden.');
+    ({ name, email } = bestellung);
+    quelle = 'link';
+  } else {
+    name = text(e.name, 120);
+    email = text(e.email, 160).toLowerCase();
+    if (name.length < 2) throw new EingabeFehler('Bitte euren Namen eintragen.');
+    if (!istGueltigeEmail(email)) throw new EingabeFehler('Bitte die E-Mail-Adresse eintragen, mit der ihr bestellt habt.');
+    if (!nummer) throw new EingabeFehler('Bitte die Bestellnummer eintragen (steht in der Bestätigungsmail, z. B. 2026-014).');
+    bestellung = await db.prepare(
+      `SELECT b.id, b.nummer FROM bestellungen b JOIN kunden k ON k.id = b.kunde_id
+       WHERE b.nummer = ? AND lower(k.email) = ?`
+    ).bind(nummer, email).first();
+    quelle = 'formular';
+  }
+
+  const zeile = await db.prepare(
+    `INSERT INTO widerrufe (bestellung_id, bestellnummer, name, email, umfang, quelle)
+     VALUES (?, ?, ?, ?, ?, ?) RETURNING eingegangen_am`
+  ).bind(bestellung ? bestellung.id : null, nummer, name, email || '', umfang, quelle).first();
+  const zeitpunkt = zeitpunktText(zeile.eingegangen_am);
+
+  const inhalt = `<p><strong>Bestellnummer:</strong> ${escapeHtml(nummer)}<br>
+      <strong>Widerrufen:</strong> ${escapeHtml(umfang)}<br>
+      <strong>Name:</strong> ${escapeHtml(name)}<br>
+      <strong>Eingegangen am:</strong> ${escapeHtml(zeitpunkt)} Uhr</p>`;
+  await Promise.all([
+    email && mailSenden(env, {
+      an: email,
+      betreff: `Eingangsbestätigung eures Widerrufs ${nummer} – Hof Kruckenhaus`,
+      antwortAn: env.CONTACT_TO || 'info@kruckenhaus.at',
+      html: `<p>Hallo ${escapeHtml(name)},</p>
+        <p>wir bestätigen den Eingang eures Widerrufs:</p>${inhalt}
+        <p>Wir melden uns in den nächsten Tagen zur Abwicklung. Bereits bezahlte Beträge erstatten wir
+          innerhalb von 14 Tagen. Für frisches Fleisch besteht kein Rücktrittsrecht (§ 18 Abs. 1 Z 4 FAGG).</p>
+        <p>Liebe Grüße<br>Kathrin &amp; Florian<br>Hof Kruckenhaus, Oberberg 70, 6252 Breitenbach am Inn</p>`,
+    }),
+    mailSenden(env, {
+      an: env.CONTACT_TO || 'info@kruckenhaus.at',
+      betreff: `Widerruf zur Bestellung ${nummer} von ${name}`,
+      antwortAn: email || undefined,
+      html: `<h2>Widerruf eingegangen</h2>${inhalt}
+        <p>${bestellung ? 'Die Bestellung ist zugeordnet.' : '<strong>Achtung:</strong> Bestellnummer und E-Mail passen zu keiner Bestellung – bitte klären.'}</p>
+        <p>In der Verwaltung unter „Übersicht" als erledigt markieren: /verwaltung/</p>`,
+    }),
+  ]);
+  return { nummer, umfang, eingegangen: zeitpunkt };
 }
 
 /* ------------------------------------------------------------
@@ -428,6 +519,11 @@ export async function onRequest({ request, env, params }) {
         ? await bestellungAufnehmen(db, env, request, eingabe)
         : await voranmeldungAufnehmen(db, env, request, eingabe);
       return json({ ok: true, ...ergebnis });
+    }
+    if (request.method === 'POST' && pfad === 'widerruf') {
+      const eingabe = await eingabeLesen(request);
+      if (eingabe['bot-field']) return json({ ok: true });
+      return json({ ok: true, ...(await widerrufAufnehmen(db, env, request.headers.get('X-Link-Schluessel'), eingabe)) });
     }
     return json({ ok: false, error: 'Nicht gefunden.' }, 404);
   } catch (fehler) {

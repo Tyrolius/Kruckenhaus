@@ -5240,3 +5240,62 @@ a.vw-zeile { text-decoration: none; }
 
 .vw-feld.vw-haken input { width: auto; margin-top: 0.2rem; }
 .vw-feld.vw-haken span { font-weight: 400; margin: 0; }
+
+/* ============================================================
+   48. WIDERRUF („Vertrag widerrufen", § 13a FAGG)
+   hofladen.html (#widerrufen), meine-bestellungen.html und die
+   Widerrufs-Karte der Verwaltung.
+   ============================================================ */
+.hl-widerruf-knopf {
+  display: inline-block;
+  margin-top: 0.5rem;
+}
+
+.hl-widerruf-form[hidden] { display: none; }
+
+.hl-widerruf-form {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+}
+
+.hl-widerruf-form .hl-auswahl { margin-bottom: 0.5rem; }
+
+.hl-widerruf-bestaetigt {
+  margin-top: var(--spacing-sm);
+  padding: var(--spacing-sm);
+  border-left: 4px solid var(--color-primary);
+  background-color: var(--color-cream);
+  border-radius: var(--border-radius);
+}
+
+.hl-widerruf-hinweis {
+  font-size: 0.9rem;
+  color: var(--color-terracotta);
+  font-weight: 700;
+}
+
+.vw-karte--achtung { border-left: 4px solid var(--color-terracotta); }
+
+.vw-widerruf {
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--color-border);
+}
+
+.vw-widerruf p { margin-bottom: 0.4rem; }
+
+.hl-widerruf-form .hl-auswahl { border: 1px solid var(--color-border); }
+
+.hl-widerruf-knopf.btn-outline {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.hl-widerruf-knopf.btn-outline:hover {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.hl-widerruf-knopf[hidden] { display: none; }

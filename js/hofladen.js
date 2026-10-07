@@ -13,6 +13,7 @@
  *   3. Bestellformular (Mengen, Summe, Termin, Absenden)
  *   4. Voranmeldung
  *   4a. Sortiment
+ *   4b. Vertrag widerrufen (§ 13a FAGG)
  *   5. Start
  * ============================================================ */
 
@@ -440,6 +441,66 @@ function initSortiment() {
 }
 
 /* ------------------------------------------------------------
+   4b. VERTRAG WIDERRUFEN (§ 13a FAGG)
+   Erst der Knopf „Vertrag widerrufen", dann Angaben und „Widerruf
+   bestätigen". Die Eingangsbestätigung mit Zeitpunkt erscheint hier und
+   kommt zusätzlich per E-Mail.
+   ------------------------------------------------------------ */
+function initWiderruf() {
+  const form = document.getElementById('hl-widerruf');
+  const knopf = document.querySelector('.hl-widerruf-knopf');
+  if (!form || !knopf) return;
+  const feld = (name) => form.elements.namedItem(name);
+
+  knopf.addEventListener('click', () => {
+    form.hidden = false;
+    knopf.setAttribute('aria-expanded', 'true');
+    feld('name').focus();
+  });
+
+  form.addEventListener('change', (e) => {
+    if (e.target.name === 'umfang') form.querySelector('[data-produkte]').hidden = e.target.value !== 'teil';
+  });
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const meldung = form.querySelector('.hl-meldung');
+    const umfang = form.querySelector('input[name="umfang"]:checked').value;
+    const fehler = !feld('name').value.trim() ? 'Bitte euren Namen eintragen.'
+      : !feld('bestellnummer').value.trim() ? 'Bitte die Bestellnummer eintragen.'
+      : !feld('email').value.trim() ? 'Bitte die E-Mail-Adresse eintragen.'
+      : umfang === 'teil' && !feld('produkte').value.trim() ? 'Bitte angeben, welche Produkte ihr widerrufen wollt.'
+      : '';
+    if (fehler) {
+      meldung.textContent = fehler;
+      meldung.className = 'hl-meldung hl-meldung--fehler';
+      return;
+    }
+    const absenden = form.querySelector('button[type="submit"]');
+    absenden.disabled = true;
+    meldung.textContent = 'Wird gesendet …';
+    meldung.className = 'hl-meldung';
+    try {
+      const erg = await senden('widerruf', {
+        name: feld('name').value, email: feld('email').value, bestellnummer: feld('bestellnummer').value,
+        umfang, produkte: feld('produkte').value, 'bot-field': feld('bot-field').value,
+      });
+      knopf.hidden = true;
+      form.outerHTML = `<div class="hl-widerruf-bestaetigt" tabindex="-1">
+        <h3>Euer Widerruf ist eingegangen</h3>
+        <p>Bestellnummer <strong>${esc(erg.nummer)}</strong> · widerrufen: <strong>${esc(erg.umfang)}</strong><br>
+          Eingegangen am ${esc(erg.eingegangen)} Uhr.</p>
+        <p>Die Bestätigung ist per E-Mail unterwegs. Wir melden uns zur Abwicklung.</p>
+      </div>`;
+    } catch (f) {
+      meldung.textContent = f.message;
+      meldung.className = 'hl-meldung hl-meldung--fehler';
+      absenden.disabled = false;
+    }
+  });
+}
+
+/* ------------------------------------------------------------
    5. START
    ------------------------------------------------------------ */
 async function initAngebot() {
@@ -463,5 +524,6 @@ document.addEventListener('DOMContentLoaded', () => {
   initBestellung();
   initVoranmeldung();
   initSortiment();
+  initWiderruf();
   initAngebot();
 });

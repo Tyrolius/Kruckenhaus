@@ -351,3 +351,30 @@ CREATE TABLE IF NOT EXISTS kunden_links (
 );
 
 CREATE INDEX IF NOT EXISTS idx_kunden_links_kunde ON kunden_links (kunde_id);
+
+
+-- ------------------------------------------------------------
+-- Widerrufe („Vertrag widerrufen", § 13a FAGG)
+-- Kunden widerrufen online – über „Meine Bestellungen" (quelle 'link')
+-- oder das Formular auf hofladen.html (quelle 'formular'). Jeder Eingang
+-- wird gespeichert und per E-Mail mit Zeitpunkt bestätigt. bestellung_id
+-- bleibt leer, wenn Bestellnummer und E-Mail nicht zusammenpassen – der
+-- Widerruf gilt trotzdem als eingegangen, der Hof klärt ihn.
+-- Storniert wird nicht automatisch (kein Rücktrittsrecht für Fleisch,
+-- teilweiser Widerruf möglich): der Hof erledigt das in der Verwaltung.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS widerrufe (
+  id             INTEGER PRIMARY KEY AUTOINCREMENT,
+  bestellung_id  INTEGER REFERENCES bestellungen (id),
+  bestellnummer  TEXT    NOT NULL,
+  name           TEXT    NOT NULL,
+  email          TEXT    NOT NULL,
+  umfang         TEXT    NOT NULL,     -- „Ganze Bestellung" oder die genannten Produkte
+  quelle         TEXT    NOT NULL CHECK (quelle IN ('formular', 'link')),
+  status         TEXT    NOT NULL DEFAULT 'offen' CHECK (status IN ('offen', 'erledigt')),
+  eingegangen_am TEXT    NOT NULL DEFAULT (datetime('now')),
+  erledigt_am    TEXT
+);
+
+CREATE INDEX IF NOT EXISTS idx_widerrufe_status ON widerrufe (status, eingegangen_am);
+CREATE INDEX IF NOT EXISTS idx_widerrufe_bestellung ON widerrufe (bestellung_id);
