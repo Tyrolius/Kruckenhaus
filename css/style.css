@@ -3555,7 +3555,7 @@ body.season-winter .winter-image { display: block; }
   height: 26px;
 }
 
-/* --- Kopf je Ansicht, Charge-Auswahl --- */
+/* --- Kopf je Ansicht, Bestellrunde-Auswahl --- */
 .vw-kopf { margin-bottom: var(--spacing-sm); }
 
 .vw-chips {
@@ -3924,7 +3924,7 @@ body.season-winter .winter-image { display: block; }
 .vw-kontakt form { margin-top: 0.6rem; }
 .vw-warnung { color: var(--color-terracotta); font-weight: 700; }
 
-/* --- Charge-Formular --- */
+/* --- Bestellrunde-Formular --- */
 .vw-termin-zeile {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -4189,7 +4189,7 @@ body.season-winter .winter-image { display: block; }
 .hl-schritte strong { display: block; color: var(--color-dark); }
 .hl-schritte span { font-size: 0.95rem; }
 
-/* Charge und Produkte */
+/* Bestellrunde und Produkte */
 .hl-angebot { display: grid; gap: var(--spacing-md); }
 
 .hl-charge-kopf h3 { margin-bottom: 0.3rem; }

@@ -2,7 +2,7 @@
 -- D1-SCHEMA – Hofladen-Vorbestellung
 -- ============================================================
 -- Tabellen für die Vorbestellung von Fleisch, Eiernudeln und Honig
--- in Chargen (Plan: docs/HOFLADEN-VORBESTELLUNG.md, Abschnitt 9.2).
+-- in Bestellrunden (Plan: docs/HOFLADEN-VORBESTELLUNG.md, Abschnitt 9.2).
 --
 -- Anlegen/aktualisieren (darf mehrfach ausgeführt werden):
 --   npx wrangler d1 execute kruckenhaus --remote --file=./schema-hofladen.sql
@@ -42,7 +42,7 @@ CREATE INDEX IF NOT EXISTS idx_kunden_email   ON kunden (email);
 
 
 -- ------------------------------------------------------------
--- Produktkatalog: jedes Produkt einmal, Preise stehen je Charge
+-- Produktkatalog: jedes Produkt einmal, Preise stehen je Bestellrunde
 -- Saisonprodukte sind normale Produkte (kategorie 'saison'); nach der
 -- Saison aktiv = 0 setzen statt löschen.
 -- art: 'gewicht' (Huhn, Pute, Gans – Preis pro kg, Endpreis nach Wiegen)
@@ -56,8 +56,8 @@ CREATE TABLE IF NOT EXISTS produkte (
   kategorie          TEXT    NOT NULL DEFAULT 'saison'
                      CHECK (kategorie IN ('fleisch', 'nudeln', 'honig', 'seife', 'saison')),
   startpreis_cent    INTEGER CHECK (startpreis_cent IS NULL OR startpreis_cent >= 0),
-                                       -- Vorschlag für die erste Charge; danach gilt
-                                       -- der Preis der letzten Charge (v_letzter_preis)
+                                       -- Vorschlag für die erste Bestellrunde; danach gilt
+                                       -- der Preis der letzten Bestellrunde (v_letzter_preis)
   beschreibung       TEXT,             -- z. B. Inhalt des Rind-Pakets
   pflichtangaben     TEXT,             -- Zutaten, Herkunft, Lagerhinweis, Füllmenge
   allergene          TEXT,             -- z. B. „Ei, Gluten"
@@ -75,7 +75,7 @@ CREATE TABLE IF NOT EXISTS produkte (
 
 
 -- ------------------------------------------------------------
--- Chargen: eine Schlachtung bzw. ein Verkaufsdurchgang
+-- Bestellrunden: eine Schlachtung bzw. ein Verkaufsdurchgang
 -- status: 'entwurf'     – nur in der Verwaltung sichtbar
 --         'stammkunden' – nur über den Stammkunden-Link bestellbar
 --         'offen'       – für alle bestellbar
@@ -99,7 +99,7 @@ CREATE INDEX IF NOT EXISTS idx_chargen_status ON chargen (status);
 
 
 -- ------------------------------------------------------------
--- Artikel einer Charge: Produkt + Preis + Kontingent
+-- Artikel einer Bestellrunde: Produkt + Preis + Kontingent
 -- preis_cent: bei Gewichtsware pro kg, sonst pro Stück/Paket
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS charge_artikel (
@@ -115,7 +115,7 @@ CREATE TABLE IF NOT EXISTS charge_artikel (
 
 
 -- ------------------------------------------------------------
--- Termine einer Charge: Abholfenster am Hof und Liefertermine
+-- Termine einer Bestellrunde: Abholfenster am Hof und Liefertermine
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS termine (
   id        INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -238,7 +238,7 @@ FROM bestell_positionen p
 JOIN charge_artikel ca ON ca.id = p.charge_artikel_id
 JOIN produkte pr       ON pr.id = ca.produkt_id;
 
--- Bestand je Artikel einer Charge: nur vorgemerkte Bestellungen zählen.
+-- Bestand je Artikel einer Bestellrunde: nur vorgemerkte Bestellungen zählen.
 CREATE VIEW IF NOT EXISTS v_bestand AS
 SELECT
   ca.id AS charge_artikel_id,
@@ -265,8 +265,8 @@ FROM bestellungen b
 LEFT JOIN v_positionen v ON v.bestellung_id = b.id
 GROUP BY b.id;
 
--- Vorschlag für eine neue Charge: Preis, Menge und Höchstmenge je Produkt
--- aus der zuletzt angelegten Charge, in der das Produkt vorkam.
+-- Vorschlag für eine neue Bestellrunde: Preis, Menge und Höchstmenge je Produkt
+-- aus der zuletzt angelegten Bestellrunde, in der das Produkt vorkam.
 CREATE VIEW IF NOT EXISTS v_letzter_preis AS
 SELECT
   ca.produkt_id,
@@ -287,12 +287,12 @@ WHERE ca.id = (
 
 
 -- ------------------------------------------------------------
--- Voranmeldungen: unverbindliche Vormerkung für eine spätere Charge,
+-- Voranmeldungen: unverbindliche Vormerkung für eine spätere Bestellrunde,
 -- z. B. im Frühjahr „3 Masthühner für den Herbst".
 -- Noch ohne Preis, Termin und Kontingent. Beim Anlegen der passenden
--- Charge werden sie in der Verwaltung zu Bestellungen übernommen
+-- Bestellrunde werden sie in der Verwaltung zu Bestellungen übernommen
 -- (wer sich zuerst gemeldet hat, kommt zuerst dran).
--- zeitraum: 'naechste' (nächste Charge mit dem Produkt, ohne Jahr)
+-- zeitraum: 'naechste' (nächste Bestellrunde mit dem Produkt, ohne Jahr)
 --           oder Saison mit Jahr: 'fruehjahr', 'sommer', 'herbst',
 --           'martini', 'weihnachten'
 -- status:   'offen' | 'uebernommen' (→ bestellung_id) | 'abgesagt'

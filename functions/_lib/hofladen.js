@@ -12,9 +12,9 @@
  *   1. Antworten und Eingaben (json, escapeHtml, istGueltigeEmail)
  *   2. Beträge (positionBetrag, euro)
  *   3. Bestellnummern (naechsteBestellnummer)
- *      Preisvorschläge für neue Chargen (preisVorschlaege)
+ *      Preisvorschläge für neue Bestellrunden (preisVorschlaege)
  *   4. Bestellung anlegen / nachrücken – Kontingent sicher prüfen
- *   5. Voranmeldungen (anlegen, in eine Charge übernehmen)
+ *   5. Voranmeldungen (anlegen, in eine Bestellrunde übernehmen)
  *   6. Persönliche Links „Meine Bestellungen" (kundenLinkErstellen, kundeAusLink)
  *   7. E-Mail über Resend (mailSenden)
  *   8. Bankverbindung aus den Cloudflare-Einstellungen (bankAusEnv)
@@ -73,8 +73,8 @@ export async function naechsteBestellnummer(db, datum = new Date()) {
   return `${jahr}-${String(zeile.letzte).padStart(3, '0')}`;
 }
 
-/* Preisvorschläge für eine neue Charge: je aktivem Produkt Preis, Menge
-   und Höchstmenge der letzten Charge, in der es vorkam. Produkte, die noch
+/* Preisvorschläge für eine neue Bestellrunde: je aktivem Produkt Preis, Menge
+   und Höchstmenge der letzten Bestellrunde, in der es vorkam. Produkte, die noch
    nie verkauft wurden, bekommen den Startpreis aus dem Katalog (oder null).
    Die Werte werden in der Verwaltung nur vorbelegt und können geändert
    werden – bestehende Bestellungen behalten ihren Preis. */
@@ -133,13 +133,13 @@ export async function bestellungAnlegen(db, b, optionen = {}) {
   if (!positionen.length) throw new EingabeFehler('Keine Artikel gewählt.');
   if (positionen.some((p) => !Number.isInteger(p.menge))) throw new EingabeFehler('Ungültige Menge.');
 
-  // Artikel müssen zu dieser Charge gehören; Höchstmengen prüfen
+  // Artikel müssen zu dieser Bestellrunde gehören; Höchstmengen prüfen
   const { results: artikel } = await db.prepare(
     'SELECT id, max_pro_bestellung FROM charge_artikel WHERE charge_id = ?'
   ).bind(b.chargeId).all();
   const erlaubt = new Map(artikel.map((a) => [a.id, a.max_pro_bestellung]));
   for (const p of positionen) {
-    if (!erlaubt.has(p.chargeArtikelId)) throw new EingabeFehler('Artikel gehört nicht zu dieser Charge.');
+    if (!erlaubt.has(p.chargeArtikelId)) throw new EingabeFehler('Artikel gehört nicht zu dieser Bestellrunde.');
     const max = erlaubt.get(p.chargeArtikelId);
     if (max && p.menge > max && !optionen.hoechstmengeIgnorieren) throw new EingabeFehler(`Höchstens ${max} Stück pro Bestellung.`);
   }
@@ -147,7 +147,7 @@ export async function bestellungAnlegen(db, b, optionen = {}) {
   if (b.terminId != null) {
     const termin = await db.prepare('SELECT id FROM termine WHERE id = ? AND charge_id = ?')
       .bind(b.terminId, b.chargeId).first();
-    if (!termin) throw new EingabeFehler('Termin gehört nicht zu dieser Charge.');
+    if (!termin) throw new EingabeFehler('Termin gehört nicht zu dieser Bestellrunde.');
   }
 
   const nummer = await naechsteBestellnummer(db);
@@ -164,7 +164,7 @@ export async function bestellungAnlegen(db, b, optionen = {}) {
       b.terminId ?? null, b.lieferadresse || null, b.zahlart || 'bar',
       b.liefergebuehrCent || 0, b.anmerkung || null, b.interneNotiz || null
     ),
-    // Einzelpreis zum Bestellzeitpunkt aus der Charge übernehmen
+    // Einzelpreis zum Bestellzeitpunkt aus der Bestellrunde übernehmen
     ...positionen.map((p) => db.prepare(
       `INSERT INTO bestell_positionen (bestellung_id, charge_artikel_id, menge, einzelpreis_cent)
        SELECT b.id, ca.id, ?, ca.preis_cent
@@ -202,10 +202,10 @@ export async function bestellungNachruecken(db, bestellungId) {
 /* ------------------------------------------------------------
    5. VORANMELDUNGEN
    Unverbindlich, ohne Preis und Termin. Zählen nicht vom Kontingent ab,
-   bis sie in eine Charge übernommen werden.
+   bis sie in eine Bestellrunde übernommen werden.
    ------------------------------------------------------------ */
 export const ZEITRAEUME = {
-  naechste: 'nächste Charge',
+  naechste: 'nächste Bestellrunde',
   fruehjahr: 'Frühjahr',
   sommer: 'Sommer',
   herbst: 'Herbst',
@@ -246,12 +246,12 @@ export async function voranmeldungAnlegen(db, v) {
 }
 
 /**
- * Übernimmt ausgewählte offene Voranmeldungen in eine Charge.
+ * Übernimmt ausgewählte offene Voranmeldungen in eine Bestellrunde.
  * Je Kunde entsteht eine Bestellung (mehrere Produkte werden zusammengefasst),
  * in der Reihenfolge der Anmeldung – wer zuerst kam, wird zuerst vorgemerkt;
  * reicht die Menge nicht mehr, landet die Bestellung auf der Warteliste.
  * Termin und Zahlart sind noch offen und werden beim Bestätigen nachgetragen.
- * Voranmeldungen für Produkte, die nicht in der Charge sind, bleiben offen.
+ * Voranmeldungen für Produkte, die nicht in der Bestellrunde sind, bleiben offen.
  *
  * @returns {Promise<{ bestellungen: Array<{kundeId, id, nummer, status}>, uebersprungen: number[] }>}
  */

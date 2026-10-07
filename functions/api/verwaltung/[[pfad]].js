@@ -9,8 +9,8 @@
  *   POST /api/verwaltung/bestellung/<id>          Bestellung ändern ({ aktion, … }):
  *        uebergeben, bezahlt, zahlart, termin, kontakt, notiz, stornieren,
  *        nachruecken, gewicht
- *   POST /api/verwaltung/charge                   Charge anlegen
- *   POST /api/verwaltung/charge/<id>              Charge bearbeiten
+ *   POST /api/verwaltung/charge                   Bestellrunde anlegen
+ *   POST /api/verwaltung/charge/<id>              Bestellrunde bearbeiten
  *   POST /api/verwaltung/voranmeldung             Voranmeldung erfassen
  *   POST /api/verwaltung/voranmeldung/<id>/absagen
  *   POST /api/verwaltung/voranmeldungen/uebernehmen
@@ -196,12 +196,12 @@ async function kundeSichern(db, kundeId, kunde = {}) {
    4. BESTELLUNGEN
    ------------------------------------------------------------ */
 async function bestellungErfassen(db, e) {
-  const chargeId = nummer(e.chargeId, 'Charge');
+  const chargeId = nummer(e.chargeId, 'Bestellrunde');
   const terminId = e.terminId ? nummer(e.terminId, 'Termin') : null;
   let lieferadresse = null;
   if (terminId) {
     const termin = await db.prepare('SELECT art FROM termine WHERE id = ? AND charge_id = ?').bind(terminId, chargeId).first();
-    if (!termin) throw new EingabeFehler('Termin gehört nicht zu dieser Charge.');
+    if (!termin) throw new EingabeFehler('Termin gehört nicht zu dieser Bestellrunde.');
     if (termin.art === 'lieferung') {
       const k = e.kunde || {};
       if (!text(k.strasse) || !text(k.ort)) throw new EingabeFehler('Für die Lieferung bitte Adresse eintragen.');
@@ -255,7 +255,7 @@ async function bestellungAendern(db, bestellungId, e) {
         `UPDATE bestellungen SET termin_id = ?, geaendert_am = datetime('now')
          WHERE id = ? AND EXISTS (SELECT 1 FROM termine t WHERE t.id = ? AND t.charge_id = bestellungen.charge_id)`
       ).bind(tid, bid, tid).run();
-      if (!r.meta.changes) throw new EingabeFehler('Termin gehört nicht zu dieser Charge.');
+      if (!r.meta.changes) throw new EingabeFehler('Termin gehört nicht zu dieser Bestellrunde.');
       break;
     }
     case 'kontakt': {
@@ -318,7 +318,7 @@ function chargePruefen(e) {
     max: ganzzahl(a.maxProBestellung, 'Höchstmenge', { min: 1, max: 100000, leer: true }),
   }));
   if (new Set(artikel.map((a) => a.produktId)).size !== artikel.length) {
-    throw new EingabeFehler('Ein Produkt ist doppelt in der Charge.');
+    throw new EingabeFehler('Ein Produkt ist doppelt in der Bestellrunde.');
   }
   return {
     titel,
@@ -361,10 +361,10 @@ async function chargeAnlegen(db, e) {
 }
 
 async function chargeBearbeiten(db, chargeId, e) {
-  const cid = nummer(chargeId, 'Charge');
+  const cid = nummer(chargeId, 'Bestellrunde');
   const c = chargePruefen(e);
   const vorhanden = await db.prepare('SELECT id FROM chargen WHERE id = ?').bind(cid).first();
-  if (!vorhanden) throw new EingabeFehler('Charge nicht gefunden.');
+  if (!vorhanden) throw new EingabeFehler('Bestellrunde nicht gefunden.');
 
   const [alteTermine, alteArtikel] = (await db.batch([
     db.prepare(`SELECT t.id, EXISTS (SELECT 1 FROM bestellungen b WHERE b.termin_id = t.id) AS benutzt
@@ -376,10 +376,10 @@ async function chargeBearbeiten(db, chargeId, e) {
   const bleibendeTermine = new Set(c.termine.filter((t) => t.id).map((t) => t.id));
   const bleibendeArtikel = new Set(c.artikel.filter((a) => a.id).map((a) => a.id));
   for (const t of c.termine) {
-    if (t.id && !alteTermine.some((x) => x.id === t.id)) throw new EingabeFehler('Termin gehört nicht zu dieser Charge.');
+    if (t.id && !alteTermine.some((x) => x.id === t.id)) throw new EingabeFehler('Termin gehört nicht zu dieser Bestellrunde.');
   }
   for (const a of c.artikel) {
-    if (a.id && !alteArtikel.some((x) => x.id === a.id)) throw new EingabeFehler('Artikel gehört nicht zu dieser Charge.');
+    if (a.id && !alteArtikel.some((x) => x.id === a.id)) throw new EingabeFehler('Artikel gehört nicht zu dieser Bestellrunde.');
   }
   const entfernteTermine = alteTermine.filter((t) => !bleibendeTermine.has(t.id));
   const entfernteArtikel = alteArtikel.filter((a) => !bleibendeArtikel.has(a.id));
@@ -457,7 +457,7 @@ export async function onRequest({ request, env, params, data }) {
       if (!r.meta.changes) throw new EingabeFehler('Voranmeldung nicht gefunden oder nicht mehr offen.');
       ergebnis = {};
     } else if (bereich === 'voranmeldungen' && teilId === 'uebernehmen' && pfad.length === 2) {
-      const erg = await voranmeldungenUebernehmen(db, nummer(eingabe.chargeId, 'Charge'), eingabe.ids || []);
+      const erg = await voranmeldungenUebernehmen(db, nummer(eingabe.chargeId, 'Bestellrunde'), eingabe.ids || []);
       ergebnis = {
         bestellungen: erg.bestellungen.map((b) => ({ id: id(b.id), nummer: b.nummer, status: b.status })),
         uebersprungen: erg.uebersprungen.map(id),

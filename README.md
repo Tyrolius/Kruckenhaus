@@ -444,7 +444,7 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 
 ## Datenbank: Hofladen-Vorbestellung (im Aufbau)
 
-Für die Vorbestellung von Fleisch, Eiernudeln und Honig in Chargen gibt es
+Für die Vorbestellung von Fleisch, Eiernudeln und Honig in Bestellrunden gibt es
 eigene Tabellen (Plan: `docs/HOFLADEN-VORBESTELLUNG.md`). Sie stehen in
 `schema-hofladen.sql` und werden so angelegt – die Datei darf mehrfach
 ausgeführt werden und verändert keine bestehenden Tabellen:
@@ -466,8 +466,8 @@ Liefergebiet ein; sie überspringt Einträge, die es schon gibt.
 | `bestellungen`, `bestell_positionen` | Vorbestellungen; Übergabe und Zahlung als eigene Felder |
 | `nummernkreis` | fortlaufende Bestellnummern `2026-001` … |
 | `v_positionen`, `v_bestand`, `v_bestellsummen` | berechnete Beträge, freie Mengen, Summen |
-| `v_letzter_preis` | Preisvorschlag für neue Chargen (Werte der letzten Charge je Produkt) |
-| `voranmeldungen`, `v_voranmeldungen_summe` | unverbindliche Vormerkungen für spätere Chargen und ihre Summe je Zeitraum |
+| `v_letzter_preis` | Preisvorschlag für neue Bestellrunden (Werte der letzten Bestellrunde je Produkt) |
+| `voranmeldungen`, `v_voranmeldungen_summe` | unverbindliche Vormerkungen für spätere Bestellrunden und ihre Summe je Zeitraum |
 
 Nach Änderungen an Schema, Helfern oder Schnittstelle die Tests laufen lassen
 (Node 22, berühren die echte Datenbank nicht):
@@ -480,7 +480,7 @@ node scripts/test-hofladen-oeffentlich.mjs
 node scripts/test-hofladen-qr.mjs
 ```
 
-**Bestellseite für Kunden:** `hofladen.html` zeigt die offenen Chargen (Status
+**Bestellseite für Kunden:** `hofladen.html` zeigt die offenen Bestellrunden (Status
 „Offen", Bestellschluss nicht vorbei) mit freier Menge, Zutaten und Allergenen,
 nimmt Vorbestellungen und unverbindliche Voranmeldungen an und verschickt
 Bestätigungen (über Resend, wie das Kontaktformular). Jede Bestätigung enthält

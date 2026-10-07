@@ -15,7 +15,7 @@ const ENTWURF_DATEN = {
   // (Vorschlag, wie in hofladen-produkte.sql). Andere Orte: nur Abholung.
   tourReihenfolge: ['Breitenbach am Inn', 'Kramsach', 'Brixlegg', 'Kundl'],
 
-  // Produktkatalog (Preise stehen je Charge) – echtes Sortiment, Stand 09/2026
+  // Produktkatalog (Preise stehen je Bestellrunde) – echtes Sortiment, Stand 09/2026
   // Gleiche Felder wie /api/verwaltung/stand
   produkte: [
     { id: 'p1', name: 'Masthuhn ganz', art: 'gewicht', kategorie: 'fleisch', richtVonG: 1800, richtBisG: 2400, startpreisCent: 1200 },
@@ -35,7 +35,7 @@ const ENTWURF_DATEN = {
   ],
 
   // Termine, Mengen und Bestellungen sind erfunden; Preise wie angegeben.
-  // Nudeln: je Charge nur die Sorten, die gerade da sind.
+  // Nudeln: je Bestellrunde nur die Sorten, die gerade da sind.
   chargen: [
     {
       id: 'c1',

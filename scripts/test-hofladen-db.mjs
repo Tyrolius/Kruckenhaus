@@ -95,23 +95,23 @@ assert.equal(roh.prepare('SELECT COUNT(*) n FROM bestellungen').get().n, vorher)
 assert.equal(roh.prepare('SELECT COUNT(*) n FROM bestell_positionen WHERE bestellung_id NOT IN (SELECT id FROM bestellungen)').get().n, 0);
 console.log('✓ Unbekannter Kunde: Transaktion vollständig zurückgerollt');
 
-// Preisvorschläge: Werte der zuletzt angelegten Charge je Produkt
+// Preisvorschläge: Werte der zuletzt angelegten Bestellrunde je Produkt
 roh.exec(`INSERT INTO produkte (name, art) VALUES ('Honig', 'stueck')`);
 roh.exec(`INSERT INTO chargen (titel, bestellschluss, erstellt_am) VALUES ('Neuer', '2026-12-01', datetime('now', '+1 day'))`);
 roh.exec(`INSERT INTO charge_artikel (charge_id, produkt_id, preis_cent, kontingent) VALUES (3, 2, 500, 12)`);
 const vorschlag = Object.fromEntries((await preisVorschlaege(db)).map((v) => [v.name, v]));
-assert.equal(vorschlag.Masthuhn.preisCent, 1390);      // nur in Charge 1
+assert.equal(vorschlag.Masthuhn.preisCent, 1390);      // nur in Bestellrunde 1
 assert.equal(vorschlag.Masthuhn.maxProBestellung, 4);
-assert.equal(vorschlag.Eiernudeln.preisCent, 500);     // jüngste Charge gewinnt
+assert.equal(vorschlag.Eiernudeln.preisCent, 500);     // jüngste Bestellrunde gewinnt
 assert.equal(vorschlag.Eiernudeln.ausCharge, 'Neuer');
 assert.equal(vorschlag.Honig.preisCent, null);         // noch nie verkauft, kein Startpreis
 roh.exec(`UPDATE produkte SET startpreis_cent = 1200 WHERE name = 'Honig'`);
 assert.equal((await preisVorschlaege(db)).find((v) => v.name === 'Honig').preisCent, 1200); // Startpreis
 roh.exec(`UPDATE produkte SET startpreis_cent = 777 WHERE name = 'Eiernudeln'`);
-assert.equal((await preisVorschlaege(db)).find((v) => v.name === 'Eiernudeln').preisCent, 500); // letzte Charge schlägt Startpreis
-console.log('✓ Preisvorschläge aus der letzten Charge je Produkt, sonst Startpreis');
+assert.equal((await preisVorschlaege(db)).find((v) => v.name === 'Eiernudeln').preisCent, 500); // letzte Bestellrunde schlägt Startpreis
+console.log('✓ Preisvorschläge aus der letzten Bestellrunde je Produkt, sonst Startpreis');
 
-// Voranmeldungen: anlegen, prüfen, in eine Charge übernehmen
+// Voranmeldungen: anlegen, prüfen, in eine Bestellrunde übernehmen
 const heuer = new Date().getUTCFullYear();
 roh.exec(`INSERT INTO chargen (titel, bestellschluss, erstellt_am) VALUES ('Herbst', '2026-10-01', datetime('now', '+2 day'))`);
 const cHerbst = roh.prepare('SELECT MAX(id) id FROM chargen').get().id;
@@ -139,7 +139,7 @@ const status = uebernahme.bestellungen.map((b) => [b.kundeId, b.status]);
 // Kunde 2 kam zuerst (3 Hühner, trotz Höchstmenge 2), dann Kunde 1 (1 Huhn + Nudeln) → 4 von 4;
 // Kunde 3 (2 Hühner) passt nicht mehr → Warteliste
 assert.deepEqual(status, [[2, 'vorgemerkt'], [1, 'vorgemerkt'], [3, 'warteliste']]);
-assert.deepEqual(uebernahme.uebersprungen, [va[4]]); // Honig ist nicht in der Charge
+assert.deepEqual(uebernahme.uebersprungen, [va[4]]); // Honig ist nicht in der Bestellrunde
 const k1 = uebernahme.bestellungen.find((b) => b.kundeId === 1);
 assert.equal(roh.prepare('SELECT COUNT(*) n FROM bestell_positionen WHERE bestellung_id = ?').get(k1.id).n, 2);
 assert.equal(roh.prepare(`SELECT COUNT(*) n FROM voranmeldungen WHERE status = 'uebernommen' AND bestellung_id IS NOT NULL`).get().n, 4);

@@ -8,9 +8,9 @@
 -- mit gleichem Namen werden übersprungen, nicht überschrieben):
 --   npx wrangler d1 execute kruckenhaus --remote --file=./hofladen-produkte.sql
 --
--- startpreis_cent ist nur der Vorschlag für die erste Charge. Der Preis,
--- der gilt, wird je Charge in der Verwaltung festgelegt; danach wird der
--- Preis der letzten Charge vorgeschlagen.
+-- startpreis_cent ist nur der Vorschlag für die erste Bestellrunde. Der Preis,
+-- der gilt, wird je Bestellrunde in der Verwaltung festgelegt; danach wird der
+-- Preis der letzten Bestellrunde vorgeschlagen.
 -- Beträge in Cent, Richtgewichte in Gramm.
 --
 -- Noch offen (später in der Verwaltung ergänzen):
@@ -40,7 +40,7 @@ INSERT INTO produkte (name, art, kategorie, richtgewicht_von_g, richtgewicht_bis
 SELECT 'Rindfleischpaket 10 kg', 'paket', 'fleisch', NULL, NULL, 14000, 50, '10 kg Rindfleisch zum Fixpreis (14 €/kg): Schnitzel, Braten, Gulasch, Faschiertes, Suppenfleisch. Suppenknochen gibt es gratis dazu.'
 WHERE NOT EXISTS (SELECT 1 FROM produkte WHERE name = 'Rindfleischpaket 10 kg');
 
--- --- Eiernudeln (Sorten nicht immer alle verfügbar – je Charge nur die vorhandenen aufnehmen) ---
+-- --- Eiernudeln (Sorten nicht immer alle verfügbar – je Bestellrunde nur die vorhandenen aufnehmen) ---
 INSERT INTO produkte (name, art, kategorie, richtgewicht_von_g, richtgewicht_bis_g, startpreis_cent, reihenfolge, beschreibung)
 SELECT 'Eiernudeln Spaghetti 500 g', 'stueck', 'nudeln', NULL, NULL, 400, 110, NULL
 WHERE NOT EXISTS (SELECT 1 FROM produkte WHERE name = 'Eiernudeln Spaghetti 500 g');

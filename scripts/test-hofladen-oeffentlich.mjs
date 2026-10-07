@@ -39,7 +39,7 @@ async function api(methode, pfad, eingabe, kopf = {}) {
 const ok = (r) => { assert.equal(r.ok, true, r.error); return r; };
 const id = (sql, ...a) => roh.prepare(sql).get(...a).id;
 
-// Charge anlegen (wie über die Verwaltung)
+// Bestellrunde anlegen (wie über die Verwaltung)
 const morgen = new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10);
 roh.prepare(`INSERT INTO chargen (titel, status, bestellschluss) VALUES ('Masthühner Test', 'offen', ?)`).run(morgen);
 roh.prepare(`INSERT INTO chargen (titel, status, bestellschluss) VALUES ('Entwurf', 'entwurf', ?)`).run(morgen);
@@ -58,7 +58,7 @@ const aNudeln = id('SELECT id FROM charge_artikel WHERE produkt_id = ? AND charg
 const tAbh = id(`SELECT id FROM termine WHERE charge_id = ? AND art = 'abholung'`, cId);
 const tLief = id(`SELECT id FROM termine WHERE charge_id = ? AND art = 'lieferung'`, cId);
 
-// Angebot: nur offene Charge mit Bestellschluss in der Zukunft
+// Angebot: nur offene Bestellrunde mit Bestellschluss in der Zukunft
 let r = ok(await api('GET', 'angebot'));
 assert.deepEqual(r.chargen.map((c) => c.titel), ['Masthühner Test']);
 const nudelArtikel = r.chargen[0].artikel.find((a) => a.id === aNudeln);
@@ -67,7 +67,7 @@ assert.equal(nudelArtikel.allergene, 'Weizen (Gluten), Ei');
 assert.equal(r.chargen[0].artikel.find((a) => a.id === aHuhn).frei, 4);
 assert.equal(r.liefergebiet.length, 4);
 assert.ok(r.produkte.length >= 14);
-console.log('✓ Angebot: nur offene Chargen, freie Menge, Pflichtangaben der Nudeln, Liefergebiet');
+console.log('✓ Angebot: nur offene Bestellrunden, freie Menge, Pflichtangaben der Nudeln, Liefergebiet');
 
 // Bestellung – Pflichtfelder und Regeln
 const basis = {

@@ -2,9 +2,9 @@
  * TEST – Schnittstelle der Hofladen-Verwaltung
  * ============================================================
  * Spielt einen typischen Ablauf gegen functions/api/verwaltung/[[pfad]].js
- * durch – so, wie ihn die Oberfläche auslöst: Charge anlegen, Bestellungen
+ * durch – so, wie ihn die Oberfläche auslöst: Bestellrunde anlegen, Bestellungen
  * erfassen (neuer und bekannter Kunde), Warteliste, wiegen, übergeben,
- * bezahlen, Termin setzen, Voranmeldungen übernehmen, Charge bearbeiten.
+ * bezahlen, Termin setzen, Voranmeldungen übernehmen, Bestellrunde bearbeiten.
  * Die Zugangsprüfung ist in test-hofladen-zugang.mjs getestet.
  *
  * Aufruf (Node 22 oder neuer):  node scripts/test-hofladen-api.mjs
@@ -40,7 +40,7 @@ assert.deepEqual(s.tourReihenfolge, ['Breitenbach am Inn', 'Kramsach', 'Brixlegg
 assert.equal(s.preisVorschlaege.find((v) => v.produktId === String(produkt('Masthuhn ganz'))).preisCent, 1200);
 console.log('✓ Stand: 14 Produkte, Liefergebiet, Startpreise als Vorschlag');
 
-// Charge anlegen
+// Bestellrunde anlegen
 const huhn = produkt('Masthuhn ganz');
 const nudeln = produkt('Eiernudeln Spaghetti 500 g');
 let r = ok(await api('POST', 'charge', {
@@ -61,7 +61,7 @@ assert.equal(ch.titel, 'Masthühner Herbst');
 assert.equal(ch.termine.length, 2);
 const [tLief, tAbh] = [ch.termine.find((t) => t.art === 'lieferung').id, ch.termine.find((t) => t.art === 'abholung').id];
 const [aHuhn, aNudeln] = [ch.artikel.find((a) => a.name === 'Masthuhn ganz').id, ch.artikel.find((a) => a.name.includes('Spaghetti')).id];
-console.log('✓ Charge mit Terminen und Artikeln angelegt');
+console.log('✓ Bestellrunde mit Terminen und Artikeln angelegt');
 
 // Bestellung: neuer Kunde, Lieferung ohne Adresse → Fehler
 r = await api('POST', 'bestellung', { chargeId, kunde: { name: 'Maria Test' }, terminId: tLief, positionen: [{ artikelId: aHuhn, menge: 2 }] });
@@ -132,7 +132,7 @@ r = await api('POST', `voranmeldung/${r.voranmeldungId}/absagen`, {});
 assert.equal(r.status, 400, 'zweimal absagen geht nicht');
 console.log('✓ Voranmeldung erfassen, übernehmen, Termin, Zahlart und Kontakt bestätigen, absagen');
 
-// Charge bearbeiten: Preis ändern (alte Bestellungen behalten Preis), Termin ergänzen,
+// Bestellrunde bearbeiten: Preis ändern (alte Bestellungen behalten Preis), Termin ergänzen,
 // benutzten Artikel nicht entfernen
 s = ok(await api('GET', 'stand'));
 const c = s.chargen[0];
@@ -152,7 +152,7 @@ assert.equal(r.status, 400);
 assert.match(r.error, /schon bestellt/);
 r = await api('POST', `charge/${chargeId}`, { ...neu, artikel: [...neu.artikel, { produktId: huhn, preisCent: 1, kontingent: 1 }] });
 assert.match(r.error, /doppelt/);
-console.log('✓ Charge bearbeiten: Preisänderung nur für neue Bestellungen, Termin ergänzt, Schutz vor Löschen/Doppelten');
+console.log('✓ Bestellrunde bearbeiten: Preisänderung nur für neue Bestellungen, Termin ergänzt, Schutz vor Löschen/Doppelten');
 
 // Schutz und Fehler
 r = await api('POST', 'bestellung', { chargeId }, { typ: 'text/plain' });

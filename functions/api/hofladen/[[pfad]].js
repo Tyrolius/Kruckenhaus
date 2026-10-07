@@ -4,7 +4,7 @@
  * Öffentliche Schnittstelle der Bestellseite hofladen.html und der Seite
  * meine-bestellungen.html (Plan: docs/HOFLADEN-VORBESTELLUNG.md, Phase 4).
  *
- *   GET  /api/hofladen/angebot       offene Chargen mit freier Menge, Termine,
+ *   GET  /api/hofladen/angebot       offene Bestellrunden mit freier Menge, Termine,
  *                                    Liefergebiet, Produkte für Voranmeldungen
  *   POST /api/hofladen/bestellung    verbindliche Vorbestellung
  *   POST /api/hofladen/voranmeldung  unverbindliche Voranmeldung
@@ -14,7 +14,7 @@
  *
  * Ablauf einer Bestellung:
  *   1. Spam-Falle (Feld „bot-field"), Pflichtfelder, Zustimmung prüfen
- *   2. Charge offen und Bestellschluss nicht vorbei, Termin und
+ *   2. Bestellrunde offen und Bestellschluss nicht vorbei, Termin und
  *      Liefergebiet passen, Höchstmengen eingehalten
  *   3. Kunde über die E-Mail-Adresse wiederfinden oder neu anlegen
  *      (bestehende Daten werden nie überschrieben, nur Lücken gefüllt)
@@ -175,7 +175,7 @@ async function bestellungAufnehmen(db, env, request, e) {
   const charge = await db.prepare(
     `SELECT id, titel FROM chargen WHERE id = ? AND status = 'offen' AND bestellschluss >= ?`
   ).bind(Number.isInteger(chargeId) ? chargeId : -1, heuteInTirol()).first();
-  if (!charge) throw new EingabeFehler('Für diese Charge kann nicht mehr bestellt werden (Bestellschluss vorbei).');
+  if (!charge) throw new EingabeFehler('Für diese Bestellrunde kann nicht mehr bestellt werden (Bestellschluss vorbei).');
 
   const termin = await db.prepare('SELECT id, art, datum, von, bis FROM termine WHERE id = ? AND charge_id = ?')
     .bind(Number(e.terminId) || -1, charge.id).first();
@@ -309,7 +309,7 @@ async function voranmeldungAufnehmen(db, env, request, e) {
       html: `<p>Hallo ${escapeHtml(kontakt.name)},</p>
         <p>danke – wir haben euch vorgemerkt: <strong>${escapeHtml(was)}</strong>.</p>
         <p>Die Voranmeldung ist <strong>unverbindlich</strong> und noch ohne Preis. Sobald die passende
-          Charge feststeht, melden wir uns mit Preis und Termin.</p>
+          Bestellrunde feststeht, melden wir uns mit Preis und Termin.</p>
         <p><a href="${escapeHtml(link)}">Meine Bestellungen ansehen</a><br>
           <small style="color:#7A7067">Euer persönlicher Link – bitte nicht weitergeben.</small></p>
         <p>Liebe Grüße<br>Kathrin &amp; Florian<br>Hof Kruckenhaus</p>`,
