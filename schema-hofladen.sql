@@ -354,6 +354,29 @@ CREATE INDEX IF NOT EXISTS idx_kunden_links_kunde ON kunden_links (kunde_id);
 
 
 -- ------------------------------------------------------------
+-- Liefertour: selbst festgelegte Reihenfolge der Kunden innerhalb eines
+-- Orts. Gilt für alle Touren – wer einmal einsortiert ist, steht beim
+-- nächsten Mal wieder an derselben Stelle. Ohne Eintrag wird nach Straße
+-- und Hausnummer sortiert.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS tour_reihenfolge (
+  kunde_id INTEGER PRIMARY KEY REFERENCES kunden (id) ON DELETE CASCADE,
+  rang     INTEGER NOT NULL
+);
+
+
+-- ------------------------------------------------------------
+-- Gesehene Bestellungen: Website-Bestellungen gelten in der Verwaltung
+-- als „neu", bis sie geöffnet oder als gesehen markiert wurden.
+-- Selbst erfasste Bestellungen werden gleich beim Anlegen eingetragen.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS bestellung_gesehen (
+  bestellung_id INTEGER PRIMARY KEY REFERENCES bestellungen (id) ON DELETE CASCADE,
+  gesehen_am    TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+
+-- ------------------------------------------------------------
 -- Widerrufe („Vertrag widerrufen", § 13a FAGG)
 -- Kunden widerrufen online – über „Meine Bestellungen" (quelle 'link')
 -- oder das Formular auf hofladen.html (quelle 'formular'). Jeder Eingang

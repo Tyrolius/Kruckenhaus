@@ -292,6 +292,49 @@ Im Entwurf (Abschnitt 0.1) schon zum Durchklicken: Start, Bestellrunde,
 Bestellung erfassen, Wiegen, Packzettel, Abholung, Liefertour, Zahlungen,
 Warteliste, Voranmeldungen, Termin offen, Export.
 
+**Stand Oktober 2026 (nach Rückmeldung von Florian):** In der Oberfläche
+steht „Bestellrunde" statt „Charge" (Florian, 07.10.2026), das Kontingent **„Menge"**. Unten am
+Handy fünf Punkte: *Übersicht · Bestellungen · Erfassen · Übergabe ·
+Voranmeldungen*; *Sortiment* in der PC-Seitenleiste bzw. über die Übersicht.
+
+- **Übergabe in einem Schritt:** Vakuumierte Stücke werden oft erst beim
+  Abholen einem Kunden zugeordnet. Deshalb tippt Kathrin bei der Übergabe die
+  Gewichte vom Etikett ab (ein Feld je Stück), der Betrag erscheint sofort,
+  und **ein** Knopf erledigt „übergeben + bar kassiert" bzw. „übergeben,
+  zahlt per Überweisung" (dann Zahlungsinfo mit QR-Code zum Scannen oder per
+  WhatsApp). Stückzahl ±1 und „Artikel dazu" direkt in der Karte – nie mehr
+  als frei. Vorab wiegen (Ansicht „Wiegen") bleibt optional, z. B. für
+  Packzettel der Liefertour. „Zahlungen" ist nur noch über die Übersicht
+  erreichbar („übergeben, Geld noch nicht da").
+- **Verkauf am Hof:** Kunde ohne Vorbestellung – Stücke wählen, Gewichte
+  eintippen, kassieren. Zählt von der Menge ab; ohne Namen landet er beim
+  Sammelkunden „Verkauf am Hof (ohne Namen)". Kein Bestand nach Gewicht
+  (bewusst, zu viel Aufwand).
+- **Liefertour:** nach Ort (Liefergebiet), dann eigene Reihenfolge (↑ ↓,
+  gespeichert je Kunde in `tour_reihenfolge`, gilt auch für spätere Touren),
+  sonst nach Straße und Hausnummer. Erledigte rutschen nach unten. Knopf
+  „Route in Google Maps" mit allen offenen Stopps (je 10 Stopps ein Link).
+- **Neue Website-Bestellungen** sind markiert („neu", Hinweis in der
+  Übersicht), bis jemand sie öffnet oder „Alle als gesehen" tippt
+  (`bestellung_gesehen`). Zusätzlich kommt wie bisher eine E-Mail an
+  info@kruckenhaus.at.
+- **Sortiment:** Produkte anlegen, ändern, aus- und einblenden (nie löschen).
+  „Nach Gewicht" bzw. „Fixpreis" ist nach dem ersten Verkauf gesperrt.
+  Eier, Marmelade u. Ä. unter „Sonstiges".
+
+- **Mehrere Abholtage** je Bestellrunde, in der Übergabe nach Tag wählbar;
+  **Abhol- und Lieferlisten zum Ausdrucken** (je Termin eine Seite, Kästchen
+  für Gewichte) für Orte ohne Internet.
+- **Gesamtübersicht:** Bestellungen über alle laufenden Runden.
+- **Abschließen und Auswertung:** Runde abschließen (= `archiviert`), Jahres-
+  auswertung nach Übergabedatum über alle Runden inkl. abgeschlossener
+  (`GET /api/verwaltung/auswertung?jahr=`), Excel-Liste je verkauftem
+  Artikel für die Buchhaltung.
+- **Ersetzt die WhatsApp-Gruppen als Bestellliste;** die Gruppen bleiben nur
+  noch für Ankündigungen (Knopf „Ankündigung für WhatsApp").
+
+Ursprünglicher Plan der Ansichten:
+
 | Ansicht | Inhalt |
 |---|---|
 | **Start** | Offene Bestellrunden mit Ampel: bestellt / Kontingent, Tage bis Bestellschluss, offene Zahlungen gesamt |
@@ -554,7 +597,7 @@ kommt danach.
 | Phase | Inhalt | Ergebnis | Stand |
 |---|---|---|---|
 | **0 – Entwurf** | Anklickbare Verwaltung mit Beispieldaten, Excel-Export, WhatsApp-Knöpfe, Voranmeldungen | Bedienung prüfen | **erledigt** |
-| **1 – Grundlage** | `schema-hofladen.sql`, Tabellen in D1 anlegen, gemeinsame Helfer (`functions/_lib/`), Produktkatalog und Liefergebiet befüllen | Datenbank steht | **teilweise** – `schema-hofladen.sql` (inkl. Voranmeldungen), Produktkatalog `hofladen-produkte.sql`, `functions/_lib/hofladen.js` und Test `scripts/test-hofladen-db.mjs` fertig; Produkte und Liefergebiet in `hofladen-produkte.sql` fertig; **offen: beide Dateien in D1 einspielen** |
+| **1 – Grundlage** | `schema-hofladen.sql`, Tabellen in D1 anlegen, gemeinsame Helfer (`functions/_lib/`), Produktkatalog und Liefergebiet befüllen | Datenbank steht | **fertig** – `schema-hofladen.sql` (inkl. Voranmeldungen), Produktkatalog `hofladen-produkte.sql`, `functions/_lib/hofladen.js` und Test `scripts/test-hofladen-db.mjs` fertig; Produkte und Liefergebiet in `hofladen-produkte.sql` fertig; **am 06.10.2026 in die Live-Datenbank eingespielt** (14 Produkte, 4 Lieferorte) |
 | **2 – Verwaltung live** | Cloudflare Access einrichten, Token-Prüfung, `/api/verwaltung/…`; Entwurf an echte Daten anschließen: Bestellrunden anlegen, Bestellung erfassen, Bestellliste, Status, Voranmeldungen erfassen und übernehmen, Excel-Export nach Vorlage | Kathrin und Florian führen eine Bestellrunde komplett in einer Liste (Bestellungen per WhatsApp/Telefon) | **programmiert** – Zugangsprüfung, Schnittstelle, Oberfläche an echten Daten, Bestellrunden-Formular, Kontakt ändern; getestet (Tests + Browser gegen lokale D1). Offen: Access einrichten, Datenbank anlegen, veröffentlichen |
 | **3 – Wiegen, Zahlung, Übergabe** | Gewichte speichern, Endbeträge, Packzettel, Abholliste, Liefertour, offene Zahlungen, Packzettel mit Endbetrag und Bankdaten (kein Vorab-Versand) | Ablauf nach der Schlachtung läuft | **programmiert** – Wiegen, Übergabe (Abholung/Liefertour), offene Zahlungen, Excel-Export, Packzettel mit Endbetrag, Bankdaten und Überweisungs-QR-Code; getestet. Offen: Testlauf mit echter Bestellrunde, Excel-Spalten nach eurer Vorlage |
 | **4 – Kundenseite** | `hofladen.html`, `js/hofladen.js`, `/api/hofladen/angebot` und `/bestellung`, `/voranmeldung`, Bestätigungsmails, Warteliste, Voranmelden durch Kunden, Pflichtangaben, Bestellbedingungen; noch **nicht** verlinkt | Kunden bestellen selbst über direkten Link | **programmiert** – `hofladen.html`, `meine-bestellungen.html`, `/api/hofladen/…`, Bestätigungsmails, persönlicher Link, Datenschutzerklärung ergänzt, Pflichtangaben Nudeln; getestet (Tests + Browser). Offen: Bestellbedingungen prüfen lassen, dann Phase 6 |

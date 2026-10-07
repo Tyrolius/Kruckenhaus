@@ -260,9 +260,9 @@ danach ebenfalls weg.
 ## Schritt 6: Checkliste vor dem Livegang
 
 - [x] Testanfrage über das Kontaktformular kommt per E-Mail an (Schritt 2)
-- [ ] Belegungskalender zeigt die Airbnb-Buchungen (Schritt 3)
-- [ ] `https://www.kruckenhaus.at` lädt mit Schloss-Symbol (Schritt 4)
-- [ ] E-Mail-Empfang (info@kruckenhaus.at) funktioniert nach dem DNS-Umzug noch
+- [x] Belegungskalender zeigt die Airbnb-Buchungen (Schritt 3)
+- [x] `https://www.kruckenhaus.at` lädt mit Schloss-Symbol (Schritt 4)
+- [x] E-Mail-Empfang (info@kruckenhaus.at) funktioniert nach dem DNS-Umzug noch
 - [ ] Fotos eingefügt (Schritt 5)
 - [ ] Website einmal komplett am **Handy** durchklicken
 - [ ] **Gästestimmen ersetzen:** Die vier Bewertungen auf der Startseite sind
@@ -349,6 +349,19 @@ Minuten online. Drei Wege, vom einfachsten zum flexibelsten:
 2. **GitHub-Web-Editor:** Auf github.com die Datei öffnen → Stift-Symbol →
    ändern → **Commit changes**. Gut für kleine Textänderungen.
 3. **Lokal am Computer:** Repository klonen, ändern, `git push`.
+
+### Änderungen vorab ansehen (Vorschau)
+
+Änderungen auf einem Arbeitszweig (nicht `master`) gehen **nicht** live,
+sondern bekommen von Cloudflare eine eigene Vorschau-Adresse:
+
+1. Einmalig einschalten: *Workers & Pages → kruckenhaus → Settings → Builds &
+   deployments → Preview deployments* → **All non-production branches**.
+2. Nach jedem Push auf den Zweig: *Deployments* → Eintrag „Preview" mit dem
+   Zweignamen → Link öffnen (Form: `https://<zweig>.kruckenhaus.pages.dev`).
+3. Hofladen-Verwaltung zum Ausprobieren: an die Adresse
+   `/verwaltung/?entwurf` anhängen – Übungsmodus mit erfundenen Daten,
+   es wird nichts gespeichert.
 
 ### Häufige Anpassungen – wo finde ich was?
 
@@ -471,6 +484,9 @@ unter dem alten Namen noch einmal angelegt).
 | `v_positionen`, `v_bestand`, `v_bestellsummen` | berechnete Beträge, freie Mengen, Summen |
 | `v_letzter_preis` | Preisvorschlag für neue Bestellrunden (Werte der letzten Bestellrunde je Produkt) |
 | `voranmeldungen`, `v_voranmeldungen_summe` | unverbindliche Vormerkungen für spätere Bestellrunden und ihre Summe je Zeitraum |
+| `tour_reihenfolge` | selbst festgelegte Reihenfolge der Liefertour je Kunde |
+| `bestellung_gesehen` | Website-Bestellungen, die in der Verwaltung schon geöffnet wurden (sonst „neu") |
+| `widerrufe` | eingegangene Widerrufe („Vertrag widerrufen") mit Zeitpunkt, offen/erledigt |
 
 Nach Änderungen an Schema, Helfern oder Schnittstelle die Tests laufen lassen
 (Node 22, berühren die echte Datenbank nicht):
@@ -502,7 +518,8 @@ Schnittstelle prüft diese Anmeldung zusätzlich selbst. **Solange die
 Schritte 2 und 3 nicht erledigt sind, ist die Verwaltung gesperrt** – es
 kann also nichts versehentlich offen stehen.
 
-**1. Tabellen in der Datenbank anlegen** (falls noch nicht geschehen):
+**1. Tabellen in der Datenbank anlegen** (erledigt am 06.10.2026; nur nach
+Schemaänderungen erneut nötig, beide Dateien sind mehrfach ausführbar):
 Cloudflare-Dashboard → *Storage & Databases → D1 → kruckenhaus → Console*,
 nacheinander den Inhalt von `schema-hofladen.sql` und `hofladen-produkte.sql`
 einfügen und ausführen.
@@ -547,6 +564,28 @@ Danach unter *Deployments* die letzte Veröffentlichung erneut ausführen
 **4. Testen:** https://www.kruckenhaus.at/verwaltung/ öffnen → E-Mail-Adresse
 eingeben → Code aus dem Postfach eintragen. Am Handy die Seite zum
 Startbildschirm hinzufügen – dann wirkt sie wie eine App.
+
+**So läuft eine Bestellrunde** (in der Datenbank heißt sie `chargen`):
+
+1. *Übersicht → + Neue Bestellrunde*: Produkte, Preise, Mengen, Abhol- und
+   Liefertermine; Status „In Vorbereitung", zum Freigeben „Offen".
+2. Website-Bestellungen kommen von selbst (E-Mail an info@ und Markierung
+   „neu"); WhatsApp-/Telefonbestellungen unter *Erfassen*.
+3. *Übergabe*: beim Kunden Gewichte vom Etikett eintippen, ein Knopf für
+   „übergeben + bar kassiert" bzw. „zahlt per Überweisung" (zeigt QR-Code).
+   Kunde ohne Bestellung: *+ Verkauf am Hof*. Liefertour mit ↑ ↓ sortieren.
+   Mehrere Abholtage: oben den Tag wählen. Ohne Internet (Schlachthaus):
+   *Abholliste zum Mitnehmen drucken* – Gewichte in die Kästchen schreiben
+   und später bei der Übergabe eintippen.
+4. Überweisungen in der *Übersicht → „übergeben, Geld noch nicht da"* abhaken.
+5. Neue Produkte (z. B. Eier) unter *Sortiment* anlegen.
+6. Alles übergeben und bezahlt: *Übersicht → Bestellrunde abschließen*. Sie
+   verschwindet aus dem Alltag, bleibt aber in der **Auswertung** (*Übersicht →
+   Mehr → Auswertung*): Umsatz je Jahr nach Tag der Übergabe, bar/Überweisung,
+   offen, je Bereich und Produkt, und **Excel-Liste für die Buchhaltung**.
+
+Gesamtübersicht über alle laufenden Runden: *Bestellungen* → oben „Alle
+laufenden Bestellrunden" wählen; die Suche findet dort jeden Kunden.
 
 **Weitere Person freischalten:** Adresse in der Access-Policy (Schritt 2.3)
 **und** in `VERWALTUNG_EMAILS` ergänzen. **Jemanden aussperren:** an beiden

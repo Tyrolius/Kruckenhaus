@@ -5,14 +5,20 @@
  * Zugangsprüfung (_middleware.js im selben Ordner).
  *
  *   GET  /api/verwaltung/stand                    alles, was die Oberfläche braucht
+ *   GET  /api/verwaltung/auswertung?jahr=2026     Jahresauswertung (auch abgeschlossene Runden)
  *   POST /api/verwaltung/bestellung               Bestellung erfassen
  *   POST /api/verwaltung/bestellung/<id>          Bestellung ändern ({ aktion, … }):
  *        uebergeben, bezahlt, zahlart, termin, kontakt, notiz, stornieren,
- *        nachruecken, gewicht
+ *        nachruecken, gewicht, position (Menge ändern/Artikel dazu),
+ *        abschliessen (Gewichte + übergeben + ggf. bar kassiert in einem)
+ *   POST /api/verwaltung/hofverkauf               Verkauf am Hof ohne Vorbestellung
+ *   POST /api/verwaltung/gesehen                  Website-Bestellungen als gesehen markieren
+ *   POST /api/verwaltung/tour                     Reihenfolge der Liefertour speichern
+ *   POST /api/verwaltung/produkt                  Produkt anlegen (Sortiment)
+ *   POST /api/verwaltung/produkt/<id>             Produkt bearbeiten / aus- und einblenden
  *   POST /api/verwaltung/charge                   Bestellrunde anlegen
  *   POST /api/verwaltung/charge/<id>              Bestellrunde bearbeiten
- *   POST /api/verwaltung/produkt                  Produkt anlegen
- *   POST /api/verwaltung/produkt/<id>             Produkt bearbeiten (auch ausblenden)
+ *   POST /api/verwaltung/charge/<id>/status       nur den Status ändern (abschließen, wieder öffnen)
  *   POST /api/verwaltung/voranmeldung             Voranmeldung erfassen
  *   POST /api/verwaltung/voranmeldung/<id>/absagen
  *   POST /api/verwaltung/voranmeldungen/uebernehmen
@@ -31,7 +37,7 @@
 import {
   json, EingabeFehler, ZEITRAEUME, istGueltigeEmail,
   bestellungAnlegen, bestellungNachruecken, preisVorschlaege,
-  voranmeldungAnlegen, voranmeldungenUebernehmen, bankAusEnv,
+  voranmeldungAnlegen, voranmeldungenUebernehmen, bankAusEnv, SQL_ALS_GESEHEN,
 } from '../../_lib/hofladen.js';
 
 /* ------------------------------------------------------------
@@ -42,6 +48,8 @@ const ZAHLARTEN = ['bar', 'ueberweisung'];
 const CHARGE_STATUS = ['entwurf', 'stammkunden', 'offen', 'geschlossen', 'archiviert'];
 const PRODUKT_ARTEN = ['gewicht', 'paket', 'stueck'];
 const KATEGORIEN = ['fleisch', 'nudeln', 'honig', 'seife', 'saison'];
+// Sammelkunde für Verkäufe am Hof, bei denen kein Name angegeben wird
+const SAMMELKUNDE = 'Verkauf am Hof (ohne Namen)';
 
 function nummer(wert, name = 'Nummer') {
   const n = Number(wert);
@@ -96,14 +104,17 @@ async function standLaden(db, bank = null) {
       db.prepare(`SELECT id, charge_id, art, datum, von, bis, hinweis FROM termine
                   WHERE charge_id IN (${aktiv}) ORDER BY datum, von`),
       db.prepare(`SELECT id, nummer, charge_id, kunde_id, quelle, status, termin_id, lieferadresse, zahlart,
-                         uebergeben_am, bezahlt_art, anmerkung, interne_notiz, erstellt_am
+                         uebergeben_am, bezahlt_art, anmerkung, interne_notiz, erstellt_am,
+                         EXISTS (SELECT 1 FROM bestellung_gesehen g WHERE g.bestellung_id = bestellungen.id) AS gesehen
                   FROM bestellungen WHERE charge_id IN (${aktiv}) ORDER BY id`),
       db.prepare(`SELECT p.id, p.bestellung_id, p.charge_artikel_id, p.menge, p.einzelpreis_cent, p.gewicht_g
                   FROM bestell_positionen p JOIN bestellungen b ON b.id = p.bestellung_id
                   WHERE b.charge_id IN (${aktiv}) ORDER BY p.id`),
-      db.prepare(`SELECT id, name, telefon, email, strasse, plz, ort, stammkunde, notiz FROM kunden ORDER BY name`),
+      db.prepare(`SELECT k.id, k.name, k.telefon, k.email, k.strasse, k.plz, k.ort, k.stammkunde, k.notiz,
+                         t.rang AS tour_rang
+                  FROM kunden k LEFT JOIN tour_reihenfolge t ON t.kunde_id = k.id ORDER BY k.name`),
       db.prepare(`SELECT id, name, art, kategorie, richtgewicht_von_g, richtgewicht_bis_g, startpreis_cent,
-                         aktiv, beschreibung, pflichtangaben, allergene, bild,
+                         aktiv, beschreibung, pflichtangaben, allergene,
                          EXISTS (SELECT 1 FROM charge_artikel ca WHERE ca.produkt_id = produkte.id) AS verwendet
                   FROM produkte ORDER BY kategorie, reihenfolge, name`),
       db.prepare(`SELECT id, kunde_id, produkt_id, menge, zeitraum, jahr, quelle, status, notiz, erstellt_am
@@ -137,19 +148,21 @@ async function standLaden(db, bank = null) {
     kunden: kunden.map((k) => ({
       id: id(k.id), name: k.name, telefon: k.telefon || '', email: k.email || '', strasse: k.strasse || '',
       plz: k.plz || '', ort: k.ort || '', stammkunde: Boolean(k.stammkunde), notiz: k.notiz || '',
+      tourRang: k.tour_rang ?? null,
     })),
     bestellungen: bestellungen.map((b) => ({
       id: id(b.id), nummer: b.nummer, chargeId: id(b.charge_id), kundeId: id(b.kunde_id), quelle: b.quelle,
       erstellt: String(b.erstellt_am).slice(0, 10), status: b.status, terminId: id(b.termin_id),
       lieferadresse: b.lieferadresse || '', zahlart: b.zahlart, bezahlt: b.bezahlt_art || null,
       uebergeben: Boolean(b.uebergeben_am), anmerkung: b.anmerkung || '', interneNotiz: b.interne_notiz || '',
+      neu: b.quelle === 'web' && !b.gesehen,
       positionen: jePos.get(b.id) || [],
     })),
     produkte: produkte.map((p) => ({
       id: id(p.id), name: p.name, art: p.art, kategorie: p.kategorie, aktiv: Boolean(p.aktiv),
       richtVonG: p.richtgewicht_von_g, richtBisG: p.richtgewicht_bis_g, startpreisCent: p.startpreis_cent,
       beschreibung: p.beschreibung || '', pflichtangaben: p.pflichtangaben || '', allergene: p.allergene || '',
-      bild: p.bild || '', verwendet: Boolean(p.verwendet),
+      verwendet: Boolean(p.verwendet),
     })),
     voranmeldungen: voranmeldungen.map((v) => ({
       id: id(v.id), kundeId: id(v.kunde_id), produktId: id(v.produkt_id), menge: v.menge,
@@ -234,7 +247,275 @@ async function bestellungErfassen(db, e) {
       chargeArtikelId: nummer(p.artikelId, 'Artikelnummer'),
       menge: ganzzahl(p.menge, 'Menge', { min: 0, max: 999 }),
     })),
-  }, { hoechstmengeIgnorieren: true });
+  }, {
+    hoechstmengeIgnorieren: true,
+    // Selbst erfasst – gilt nicht als „neu"
+    zusatz: (nr) => [db.prepare(SQL_ALS_GESEHEN).bind(nr)],
+  });
+}
+
+// Gewicht einer Position nur bei Gewichtsware setzen (sonst ändert sich nichts)
+function gewichtSetzen(db, bid, positionId, gewichtG) {
+  return db.prepare(
+    `UPDATE bestell_positionen SET gewicht_g = ?
+     WHERE id = ? AND bestellung_id = ? AND charge_artikel_id IN (
+       SELECT ca.id FROM charge_artikel ca JOIN produkte p ON p.id = ca.produkt_id WHERE p.art = 'gewicht')`
+  ).bind(gewichtG, positionId, bid);
+}
+
+// Bar kassiert: Zeitpunkt, Art und den Betrag zu diesem Zeitpunkt festhalten
+const SQL_BAR_KASSIERT =
+  `bezahlt_am = datetime('now'), bezahlt_art = 'bar', zahlart = 'bar',
+   bezahlt_betrag_cent = (SELECT gesamt_cent FROM v_bestellsummen WHERE bestellung_id = bestellungen.id)`;
+
+/**
+ * Übergabe in einem Schritt: Gewichte vom Etikett speichern, als übergeben
+ * markieren und – bei Barzahlung – gleich als bezahlt. Gewichtsware ohne
+ * Gewicht wird abgelehnt, damit nie ein geschätzter Betrag kassiert wird.
+ */
+async function bestellungAbschliessen(db, bid, e) {
+  const zahlung = e.zahlung == null ? null : auswahl(e.zahlung, ZAHLARTEN, 'Zahlung');
+  const gewichte = new Map((e.gewichte || []).map((g) => [
+    nummer(g.positionId, 'Position'),
+    ganzzahl(g.gewichtG, 'Gewicht', { min: 1, max: 200000 }),
+  ]));
+  const b = await db.prepare('SELECT status FROM bestellungen WHERE id = ?').bind(bid).first();
+  if (!b) throw new EingabeFehler('Bestellung nicht gefunden.');
+  if (b.status !== 'vorgemerkt') throw new EingabeFehler('Nur vorgemerkte Bestellungen können übergeben werden.');
+  const { results: positionen } = await db.prepare(
+    `SELECT bp.id, bp.gewicht_g, p.art FROM bestell_positionen bp
+     JOIN charge_artikel ca ON ca.id = bp.charge_artikel_id JOIN produkte p ON p.id = ca.produkt_id
+     WHERE bp.bestellung_id = ?`
+  ).bind(bid).all();
+  for (const pid of gewichte.keys()) {
+    if (!positionen.some((p) => p.id === pid && p.art === 'gewicht')) throw new EingabeFehler('Position nicht gefunden oder keine Gewichtsware.');
+  }
+  if (positionen.some((p) => p.art === 'gewicht' && !gewichte.has(p.id) && !p.gewicht_g)) {
+    throw new EingabeFehler('Bitte alle Gewichte eintragen.');
+  }
+  await db.batch([
+    ...[...gewichte].map(([pid, g]) => gewichtSetzen(db, bid, pid, g)),
+    db.prepare(`UPDATE bestellungen SET uebergeben_am = datetime('now'), geaendert_am = datetime('now')
+                ${zahlung === 'ueberweisung' ? ", zahlart = 'ueberweisung'" : ''} WHERE id = ?`).bind(bid),
+    ...(zahlung === 'bar'
+      ? [db.prepare(`UPDATE bestellungen SET ${SQL_BAR_KASSIERT} WHERE id = ? AND bezahlt_am IS NULL`).bind(bid)]
+      : []),
+    db.prepare('INSERT OR IGNORE INTO bestellung_gesehen (bestellung_id) VALUES (?)').bind(bid),
+  ]);
+  return {};
+}
+
+/**
+ * Menge eines Artikels in einer Bestellung setzen (z. B. bei der Übergabe
+ * „ein Huhn mehr"). Mehr geht nur, solange genug frei ist – geprüft in
+ * derselben Anweisung, damit nichts doppelt verkauft wird. Bei Gewichtsware
+ * wird das Gewicht zurückgesetzt, weil es nicht mehr zur Stückzahl passt.
+ */
+async function positionSetzen(db, bid, e) {
+  const artikelId = nummer(e.artikelId, 'Artikel');
+  const menge = ganzzahl(e.menge, 'Menge', { min: 0, max: 999 });
+  const b = await db.prepare(
+    `SELECT b.status, ca.id AS artikel FROM bestellungen b
+     LEFT JOIN charge_artikel ca ON ca.charge_id = b.charge_id AND ca.id = ?
+     WHERE b.id = ?`
+  ).bind(artikelId, bid).first();
+  if (!b) throw new EingabeFehler('Bestellung nicht gefunden.');
+  if (!b.artikel) throw new EingabeFehler('Artikel gehört nicht zu dieser Bestellrunde.');
+  if (b.status !== 'vorgemerkt') throw new EingabeFehler('Nur bei vorgemerkten Bestellungen möglich.');
+  const { results: positionen } = await db.prepare(
+    'SELECT id, charge_artikel_id, menge FROM bestell_positionen WHERE bestellung_id = ?'
+  ).bind(bid).all();
+  const pos = positionen.find((p) => p.charge_artikel_id === artikelId);
+  const frei = async () => (await db.prepare('SELECT frei FROM v_bestand WHERE charge_artikel_id = ?').bind(artikelId).first()).frei;
+
+  let r;
+  if (menge === 0) {
+    if (!pos) return {};
+    if (positionen.length === 1) throw new EingabeFehler('Der letzte Artikel kann nicht entfernt werden – Bestellung stattdessen stornieren.');
+    r = await db.prepare('DELETE FROM bestell_positionen WHERE id = ?').bind(pos.id).run();
+  } else if (pos) {
+    r = await db.prepare(
+      `UPDATE bestell_positionen SET menge = ?1, gewicht_g = CASE WHEN menge = ?1 THEN gewicht_g END
+       WHERE id = ?2 AND ?1 - menge <= (SELECT frei FROM v_bestand WHERE charge_artikel_id = ?3)`
+    ).bind(menge, pos.id, artikelId).run();
+    if (!r.meta.changes) throw new EingabeFehler(`Nicht genug frei – noch ${Math.max(0, await frei())} verfügbar.`);
+  } else {
+    r = await db.prepare(
+      `INSERT INTO bestell_positionen (bestellung_id, charge_artikel_id, menge, einzelpreis_cent)
+       SELECT ?1, ca.id, ?2, ca.preis_cent FROM charge_artikel ca
+       WHERE ca.id = ?3 AND ?2 <= (SELECT frei FROM v_bestand WHERE charge_artikel_id = ?3)`
+    ).bind(bid, menge, artikelId).run();
+    if (!r.meta.changes) throw new EingabeFehler(`Nicht genug frei – noch ${Math.max(0, await frei())} verfügbar.`);
+  }
+  await db.prepare(`UPDATE bestellungen SET geaendert_am = datetime('now') WHERE id = ?`).bind(bid).run();
+  return {};
+}
+
+/* ------------------------------------------------------------
+   4a. VERKAUF AM HOF (ohne Vorbestellung)
+   Wird wie eine Bestellung angelegt, aber gleich übergeben (und bei
+   Barzahlung bezahlt). Zählt von der Menge ab; reicht sie nicht, wird
+   nichts gespeichert.
+   ------------------------------------------------------------ */
+async function hofverkauf(db, e) {
+  const chargeId = nummer(e.chargeId, 'Bestellrunde');
+  const zahlung = auswahl(e.zahlung || 'bar', ZAHLARTEN, 'Zahlung');
+  const positionen = (e.positionen || [])
+    .map((p) => ({
+      chargeArtikelId: nummer(p.artikelId, 'Artikelnummer'),
+      menge: ganzzahl(p.menge, 'Menge', { min: 0, max: 999 }),
+      gewichtG: ganzzahl(p.gewichtG, 'Gewicht', { min: 1, max: 200000, leer: true }),
+    }))
+    .filter((p) => p.menge > 0);
+  if (!positionen.length) throw new EingabeFehler('Bitte mindestens einen Artikel wählen.');
+  if (new Set(positionen.map((p) => p.chargeArtikelId)).size !== positionen.length) {
+    throw new EingabeFehler('Ein Artikel ist doppelt angegeben.');
+  }
+
+  const { results: artikel } = await db.prepare(
+    `SELECT ca.id, p.art, v.frei FROM charge_artikel ca JOIN produkte p ON p.id = ca.produkt_id
+     JOIN v_bestand v ON v.charge_artikel_id = ca.id WHERE ca.charge_id = ?`
+  ).bind(chargeId).all();
+  for (const p of positionen) {
+    const a = artikel.find((x) => x.id === p.chargeArtikelId);
+    if (!a) throw new EingabeFehler('Artikel gehört nicht zu dieser Bestellrunde.');
+    if (a.art === 'gewicht' && !p.gewichtG) throw new EingabeFehler('Bitte alle Gewichte eintragen.');
+    if (a.art !== 'gewicht') p.gewichtG = null;
+    if (p.menge > a.frei) throw new EingabeFehler(`Nicht genug frei – noch ${Math.max(0, a.frei)} verfügbar.`);
+  }
+
+  // Kunde: bekannt, neu mit Name oder – ohne Namen – der Sammelkunde
+  let kundeId;
+  if (e.kundeId || text(e.kunde && e.kunde.name)) {
+    kundeId = await kundeSichern(db, e.kundeId, e.kunde);
+  } else {
+    const sammel = await db.prepare('SELECT id FROM kunden WHERE name = ? ORDER BY id LIMIT 1').bind(SAMMELKUNDE).first();
+    kundeId = sammel ? sammel.id : await kundeSichern(db, null, { name: SAMMELKUNDE });
+  }
+
+  const erg = await bestellungAnlegen(db, {
+    chargeId,
+    kundeId,
+    quelle: 'persoenlich',
+    zahlart: zahlung,
+    interneNotiz: 'Verkauf am Hof',
+    positionen,
+  }, {
+    hoechstmengeIgnorieren: true,
+    zusatz: (nr) => [
+      ...positionen.filter((p) => p.gewichtG).map((p) => db.prepare(
+        `UPDATE bestell_positionen SET gewicht_g = ?
+         WHERE bestellung_id = (SELECT id FROM bestellungen WHERE nummer = ?) AND charge_artikel_id = ?`
+      ).bind(p.gewichtG, nr, p.chargeArtikelId)),
+      db.prepare(`UPDATE bestellungen SET uebergeben_am = datetime('now') WHERE nummer = ?`).bind(nr),
+      ...(zahlung === 'bar' ? [db.prepare(`UPDATE bestellungen SET ${SQL_BAR_KASSIERT} WHERE nummer = ?`).bind(nr)] : []),
+      db.prepare(SQL_ALS_GESEHEN).bind(nr),
+    ],
+  });
+
+  // Gleichzeitig hat jemand anderer zugegriffen – dann nichts speichern
+  if (erg.status !== 'vorgemerkt') {
+    await db.batch([
+      db.prepare('DELETE FROM bestellung_gesehen WHERE bestellung_id = ?').bind(erg.id),
+      db.prepare('DELETE FROM bestell_positionen WHERE bestellung_id = ?').bind(erg.id),
+      db.prepare('DELETE FROM bestellungen WHERE id = ?').bind(erg.id),
+    ]);
+    throw new EingabeFehler('Nicht genug frei – inzwischen anderweitig bestellt.');
+  }
+  return { bestellung: { id: id(erg.id), nummer: erg.nummer } };
+}
+
+/* ------------------------------------------------------------
+   4b. NEU-MARKIERUNG UND LIEFERTOUR
+   ------------------------------------------------------------ */
+async function alsGesehen(db, e) {
+  const ids = [...new Set((e.ids || []).map((x) => nummer(x, 'Bestellnummer')))].slice(0, 500);
+  if (!ids.length) return {};
+  await db.batch(ids.map((bid) => db.prepare(
+    'INSERT OR IGNORE INTO bestellung_gesehen (bestellung_id) SELECT id FROM bestellungen WHERE id = ?'
+  ).bind(bid)));
+  return {};
+}
+
+// Reihenfolge der Kunden innerhalb eines Orts: Rang 10, 20, 30 …
+async function tourSpeichern(db, e) {
+  const ids = [...new Set((e.kundeIds || []).map((x) => nummer(x, 'Kundennummer')))].slice(0, 300);
+  if (!ids.length) return {};
+  await db.batch(ids.map((kid, i) => db.prepare(
+    `INSERT INTO tour_reihenfolge (kunde_id, rang) SELECT id, ? FROM kunden WHERE id = ?
+     ON CONFLICT (kunde_id) DO UPDATE SET rang = excluded.rang`
+  ).bind((i + 1) * 10, kid)));
+  return {};
+}
+
+/* ------------------------------------------------------------
+   4c. SORTIMENT (Produkte anlegen und bearbeiten)
+   Produkte werden nie gelöscht, sondern ausgeblendet (aktiv = 0) – alte
+   Bestellungen verweisen weiter auf sie. Die Art (Gewicht/Fixpreis) lässt
+   sich nur ändern, solange das Produkt noch in keiner Bestellrunde war.
+   ------------------------------------------------------------ */
+function produktPruefen(e) {
+  const name = text(e.name, 120);
+  if (!name) throw new EingabeFehler('Bitte einen Namen eintragen.');
+  const art = auswahl(e.art, PRODUKT_ARTEN, 'Art');
+  const p = {
+    name,
+    art,
+    kategorie: auswahl(e.kategorie || 'saison', KATEGORIEN, 'Bereich'),
+    startpreisCent: ganzzahl(e.startpreisCent, 'Preis', { max: 10000000, leer: true }),
+    beschreibung: textOderNull(e.beschreibung, 1000),
+    pflichtangaben: textOderNull(e.pflichtangaben, 1000),
+    allergene: textOderNull(e.allergene, 300),
+    aktiv: e.aktiv === false ? 0 : 1,
+    richtVonG: null,
+    richtBisG: null,
+  };
+  if (art === 'gewicht') {
+    p.richtVonG = ganzzahl(e.richtVonG, 'Gewicht von', { min: 1, max: 200000 });
+    p.richtBisG = ganzzahl(e.richtBisG, 'Gewicht bis', { min: 1, max: 200000 });
+    if (p.richtBisG < p.richtVonG) throw new EingabeFehler('„Gewicht bis" muss mindestens so groß sein wie „von".');
+  }
+  return p;
+}
+
+async function nameFrei(db, name, ausserId = 0) {
+  const doppelt = await db.prepare('SELECT 1 FROM produkte WHERE lower(name) = lower(?) AND id <> ?').bind(name, ausserId).first();
+  if (doppelt) throw new EingabeFehler('Ein Produkt mit diesem Namen gibt es schon.');
+}
+
+async function produktAnlegen(db, e) {
+  const p = produktPruefen(e);
+  await nameFrei(db, p.name);
+  const zeile = await db.prepare(
+    `INSERT INTO produkte (name, art, kategorie, startpreis_cent, beschreibung, pflichtangaben, allergene,
+                           richtgewicht_von_g, richtgewicht_bis_g, aktiv, reihenfolge)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+             (SELECT COALESCE(MAX(reihenfolge), 0) + 10 FROM produkte WHERE kategorie = ?))
+     RETURNING id`
+  ).bind(p.name, p.art, p.kategorie, p.startpreisCent, p.beschreibung, p.pflichtangaben, p.allergene,
+    p.richtVonG, p.richtBisG, p.aktiv, p.kategorie).first();
+  return { produktId: id(zeile.id) };
+}
+
+async function produktBearbeiten(db, produktId, e) {
+  const pid = nummer(produktId, 'Produkt');
+  const alt = await db.prepare(
+    `SELECT art, EXISTS (SELECT 1 FROM charge_artikel WHERE produkt_id = produkte.id) AS verwendet
+     FROM produkte WHERE id = ?`
+  ).bind(pid).first();
+  if (!alt) throw new EingabeFehler('Produkt nicht gefunden.');
+  const p = produktPruefen(e);
+  if (alt.verwendet && p.art !== alt.art && (alt.art === 'gewicht' || p.art === 'gewicht')) {
+    throw new EingabeFehler('Das Produkt wurde schon verkauft – „nach Gewicht" bzw. „Fixpreis" lässt sich nicht mehr ändern. Bitte ein neues Produkt anlegen.');
+  }
+  await nameFrei(db, p.name, pid);
+  await db.prepare(
+    `UPDATE produkte SET name = ?, art = ?, kategorie = ?, startpreis_cent = ?, beschreibung = ?,
+            pflichtangaben = ?, allergene = ?, richtgewicht_von_g = ?, richtgewicht_bis_g = ?, aktiv = ?
+     WHERE id = ?`
+  ).bind(p.name, p.art, p.kategorie, p.startpreisCent, p.beschreibung, p.pflichtangaben, p.allergene,
+    p.richtVonG, p.richtBisG, p.aktiv, pid).run();
+  return { produktId: id(pid) };
 }
 
 async function bestellungAendern(db, bestellungId, e) {
@@ -292,14 +573,14 @@ async function bestellungAendern(db, bestellungId, e) {
       return { bestellung: await bestellungNachruecken(db, bid) };
     case 'gewicht': {
       const gewichtG = ganzzahl(e.gewichtG, 'Gewicht', { min: 1, max: 200000, leer: true });
-      r = await db.prepare(
-        `UPDATE bestell_positionen SET gewicht_g = ?
-         WHERE id = ? AND bestellung_id = ? AND charge_artikel_id IN (
-           SELECT ca.id FROM charge_artikel ca JOIN produkte p ON p.id = ca.produkt_id WHERE p.art = 'gewicht')`
-      ).bind(gewichtG, nummer(e.positionId, 'Position'), bid).run();
+      r = await gewichtSetzen(db, bid, nummer(e.positionId, 'Position'), gewichtG).run();
       if (!r.meta.changes) throw new EingabeFehler('Position nicht gefunden oder keine Gewichtsware.');
       break;
     }
+    case 'position':
+      return positionSetzen(db, bid, e);
+    case 'abschliessen':
+      return bestellungAbschliessen(db, bid, e);
     default:
       throw new EingabeFehler('Unbekannte Aktion.');
   }
@@ -418,86 +699,67 @@ async function chargeBearbeiten(db, chargeId, e) {
 }
 
 /* ------------------------------------------------------------
-   6. PRODUKTE (Katalog)
-   Preise stehen je Bestellrunde, hier nur der Vorschlag für die erste.
-   Produkte werden nie gelöscht, nur ausgeblendet (aktiv = 0) – alte
-   Bestellungen verweisen weiter darauf. Die Art (Gewicht/Paket/Stück)
-   lässt sich nur ändern, solange das Produkt in keiner Bestellrunde war,
-   sonst stimmen die Beträge alter Bestellungen nicht mehr.
+   5a. AUSWERTUNG FÜR DIE BUCHHALTUNG
+   Zugeordnet wird nach dem Tag der Übergabe (Lieferung/Abholung). Was
+   noch nicht übergeben ist, zählt noch zu keinem Jahr. Enthält auch
+   abgeschlossene (archivierte) Bestellrunden. Die Rechnung je Position
+   kommt aus v_positionen – dieselbe wie in der Oberfläche.
    ------------------------------------------------------------ */
-function produktPruefen(e) {
-  const name = text(e.name, 120);
-  if (!name) throw new EingabeFehler('Bitte einen Namen eintragen.');
-  const art = auswahl(e.art, PRODUKT_ARTEN, 'Art');
-  let richtVon = null;
-  let richtBis = null;
-  if (art === 'gewicht') {
-    richtVon = ganzzahl(e.richtVonG, 'Richtgewicht von', { min: 1, max: 200000 });
-    richtBis = ganzzahl(e.richtBisG, 'Richtgewicht bis', { min: 1, max: 200000 });
-    if (richtBis < richtVon) throw new EingabeFehler('Richtgewicht: „bis" muss mindestens so groß sein wie „von".');
-  }
-  const bild = text(e.bild, 200).replace(/^\/+/, '');
-  if (bild && !/^images\/[a-z0-9/_-]+\.(jpe?g|png|webp)$/i.test(bild)) {
-    throw new EingabeFehler('Foto: bitte einen Pfad wie images/hofladen/honig.jpg eintragen.');
+async function auswertung(db, jahrText) {
+  const { results: jahre } = await db.prepare(
+    `SELECT DISTINCT substr(uebergeben_am, 1, 4) AS jahr FROM bestellungen
+     WHERE uebergeben_am IS NOT NULL AND status = 'vorgemerkt' ORDER BY jahr DESC`
+  ).all();
+  const jahr = /^\d{4}$/.test(String(jahrText || '')) ? String(jahrText) : (jahre[0] ? jahre[0].jahr : String(new Date().getUTCFullYear()));
+  const [bestellungen, positionen, runden] = (await db.batch([
+    db.prepare(`SELECT b.id, b.nummer, b.charge_id, b.quelle, b.zahlart, b.bezahlt_art, b.bezahlt_am,
+                       b.bezahlt_betrag_cent, b.uebergeben_am, b.erstellt_am, b.interne_notiz,
+                       k.name AS kunde, s.gesamt_cent
+                FROM bestellungen b JOIN kunden k ON k.id = b.kunde_id
+                JOIN v_bestellsummen s ON s.bestellung_id = b.id
+                WHERE b.status = 'vorgemerkt' AND substr(b.uebergeben_am, 1, 4) = ?
+                ORDER BY b.uebergeben_am, b.id`).bind(jahr),
+    db.prepare(`SELECT v.bestellung_id, v.produkt_name, v.art, v.menge, v.gewicht_g, v.betrag_cent, p.kategorie
+                FROM v_positionen v JOIN produkte p ON p.id = v.produkt_id
+                JOIN bestellungen b ON b.id = v.bestellung_id
+                WHERE b.status = 'vorgemerkt' AND substr(b.uebergeben_am, 1, 4) = ?
+                ORDER BY v.bestellung_id, v.id`).bind(jahr),
+    // Runden mit Übergaben in diesem Jahr oder noch offene
+    db.prepare(`SELECT c.id, c.titel, c.status, c.bestellschluss,
+                       (SELECT COUNT(*) FROM bestellungen b WHERE b.charge_id = c.id AND b.status = 'vorgemerkt'
+                          AND b.uebergeben_am IS NULL) AS nicht_uebergeben
+                FROM chargen c
+                WHERE c.status <> 'archiviert' OR EXISTS (SELECT 1 FROM bestellungen b WHERE b.charge_id = c.id
+                  AND substr(b.uebergeben_am, 1, 4) = ?)
+                ORDER BY c.bestellschluss, c.id`).bind(jahr),
+  ])).map((r) => r.results);
+
+  const jePos = new Map();
+  for (const p of positionen) {
+    if (!jePos.has(p.bestellung_id)) jePos.set(p.bestellung_id, []);
+    jePos.get(p.bestellung_id).push({
+      produkt: p.produkt_name, kategorie: p.kategorie, art: p.art, menge: p.menge,
+      gewichtG: p.gewicht_g ?? null, cent: p.betrag_cent,
+    });
   }
   return {
-    name,
-    art,
-    kategorie: auswahl(e.kategorie, KATEGORIEN, 'Bereich'),
-    beschreibung: textOderNull(e.beschreibung, 1000),
-    pflichtangaben: textOderNull(e.pflichtangaben, 1500),
-    allergene: textOderNull(e.allergene, 200),
-    richtVon,
-    richtBis,
-    startpreisCent: ganzzahl(e.startpreisCent, 'Preis', { max: 10000000, leer: true }),
-    bild: bild || null,
-    aktiv: e.aktiv === false ? 0 : 1,
+    jahr,
+    jahre: [...new Set([jahr, ...jahre.map((j) => j.jahr)])].sort().reverse(),
+    runden: runden.map((c) => ({
+      id: id(c.id), titel: c.titel, status: c.status, bestellschluss: c.bestellschluss, nichtUebergeben: c.nicht_uebergeben,
+    })),
+    bestellungen: bestellungen.map((b) => ({
+      id: id(b.id), nummer: b.nummer, chargeId: id(b.charge_id), kunde: b.kunde, quelle: b.quelle,
+      hofverkauf: b.interne_notiz === 'Verkauf am Hof', zahlart: b.zahlart, bezahlt: b.bezahlt_art || null,
+      bezahltAm: b.bezahlt_am ? String(b.bezahlt_am).slice(0, 10) : null,
+      uebergebenAm: String(b.uebergeben_am).slice(0, 10), cent: b.gesamt_cent,
+      positionen: jePos.get(b.id) || [],
+    })),
   };
 }
 
-async function nameFrei(db, name, ausser = 0) {
-  const gleich = await db.prepare('SELECT id FROM produkte WHERE lower(name) = lower(?) AND id <> ?').bind(name, ausser).first();
-  if (gleich) throw new EingabeFehler(`Ein Produkt „${name}" gibt es schon.`);
-}
-
-async function produktAnlegen(db, e) {
-  const p = produktPruefen(e);
-  await nameFrei(db, p.name);
-  // Neue Produkte ans Ende ihres Bereichs
-  const zeile = await db.prepare(
-    `INSERT INTO produkte (name, art, kategorie, beschreibung, pflichtangaben, allergene,
-                           richtgewicht_von_g, richtgewicht_bis_g, startpreis_cent, bild, aktiv, reihenfolge)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-             (SELECT COALESCE(MAX(reihenfolge), 0) + 10 FROM produkte WHERE kategorie = ?))
-     RETURNING id`
-  ).bind(p.name, p.art, p.kategorie, p.beschreibung, p.pflichtangaben, p.allergene,
-    p.richtVon, p.richtBis, p.startpreisCent, p.bild, p.aktiv, p.kategorie).first();
-  return { produktId: id(zeile.id) };
-}
-
-async function produktBearbeiten(db, produktId, e) {
-  const pid = nummer(produktId, 'Produktnummer');
-  const p = produktPruefen(e);
-  const alt = await db.prepare(
-    `SELECT art, EXISTS (SELECT 1 FROM charge_artikel ca WHERE ca.produkt_id = produkte.id) AS verwendet
-     FROM produkte WHERE id = ?`
-  ).bind(pid).first();
-  if (!alt) throw new EingabeFehler('Produkt nicht gefunden.');
-  if (alt.verwendet && alt.art !== p.art) {
-    throw new EingabeFehler('Die Art lässt sich nicht mehr ändern, weil das Produkt schon angeboten wurde – bitte ein neues Produkt anlegen.');
-  }
-  await nameFrei(db, p.name, pid);
-  await db.prepare(
-    `UPDATE produkte SET name = ?, art = ?, kategorie = ?, beschreibung = ?, pflichtangaben = ?, allergene = ?,
-            richtgewicht_von_g = ?, richtgewicht_bis_g = ?, startpreis_cent = ?, bild = ?, aktiv = ?
-     WHERE id = ?`
-  ).bind(p.name, p.art, p.kategorie, p.beschreibung, p.pflichtangaben, p.allergene,
-    p.richtVon, p.richtBis, p.startpreisCent, p.bild, p.aktiv, pid).run();
-  return { produktId: id(pid) };
-}
-
 /* ------------------------------------------------------------
-   7. VORANMELDUNGEN
+   6. VORANMELDUNGEN
    ------------------------------------------------------------ */
 async function voranmeldungErfassen(db, e) {
   const kundeId = await kundeSichern(db, e.kundeId, e.kunde);
@@ -528,6 +790,9 @@ export async function onRequest({ request, env, params, data }) {
     if (request.method === 'GET' && bereich === 'stand' && pfad.length === 1) {
       return json({ ok: true, nutzer: data.nutzer, ...(await standLaden(db, bankAusEnv(env))) });
     }
+    if (request.method === 'GET' && bereich === 'auswertung' && pfad.length === 1) {
+      return json({ ok: true, ...(await auswertung(db, new URL(request.url).searchParams.get('jahr'))) });
+    }
     if (request.method !== 'POST') return json({ ok: false, error: 'Nicht gefunden.' }, 404);
     if (!(request.headers.get('content-type') || '').includes('application/json')) {
       return json({ ok: false, error: 'Nur JSON-Anfragen.' }, 415);
@@ -541,9 +806,18 @@ export async function onRequest({ request, env, params, data }) {
     else if (bereich === 'bestellung' && pfad.length === 2) ergebnis = await bestellungAendern(db, teilId, eingabe);
     else if (bereich === 'charge' && pfad.length === 1) ergebnis = await chargeAnlegen(db, eingabe);
     else if (bereich === 'charge' && pfad.length === 2) ergebnis = await chargeBearbeiten(db, teilId, eingabe);
+    else if (bereich === 'charge' && unteraktion === 'status' && pfad.length === 3) {
+      const r = await db.prepare('UPDATE chargen SET status = ? WHERE id = ?')
+        .bind(auswahl(eingabe.status, CHARGE_STATUS, 'Status'), nummer(teilId, 'Bestellrunde')).run();
+      if (!r.meta.changes) throw new EingabeFehler('Bestellrunde nicht gefunden.');
+      ergebnis = {};
+    }
+    else if (bereich === 'voranmeldung' && pfad.length === 1) ergebnis = await voranmeldungErfassen(db, eingabe);
+    else if (bereich === 'hofverkauf' && pfad.length === 1) ergebnis = await hofverkauf(db, eingabe);
+    else if (bereich === 'gesehen' && pfad.length === 1) ergebnis = await alsGesehen(db, eingabe);
+    else if (bereich === 'tour' && pfad.length === 1) ergebnis = await tourSpeichern(db, eingabe);
     else if (bereich === 'produkt' && pfad.length === 1) ergebnis = await produktAnlegen(db, eingabe);
     else if (bereich === 'produkt' && pfad.length === 2) ergebnis = await produktBearbeiten(db, teilId, eingabe);
-    else if (bereich === 'voranmeldung' && pfad.length === 1) ergebnis = await voranmeldungErfassen(db, eingabe);
     else if (bereich === 'voranmeldung' && unteraktion === 'absagen' && pfad.length === 3) {
       const r = await db.prepare(
         `UPDATE voranmeldungen SET status = 'abgesagt', geaendert_am = datetime('now') WHERE id = ? AND status = 'offen'`
