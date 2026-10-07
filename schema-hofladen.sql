@@ -42,9 +42,32 @@ CREATE INDEX IF NOT EXISTS idx_kunden_email   ON kunden (email);
 
 
 -- ------------------------------------------------------------
+-- Bereiche des Sortiments (Fleisch, Eiernudeln, Honig …) – in der
+-- Verwaltung unter „Sortiment → Bereiche" anlegen, umbenennen, ordnen,
+-- leere löschen. kennung verbindet die fünf ursprünglichen Bereiche mit
+-- der alten Spalte produkte.kategorie (für neue Bereiche leer).
+-- Vorhandene Datenbank: vorher einmal migration-2026-10-bereiche.sql.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS bereiche (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  name        TEXT    NOT NULL,
+  reihenfolge INTEGER NOT NULL DEFAULT 0,
+  kennung     TEXT    UNIQUE
+);
+
+INSERT OR IGNORE INTO bereiche (kennung, name, reihenfolge) VALUES
+  ('fleisch', 'Fleisch',        10),
+  ('nudeln',  'Eiernudeln',     20),
+  ('honig',   'Honig',          30),
+  ('seife',   'Alpakaseife',    40),
+  ('saison',  'Saisonprodukte', 50);
+
+
+-- ------------------------------------------------------------
 -- Produktkatalog: jedes Produkt einmal, Preise stehen je Bestellrunde
--- Saisonprodukte sind normale Produkte (kategorie 'saison'); nach der
--- Saison aktiv = 0 setzen statt löschen.
+-- Der Bereich steht in bereich_id. kategorie ist die alte, feste
+-- Einteilung und wird nur noch mitgeführt (neue Bereiche: 'saison').
+-- Nicht mehr erhältliche Produkte aktiv = 0 setzen statt löschen.
 -- art: 'gewicht' (Huhn, Pute, Gans – Preis pro kg, Endpreis nach Wiegen)
 --      'paket'   (Rindfleisch 5 kg / 10 kg – Fixpreis)
 --      'stueck'  (Eiernudeln, Honig – Fixpreis)
@@ -55,6 +78,7 @@ CREATE TABLE IF NOT EXISTS produkte (
   art                TEXT    NOT NULL CHECK (art IN ('gewicht', 'paket', 'stueck')),
   kategorie          TEXT    NOT NULL DEFAULT 'saison'
                      CHECK (kategorie IN ('fleisch', 'nudeln', 'honig', 'seife', 'saison')),
+  bereich_id         INTEGER REFERENCES bereiche (id),
   startpreis_cent    INTEGER CHECK (startpreis_cent IS NULL OR startpreis_cent >= 0),
                                        -- Vorschlag für die erste Bestellrunde; danach gilt
                                        -- der Preis der letzten Bestellrunde (v_letzter_preis)
@@ -72,6 +96,23 @@ CREATE TABLE IF NOT EXISTS produkte (
          OR (richtgewicht_von_g IS NOT NULL AND richtgewicht_bis_g IS NOT NULL
              AND richtgewicht_von_g > 0 AND richtgewicht_bis_g >= richtgewicht_von_g))
 );
+
+-- Produkte ohne Bereich dem Bereich ihrer alten kategorie zuordnen
+UPDATE produkte SET bereich_id = (SELECT b.id FROM bereiche b WHERE b.kennung = produkte.kategorie)
+WHERE bereich_id IS NULL;
+
+-- Produkte mit ihrem Bereich (Name und Reihenfolge); fehlt bereich_id,
+-- gilt der Bereich der alten kategorie
+CREATE VIEW IF NOT EXISTS v_produkte AS
+SELECT
+  p.id, p.name, p.art, p.kategorie, p.startpreis_cent, p.beschreibung, p.pflichtangaben,
+  p.allergene, p.richtgewicht_von_g, p.richtgewicht_bis_g, p.bild, p.aktiv, p.reihenfolge,
+  b.id          AS bereich,
+  b.name        AS bereich_name,
+  b.reihenfolge AS bereich_reihenfolge
+FROM produkte p
+LEFT JOIN bereiche b
+  ON b.id = COALESCE(p.bereich_id, (SELECT b2.id FROM bereiche b2 WHERE b2.kennung = p.kategorie));
 
 
 -- ------------------------------------------------------------

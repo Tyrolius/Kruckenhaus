@@ -12,7 +12,7 @@
  *
  * Ansichten (Adresse hinter #):
  *   uebersicht · bestellungen · neu · hofverkauf · uebergabe · voranmeldungen ·
- *   sortiment · produkt (bearbeiten) · wiegen · zahlungen ·
+ *   sortiment · bereiche · produkt (bearbeiten) · wiegen · zahlungen ·
  *   charge (bearbeiten) · charge-neu
  * Eine Bestellrunde heißt in der Datenbank „charge" (Tabelle chargen).
  * ============================================================ */
@@ -1528,7 +1528,23 @@ const CHARGE_STATUS = {
   geschlossen: 'Bestellschluss – keine Website-Bestellungen mehr',
   archiviert: 'Abgeschlossen – wird ausgeblendet',
 };
-const KATEGORIEN = { fleisch: 'Fleisch', nudeln: 'Eiernudeln', honig: 'Honig', seife: 'Seife', saison: 'Sonstiges' };
+// Bereiche des Sortiments kommen aus der Datenbank (daten.bereiche, in
+// ihrer Reihenfolge) und werden unter „Sortiment → Bereiche" gepflegt
+const bereichName = (id) => ((daten.bereiche || []).find((b) => b.id === id) || {}).name || 'Ohne Bereich';
+const bereichRang = (id) => {
+  const i = (daten.bereiche || []).findIndex((b) => b.id === id);
+  return i < 0 ? 9999 : i;
+};
+const produkteImBereich = (id) => daten.produkte.filter((p) => p.bereichId === id).length;
+
+// Liste nach Bereichen gruppieren: [[bereich, liste], …], leere entfallen
+function nachBereichen(liste, bereichVon) {
+  const bereiche = daten.bereiche || [];
+  const gruppen = bereiche.map((b) => [b, liste.filter((x) => bereichVon(x) === b.id)]);
+  const ohne = liste.filter((x) => !bereiche.some((b) => b.id === bereichVon(x)));
+  if (ohne.length) gruppen.push([{ id: null, name: 'Ohne Bereich' }, ohne]);
+  return gruppen.filter(([, l]) => l.length);
+}
 const ARTEN = { gewicht: 'nach Gewicht (Preis pro kg)', stueck: 'Fixpreis je Stück', paket: 'Fixpreis je Paket' };
 
 const centAusText = (wert) => {
@@ -1607,8 +1623,7 @@ function ansichtCharge(neu) {
     chargeFormStarten(neu);
   }
   const f = zustand.chargeForm;
-  const gruppen = Object.keys(KATEGORIEN).map((kat) => [kat, f.artikel.filter((a) => (a.produkt.kategorie || 'saison') === kat)])
-    .filter(([, liste]) => liste.length);
+  const gruppen = nachBereichen(f.artikel, (a) => a.produkt.bereichId);
   const statusListe = { ...CHARGE_STATUS };
   if (f.status === 'stammkunden') statusListe.stammkunden = 'Nur Stammkunden';
 
@@ -1638,7 +1653,7 @@ function ansichtCharge(neu) {
       <section class="vw-karte"><h2>Was wird angeboten?</h2>
         <p class="vw-klein">Häkchen setzen, Preis (bei Gewichtsware pro kg) und vorhandene Menge eintragen. Höchstmenge pro Bestellung ist optional.
           Fehlt ein Produkt? Im <a href="#sortiment">Sortiment</a> anlegen.</p>
-        ${gruppen.map(([kat, liste]) => `<h3 class="vw-ort-titel">${KATEGORIEN[kat]}</h3>
+        ${gruppen.map(([b, liste]) => `<h3 class="vw-ort-titel">${esc(b.name)}</h3>
           ${liste.map((a) => `<div class="vw-artikel-form" data-produkt="${a.produkt.id}">
             <label class="vw-artikel-name"><input type="checkbox" name="a-an" ${a.an ? 'checked' : ''} /> ${esc(a.produkt.name)}
               ${a.bestellt ? `<span class="vw-klein"> · ${a.bestellt} bestellt</span>` : ''}</label>
@@ -1719,7 +1734,7 @@ function auswertungBeispiel() {
     const positionen = b.positionen.map((p) => {
       const a = artikelVon(ch, p.artikelId);
       const produkt = produktVon(a.produktId) || {};
-      return { produkt: a.name, kategorie: produkt.kategorie || 'saison', art: a.art, menge: p.menge,
+      return { produkt: a.name, bereich: bereichName(produkt.bereichId), bereichRang: bereichRang(produkt.bereichId), art: a.art, menge: p.menge,
         gewichtG: p.gewichtG || null, cent: positionBetrag(ch, p).cent };
     });
     return { id: b.id, nummer: b.nummer, chargeId: b.chargeId, kunde: kundeVon(b).name, quelle: b.quelle,
@@ -1768,16 +1783,15 @@ function ansichtAuswertung() {
   // Je Bereich und je Produkt
   const jeProdukt = new Map();
   aw.bestellungen.forEach((b) => b.positionen.forEach((p) => {
-    const e = jeProdukt.get(p.produkt) || { produkt: p.produkt, kategorie: p.kategorie, art: p.art, menge: 0, gramm: 0, cent: 0 };
+    const e = jeProdukt.get(p.produkt) || { produkt: p.produkt, bereich: p.bereich, bereichRang: p.bereichRang, art: p.art, menge: 0, gramm: 0, cent: 0 };
     e.menge += p.menge;
     e.gramm += p.gewichtG || 0;
     e.cent += p.cent;
     jeProdukt.set(p.produkt, e);
   }));
-  const produkte = [...jeProdukt.values()].sort((x, y) =>
-    Object.keys(KATEGORIEN).indexOf(x.kategorie) - Object.keys(KATEGORIEN).indexOf(y.kategorie) || y.cent - x.cent);
-  const bereiche = Object.keys(KATEGORIEN)
-    .map((kat) => [kat, produkte.filter((p) => p.kategorie === kat).reduce((x, p) => x + p.cent, 0)])
+  const produkte = [...jeProdukt.values()].sort((x, y) => x.bereichRang - y.bereichRang || y.cent - x.cent);
+  const bereiche = [...new Set(produkte.map((p) => p.bereich))]
+    .map((name) => [name, produkte.filter((p) => p.bereich === name).reduce((x, p) => x + p.cent, 0)])
     .filter(([, cent]) => cent);
 
   const runden = aw.runden.map((r) => {
@@ -1807,7 +1821,7 @@ function ansichtAuswertung() {
       <div class="vw-kennzahl"><strong>${euro(summe(ueberwiesen))}</strong><span>per Überweisung bezahlt</span></div>
     </div>
     <section class="vw-karte"><h2>Nach Bereich</h2>
-      ${bereiche.length ? bereiche.map(([kat, cent]) => `<div class="vw-zeile-kopf vw-auswertung-zeile"><span>${KATEGORIEN[kat]}</span><strong>${euro(cent)}</strong></div>`).join('')
+      ${bereiche.length ? bereiche.map(([name, cent]) => `<div class="vw-zeile-kopf vw-auswertung-zeile"><span>${esc(name)}</span><strong>${euro(cent)}</strong></div>`).join('')
         : '<p class="vw-klein">In diesem Jahr wurde noch nichts übergeben.</p>'}
     </section>
     ${produkte.length ? `<section class="vw-karte"><h2>Nach Produkt</h2>
@@ -1830,7 +1844,7 @@ function auswertungExport() {
   aw.bestellungen.forEach((b) => b.positionen.forEach((p) => {
     zeilen.push([b.uebergebenAm, b.nummer, runde(b.chargeId), b.kunde,
       b.hofverkauf ? 'Verkauf am Hof' : `Vorbestellung (${QUELLEN[b.quelle] || b.quelle})`,
-      KATEGORIEN[p.kategorie] || p.kategorie, p.produkt, p.menge, p.gewichtG ? p.gewichtG / 1000 : '', p.cent / 100,
+      p.bereich, p.produkt, p.menge, p.gewichtG ? p.gewichtG / 1000 : '', p.cent / 100,
       b.bezahlt ? ZAHLARTEN[b.bezahlt] : `offen (${ZAHLARTEN[b.zahlart]})`, b.bezahltAm || '']);
   }));
   csvHerunterladen(zeilen, `hofladen-auswertung-${aw.jahr}.csv`);
@@ -1864,15 +1878,16 @@ async function rundeStatus(id, status) {
 const kgText = (g) => (g ? kgFormat.format(g / 1000) : '');
 
 function ansichtSortiment() {
-  const gruppen = Object.keys(KATEGORIEN)
-    .map((kat) => [kat, daten.produkte.filter((p) => (p.kategorie || 'saison') === kat)])
-    .filter(([, liste]) => liste.length);
+  const gruppen = nachBereichen(daten.produkte, (p) => p.bereichId);
   inhalt().innerHTML = `
     <div class="vw-kopf"><h1>Sortiment</h1>
       <p class="vw-klein">Alle Produkte, die ihr anbieten könnt. Preis und Menge legt ihr je Bestellrunde fest – hier steht nur ein Preisvorschlag.
         Was gerade nicht verkauft wird, einfach ausblenden.</p>
-      <button type="button" class="vw-knopf vw-knopf--voll" data-aktion="produkt-neu">+ Neues Produkt</button></div>
-    ${gruppen.map(([kat, liste]) => `<section class="vw-karte"><h2>${KATEGORIEN[kat]}</h2>
+      <div class="vw-knopfreihe">
+        <button type="button" class="vw-knopf vw-knopf--voll" data-aktion="produkt-neu">+ Neues Produkt</button>
+        <a class="vw-knopf" href="#bereiche">Bereiche bearbeiten</a>
+      </div></div>
+    ${gruppen.map(([b, liste]) => `<section class="vw-karte"><h2>${esc(b.name)}</h2>
       ${liste.map((p) => `<div class="vw-produkt-zeile${p.aktiv === false ? ' vw-zeile--grau' : ''}">
         <div><strong>${esc(p.name)}</strong>${p.aktiv === false ? ' <span class="vw-marke">ausgeblendet</span>' : ''}<br>
           <span class="vw-klein">${p.art === 'gewicht' ? 'nach Gewicht' : 'Fixpreis'}${p.startpreisCent != null
@@ -1888,7 +1903,7 @@ function produktFormStarten(id) {
   const p = id ? produktVon(id) : null;
   zustand.produktForm = p
     ? { ...p, preis: textAusCent(p.startpreisCent), von: kgText(p.richtVonG), bis: kgText(p.richtBisG) }
-    : { id: null, name: '', art: 'stueck', kategorie: 'saison', preis: '', von: '', bis: '', beschreibung: '',
+    : { id: null, name: '', art: 'stueck', bereichId: (daten.bereiche[0] || {}).id || '', preis: '', von: '', bis: '', beschreibung: '',
       pflichtangaben: '', allergene: '', aktiv: true, verwendet: false };
 }
 
@@ -1902,8 +1917,8 @@ function ansichtProdukt() {
     <form class="vw-karte" id="vw-produkt-formular" novalidate>
       <label class="vw-feld"><span>Name (so sehen ihn die Kunden)</span>
         <input name="name" value="${esc(f.name)}" placeholder="z. B. Freilandeier 10 Stück" required /></label>
-      <label class="vw-feld"><span>Bereich</span><select name="kategorie">${Object.entries(KATEGORIEN).map(([wert, text]) =>
-        `<option value="${wert}" ${f.kategorie === wert ? 'selected' : ''}>${wert === 'saison' ? 'Sonstiges (z. B. Eier, Marmelade, Saisonware)' : text}</option>`).join('')}</select></label>
+      <label class="vw-feld"><span>Bereich <a class="vw-klein" href="#bereiche">(Bereiche bearbeiten)</a></span><select name="bereichId">${daten.bereiche.map((b) =>
+        `<option value="${esc(b.id)}" ${f.bereichId === b.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select></label>
       <fieldset class="vw-feldgruppe"><legend>Wie wird verkauft?</legend>
         <div class="vw-auswahl">${Object.entries(arten).map(([wert, text]) => `<label>
           <input type="radio" name="art" value="${wert}" ${f.art === wert ? 'checked' : ''} ${artGesperrt && f.art !== wert && (wert === 'gewicht' || f.art === 'gewicht') ? 'disabled' : ''} /> ${text}</label>`).join('')}</div>
@@ -1930,7 +1945,7 @@ function ansichtProdukt() {
 
 function produktEingabe(f, aenderung = {}) {
   return {
-    name: f.name.trim(), art: f.art, kategorie: f.kategorie, startpreisCent: f.preis === '' ? null : centAusText(f.preis),
+    name: f.name.trim(), art: f.art, bereichId: f.bereichId, startpreisCent: f.preis === '' ? null : centAusText(f.preis),
     richtVonG: f.art === 'gewicht' ? grammAusText(f.von) : null, richtBisG: f.art === 'gewicht' ? grammAusText(f.bis) : null,
     beschreibung: f.beschreibung, pflichtangaben: f.pflichtangaben, allergene: f.allergene, aktiv: f.aktiv !== false,
     ...aenderung,
@@ -1939,7 +1954,7 @@ function produktEingabe(f, aenderung = {}) {
 
 async function produktSpeichern(form) {
   const f = zustand.produktForm;
-  ['name', 'kategorie', 'preis', 'von', 'bis', 'beschreibung', 'pflichtangaben', 'allergene'].forEach((n) => { f[n] = feld(form, n).value; });
+  ['name', 'bereichId', 'preis', 'von', 'bis', 'beschreibung', 'pflichtangaben', 'allergene'].forEach((n) => { f[n] = feld(form, n).value; });
   const art = form.querySelector('input[name="art"]:checked');
   f.art = art ? art.value : f.art;
   const eingabe = produktEingabe(f);
@@ -1969,6 +1984,81 @@ function produktAktivUmschalten(p) {
   const aktiv = p.aktiv === false;
   speichern(`produkt/${p.id}`, produktEingabe(f, { aktiv }), () => { p.aktiv = aktiv; return {}; },
     { erfolg: aktiv ? `„${p.name}" wird wieder angeboten.` : `„${p.name}" ist ausgeblendet.` });
+}
+
+// 5.9a Bereiche des Sortiments – anlegen, umbenennen, ordnen, leere löschen
+function ansichtBereiche() {
+  const liste = daten.bereiche || [];
+  inhalt().innerHTML = `
+    <div class="vw-kopf"><h1>Bereiche</h1>
+      <p class="vw-klein">So wird das Sortiment gegliedert – hier in der Verwaltung und auf der Hofladen-Seite, in dieser
+        Reihenfolge. Löschen lässt sich nur ein leerer Bereich; Produkte ordnet ihr unter „Sortiment → Bearbeiten" um.</p>
+      <a class="vw-knopf" href="#sortiment">Zurück zum Sortiment</a></div>
+    <section class="vw-karte" aria-label="Bereiche">
+      ${liste.map((b, i) => {
+        const anzahl = produkteImBereich(b.id);
+        return `<form class="vw-bereich-zeile" data-bereich="${esc(b.id)}" novalidate>
+          <label class="vw-feld"><span class="vw-klein">${anzahl === 1 ? '1 Produkt' : `${anzahl} Produkte`}</span>
+            <input name="name" value="${esc(b.name)}" maxlength="60" aria-label="Name des Bereichs" required /></label>
+          <div class="vw-knopfreihe vw-knopfreihe--klein">
+            <button type="submit" class="vw-knopf vw-knopf--klein">Umbenennen</button>
+            <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="bereich-schieben" data-id="${esc(b.id)}" data-wert="-1"
+              aria-label="${esc(b.name)} nach oben" ${i === 0 ? 'disabled' : ''}>↑</button>
+            <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="bereich-schieben" data-id="${esc(b.id)}" data-wert="1"
+              aria-label="${esc(b.name)} nach unten" ${i === liste.length - 1 ? 'disabled' : ''}>↓</button>
+            <button type="button" class="vw-knopf vw-knopf--klein vw-knopf--warnung" data-aktion="bereich-loeschen" data-id="${esc(b.id)}"
+              ${anzahl || liste.length === 1 ? 'disabled' : ''}>Löschen</button>
+          </div>
+        </form>`;
+      }).join('')}
+    </section>
+    <form class="vw-karte" id="vw-bereich-neu" novalidate><h2>Neuer Bereich</h2>
+      <label class="vw-feld"><span>Name (so sehen ihn die Kunden)</span>
+        <input name="name" maxlength="60" placeholder="z. B. Eier und Marmelade" required /></label>
+      <button type="submit" class="vw-knopf vw-knopf--voll">Bereich anlegen</button>
+    </form>
+    ${nutzerZeile()}`;
+}
+
+function bereichAnlegen(form) {
+  const name = feld(form, 'name').value.trim();
+  if (!name) return meldung('Bitte einen Namen eintragen.');
+  if (daten.bereiche.some((b) => b.name.toLowerCase() === name.toLowerCase())) return meldung('Einen Bereich mit diesem Namen gibt es schon.');
+  speichern('bereich', { name }, () => {
+    daten.bereiche.push({ id: `b${Date.now()}`, name });
+    return {};
+  }, { erfolg: `Bereich „${name}" angelegt – jetzt im Sortiment Produkte zuordnen.` });
+}
+
+function bereichUmbenennen(form) {
+  const b = daten.bereiche.find((x) => x.id === form.dataset.bereich);
+  const name = feld(form, 'name').value.trim();
+  if (!b) return;
+  if (!name) return meldung('Bitte einen Namen eintragen.');
+  if (name === b.name) return meldung('Der Name ist unverändert.');
+  if (daten.bereiche.some((x) => x !== b && x.name.toLowerCase() === name.toLowerCase())) return meldung('Einen Bereich mit diesem Namen gibt es schon.');
+  speichern(`bereich/${b.id}`, { name }, () => { b.name = name; return {}; }, { erfolg: `Umbenannt in „${name}".` });
+}
+
+function bereichSchieben(id, richtung) {
+  const ids = daten.bereiche.map((b) => b.id);
+  const i = ids.indexOf(id);
+  const j = i + richtung;
+  if (i < 0 || j < 0 || j >= ids.length) return;
+  [ids[i], ids[j]] = [ids[j], ids[i]];
+  speichern('bereiche/reihenfolge', { ids }, () => {
+    daten.bereiche = ids.map((x) => daten.bereiche.find((b) => b.id === x));
+    return {};
+  });
+}
+
+function bereichLoeschen(id) {
+  const b = daten.bereiche.find((x) => x.id === id);
+  if (!b || !window.confirm(`Bereich „${b.name}" löschen?`)) return;
+  speichern(`bereich/${id}/loeschen`, {}, () => {
+    daten.bereiche = daten.bereiche.filter((x) => x.id !== id);
+    return {};
+  }, { erfolg: `Bereich „${b.name}" gelöscht.` });
 }
 
 // Ohne Bestellrunde: freundlicher Hinweis statt leerer Ansichten
@@ -2297,13 +2387,14 @@ const ANSICHTEN = {
   zahlungen: ansichtZahlungen,
   voranmeldungen: ansichtVoranmeldungen,
   sortiment: ansichtSortiment,
+  bereiche: ansichtBereiche,
   auswertung: ansichtAuswertung,
   produkt: ansichtProdukt,
   charge: () => ansichtCharge(false),
   'charge-neu': () => ansichtCharge(true),
 };
 // Diese Ansichten funktionieren auch ohne laufende Bestellrunde
-const OHNE_CHARGE = ['voranmeldungen', 'charge-neu', 'sortiment', 'produkt', 'auswertung'];
+const OHNE_CHARGE = ['voranmeldungen', 'charge-neu', 'sortiment', 'bereiche', 'produkt', 'auswertung'];
 
 function aktuelleAnsicht() {
   const name = location.hash.slice(1);
@@ -2324,7 +2415,7 @@ function zeigen() {
     ANSICHTEN[name]();
   }
   const menuepunkt = {
-    hofverkauf: 'neu', abgabe: 'uebergabe', produkt: 'sortiment', wiegen: 'uebersicht', zahlungen: 'uebersicht',
+    hofverkauf: 'neu', abgabe: 'uebergabe', produkt: 'sortiment', bereiche: 'sortiment', wiegen: 'uebersicht', zahlungen: 'uebersicht',
     charge: 'uebersicht', 'charge-neu': 'uebersicht',
   }[name] || name;
   document.querySelectorAll('.vw-nav a[data-ansicht]').forEach((a) => {
@@ -2387,7 +2478,8 @@ function initKlicks() {
         break;
       }
       case 'stornieren':
-        bestellungAendern(b, { aktion: 'stornieren' }, () => { b.status = 'storniert'; }, `${b.nummer} storniert.`);
+        bestellungAendern(b, { aktion: 'stornieren' }, () => { b.status = 'storniert'; },
+          (erg) => `${b.nummer} storniert.${erg && erg.mail ? ' Kunde per E-Mail informiert.' : ''}`);
         break;
       case 'wiederherstellen':
       case 'nachruecken': {
@@ -2398,7 +2490,7 @@ function initKlicks() {
           return { bestellung: { status: b.status } };
         }, {
           erfolg: (erg) => (erg.bestellung.status === 'vorgemerkt'
-            ? `${name} ist jetzt vorgemerkt.`
+            ? `${name} ist jetzt vorgemerkt.${erg.mail ? ' Kunde per E-Mail informiert.' : ''}`
             : 'Nicht genug frei – bleibt auf der Warteliste.'),
         });
         break;
@@ -2551,6 +2643,12 @@ function initKlicks() {
       case 'produkt-aktiv':
         produktAktivUmschalten(produktVon(el.dataset.id));
         break;
+      case 'bereich-schieben':
+        bereichSchieben(el.dataset.id, Number(el.dataset.wert));
+        break;
+      case 'bereich-loeschen':
+        bereichLoeschen(el.dataset.id);
+        break;
       case 'neu-laden':
         location.reload();
         break;
@@ -2618,6 +2716,12 @@ function initEingaben() {
     if (id === 'vw-produkt-formular') {
       e.preventDefault();
       produktSpeichern(e.target);
+      return;
+    }
+    if (id === 'vw-bereich-neu' || e.target.classList.contains('vw-bereich-zeile')) {
+      e.preventDefault();
+      if (id === 'vw-bereich-neu') bereichAnlegen(e.target);
+      else bereichUmbenennen(e.target);
       return;
     }
     if (!['vw-va-formular', 'vw-formular', 'vw-charge-formular'].includes(id)) return;

@@ -31,6 +31,8 @@
  * es geht dann nur keine E-Mail raus (kein harter Fehler fürs Frontend).
  * ============================================================ */
 
+import { BETRIEB, mailHtml, absatz, klein, kasten, gruss, textAusHtml } from '../_lib/mail.js';
+
 const json = (data, status = 200) =>
   new Response(JSON.stringify(data), {
     status,
@@ -79,7 +81,7 @@ async function sendEmail(env, data) {
   if (!env.RESEND_API_KEY) return { sent: false, reason: 'no-api-key' };
 
   const to = env.CONTACT_TO || 'info@kruckenhaus.at';
-  const from = env.CONTACT_FROM || 'Kruckenhaus Website <website@kruckenhaus.at>';
+  const from = env.CONTACT_FROM || `${BETRIEB} <website@kruckenhaus.at>`;
 
   const rows = [
     ['Name', data.name],
@@ -93,11 +95,14 @@ async function sendEmail(env, data) {
     .map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;font-weight:700">${escapeHtml(k)}</td><td>${escapeHtml(v)}</td></tr>`)
     .join('');
 
-  const html =
-    `<h2>Neue Anfrage über kruckenhaus.at</h2>` +
-    `<table style="border-collapse:collapse">${rows}</table>` +
-    `<p style="margin-top:16px"><strong>Nachricht:</strong></p>` +
-    `<p style="white-space:pre-wrap">${escapeHtml(data.message)}</p>`;
+  const html = mailHtml({
+    art: 'hof',
+    titel: 'Neue Anfrage über kruckenhaus.at',
+    inhalt:
+      `<table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 0 16px">${rows}</table>` +
+      absatz('<strong>Nachricht:</strong>') +
+      `<p style="margin:0 0 16px;white-space:pre-wrap">${escapeHtml(data.message)}</p>`,
+  });
 
   return resendSenden(env, {
     from,
@@ -105,6 +110,7 @@ async function sendEmail(env, data) {
     reply_to: data.email,
     subject: `Neue Anfrage von ${data.name}`,
     html,
+    text: textAusHtml(html),
   });
 }
 
@@ -123,7 +129,7 @@ async function sendBestaetigung(env, data) {
   }
 
   const antwortAn = env.CONTACT_TO || 'info@kruckenhaus.at';
-  const from = env.CONTACT_FROM || 'Kruckenhaus Website <website@kruckenhaus.at>';
+  const from = env.CONTACT_FROM || `${BETRIEB} <website@kruckenhaus.at>`;
   const name = data.name.slice(0, 60);
   // Terminanfrage (mit Zeitraum) oder allgemeine Frage, z. B. zum Hof oder Hofladen
   const mitZeitraum = Boolean(data.anreise && data.abreise);
@@ -137,42 +143,30 @@ async function sendBestaetigung(env, data) {
   ].filter(([, v]) => v);
 
   const tabelle = zeilen.length
-    ? `<p>Eure Angaben:</p><table style="border-collapse:collapse">` +
-      zeilen
-        .map(([k, v]) => `<tr><td style="padding:4px 12px 4px 0;font-weight:700">${escapeHtml(k)}</td><td>${escapeHtml(v)}</td></tr>`)
-        .join('') +
-      `</table>`
+    ? absatz('Eure Angaben:') +
+      kasten(zeilen.map(([k, v]) => `<strong>${escapeHtml(k)}:</strong> ${escapeHtml(v)}`).join('<br>'))
     : '';
 
-  const html =
-    `<div style="font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.5;color:#2F5848;max-width:560px">` +
-    `<p>Hallo ${escapeHtml(name)},</p>` +
-    `<p>danke für eure ${art}! Sie ist gut bei uns angekommen. Wir melden uns innerhalb von 24 Stunden persönlich bei euch.</p>` +
-    tabelle +
-    (mitZeitraum ? `<p>${terminHinweis}</p>` : '') +
-    `<p>Etwas vergessen oder eilig? Antwortet einfach auf diese E-Mail oder ruft uns an: ` +
-    `<a href="tel:+436642166181">+43 664 2166181</a> (auch WhatsApp).</p>` +
-    `<p>Liebe Grüße vom Hof<br />Kathrin und Florian Häusler</p>` +
-    `<p style="font-size:13px;color:#666">Hof Kruckenhaus · Oberberg 70 · 6252 Breitenbach am Inn · ` +
-    `<a href="https://www.kruckenhaus.at">kruckenhaus.at</a><br />` +
-    `Diese E-Mail wurde automatisch verschickt, weil über unsere Website eine Anfrage mit dieser Adresse gestellt wurde.</p>` +
-    `</div>`;
-
-  const text =
-    `Hallo ${name},\n\n` +
-    `danke für eure ${art}! Sie ist gut bei uns angekommen. Wir melden uns innerhalb von 24 Stunden persönlich bei euch.\n\n` +
-    (zeilen.length ? `Eure Angaben:\n${zeilen.map(([k, v]) => `${k}: ${v}`).join('\n')}\n\n` : '') +
-    (mitZeitraum ? `${terminHinweis}\n\n` : '') +
-    `Etwas vergessen oder eilig? Antwortet einfach auf diese E-Mail oder ruft uns an: +43 664 2166181 (auch WhatsApp).\n\n` +
-    `Liebe Grüße vom Hof\nKathrin und Florian Häusler\n\n` +
-    `Hof Kruckenhaus · Oberberg 70 · 6252 Breitenbach am Inn · www.kruckenhaus.at\n` +
-    `Diese E-Mail wurde automatisch verschickt, weil über unsere Website eine Anfrage mit dieser Adresse gestellt wurde.`;
+  const html = mailHtml({
+    titel: `Eure ${art} ist angekommen`,
+    vorschau: 'Wir melden uns innerhalb von 24 Stunden persönlich bei euch.',
+    inhalt:
+      absatz(`Hallo ${escapeHtml(name)},`) +
+      absatz(`danke für eure ${art}! Sie ist gut bei uns angekommen. Wir melden uns innerhalb von 24 Stunden persönlich bei euch.`) +
+      tabelle +
+      (mitZeitraum ? absatz(terminHinweis) : '') +
+      absatz('Etwas vergessen oder eilig? Antwortet einfach auf diese E-Mail oder ruft uns an: ' +
+        '<a href="tel:+436642166181">+43 664 2166181</a> (auch WhatsApp).') +
+      gruss +
+      klein('Diese E-Mail wurde automatisch verschickt, weil über unsere Website eine Anfrage mit dieser Adresse gestellt wurde.'),
+  });
+  const text = textAusHtml(html);
 
   return resendSenden(env, {
     from,
     to: data.email,
     reply_to: antwortAn,
-    subject: `Eure ${art} an den Hof Kruckenhaus ist angekommen`,
+    subject: `Eure ${art} an den ${BETRIEB} ist angekommen`,
     html,
     text,
   });

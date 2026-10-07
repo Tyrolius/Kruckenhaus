@@ -69,7 +69,10 @@ assert.equal(r.liefergebiet.length, 4);
 assert.ok(r.produkte.length >= 14);
 assert.equal(r.chargen[0].artikel.find((a) => a.id === aNudeln).produktId, nudeln);
 const sortimentNudeln = r.produkte.find((p) => p.id === nudeln);
-assert.deepEqual([sortimentNudeln.art, sortimentNudeln.kategorie], ['stueck', 'nudeln']);
+assert.equal(sortimentNudeln.art, 'stueck');
+assert.equal(r.bereiche.find((b) => b.id === sortimentNudeln.bereichId).name, 'Eiernudeln');
+assert.deepEqual(r.bereiche.map((b) => b.name), ['Fleisch', 'Eiernudeln', 'Honig', 'Alpakaseife', 'Saisonprodukte']);
+assert.equal(r.chargen[0].artikel.find((a) => a.id === aNudeln).bereichId, sortimentNudeln.bereichId);
 assert.match(sortimentNudeln.pflichtangaben, /Hartweizengrieß/);
 assert.deepEqual([r.produkte.find((p) => p.id === huhn).richtVonG, r.produkte.find((p) => p.id === huhn).richtBisG], [1800, 2400]);
 // Ausgeblendete Produkte erscheinen nicht im Sortiment

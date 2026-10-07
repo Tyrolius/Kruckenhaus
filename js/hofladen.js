@@ -24,7 +24,6 @@
    ------------------------------------------------------------ */
 const hlEuro = new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' });
 const hlKg = new Intl.NumberFormat('de-AT', { maximumFractionDigits: 1 });
-const hlKategorien = { fleisch: 'Fleisch', nudeln: 'Eiernudeln', honig: 'Honig', seife: 'Alpakaseife', saison: 'Saisonprodukte' };
 
 const euro = (cent) => hlEuro.format(cent / 100);
 
@@ -74,6 +73,16 @@ async function senden(pfad, daten) {
 
 let hlAngebot = null;
 
+// Liste nach Bereichen gruppieren (Reihenfolge wie in der Verwaltung);
+// leere Bereiche entfallen. Liefert [[bereich, liste], …]
+function nachBereichen(liste) {
+  const bereiche = (hlAngebot && hlAngebot.bereiche) || [];
+  const gruppen = bereiche.map((b) => [b, liste.filter((x) => x.bereichId === b.id)]);
+  const ohne = liste.filter((x) => !bereiche.some((b) => b.id === x.bereichId));
+  if (ohne.length) gruppen.push([{ id: null, name: 'Weitere Produkte' }, ohne]);
+  return gruppen.filter(([, l]) => l.length);
+}
+
 /* ------------------------------------------------------------
    2. ANGEBOT ANZEIGEN
    ------------------------------------------------------------ */
@@ -107,9 +116,7 @@ function produktZeile(a) {
 }
 
 function chargeFormular(ch, liefergebiet) {
-  const gruppen = Object.keys(hlKategorien)
-    .map((kat) => [kat, ch.artikel.filter((a) => a.kategorie === kat)])
-    .filter(([, liste]) => liste.length);
+  const gruppen = nachBereichen(ch.artikel);
   const hatLieferung = ch.termine.some((t) => t.art === 'lieferung');
 
   return `<article class="hl-charge" id="charge-${ch.id}">
@@ -122,7 +129,7 @@ function chargeFormular(ch, liefergebiet) {
       <p style="display:none;" aria-hidden="true">
         <label>Nicht ausfüllen: <input name="bot-field" tabindex="-1" autocomplete="off" /></label>
       </p>
-      ${gruppen.map(([kat, liste]) => `<div class="hl-kategorie"><h4>${hlKategorien[kat]}</h4>${liste.map(produktZeile).join('')}</div>`).join('')}
+      ${gruppen.map(([b, liste]) => `<div class="hl-kategorie"><h4>${esc(b.name)}</h4>${liste.map(produktZeile).join('')}</div>`).join('')}
 
       <fieldset class="hl-feldgruppe">
         <legend>Abholung oder Lieferung</legend>
@@ -309,12 +316,8 @@ function voranmeldungVorbereiten(daten) {
   const form = document.getElementById('hl-voranmeldung');
   if (!form) return;
   const produkt = form.elements.namedItem('produktId');
-  produkt.innerHTML = Object.keys(hlKategorien).map((kat) => {
-    const liste = daten.produkte.filter((p) => p.kategorie === kat);
-    return liste.length
-      ? `<optgroup label="${hlKategorien[kat]}">${liste.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</optgroup>`
-      : '';
-  }).join('');
+  produkt.innerHTML = nachBereichen(daten.produkte).map(([b, liste]) =>
+    `<optgroup label="${esc(b.name)}">${liste.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</optgroup>`).join('');
   form.elements.namedItem('zeitraum').innerHTML = Object.entries(daten.zeitraeume)
     .map(([wert, text]) => `<option value="${wert}">${esc(text)}</option>`).join('');
   const jahr = new Date().getFullYear();
@@ -416,13 +419,8 @@ function sortimentZeigen(daten) {
   const bereich = document.getElementById('sortiment');
   const ziel = document.getElementById('hl-sortiment');
   if (!bereich || !ziel || !daten.produkte.length) return;
-  ziel.innerHTML = Object.keys(hlKategorien).map((kat) => {
-    const liste = daten.produkte.filter((p) => p.kategorie === kat);
-    return liste.length
-      ? `<div class="hl-kategorie"><h3>${hlKategorien[kat]}</h3>
-          <div class="hl-sortiment-raster">${liste.map((p) => sortimentKarte(p, daten)).join('')}</div></div>`
-      : '';
-  }).join('');
+  ziel.innerHTML = nachBereichen(daten.produkte).map(([b, liste]) => `<div class="hl-kategorie"><h3>${esc(b.name)}</h3>
+    <div class="hl-sortiment-raster">${liste.map((p) => sortimentKarte(p, daten)).join('')}</div></div>`).join('');
   bereich.hidden = false;
 }
 

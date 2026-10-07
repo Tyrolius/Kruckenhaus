@@ -11,11 +11,17 @@
  *        uebergeben, bezahlt, zahlart, termin, kontakt, notiz, stornieren,
  *        nachruecken, gewicht, position (Menge ändern/Artikel dazu),
  *        abschliessen (Gewichte + übergeben + ggf. bar kassiert in einem)
+ *        stornieren und nachruecken (von der Warteliste) schicken dem Kunden
+ *        eine Mail, wenn er eine E-Mail-Adresse hat ({ mail: false } = keine)
  *   POST /api/verwaltung/hofverkauf               Verkauf am Hof ohne Vorbestellung
  *   POST /api/verwaltung/gesehen                  Website-Bestellungen als gesehen markieren
  *   POST /api/verwaltung/tour                     Reihenfolge der Liefertour speichern
  *   POST /api/verwaltung/produkt                  Produkt anlegen (Sortiment)
  *   POST /api/verwaltung/produkt/<id>             Produkt bearbeiten / aus- und einblenden
+ *   POST /api/verwaltung/bereich                  Bereich anlegen ({ name })
+ *   POST /api/verwaltung/bereich/<id>             Bereich umbenennen ({ name })
+ *   POST /api/verwaltung/bereich/<id>/loeschen    leeren Bereich löschen
+ *   POST /api/verwaltung/bereiche/reihenfolge     Reihenfolge ({ ids: [...] })
  *   POST /api/verwaltung/charge                   Bestellrunde anlegen
  *   POST /api/verwaltung/charge/<id>              Bestellrunde bearbeiten
  *   POST /api/verwaltung/charge/<id>/status       nur den Status ändern (abschließen, wieder öffnen)
@@ -29,6 +35,7 @@
  * IDs gehen als Text an die Oberfläche und werden hier wieder geprüft.
  *
  * Binding: DB (D1 „kruckenhaus", Tabellen aus schema-hofladen.sql)
+ * Optional: RESEND_API_KEY, CONTACT_FROM, CONTACT_TO für die Mails an Kunden.
  * Optional (Secrets, für den Packzettel bei Überweisung):
  *   BANK_INHABER, BANK_IBAN, BANK_BIC, BANK_NAME – fehlen sie, druckt der
  *   Packzettel keinen Überweisungsblock.
@@ -38,7 +45,11 @@ import {
   json, EingabeFehler, ZEITRAEUME, istGueltigeEmail,
   bestellungAnlegen, bestellungNachruecken, preisVorschlaege,
   voranmeldungAnlegen, voranmeldungenUebernehmen, bankAusEnv, SQL_ALS_GESEHEN,
+  kundenLinkErstellen, mailSenden, escapeHtml,
 } from '../../_lib/hofladen.js';
+import {
+  BETRIEB, mailHtml, absatz, klein, knopf, kasten, gruss, positionenHtml, terminText,
+} from '../../_lib/mail.js';
 
 /* ------------------------------------------------------------
    1. EINGABEN PRÜFEN
@@ -47,6 +58,8 @@ const QUELLEN = ['web', 'whatsapp', 'telefon', 'persoenlich'];
 const ZAHLARTEN = ['bar', 'ueberweisung'];
 const CHARGE_STATUS = ['entwurf', 'stammkunden', 'offen', 'geschlossen', 'archiviert'];
 const PRODUKT_ARTEN = ['gewicht', 'paket', 'stueck'];
+// Alte, feste Einteilung (Spalte produkte.kategorie, mit CHECK) – neue
+// Bereiche ohne kennung bekommen dort 'saison'
 const KATEGORIEN = ['fleisch', 'nudeln', 'honig', 'seife', 'saison'];
 // Sammelkunde für Verkäufe am Hof, bei denen kein Name angegeben wird
 const SAMMELKUNDE = 'Verkauf am Hof (ohne Namen)';
@@ -92,15 +105,15 @@ const id = (wert) => (wert == null ? null : String(wert));
 
 async function standLaden(db, bank = null) {
   const aktiv = `SELECT id FROM chargen WHERE status <> 'archiviert'`;
-  const [chargen, artikel, termine, bestellungen, positionen, kunden, produkte, voranmeldungen, liefergebiet, widerrufe] =
+  const [chargen, artikel, termine, bestellungen, positionen, kunden, produkte, voranmeldungen, liefergebiet, widerrufe, bereiche] =
     (await db.batch([
       db.prepare(`SELECT id, titel, status, bestellschluss FROM chargen
                   WHERE status <> 'archiviert' ORDER BY bestellschluss, id`),
       db.prepare(`SELECT ca.id, ca.charge_id, ca.produkt_id, ca.preis_cent, ca.kontingent, ca.max_pro_bestellung,
                          p.name, p.art, p.richtgewicht_von_g, p.richtgewicht_bis_g
-                  FROM charge_artikel ca JOIN produkte p ON p.id = ca.produkt_id
+                  FROM charge_artikel ca JOIN v_produkte p ON p.id = ca.produkt_id
                   WHERE ca.charge_id IN (${aktiv})
-                  ORDER BY p.kategorie, ca.reihenfolge, p.reihenfolge, p.name`),
+                  ORDER BY p.bereich_reihenfolge, ca.reihenfolge, p.reihenfolge, p.name`),
       db.prepare(`SELECT id, charge_id, art, datum, von, bis, hinweis FROM termine
                   WHERE charge_id IN (${aktiv}) ORDER BY datum, von`),
       db.prepare(`SELECT id, nummer, charge_id, kunde_id, quelle, status, termin_id, lieferadresse, zahlart,
@@ -113,15 +126,17 @@ async function standLaden(db, bank = null) {
       db.prepare(`SELECT k.id, k.name, k.telefon, k.email, k.strasse, k.plz, k.ort, k.stammkunde, k.notiz,
                          t.rang AS tour_rang
                   FROM kunden k LEFT JOIN tour_reihenfolge t ON t.kunde_id = k.id ORDER BY k.name`),
-      db.prepare(`SELECT id, name, art, kategorie, richtgewicht_von_g, richtgewicht_bis_g, startpreis_cent,
-                         aktiv, beschreibung, pflichtangaben, allergene,
-                         EXISTS (SELECT 1 FROM charge_artikel ca WHERE ca.produkt_id = produkte.id) AS verwendet
-                  FROM produkte ORDER BY kategorie, reihenfolge, name`),
+      db.prepare(`SELECT p.id, p.name, p.art, p.bereich, p.richtgewicht_von_g, p.richtgewicht_bis_g, p.startpreis_cent,
+                         p.aktiv, p.beschreibung, p.pflichtangaben, p.allergene,
+                         EXISTS (SELECT 1 FROM charge_artikel ca WHERE ca.produkt_id = p.id) AS verwendet
+                  FROM v_produkte p ORDER BY p.bereich_reihenfolge, p.reihenfolge, p.name`),
       db.prepare(`SELECT id, kunde_id, produkt_id, menge, zeitraum, jahr, quelle, status, notiz, erstellt_am
                   FROM voranmeldungen WHERE status = 'offen' ORDER BY erstellt_am, id`),
       db.prepare(`SELECT plz, ort, liefergebuehr_cent, gratis_ab_cent FROM liefergebiet ORDER BY tour_reihenfolge, ort`),
       db.prepare(`SELECT id, bestellung_id, bestellnummer, name, email, umfang, quelle, eingegangen_am
                   FROM widerrufe WHERE status = 'offen' ORDER BY eingegangen_am, id`),
+      db.prepare(`SELECT b.id, b.name, (SELECT COUNT(*) FROM v_produkte p WHERE p.bereich = b.id) AS produkte
+                  FROM bereiche b ORDER BY b.reihenfolge, b.id`),
     ])).map((r) => r.results);
 
   const jePos = new Map();
@@ -158,8 +173,9 @@ async function standLaden(db, bank = null) {
       neu: b.quelle === 'web' && !b.gesehen,
       positionen: jePos.get(b.id) || [],
     })),
+    bereiche: bereiche.map((b) => ({ id: id(b.id), name: b.name, produkte: b.produkte })),
     produkte: produkte.map((p) => ({
-      id: id(p.id), name: p.name, art: p.art, kategorie: p.kategorie, aktiv: Boolean(p.aktiv),
+      id: id(p.id), name: p.name, art: p.art, bereichId: id(p.bereich), aktiv: Boolean(p.aktiv),
       richtVonG: p.richtgewicht_von_g, richtBisG: p.richtgewicht_bis_g, startpreisCent: p.startpreis_cent,
       beschreibung: p.beschreibung || '', pflichtangaben: p.pflichtangaben || '', allergene: p.allergene || '',
       verwendet: Boolean(p.verwendet),
@@ -461,7 +477,7 @@ function produktPruefen(e) {
   const p = {
     name,
     art,
-    kategorie: auswahl(e.kategorie || 'saison', KATEGORIEN, 'Bereich'),
+    bereichId: nummer(e.bereichId, 'Bereich'),
     startpreisCent: ganzzahl(e.startpreisCent, 'Preis', { max: 10000000, leer: true }),
     beschreibung: textOderNull(e.beschreibung, 1000),
     pflichtangaben: textOderNull(e.pflichtangaben, 1000),
@@ -478,6 +494,13 @@ function produktPruefen(e) {
   return p;
 }
 
+// Bereich muss existieren; liefert die alte kategorie dazu (CHECK der Spalte)
+async function bereichPruefen(db, bereichId) {
+  const b = await db.prepare('SELECT id, kennung FROM bereiche WHERE id = ?').bind(bereichId).first();
+  if (!b) throw new EingabeFehler('Bitte einen Bereich wählen.');
+  return KATEGORIEN.includes(b.kennung) ? b.kennung : 'saison';
+}
+
 async function nameFrei(db, name, ausserId = 0) {
   const doppelt = await db.prepare('SELECT 1 FROM produkte WHERE lower(name) = lower(?) AND id <> ?').bind(name, ausserId).first();
   if (doppelt) throw new EingabeFehler('Ein Produkt mit diesem Namen gibt es schon.');
@@ -485,15 +508,17 @@ async function nameFrei(db, name, ausserId = 0) {
 
 async function produktAnlegen(db, e) {
   const p = produktPruefen(e);
+  const kategorie = await bereichPruefen(db, p.bereichId);
   await nameFrei(db, p.name);
+  // Neue Produkte ans Ende ihres Bereichs
   const zeile = await db.prepare(
-    `INSERT INTO produkte (name, art, kategorie, startpreis_cent, beschreibung, pflichtangaben, allergene,
+    `INSERT INTO produkte (name, art, kategorie, bereich_id, startpreis_cent, beschreibung, pflichtangaben, allergene,
                            richtgewicht_von_g, richtgewicht_bis_g, aktiv, reihenfolge)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-             (SELECT COALESCE(MAX(reihenfolge), 0) + 10 FROM produkte WHERE kategorie = ?))
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+             (SELECT COALESCE(MAX(reihenfolge), 0) + 10 FROM v_produkte WHERE bereich = ?))
      RETURNING id`
-  ).bind(p.name, p.art, p.kategorie, p.startpreisCent, p.beschreibung, p.pflichtangaben, p.allergene,
-    p.richtVonG, p.richtBisG, p.aktiv, p.kategorie).first();
+  ).bind(p.name, p.art, kategorie, p.bereichId, p.startpreisCent, p.beschreibung, p.pflichtangaben, p.allergene,
+    p.richtVonG, p.richtBisG, p.aktiv, p.bereichId).first();
   return { produktId: id(zeile.id) };
 }
 
@@ -508,17 +533,137 @@ async function produktBearbeiten(db, produktId, e) {
   if (alt.verwendet && p.art !== alt.art && (alt.art === 'gewicht' || p.art === 'gewicht')) {
     throw new EingabeFehler('Das Produkt wurde schon verkauft – „nach Gewicht" bzw. „Fixpreis" lässt sich nicht mehr ändern. Bitte ein neues Produkt anlegen.');
   }
+  const kategorie = await bereichPruefen(db, p.bereichId);
   await nameFrei(db, p.name, pid);
   await db.prepare(
-    `UPDATE produkte SET name = ?, art = ?, kategorie = ?, startpreis_cent = ?, beschreibung = ?,
+    `UPDATE produkte SET name = ?, art = ?, kategorie = ?, bereich_id = ?, startpreis_cent = ?, beschreibung = ?,
             pflichtangaben = ?, allergene = ?, richtgewicht_von_g = ?, richtgewicht_bis_g = ?, aktiv = ?
      WHERE id = ?`
-  ).bind(p.name, p.art, p.kategorie, p.startpreisCent, p.beschreibung, p.pflichtangaben, p.allergene,
+  ).bind(p.name, p.art, kategorie, p.bereichId, p.startpreisCent, p.beschreibung, p.pflichtangaben, p.allergene,
     p.richtVonG, p.richtBisG, p.aktiv, pid).run();
   return { produktId: id(pid) };
 }
 
-async function bestellungAendern(db, bestellungId, e) {
+/* ------------------------------------------------------------
+   4c2. BEREICHE (Fleisch, Eiernudeln, Honig …)
+   Frei anlegen, umbenennen, ordnen. Gelöscht wird nur ein leerer
+   Bereich – sonst erst die Produkte einem anderen Bereich zuordnen.
+   ------------------------------------------------------------ */
+async function bereichNameFrei(db, name, ausserId = 0) {
+  if (!name) throw new EingabeFehler('Bitte einen Namen für den Bereich eintragen.');
+  const doppelt = await db.prepare('SELECT 1 FROM bereiche WHERE lower(name) = lower(?) AND id <> ?').bind(name, ausserId).first();
+  if (doppelt) throw new EingabeFehler('Einen Bereich mit diesem Namen gibt es schon.');
+}
+
+async function bereichAnlegen(db, e) {
+  const name = text(e.name, 60);
+  await bereichNameFrei(db, name);
+  const zeile = await db.prepare(
+    `INSERT INTO bereiche (name, reihenfolge) VALUES (?, (SELECT COALESCE(MAX(reihenfolge), 0) + 10 FROM bereiche))
+     RETURNING id`
+  ).bind(name).first();
+  return { bereichId: id(zeile.id) };
+}
+
+async function bereichUmbenennen(db, bereichId, e) {
+  const bid = nummer(bereichId, 'Bereich');
+  const name = text(e.name, 60);
+  await bereichNameFrei(db, name, bid);
+  const r = await db.prepare('UPDATE bereiche SET name = ? WHERE id = ?').bind(name, bid).run();
+  if (!r.meta.changes) throw new EingabeFehler('Bereich nicht gefunden.');
+  return {};
+}
+
+async function bereichLoeschen(db, bereichId) {
+  const bid = nummer(bereichId, 'Bereich');
+  const zeile = await db.prepare(
+    'SELECT (SELECT COUNT(*) FROM v_produkte WHERE bereich = ?) AS produkte, (SELECT COUNT(*) FROM bereiche) AS bereiche'
+  ).bind(bid).first();
+  if (zeile.produkte) {
+    throw new EingabeFehler(`Im Bereich ${zeile.produkte === 1 ? 'ist noch 1 Produkt' : `sind noch ${zeile.produkte} Produkte`} – bitte zuerst einem anderen Bereich zuordnen.`);
+  }
+  if (zeile.bereiche <= 1) throw new EingabeFehler('Der letzte Bereich kann nicht gelöscht werden.');
+  const r = await db.prepare('DELETE FROM bereiche WHERE id = ?').bind(bid).run();
+  if (!r.meta.changes) throw new EingabeFehler('Bereich nicht gefunden.');
+  return {};
+}
+
+async function bereicheOrdnen(db, e) {
+  const ids = (Array.isArray(e.ids) ? e.ids : []).map((x) => nummer(x, 'Bereich'));
+  const { results: alle } = await db.prepare('SELECT id FROM bereiche').all();
+  if (ids.length !== alle.length || new Set(ids).size !== ids.length || !alle.every((b) => ids.includes(b.id))) {
+    throw new EingabeFehler('Die Reihenfolge passt nicht zu den Bereichen – bitte Seite neu laden.');
+  }
+  await db.batch(ids.map((bid, i) => db.prepare('UPDATE bereiche SET reihenfolge = ? WHERE id = ?').bind((i + 1) * 10, bid)));
+  return {};
+}
+
+/* ------------------------------------------------------------
+   4d. MAILS AN KUNDEN (nachgerückt, storniert)
+   Nur wenn der Kunde eine E-Mail-Adresse hat; fehlt sie oder der
+   Mail-Schlüssel, läuft alles normal weiter (gesendet = false).
+   ------------------------------------------------------------ */
+async function kundenMail(db, ctx, bestellungId, art) {
+  const b = await db.prepare(
+    `SELECT b.nummer, b.kunde_id, k.name, k.email, c.titel, t.art, t.datum, t.von, t.bis
+     FROM bestellungen b JOIN kunden k ON k.id = b.kunde_id JOIN chargen c ON c.id = b.charge_id
+     LEFT JOIN termine t ON t.id = b.termin_id WHERE b.id = ?`
+  ).bind(bestellungId).first();
+  if (!b || !b.email || !ctx.env.RESEND_API_KEY) return false;
+  const { results: zeilen } = await db.prepare(
+    `SELECT produkt_name, art, menge, einzelpreis_cent, betrag_cent, geschaetzt
+     FROM v_positionen WHERE bestellung_id = ? ORDER BY id`
+  ).bind(bestellungId).all();
+  const termin = b.datum ? { art: b.art, datum: b.datum, von: b.von, bis: b.bis } : null;
+  const eckdaten = kasten(`<strong>Bestellnummer ${escapeHtml(b.nummer)}</strong><br>${escapeHtml(b.titel)}`
+    + (art === 'nachgerueckt' ? `<br>${escapeHtml(termin ? terminText(termin) : 'Den Termin stimmen wir noch mit euch ab.')}` : ''));
+
+  let betreff;
+  let titel;
+  let teile;
+  if (art === 'nachgerueckt') {
+    const link = `${ctx.origin}/meine-bestellungen.html#${await kundenLinkErstellen(db, b.kunde_id)}`;
+    betreff = `Gute Nachricht: eure Bestellung ${b.nummer} ist fix – ${BETRIEB}`;
+    titel = 'Ihr seid nachgerückt';
+    teile = [
+      absatz(`Hallo ${escapeHtml(b.name)},`),
+      absatz('gute Nachricht: Es ist etwas frei geworden – eure Bestellung von der Warteliste ist jetzt <strong>fix vorgemerkt</strong>.'),
+      eckdaten,
+      positionenHtml(zeilen),
+      knopf(link, 'Meine Bestellungen ansehen'),
+      klein('Euer persönlicher Link – bitte nicht weitergeben.'),
+      absatz('Passt es doch nicht mehr? Bitte gebt uns kurz Bescheid, dann rückt der Nächste nach: <a href="tel:+436642166181">+43 664 2166181</a> (auch WhatsApp).'),
+      gruss,
+    ];
+  } else {
+    const warteliste = art === 'gestrichen';
+    betreff = warteliste
+      ? `Warteliste: Bestellung ${b.nummer} – ${BETRIEB}`
+      : `Eure Bestellung ${b.nummer} wurde storniert – ${BETRIEB}`;
+    titel = warteliste ? 'Von der Warteliste gestrichen' : 'Eure Bestellung wurde storniert';
+    teile = [
+      absatz(`Hallo ${escapeHtml(b.name)},`),
+      absatz(warteliste
+        ? 'leider ist für eure Bestellung auf der Warteliste nichts mehr frei geworden – wir haben sie deshalb gestrichen. Beim nächsten Mal klappt es hoffentlich!'
+        : 'eure Bestellung ist bei uns <strong>storniert</strong>.'),
+      eckdaten,
+      positionenHtml(zeilen),
+      absatz(`Falls das ein Versehen ist oder ihr Fragen habt, meldet euch bitte:
+        <a href="tel:+436642166181">+43 664 2166181</a> (auch WhatsApp) oder einfach auf diese E-Mail antworten.`),
+      warteliste ? absatz('Wenn ihr wollt, merken wir euch gern für die nächste Bestellrunde vor.') : '',
+      gruss,
+    ];
+  }
+  const erg = await mailSenden(ctx.env, {
+    an: b.email,
+    betreff,
+    antwortAn: ctx.env.CONTACT_TO || 'info@kruckenhaus.at',
+    html: mailHtml({ titel, vorschau: `Bestellung ${b.nummer} – ${b.titel}`, inhalt: teile.join('') }),
+  });
+  return erg.gesendet;
+}
+
+async function bestellungAendern(db, bestellungId, e, ctx = {}) {
   const bid = nummer(bestellungId, 'Bestellnummer');
   const aenderung = (sql, ...werte) => db.prepare(
     `UPDATE bestellungen SET ${sql}, geaendert_am = datetime('now') WHERE id = ?`
@@ -566,11 +711,23 @@ async function bestellungAendern(db, bestellungId, e) {
     case 'notiz':
       r = await aenderung('interne_notiz = ?', textOderNull(e.text, 1000));
       break;
-    case 'stornieren':
-      r = await aenderung(`status = 'storniert'`);
-      break;
-    case 'nachruecken':
-      return { bestellung: await bestellungNachruecken(db, bid) };
+    case 'stornieren': {
+      const vorher = await db.prepare('SELECT status FROM bestellungen WHERE id = ?').bind(bid).first();
+      if (!vorher) throw new EingabeFehler('Bestellung nicht gefunden.');
+      if (vorher.status === 'storniert') return { mail: false };
+      await aenderung(`status = 'storniert'`);
+      // Mail an den Kunden (außer ausdrücklich abgewählt)
+      const mail = e.mail === false ? false
+        : await kundenMail(db, ctx, bid, vorher.status === 'warteliste' ? 'gestrichen' : 'storniert');
+      return { mail };
+    }
+    case 'nachruecken': {
+      const vorher = await db.prepare('SELECT status FROM bestellungen WHERE id = ?').bind(bid).first();
+      const bestellung = await bestellungNachruecken(db, bid);
+      const mail = vorher && vorher.status === 'warteliste' && bestellung.status === 'vorgemerkt' && e.mail !== false
+        ? await kundenMail(db, ctx, bid, 'nachgerueckt') : false;
+      return { bestellung, mail };
+    }
     case 'gewicht': {
       const gewichtG = ganzzahl(e.gewichtG, 'Gewicht', { min: 1, max: 200000, leer: true });
       r = await gewichtSetzen(db, bid, nummer(e.positionId, 'Position'), gewichtG).run();
@@ -719,8 +876,9 @@ async function auswertung(db, jahrText) {
                 JOIN v_bestellsummen s ON s.bestellung_id = b.id
                 WHERE b.status = 'vorgemerkt' AND substr(b.uebergeben_am, 1, 4) = ?
                 ORDER BY b.uebergeben_am, b.id`).bind(jahr),
-    db.prepare(`SELECT v.bestellung_id, v.produkt_name, v.art, v.menge, v.gewicht_g, v.betrag_cent, p.kategorie
-                FROM v_positionen v JOIN produkte p ON p.id = v.produkt_id
+    db.prepare(`SELECT v.bestellung_id, v.produkt_name, v.art, v.menge, v.gewicht_g, v.betrag_cent,
+                       p.bereich_name, p.bereich_reihenfolge
+                FROM v_positionen v JOIN v_produkte p ON p.id = v.produkt_id
                 JOIN bestellungen b ON b.id = v.bestellung_id
                 WHERE b.status = 'vorgemerkt' AND substr(b.uebergeben_am, 1, 4) = ?
                 ORDER BY v.bestellung_id, v.id`).bind(jahr),
@@ -738,7 +896,8 @@ async function auswertung(db, jahrText) {
   for (const p of positionen) {
     if (!jePos.has(p.bestellung_id)) jePos.set(p.bestellung_id, []);
     jePos.get(p.bestellung_id).push({
-      produkt: p.produkt_name, kategorie: p.kategorie, art: p.art, menge: p.menge,
+      produkt: p.produkt_name, bereich: p.bereich_name || 'Ohne Bereich', bereichRang: p.bereich_reihenfolge ?? 9999,
+      art: p.art, menge: p.menge,
       gewichtG: p.gewicht_g ?? null, cent: p.betrag_cent,
     });
   }
@@ -803,7 +962,7 @@ export async function onRequest({ request, env, params, data }) {
 
     let ergebnis;
     if (bereich === 'bestellung' && pfad.length === 1) ergebnis = { bestellung: await bestellungErfassen(db, eingabe) };
-    else if (bereich === 'bestellung' && pfad.length === 2) ergebnis = await bestellungAendern(db, teilId, eingabe);
+    else if (bereich === 'bestellung' && pfad.length === 2) ergebnis = await bestellungAendern(db, teilId, eingabe, { env, origin: new URL(request.url).origin });
     else if (bereich === 'charge' && pfad.length === 1) ergebnis = await chargeAnlegen(db, eingabe);
     else if (bereich === 'charge' && pfad.length === 2) ergebnis = await chargeBearbeiten(db, teilId, eingabe);
     else if (bereich === 'charge' && unteraktion === 'status' && pfad.length === 3) {
@@ -816,6 +975,10 @@ export async function onRequest({ request, env, params, data }) {
     else if (bereich === 'hofverkauf' && pfad.length === 1) ergebnis = await hofverkauf(db, eingabe);
     else if (bereich === 'gesehen' && pfad.length === 1) ergebnis = await alsGesehen(db, eingabe);
     else if (bereich === 'tour' && pfad.length === 1) ergebnis = await tourSpeichern(db, eingabe);
+    else if (bereich === 'bereich' && pfad.length === 1) ergebnis = await bereichAnlegen(db, eingabe);
+    else if (bereich === 'bereich' && pfad.length === 2) ergebnis = await bereichUmbenennen(db, teilId, eingabe);
+    else if (bereich === 'bereich' && unteraktion === 'loeschen' && pfad.length === 3) ergebnis = await bereichLoeschen(db, teilId);
+    else if (bereich === 'bereiche' && teilId === 'reihenfolge' && pfad.length === 2) ergebnis = await bereicheOrdnen(db, eingabe);
     else if (bereich === 'produkt' && pfad.length === 1) ergebnis = await produktAnlegen(db, eingabe);
     else if (bereich === 'produkt' && pfad.length === 2) ergebnis = await produktBearbeiten(db, teilId, eingabe);
     else if (bereich === 'voranmeldung' && unteraktion === 'absagen' && pfad.length === 3) {

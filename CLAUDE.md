@@ -48,6 +48,7 @@ schema-hofladen.sql        D1-Schema der Hofladen-Vorbestellung (im Aufbau)
 hofladen-produkte.sql      Produktkatalog der Hofladen-Vorbestellung (Erstbefüllung)
 functions/_lib/hofladen.js gemeinsame Helfer der Hofladen-Functions (keine Route)
 functions/_lib/zugang.js   Prüfung der Cloudflare-Access-Anmeldung
+functions/_lib/mail.js     gemeinsame Mail-Vorlage („Bergbauernhof Kruckenhaus") + Nur-Text-Fassung
 functions/api/verwaltung/  Schnittstelle der Verwaltung (_middleware.js = Zugang)
 verwaltung/                Hofladen-Verwaltung (inkl. Produktkatalog); ?entwurf = Beispielmodus
 hofladen.html + js/hofladen.js   Bestellseite mit Sortiment für Kunden (noch noindex, nicht verlinkt)
@@ -146,6 +147,8 @@ danach gegenprüfen, dass keine Fundstelle übrig blieb.
 - Fehlende Secrets dürfen nicht zum harten Fehler führen: fehlt
   `RESEND_API_KEY`, wird die Anfrage trotzdem in D1 gespeichert. Dieses
   „graceful degradation"-Muster beibehalten.
+- Alle Mails über `mailHtml()` aus `functions/_lib/mail.js` bauen (einheitlicher
+  Rahmen, Inline-Styles, keine Bilder); die Nur-Text-Fassung entsteht daraus.
 - Nutzereingaben vor dem Einsetzen in E-Mail-HTML escapen
   (`escapeHtml`), D1-Zugriffe nur über gebundene Prepared Statements.
 
