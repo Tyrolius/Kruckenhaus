@@ -20,6 +20,8 @@
  *   8. Bankverbindung aus den Cloudflare-Einstellungen (bankAusEnv)
  * ============================================================ */
 
+import { textAusHtml } from './mail.js';
+
 /* ------------------------------------------------------------
    1. ANTWORTEN UND EINGABEN
    ------------------------------------------------------------ */
@@ -347,6 +349,8 @@ export async function kundeAusLink(db, schluessel) {
    7. E-MAIL (Resend)
    Fehlt RESEND_API_KEY, wird nichts verschickt, aber auch kein Fehler
    ausgelöst – gespeichert ist die Bestellung trotzdem.
+   html kommt fertig aus mailHtml() (functions/_lib/mail.js); die
+   Nur-Text-Fassung wird daraus abgeleitet.
    ------------------------------------------------------------ */
 export async function mailSenden(env, { an, betreff, html, antwortAn }) {
   if (!env.RESEND_API_KEY) return { gesendet: false, grund: 'kein-api-key' };
@@ -355,10 +359,11 @@ export async function mailSenden(env, { an, betreff, html, antwortAn }) {
       method: 'POST',
       headers: { Authorization: `Bearer ${env.RESEND_API_KEY}`, 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        from: env.CONTACT_FROM || 'Kruckenhaus Website <website@kruckenhaus.at>',
+        from: env.CONTACT_FROM || 'Bergbauernhof Kruckenhaus <website@kruckenhaus.at>',
         to: an,
         subject: betreff,
         html,
+        text: textAusHtml(html),
         ...(antwortAn ? { reply_to: antwortAn } : {}),
       }),
     });

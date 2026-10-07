@@ -11,6 +11,8 @@
  *        uebergeben, bezahlt, zahlart, termin, kontakt, notiz, stornieren,
  *        nachruecken, gewicht, position (Menge ändern/Artikel dazu),
  *        abschliessen (Gewichte + übergeben + ggf. bar kassiert in einem)
+ *        stornieren und nachruecken (von der Warteliste) schicken dem Kunden
+ *        eine Mail, wenn er eine E-Mail-Adresse hat ({ mail: false } = keine)
  *   POST /api/verwaltung/hofverkauf               Verkauf am Hof ohne Vorbestellung
  *   POST /api/verwaltung/gesehen                  Website-Bestellungen als gesehen markieren
  *   POST /api/verwaltung/tour                     Reihenfolge der Liefertour speichern
@@ -29,6 +31,7 @@
  * IDs gehen als Text an die Oberfläche und werden hier wieder geprüft.
  *
  * Binding: DB (D1 „kruckenhaus", Tabellen aus schema-hofladen.sql)
+ * Optional: RESEND_API_KEY, CONTACT_FROM, CONTACT_TO für die Mails an Kunden.
  * Optional (Secrets, für den Packzettel bei Überweisung):
  *   BANK_INHABER, BANK_IBAN, BANK_BIC, BANK_NAME – fehlen sie, druckt der
  *   Packzettel keinen Überweisungsblock.
@@ -38,7 +41,11 @@ import {
   json, EingabeFehler, ZEITRAEUME, istGueltigeEmail,
   bestellungAnlegen, bestellungNachruecken, preisVorschlaege,
   voranmeldungAnlegen, voranmeldungenUebernehmen, bankAusEnv, SQL_ALS_GESEHEN,
+  kundenLinkErstellen, mailSenden, escapeHtml,
 } from '../../_lib/hofladen.js';
+import {
+  BETRIEB, mailHtml, absatz, klein, knopf, kasten, gruss, positionenHtml, terminText,
+} from '../../_lib/mail.js';
 
 /* ------------------------------------------------------------
    1. EINGABEN PRÜFEN
@@ -518,7 +525,72 @@ async function produktBearbeiten(db, produktId, e) {
   return { produktId: id(pid) };
 }
 
-async function bestellungAendern(db, bestellungId, e) {
+/* ------------------------------------------------------------
+   4d. MAILS AN KUNDEN (nachgerückt, storniert)
+   Nur wenn der Kunde eine E-Mail-Adresse hat; fehlt sie oder der
+   Mail-Schlüssel, läuft alles normal weiter (gesendet = false).
+   ------------------------------------------------------------ */
+async function kundenMail(db, ctx, bestellungId, art) {
+  const b = await db.prepare(
+    `SELECT b.nummer, b.kunde_id, k.name, k.email, c.titel, t.art, t.datum, t.von, t.bis
+     FROM bestellungen b JOIN kunden k ON k.id = b.kunde_id JOIN chargen c ON c.id = b.charge_id
+     LEFT JOIN termine t ON t.id = b.termin_id WHERE b.id = ?`
+  ).bind(bestellungId).first();
+  if (!b || !b.email || !ctx.env.RESEND_API_KEY) return false;
+  const { results: zeilen } = await db.prepare(
+    `SELECT produkt_name, art, menge, einzelpreis_cent, betrag_cent, geschaetzt
+     FROM v_positionen WHERE bestellung_id = ? ORDER BY id`
+  ).bind(bestellungId).all();
+  const termin = b.datum ? { art: b.art, datum: b.datum, von: b.von, bis: b.bis } : null;
+  const eckdaten = kasten(`<strong>Bestellnummer ${escapeHtml(b.nummer)}</strong><br>${escapeHtml(b.titel)}`
+    + (art === 'nachgerueckt' ? `<br>${escapeHtml(termin ? terminText(termin) : 'Den Termin stimmen wir noch mit euch ab.')}` : ''));
+
+  let betreff;
+  let titel;
+  let teile;
+  if (art === 'nachgerueckt') {
+    const link = `${ctx.origin}/meine-bestellungen.html#${await kundenLinkErstellen(db, b.kunde_id)}`;
+    betreff = `Gute Nachricht: eure Bestellung ${b.nummer} ist fix – ${BETRIEB}`;
+    titel = 'Ihr seid nachgerückt';
+    teile = [
+      absatz(`Hallo ${escapeHtml(b.name)},`),
+      absatz('gute Nachricht: Es ist etwas frei geworden – eure Bestellung von der Warteliste ist jetzt <strong>fix vorgemerkt</strong>.'),
+      eckdaten,
+      positionenHtml(zeilen),
+      knopf(link, 'Meine Bestellungen ansehen'),
+      klein('Euer persönlicher Link – bitte nicht weitergeben.'),
+      absatz('Passt es doch nicht mehr? Bitte gebt uns kurz Bescheid, dann rückt der Nächste nach: <a href="tel:+436642166181">+43 664 2166181</a> (auch WhatsApp).'),
+      gruss,
+    ];
+  } else {
+    const warteliste = art === 'gestrichen';
+    betreff = warteliste
+      ? `Warteliste: Bestellung ${b.nummer} – ${BETRIEB}`
+      : `Eure Bestellung ${b.nummer} wurde storniert – ${BETRIEB}`;
+    titel = warteliste ? 'Von der Warteliste gestrichen' : 'Eure Bestellung wurde storniert';
+    teile = [
+      absatz(`Hallo ${escapeHtml(b.name)},`),
+      absatz(warteliste
+        ? 'leider ist für eure Bestellung auf der Warteliste nichts mehr frei geworden – wir haben sie deshalb gestrichen. Beim nächsten Mal klappt es hoffentlich!'
+        : 'eure Bestellung ist bei uns <strong>storniert</strong>.'),
+      eckdaten,
+      positionenHtml(zeilen),
+      absatz(`Falls das ein Versehen ist oder ihr Fragen habt, meldet euch bitte:
+        <a href="tel:+436642166181">+43 664 2166181</a> (auch WhatsApp) oder einfach auf diese E-Mail antworten.`),
+      warteliste ? absatz('Wenn ihr wollt, merken wir euch gern für die nächste Bestellrunde vor.') : '',
+      gruss,
+    ];
+  }
+  const erg = await mailSenden(ctx.env, {
+    an: b.email,
+    betreff,
+    antwortAn: ctx.env.CONTACT_TO || 'info@kruckenhaus.at',
+    html: mailHtml({ titel, vorschau: `Bestellung ${b.nummer} – ${b.titel}`, inhalt: teile.join('') }),
+  });
+  return erg.gesendet;
+}
+
+async function bestellungAendern(db, bestellungId, e, ctx = {}) {
   const bid = nummer(bestellungId, 'Bestellnummer');
   const aenderung = (sql, ...werte) => db.prepare(
     `UPDATE bestellungen SET ${sql}, geaendert_am = datetime('now') WHERE id = ?`
@@ -566,11 +638,23 @@ async function bestellungAendern(db, bestellungId, e) {
     case 'notiz':
       r = await aenderung('interne_notiz = ?', textOderNull(e.text, 1000));
       break;
-    case 'stornieren':
-      r = await aenderung(`status = 'storniert'`);
-      break;
-    case 'nachruecken':
-      return { bestellung: await bestellungNachruecken(db, bid) };
+    case 'stornieren': {
+      const vorher = await db.prepare('SELECT status FROM bestellungen WHERE id = ?').bind(bid).first();
+      if (!vorher) throw new EingabeFehler('Bestellung nicht gefunden.');
+      if (vorher.status === 'storniert') return { mail: false };
+      await aenderung(`status = 'storniert'`);
+      // Mail an den Kunden (außer ausdrücklich abgewählt)
+      const mail = e.mail === false ? false
+        : await kundenMail(db, ctx, bid, vorher.status === 'warteliste' ? 'gestrichen' : 'storniert');
+      return { mail };
+    }
+    case 'nachruecken': {
+      const vorher = await db.prepare('SELECT status FROM bestellungen WHERE id = ?').bind(bid).first();
+      const bestellung = await bestellungNachruecken(db, bid);
+      const mail = vorher && vorher.status === 'warteliste' && bestellung.status === 'vorgemerkt' && e.mail !== false
+        ? await kundenMail(db, ctx, bid, 'nachgerueckt') : false;
+      return { bestellung, mail };
+    }
     case 'gewicht': {
       const gewichtG = ganzzahl(e.gewichtG, 'Gewicht', { min: 1, max: 200000, leer: true });
       r = await gewichtSetzen(db, bid, nummer(e.positionId, 'Position'), gewichtG).run();
@@ -803,7 +887,7 @@ export async function onRequest({ request, env, params, data }) {
 
     let ergebnis;
     if (bereich === 'bestellung' && pfad.length === 1) ergebnis = { bestellung: await bestellungErfassen(db, eingabe) };
-    else if (bereich === 'bestellung' && pfad.length === 2) ergebnis = await bestellungAendern(db, teilId, eingabe);
+    else if (bereich === 'bestellung' && pfad.length === 2) ergebnis = await bestellungAendern(db, teilId, eingabe, { env, origin: new URL(request.url).origin });
     else if (bereich === 'charge' && pfad.length === 1) ergebnis = await chargeAnlegen(db, eingabe);
     else if (bereich === 'charge' && pfad.length === 2) ergebnis = await chargeBearbeiten(db, teilId, eingabe);
     else if (bereich === 'charge' && unteraktion === 'status' && pfad.length === 3) {

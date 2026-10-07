@@ -107,11 +107,43 @@ ok(await api('POST', `bestellung/${b1}`, { aktion: 'bezahlt', art: null }));
 assert.equal(roh.prepare('SELECT bezahlt_art FROM bestellungen WHERE id = ?').get(Number(b1)).bezahlt_art, null);
 console.log('✓ Wiegen (nur Gewichtsware), übergeben, bezahlt mit Betrag, rückgängig');
 
-// Stornieren → Warteliste rückt nach
-ok(await api('POST', `bestellung/${b1}`, { aktion: 'stornieren' }));
+// Stornieren → Warteliste rückt nach; beide Kunden bekommen eine Mail
+const mails = [];
+const fetchVorher = globalThis.fetch;
+globalThis.fetch = async (url, optionen) => {
+  assert.equal(url, 'https://api.resend.com/emails');
+  mails.push(JSON.parse(optionen.body));
+  return new Response('{}', { status: 200 });
+};
+env.RESEND_API_KEY = 'test';
+roh.prepare(`UPDATE kunden SET email = 'maria@example.at' WHERE name = 'Maria Test'`).run();
+roh.prepare(`UPDATE kunden SET email = 'hans@example.at' WHERE name = 'Hans Test'`).run();
+r = ok(await api('POST', `bestellung/${b1}`, { aktion: 'stornieren' }));
+assert.equal(r.mail, true);
+assert.equal(mails[0].to, 'maria@example.at');
+assert.match(mails[0].subject, /storniert – Bergbauernhof Kruckenhaus/);
+assert.match(mails[0].html, /Bergbauernhof Kruckenhaus/);
+assert.match(mails[0].text, /eure Bestellung ist bei uns storniert/);
+assert.doesNotMatch(mails[0].text, /<[a-z]/, 'Nur-Text ohne HTML');
+r = ok(await api('POST', `bestellung/${b1}`, { aktion: 'stornieren' }));
+assert.equal(mails.length, 1, 'schon storniert → keine zweite Mail');
 r = ok(await api('POST', `bestellung/${b3}`, { aktion: 'nachruecken' }));
 assert.equal(r.bestellung.status, 'vorgemerkt');
-console.log('✓ Stornieren und Nachrücken');
+assert.equal(r.mail, true);
+assert.equal(mails[1].to, 'hans@example.at');
+assert.match(mails[1].html, /Ihr seid nachgerückt/);
+assert.match(mails[1].html, /meine-bestellungen\.html#[A-Za-z0-9_-]{43}/);
+assert.match(mails[1].text, /Masthuhn ganz/);
+// Ohne E-Mail-Adresse oder mit { mail: false }: keine Mail, Aktion klappt trotzdem
+roh.prepare(`UPDATE kunden SET email = NULL WHERE name = 'Hans Test'`).run();
+r = ok(await api('POST', `bestellung/${b3}`, { aktion: 'stornieren' }));
+assert.equal(r.mail, false);
+r = ok(await api('POST', `bestellung/${b3}`, { aktion: 'nachruecken' }));
+assert.equal(r.mail, false, 'storniert → wieder da ist kein Nachrücken von der Warteliste');
+assert.equal(mails.length, 2);
+delete env.RESEND_API_KEY;
+globalThis.fetch = fetchVorher;
+console.log('✓ Stornieren und Nachrücken, Mail an den Kunden (nur mit E-Mail-Adresse)');
 
 // Voranmeldung → übernehmen → Termin offen → Termin setzen
 r = ok(await api('POST', 'voranmeldung', { kunde: { name: 'Vera Voran' }, produktId: nudeln, menge: 2, zeitraum: 'naechste', quelle: 'telefon' }));

@@ -2387,7 +2387,8 @@ function initKlicks() {
         break;
       }
       case 'stornieren':
-        bestellungAendern(b, { aktion: 'stornieren' }, () => { b.status = 'storniert'; }, `${b.nummer} storniert.`);
+        bestellungAendern(b, { aktion: 'stornieren' }, () => { b.status = 'storniert'; },
+          (erg) => `${b.nummer} storniert.${erg && erg.mail ? ' Kunde per E-Mail informiert.' : ''}`);
         break;
       case 'wiederherstellen':
       case 'nachruecken': {
@@ -2398,7 +2399,7 @@ function initKlicks() {
           return { bestellung: { status: b.status } };
         }, {
           erfolg: (erg) => (erg.bestellung.status === 'vorgemerkt'
-            ? `${name} ist jetzt vorgemerkt.`
+            ? `${name} ist jetzt vorgemerkt.${erg.mail ? ' Kunde per E-Mail informiert.' : ''}`
             : 'Nicht genug frei – bleibt auf der Warteliste.'),
         });
         break;
