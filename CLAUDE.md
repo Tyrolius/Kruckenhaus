@@ -49,8 +49,8 @@ hofladen-produkte.sql      Produktkatalog der Hofladen-Vorbestellung (Erstbefül
 functions/_lib/hofladen.js gemeinsame Helfer der Hofladen-Functions (keine Route)
 functions/_lib/zugang.js   Prüfung der Cloudflare-Access-Anmeldung
 functions/api/verwaltung/  Schnittstelle der Verwaltung (_middleware.js = Zugang)
-verwaltung/                Hofladen-Verwaltung; ?entwurf = Beispielmodus
-hofladen.html + js/hofladen.js   Bestellseite für Kunden (noch noindex, nicht verlinkt)
+verwaltung/                Hofladen-Verwaltung (inkl. Produktkatalog); ?entwurf = Beispielmodus
+hofladen.html + js/hofladen.js   Bestellseite mit Sortiment für Kunden (noch noindex, nicht verlinkt)
 vorschau.html              Übergangs-Startseite, solange Fotos fehlen; aktiv über den
                            Block „VORSCHAU-MODUS“ in _redirects (zum Livegang löschen)
 meine-bestellungen.html + js/meine-bestellungen.js   Ansicht zum persönlichen Link

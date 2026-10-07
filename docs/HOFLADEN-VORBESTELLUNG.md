@@ -4,7 +4,7 @@ Stand: September 2026 · Status: **Phase 1, 2 und 4 programmiert; Phase 4 wartet
 
 > Kurzfassung: Statt Vorbestellungen in mehreren WhatsApp-Gruppen zu sammeln,
 > bekommt kruckenhaus.at eine Vorbestellseite für Fleisch, Eiernudeln und
-> Honig. Jede Schlachtung oder Lieferung ist eine **Charge** mit fester Menge,
+> Honig. Jede Schlachtung oder Lieferung ist eine **Bestellrunde** mit fester Menge,
 > Bestellschluss und Abhol-/Liefertermin. Kunden bestellen selbst, die Menge
 > zählt automatisch herunter, und Kathrin und Florian sehen alles in **einer**
 > Liste – am Handy und am PC: wer was bestellt hat, was gewogen ist, was geliefert und was
@@ -27,7 +27,7 @@ Stand: September 2026 · Status: **Phase 1, 2 und 4 programmiert; Phase 4 wartet
 | WhatsApp-Schnittstelle (Cloud API)? | Nein – nur Knöpfe mit fertigem Text, siehe Abschnitt 8 |
 | Online-Zahlung? | Nein – bar oder Überweisung, siehe Abschnitt 5 |
 | Bestellnummern? | `2026-001` – Jahr und laufende Nummer |
-| Voranmeldungen für spätere Chargen? | Ja – unverbindlich, feste Zeiträume, durch Verwaltung **und** Kunden selbst (Abschnitt 3a) |
+| Voranmeldungen für spätere Bestellrunden? | Ja – unverbindlich, feste Zeiträume, durch Verwaltung **und** Kunden selbst (Abschnitt 3a) |
 
 ### 0.1 Entwurf der Verwaltung
 
@@ -39,7 +39,7 @@ Datenbank, ohne Mails, ohne Anmeldung:
 |---|---|
 | `verwaltung/index.html` | Gerüst, Navigation (Handy: unten, PC: links) |
 | `verwaltung/verwaltung.js` | Ansichten Übersicht, Bestellungen, Erfassen, Wiegen, Übergabe, Zahlungen; Excel-Export; Packzettel-Druck |
-| `verwaltung/entwurf-daten.js` | Beispieldaten (zwei Chargen, 19 Bestellungen) |
+| `verwaltung/entwurf-daten.js` | Beispieldaten (zwei Bestellrunden, 19 Bestellungen) |
 | `css/style.css` Abschnitt 40 | Gestaltung der Verwaltung |
 
 **Excel:** „Liste für Excel herunterladen" erzeugt eine CSV-Datei
@@ -60,7 +60,7 @@ darf deshalb auch vor der Access-Einrichtung auf `master`.
 | Punkt | Entscheidung |
 |---|---|
 | Produkte | siehe Tabelle unten und `hofladen-produkte.sql` |
-| Verkaufsform | Vorbestellung je Charge, wenige Chargen im Jahr |
+| Verkaufsform | Vorbestellung je Bestellrunde, wenige Bestellrunden im Jahr |
 | Übergabe | Abholung am Hof **oder** Lieferung im Umkreis |
 | Zahlung | Bar bei Übergabe **oder** Überweisung |
 | Nutzer der Verwaltung | Kathrin und Florian, gleichberechtigt, am Handy **und** am Windows-PC |
@@ -84,27 +84,27 @@ darf deshalb auch vor der Access-Einrichtung auf `master`.
 
 - **Rindfleischpakete** enthalten Schnitzel, Braten, Gulasch, Faschiertes und
   Suppenfleisch; Suppenknochen gibt es gratis dazu.
-- **Nudelsorten** sind nicht immer alle verfügbar: In eine Charge kommen nur
+- **Nudelsorten** sind nicht immer alle verfügbar: In eine Bestellrunde kommen nur
   die Sorten, die gerade da sind, mit der vorhandenen Menge als Kontingent.
 - **Saisonprodukte** sind normale Produkte der Kategorie „Saison": anlegen,
   wenn es sie gibt, nach der Saison ausblenden (nicht löschen) – im nächsten
   Jahr wieder einblenden, der Preis vom letzten Mal ist vorbelegt.
-- Nudeln, Honig und Seife laufen als **Zusatzartikel** in jeder Charge mit.
+- Nudeln, Honig und Seife laufen als **Zusatzartikel** in jeder Bestellrunde mit.
 
-## 2. So läuft eine Charge ab (Alltag)
+## 2. So läuft eine Bestellrunde ab (Alltag)
 
 So sieht es für Kathrin und Florian aus, ohne Technik:
 
-1. **Charge anlegen** (Verwaltung → „Neue Charge"):
+1. **Bestellrunde anlegen** (Verwaltung → „Neue Bestellrunde"):
    z. B. *„Masthühner Herbst"*, 40 Stück, 13,90 €/kg, Bestellschluss
    10.10., Abholung Sa 18.10. 9–12 Uhr, Lieferung Fr 17.10. nachmittags.
-   Eiernudeln und Honig kann man jeder Charge als Zusatzartikel mitgeben.
+   Eiernudeln und Honig kann man jeder Bestellrunde als Zusatzartikel mitgeben.
 2. **Ankündigen:** In der Verwaltung auf „Ankündigung" tippen. Dann:
    - geht eine E-Mail an alle Kunden, die Neuigkeiten erhalten wollen, und
    - erscheint ein fertiger Text mit Link, den man in die WhatsApp-Gruppen
      oder den WhatsApp-Kanal kopiert.
    - Optional: Stammkunden bekommen einen eigenen Link und können **ein paar
-     Tage früher** bestellen, bevor die Charge für alle freigegeben wird.
+     Tage früher** bestellen, bevor die Bestellrunde für alle freigegeben wird.
 3. **Bestellungen laufen ein:** Jede Bestellung ist sofort verbindlich
    vorgemerkt, der Kunde bekommt eine Bestätigungsmail, und Kathrin und
    Florian bekommen eine kurze Mail „Neue Vorbestellung". Ist das Kontingent
@@ -134,8 +134,8 @@ So sieht es für Kathrin und Florian aus, ohne Technik:
    noch überweisen muss. Kommt Geld am Konto an, in der Liste auf „bezahlt"
    tippen. Die Zahlungsreferenz (z. B. `2026-014`) macht das Zuordnen
    einfach.
-10. **Charge abschließen:** Wenn alles übergeben und bezahlt ist, wird die
-    Charge archiviert. Umsatz, Stück, Kilo bleiben für den Jahresüberblick
+10. **Bestellrunde abschließen:** Wenn alles übergeben und bezahlt ist, wird die
+    Bestellrunde archiviert. Umsatz, Stück, Kilo bleiben für den Jahresüberblick
     erhalten.
 
 ## 3. Produkte und Preislogik
@@ -148,31 +148,31 @@ So sieht es für Kathrin und Florian aus, ohne Technik:
 
 - Jedes Produkt wird **einmal** im Produktkatalog angelegt (Name,
   Beschreibung, Allergene/Pflichtangaben, Einheit, Richtgewicht, Foto).
-- In der Charge wird es mit **Preis und Kontingent** angeboten. So kann der
-  Kilopreis von Charge zu Charge anders sein, ohne dass alte Bestellungen sich
+- In der Bestellrunde wird es mit **Preis und Kontingent** angeboten. So kann der
+  Kilopreis von Bestellrunde zu Bestellrunde anders sein, ohne dass alte Bestellungen sich
   ändern.
-- **Preise anpassen (entschieden):** Beim Anlegen einer neuen Charge sind
+- **Preise anpassen (entschieden):** Beim Anlegen einer neuen Bestellrunde sind
   Preis, Menge und Höchstmenge jedes Produkts mit den Werten der **letzten
-  Charge** vorbelegt (Ansicht `v_letzter_preis`); geändert wird nur, was sich
+  Bestellrunde** vorbelegt (Ansicht `v_letzter_preis`); geändert wird nur, was sich
   geändert hat. Jede Bestellung speichert ihren Preis zum Bestellzeitpunkt –
   Preisänderungen gelten nur für neue Bestellungen.
 - **Rind-Paketinhalt** (z. B. „Steaks, Braten, Gulasch, Faschiertes,
   Suppenfleisch") steht in der Produktbeschreibung.
 - Beträge werden intern in **Cent**, Gewichte in **Gramm** gespeichert
   (keine Rundungsfehler).
-- Optional je Charge: **Höchstmenge pro Bestellung** (z. B. max. 2 Gänse),
+- Optional je Bestellrunde: **Höchstmenge pro Bestellung** (z. B. max. 2 Gänse),
   damit nicht einer alles nimmt.
 
-## 3a. Voranmeldungen für spätere Chargen
+## 3a. Voranmeldungen für spätere Bestellrunden
 
 Kunden melden sich oft schon lange vorher an, z. B. im Frühjahr für die
 Herbst-Hühner. Das wird **getrennt von Bestellungen** geführt:
 
 | | Voranmeldung | Bestellung |
 |---|---|---|
-| Gebunden an | Produkt | konkrete Charge |
-| Zeitraum | feste Auswahl: nächste Charge, Frühjahr, Sommer, Herbst, Martini, Weihnachten (mit Jahr) | Abhol-/Liefertermin |
-| Preis | keiner (höchstens „zuletzt …" als Orientierung) | fix aus der Charge |
+| Gebunden an | Produkt | konkrete Bestellrunde |
+| Zeitraum | feste Auswahl: nächste Bestellrunde, Frühjahr, Sommer, Herbst, Martini, Weihnachten (mit Jahr) | Abhol-/Liefertermin |
+| Preis | keiner (höchstens „zuletzt …" als Orientierung) | fix aus der Bestellrunde |
 | Kontingent | zählt nicht | zählt |
 | Verbindlich | nein, für beide Seiten | ja |
 
@@ -184,15 +184,15 @@ Herbst-Hühner. Das wird **getrennt von Bestellungen** geführt:
 2. **Planen:** Die Verwaltung zeigt je Zeitraum und Produkt die Summe
    („Frühjahr 2027: 9 Masthühner von 3 Kunden") – Grundlage, wie viele Küken
    und Gänse eingestellt werden.
-3. **Übernehmen:** Beim Anlegen der passenden Charge zeigt die Verwaltung
-   „N Voranmeldungen passen zu dieser Charge". Vorausgewählt sind „nächste
-   Charge" und die Saison des ersten Termins der Charge (änderbar). Ein Tipp
+3. **Übernehmen:** Beim Anlegen der passenden Bestellrunde zeigt die Verwaltung
+   „N Voranmeldungen passen zu dieser Bestellrunde". Vorausgewählt sind „nächste
+   Bestellrunde" und die Saison des ersten Termins der Bestellrunde (änderbar). Ein Tipp
    macht daraus Bestellungen – je Kunde eine, mit dem aktuellen Preis, in der
    Reihenfolge der Anmeldung. Reicht die Menge nicht, landen die späteren auf
    der Warteliste. Das passiert **vor** der öffentlichen Ankündigung.
 4. **Bestätigen:** Übernommene Bestellungen haben noch **keinen Termin**
    („Termin offen"). Der WhatsApp-Knopf „Bestätigung" schickt Preis und die
-   Termine der Charge und fragt Termin und Zahlart ab; die Antwort wird in
+   Termine der Bestellrunde und fragt Termin und Zahlart ab; die Antwort wird in
    der Bestellung mit einem Tipp gesetzt.
 5. **Absagen:** Voranmeldungen lassen sich jederzeit absagen; übernommene
    Bestellungen werden wie jede Bestellung storniert (Warteliste rückt nach).
@@ -203,7 +203,7 @@ läuft je Kunde in einer Transaktion, nichts wird doppelt übernommen.
 
 ## 4. Abholung und Lieferung
 
-- Jede Charge hat einen oder mehrere **Termine**: Abholzeitfenster am Hof und
+- Jede Bestellrunde hat einen oder mehrere **Termine**: Abholzeitfenster am Hof und
   Liefertermin(e). Der Kunde wählt beim Bestellen.
 - **Liefergebiet (festgelegt):** 6252 Breitenbach am Inn, 6233 Kramsach,
   6230 Brixlegg, 6250 Kundl – gepflegt in der Tabelle `liefergebiet`
@@ -231,7 +231,7 @@ läuft je Kunde in einer Transaktion, nichts wird doppelt übernommen.
   keine Anzahlung – passt zu Stammkunden und vermeidet Rückzahlungen bei
   Gewichtsabweichungen.
 - **Keine Online-Zahlung** (Karte/PayPal/Stripe): unnötige Gebühren und
-  Aufwand für wenige Chargen. Kann später ergänzt werden, falls gewünscht.
+  Aufwand für wenige Bestellrunden. Kann später ergänzt werden, falls gewünscht.
 - IBAN/BIC werden als Cloudflare-Variable hinterlegt (nicht geheim, aber
   zentral änderbar), nicht fest im Code.
 
@@ -240,14 +240,14 @@ läuft je Kunde in einer Transaktion, nichts wird doppelt übernommen.
 **Aufbau (mobil zuerst, wie der Rest der Website):**
 
 1. Kurze Einleitung: „Fleisch, Nudeln und Honig vom Hof – auf Vorbestellung".
-2. **Aktuelle Chargen** als Karten: Produkt, Foto, Preis (bzw. Kilopreis
+2. **Aktuelle Bestellrunden** als Karten: Produkt, Foto, Preis (bzw. Kilopreis
    mit „ca."-Preis je Stück), **noch verfügbar: 12 von 40**, Bestellschluss,
    Termine. Ausverkauft → „Auf die Warteliste".
-3. **Voranmelden:** Für jedes Produkt – auch wenn gerade keine Charge offen
+3. **Voranmelden:** Für jedes Produkt – auch wenn gerade keine Bestellrunde offen
    oder es ausverkauft ist – „Für später vormerken": Produkt, Menge,
    Zeitraum (feste Auswahl), Name, Telefon oder E-Mail. Deutlich als
    **unverbindlich** gekennzeichnet; Bestätigungsmail „Voranmeldung
-   erhalten". Optional dazu „Bei neuen Chargen Bescheid geben" (E-Mail,
+   erhalten". Optional dazu „Bei neuen Bestellrunden Bescheid geben" (E-Mail,
    ausdrückliche Einwilligung).
 4. **Bestellformular** (eine Seite, keine Registrierung, kein Konto):
    - Mengen je Artikel (Plus/Minus-Knöpfe)
@@ -255,7 +255,7 @@ läuft je Kunde in einer Transaktion, nichts wird doppelt übernommen.
    - Name, Telefon, E-Mail
    - Zahlungswunsch: bar / Überweisung
    - Anmerkung (z. B. „Gans lieber größer")
-   - Häkchen: Neuigkeiten zu neuen Chargen per E-Mail (freiwillig)
+   - Häkchen: Neuigkeiten zu neuen Bestellrunden per E-Mail (freiwillig)
    - Hinweis auf Datenschutz und die Bestellbedingungen
    - Zusammenfassung mit „ca."-Summe, Knopf **„Verbindlich vorbestellen"**
 5. **Bestätigung** auf der Seite und per Mail mit Bestellnummer, Inhalt,
@@ -288,14 +288,14 @@ Startbildschirm ablegen, dann fühlt es sich wie eine App an. Beide sehen
 immer denselben Stand.
 
 **Ansichten** (große Knöpfe, für Daumen gebaut, am PC mit Seitenleiste, druckbar).
-Im Entwurf (Abschnitt 0.1) schon zum Durchklicken: Start, Charge,
+Im Entwurf (Abschnitt 0.1) schon zum Durchklicken: Start, Bestellrunde,
 Bestellung erfassen, Wiegen, Packzettel, Abholung, Liefertour, Zahlungen,
 Warteliste, Voranmeldungen, Termin offen, Export.
 
 | Ansicht | Inhalt |
 |---|---|
-| **Start** | Offene Chargen mit Ampel: bestellt / Kontingent, Tage bis Bestellschluss, offene Zahlungen gesamt |
-| **Charge** | Alle Bestellungen der Charge, Filter (Abholung/Lieferung/offen/bezahlt), Suche nach Name; Summen je Artikel |
+| **Start** | Offene Bestellrunden mit Ampel: bestellt / Kontingent, Tage bis Bestellschluss, offene Zahlungen gesamt |
+| **Bestellrunde** | Alle Bestellungen der Bestellrunde, Filter (Abholung/Lieferung/offen/bezahlt), Suche nach Name; Summen je Artikel |
 | **Bestellung erfassen** | Für Telefon/WhatsApp: Kunde suchen (Name/Telefon) oder neu, Mengen, Termin – zählt vom Kontingent ab |
 | **Wiegen** | Eine Zeile je Gewichtsware, Gewicht eintippen, Endbetrag erscheint sofort |
 | **Packliste / Etiketten** | Druckansicht je Bestellung: Name, Inhalt, Gewicht, Betrag, Abholung/Lieferung |
@@ -303,12 +303,12 @@ Warteliste, Voranmeldungen, Termin offen, Export.
 | **Liefertour** | Nach Ort sortiert, Adresse, Anruf- und Navigationslink, Abhaken |
 | **Offene Zahlungen** | Wer noch zahlen muss, mit Zahlungsreferenz; „bezahlt"-Knopf |
 | **Warteliste** | Nachrücken mit einem Tipp (Kunde bekommt Mail) |
-| **Voranmeldungen** | Planung je Zeitraum, erfassen, absagen, in die Charge übernehmen (Abschnitt 3a) |
+| **Voranmeldungen** | Planung je Zeitraum, erfassen, absagen, in die Bestellrunde übernehmen (Abschnitt 3a) |
 | **Termin offen** | Filter für übernommene Voranmeldungen; Termin und Zahlart mit einem Tipp setzen, WhatsApp „Bestätigung" |
 | **Kunden** | Kartei mit Bestellhistorie, Notizen („liefert immer an Nachbarn"), Stammkunde ja/nein, Newsletter-Einwilligung |
 | **Produkte** | Katalog pflegen (Texte, Allergene, Richtgewicht, Foto) |
-| **Chargen** | Neu anlegen, bearbeiten, Bestellung öffnen/schließen, archivieren; Jahresübersicht (Stück, kg, Umsatz) |
-| **Export** | Datei für Excel (CSV) aller Bestellungen einer Charge oder eines Jahres – Spalten passend zur bestehenden Abrechnungsliste |
+| **Bestellrunden** | Neu anlegen, bearbeiten, Bestellung öffnen/schließen, archivieren; Jahresübersicht (Stück, kg, Umsatz) |
+| **Export** | Datei für Excel (CSV) aller Bestellungen einer Bestellrunde oder eines Jahres – Spalten passend zur bestehenden Abrechnungsliste |
 
 **Status einer Bestellung** (bewusst wenige, gut lesbar):
 
@@ -331,7 +331,7 @@ ein Gewicht eingetragen ist.
 | Neue Bestellung eingegangen | Kathrin + Florian | Mail (automatisch) |
 | Von Warteliste nachgerückt | Kunde | Mail (auf Knopfdruck) |
 | ~~Abholbereit mit Endbetrag~~ | – | entfällt: Endbetrag erst bei der Übergabe (Packzettel) |
-| Neue Charge | Kunden mit Einwilligung | Mail (auf Knopfdruck) + „Ankündigung für WhatsApp“ (Kanal, Übertragungsliste, Gruppe) |
+| Neue Bestellrunde | Kunden mit Einwilligung | Mail (auf Knopfdruck) + „Ankündigung für WhatsApp“ (Kanal, Übertragungsliste, Gruppe) |
 | Einzelne Rückfrage / „ist fertig“ | Kunde | WhatsApp-Knopf mit vorbereitetem Text (öffnet WhatsApp am Handy) |
 
 - Versand über **Resend** (schon eingerichtet, gratis bis 3.000 Mails/Monat,
@@ -347,7 +347,7 @@ ein Gewicht eingetragen ist.
     WhatsApp am Handy mit fertigem Text „ist fertig“ samt Betrag und Termin
     an genau diesen Kunden – nur noch auf Senden tippen.
   - **„Ankündigung für WhatsApp“** in der Übersicht: fertiger Text zur
-    Charge (Artikel, Preise, Termine, Bestellschluss, Link zur
+    Bestellrunde (Artikel, Preise, Termine, Bestellschluss, Link zur
     Vorbestellseite), vorher änderbar. „In WhatsApp öffnen“ lässt Kanal,
     Übertragungsliste oder Gruppe auswählen; alternativ „Text kopieren“.
   - Für Ankündigungen die **Übertragungslisten** der WhatsApp-Business-App
@@ -370,7 +370,7 @@ js/hofladen.js                          Angebot laden, Formular, Summen
 verwaltung/index.html                   Verwaltung (eine Seite, mehrere Ansichten) – Entwurf vorhanden
 verwaltung/verwaltung.js                Logik der Verwaltung – Entwurf vorhanden
 verwaltung/entwurf-daten.js             Beispieldaten – entfällt in Phase 2
-functions/api/hofladen/angebot.js       GET  – offene Chargen + Restmengen
+functions/api/hofladen/angebot.js       GET  – offene Bestellrunden + Restmengen
 functions/api/hofladen/bestellung.js    POST – Bestellung aufgeben
 functions/api/hofladen/voranmeldung.js  POST – Voranmeldung durch Kunden
 functions/api/hofladen/newsletter.js    POST – An-/Abmeldung Neuigkeiten
@@ -445,7 +445,7 @@ bestell_positionen id, bestellung_id, charge_artikel_id, menge,
 
 | Route | Methode | Zweck | Schutz |
 |---|---|---|---|
-| `/api/hofladen/angebot` | GET | offene Chargen, Artikel, Restmengen, Termine, Liefergebiet | öffentlich (mit `?t=` Stammkunden-Token für Vorab-Chargen) |
+| `/api/hofladen/angebot` | GET | offene Bestellrunden, Artikel, Restmengen, Termine, Liefergebiet | öffentlich (mit `?t=` Stammkunden-Token für Vorab-Bestellrunden) |
 | `/api/hofladen/bestellung` | POST | Bestellung aufgeben | öffentlich, Honeypot, Plausibilitätsprüfung, Bestellschluss |
 | `/api/hofladen/voranmeldung` | POST | Voranmeldung durch Kunden | öffentlich, Honeypot, Plausibilitätsprüfung |
 | `/api/hofladen/newsletter` | POST | Anmelden/Abmelden | öffentlich, Abmelden nur mit Token |
@@ -490,9 +490,13 @@ Keine Rechtsberatung – bitte mit der **Landwirtschaftskammer Tirol**
       der Bestellung auf der Seite stehen – Zutaten, Allergene (Eiernudeln:
       Ei, Gluten), Füllmenge, Herkunft, Betrieb.
 - [ ] **Rücktrittsrecht:** Für schnell verderbliche Lebensmittel besteht
-      kein 14-tägiges Rücktrittsrecht (FAGG § 18 Abs. 1 Z 4). Honig und
-      Nudeln sind nicht schnell verderblich – klären, ob für diese ein
-      Rücktrittsrecht bzw. eine Widerrufsbelehrung nötig ist.
+      kein 14-tägiges Rücktrittsrecht (FAGG § 18 Abs. 1 Z 4). Für Honig,
+      Nudeln und Seife gilt es – Belehrung und Muster-Widerrufsformular
+      stehen in den Bestellbedingungen (Entwurf, prüfen lassen).
+- [x] **Widerrufsbutton (§ 13a FAGG, Pflicht seit 2026):** „Vertrag
+      widerrufen" in „Meine Bestellungen" und als Formular auf
+      `hofladen.html` (#widerrufen), Eingangsbestätigung per E-Mail mit
+      Zeitpunkt, Anzeige in der Verwaltung – umgesetzt.
 - [ ] **Kurze Bestellbedingungen** (Vorbestellung verbindlich, Endpreis
       nach Gewicht, Stornierung bis Bestellschluss, Lieferbedingungen,
       Zahlung) – als eigener Abschnitt auf `hofladen.html`.
@@ -551,16 +555,16 @@ kommt danach.
 |---|---|---|---|
 | **0 – Entwurf** | Anklickbare Verwaltung mit Beispieldaten, Excel-Export, WhatsApp-Knöpfe, Voranmeldungen | Bedienung prüfen | **erledigt** |
 | **1 – Grundlage** | `schema-hofladen.sql`, Tabellen in D1 anlegen, gemeinsame Helfer (`functions/_lib/`), Produktkatalog und Liefergebiet befüllen | Datenbank steht | **teilweise** – `schema-hofladen.sql` (inkl. Voranmeldungen), Produktkatalog `hofladen-produkte.sql`, `functions/_lib/hofladen.js` und Test `scripts/test-hofladen-db.mjs` fertig; Produkte und Liefergebiet in `hofladen-produkte.sql` fertig; **offen: beide Dateien in D1 einspielen** |
-| **2 – Verwaltung live** | Cloudflare Access einrichten, Token-Prüfung, `/api/verwaltung/…`; Entwurf an echte Daten anschließen: Chargen anlegen, Bestellung erfassen, Bestellliste, Status, Voranmeldungen erfassen und übernehmen, Excel-Export nach Vorlage | Kathrin und Florian führen eine Charge komplett in einer Liste (Bestellungen per WhatsApp/Telefon) | **programmiert** – Zugangsprüfung, Schnittstelle, Oberfläche an echten Daten, Chargen-Formular, Kontakt ändern; getestet (Tests + Browser gegen lokale D1). Offen: Access einrichten, Datenbank anlegen, veröffentlichen |
-| **3 – Wiegen, Zahlung, Übergabe** | Gewichte speichern, Endbeträge, Packzettel, Abholliste, Liefertour, offene Zahlungen, Packzettel mit Endbetrag und Bankdaten (kein Vorab-Versand) | Ablauf nach der Schlachtung läuft | **programmiert** – Wiegen, Übergabe (Abholung/Liefertour), offene Zahlungen, Excel-Export, Packzettel mit Endbetrag, Bankdaten und Überweisungs-QR-Code; getestet. Offen: Testlauf mit echter Charge, Excel-Spalten nach eurer Vorlage |
+| **2 – Verwaltung live** | Cloudflare Access einrichten, Token-Prüfung, `/api/verwaltung/…`; Entwurf an echte Daten anschließen: Bestellrunden anlegen, Bestellung erfassen, Bestellliste, Status, Voranmeldungen erfassen und übernehmen, Excel-Export nach Vorlage | Kathrin und Florian führen eine Bestellrunde komplett in einer Liste (Bestellungen per WhatsApp/Telefon) | **programmiert** – Zugangsprüfung, Schnittstelle, Oberfläche an echten Daten, Bestellrunden-Formular, Kontakt ändern; getestet (Tests + Browser gegen lokale D1). Offen: Access einrichten, Datenbank anlegen, veröffentlichen |
+| **3 – Wiegen, Zahlung, Übergabe** | Gewichte speichern, Endbeträge, Packzettel, Abholliste, Liefertour, offene Zahlungen, Packzettel mit Endbetrag und Bankdaten (kein Vorab-Versand) | Ablauf nach der Schlachtung läuft | **programmiert** – Wiegen, Übergabe (Abholung/Liefertour), offene Zahlungen, Excel-Export, Packzettel mit Endbetrag, Bankdaten und Überweisungs-QR-Code; getestet. Offen: Testlauf mit echter Bestellrunde, Excel-Spalten nach eurer Vorlage |
 | **4 – Kundenseite** | `hofladen.html`, `js/hofladen.js`, `/api/hofladen/angebot` und `/bestellung`, `/voranmeldung`, Bestätigungsmails, Warteliste, Voranmelden durch Kunden, Pflichtangaben, Bestellbedingungen; noch **nicht** verlinkt | Kunden bestellen selbst über direkten Link | **programmiert** – `hofladen.html`, `meine-bestellungen.html`, `/api/hofladen/…`, Bestätigungsmails, persönlicher Link, Datenschutzerklärung ergänzt, Pflichtangaben Nudeln; getestet (Tests + Browser). Offen: Bestellbedingungen prüfen lassen, dann Phase 6 |
-| **5 – Kunden und Ankündigung** | Kundenkartei, Newsletter An-/Abmeldung, Ankündigung per Mail, Stammkunden-Link | Chargen ankündigen ohne Gruppen-Chaos | offen |
+| **5 – Kunden und Ankündigung** | Kundenkartei, Newsletter An-/Abmeldung, Ankündigung per Mail, Stammkunden-Link | Bestellrunden ankündigen ohne Gruppen-Chaos | offen |
 | **6 – Veröffentlichung** | Navigation in allen Seiten, `sitemap.xml`, `llms.txt`, Knopf auf `bauernhof.html`, README-Bedienungsanleitung, Datenschutz (nach Freigabe), Friedhold stilllegen | live | offen |
 | **später** | „Meine Bestellung ändern"-Link, Jahresauswertung als Grafik, CSV-Import alter Kunden | nach Bedarf | – |
 
-**Testlauf vor dem Start:** Eine echte, kleine Charge (z. B. Honig und
+**Testlauf vor dem Start:** Eine echte, kleine Bestellrunde (z. B. Honig und
 Nudeln) mit ein paar Stammkunden durchspielen – vom Anlegen bis „bezahlt".
-Die bestehenden WhatsApp-Bestellungen der laufenden Charge in Phase 2
+Die bestehenden WhatsApp-Bestellungen der laufenden Bestellrunde in Phase 2
 einmalig nachtragen, damit ab dann **nur noch eine Liste** zählt.
 
 ## 13. Kosten

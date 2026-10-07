@@ -7,6 +7,8 @@
  * so weder in Server-Protokollen noch als Referrer auf.
  * Steht der genaue Betrag fest und ist eine Überweisung offen, erscheint ein
  * QR-Code für die Banking-App (js/qrcode.js).
+ * Je Bestellung gibt es „Vertrag widerrufen" (§ 13a FAGG): Knopf, Auswahl,
+ * „Widerruf bestätigen" – an /api/hofladen/widerruf, mit demselben Schlüssel.
  * Keine Cookies, kein localStorage.
  * ============================================================ */
 
@@ -93,7 +95,85 @@ function mbBestellung(b, bank) {
     </table>
     ${b.geschaetzt && b.status !== 'storniert' ? '<p class="form-hint">Fleisch wird nach Gewicht abgerechnet – den genauen Betrag erfahrt ihr bei der Übergabe.</p>' : ''}
     ${mbUeberweisung(b, bank)}
+    ${b.status === 'storniert' ? '' : mbWiderruf(b)}
   </article>`;
+}
+
+// „Vertrag widerrufen": bereits eingegangene Widerrufe und der Knopf dazu
+function mbWiderruf(b) {
+  const eingegangen = (b.widerrufe || []).map((w) =>
+    `<p class="hl-widerruf-hinweis">Widerruf eingegangen am ${mbEsc(w.eingegangen)} Uhr: ${mbEsc(w.umfang)}</p>`).join('');
+  return `<div class="hl-widerruf" data-nummer="${mbEsc(b.nummer)}">
+    ${eingegangen}
+    <button type="button" class="btn btn-outline hl-widerruf-knopf" aria-expanded="false">Vertrag widerrufen</button>
+    <form class="hl-widerruf-form contact-form" hidden novalidate>
+      <p>Für Nudeln, Honig und Seife könnt ihr innerhalb von 14 Tagen ab Übergabe zurücktreten,
+        für frisches Fleisch gilt das nicht.</p>
+      <fieldset class="hl-feldgruppe">
+        <legend>Was wollt ihr widerrufen?</legend>
+        <label class="hl-auswahl"><input type="radio" name="umfang" value="ganz" checked /> <span>Die ganze Bestellung ${mbEsc(b.nummer)}</span></label>
+        <label class="hl-auswahl"><input type="radio" name="umfang" value="teil" /> <span>Nur einzelne Produkte</span></label>
+      </fieldset>
+      <div class="form-group" data-produkte hidden>
+        <label>Welche Produkte?<textarea name="produkte" rows="2" placeholder="z. B. 2× Honig 500 g"></textarea></label>
+      </div>
+      <button type="submit" class="btn btn-primary hl-knopf-breit">Widerruf bestätigen</button>
+      <p class="hl-meldung" role="status" aria-live="polite"></p>
+    </form>
+  </div>`;
+}
+
+async function mbWiderrufSenden(form, schluessel) {
+  const bereich = form.closest('.hl-widerruf');
+  const meldung = form.querySelector('.hl-meldung');
+  const umfang = form.querySelector('input[name="umfang"]:checked').value;
+  const produkte = form.elements.namedItem('produkte').value.trim();
+  if (umfang === 'teil' && !produkte) {
+    meldung.textContent = 'Bitte angeben, welche Produkte ihr widerrufen wollt.';
+    meldung.className = 'hl-meldung hl-meldung--fehler';
+    return;
+  }
+  const knopf = form.querySelector('button[type="submit"]');
+  knopf.disabled = true;
+  meldung.textContent = 'Wird gesendet …';
+  meldung.className = 'hl-meldung';
+  try {
+    const antwort = await fetch('/api/hofladen/widerruf', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Accept: 'application/json', 'X-Link-Schluessel': schluessel },
+      body: JSON.stringify({ bestellnummer: bereich.dataset.nummer, umfang, produkte }),
+    });
+    const erg = await antwort.json().catch(() => ({}));
+    if (!antwort.ok || !erg.ok) throw new Error(erg.error || 'Das hat leider nicht geklappt – bitte ruft uns an: +43 664 2166181.');
+    bereich.innerHTML = `<div class="hl-widerruf-bestaetigt">
+      <strong>Euer Widerruf ist eingegangen</strong>
+      <p>Bestellung ${mbEsc(erg.nummer)} · widerrufen: ${mbEsc(erg.umfang)}<br>Eingegangen am ${mbEsc(erg.eingegangen)} Uhr.
+        Die Bestätigung ist per E-Mail unterwegs.</p></div>`;
+  } catch (f) {
+    meldung.textContent = f.message || 'Keine Verbindung – bitte später noch einmal versuchen.';
+    meldung.className = 'hl-meldung hl-meldung--fehler';
+    knopf.disabled = false;
+  }
+}
+
+function mbWiderrufVorbereiten(ziel, schluessel) {
+  ziel.addEventListener('click', (e) => {
+    const knopf = e.target.closest('.hl-widerruf-knopf');
+    if (!knopf) return;
+    const form = knopf.nextElementSibling;
+    form.hidden = false;
+    knopf.setAttribute('aria-expanded', 'true');
+    knopf.hidden = true;
+  });
+  ziel.addEventListener('change', (e) => {
+    if (e.target.name !== 'umfang') return;
+    e.target.closest('form').querySelector('[data-produkte]').hidden = e.target.value !== 'teil';
+  });
+  ziel.addEventListener('submit', (e) => {
+    if (!e.target.classList.contains('hl-widerruf-form')) return;
+    e.preventDefault();
+    mbWiderrufSenden(e.target, schluessel);
+  });
 }
 
 function mbZeigen(daten) {
@@ -134,6 +214,7 @@ async function initMeineBestellungen() {
       return;
     }
     mbZeigen(daten);
+    mbWiderrufVorbereiten(ziel, schluessel);
   } catch {
     ziel.innerHTML = '<div class="hl-leer"><p>Keine Verbindung – bitte später noch einmal versuchen.</p></div>';
   }

@@ -39,7 +39,7 @@ async function api(methode, pfad, eingabe, kopf = {}) {
 const ok = (r) => { assert.equal(r.ok, true, r.error); return r; };
 const id = (sql, ...a) => roh.prepare(sql).get(...a).id;
 
-// Charge anlegen (wie über die Verwaltung)
+// Bestellrunde anlegen (wie über die Verwaltung)
 const morgen = new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10);
 roh.prepare(`INSERT INTO chargen (titel, status, bestellschluss) VALUES ('Masthühner Test', 'offen', ?)`).run(morgen);
 roh.prepare(`INSERT INTO chargen (titel, status, bestellschluss) VALUES ('Entwurf', 'entwurf', ?)`).run(morgen);
@@ -58,7 +58,7 @@ const aNudeln = id('SELECT id FROM charge_artikel WHERE produkt_id = ? AND charg
 const tAbh = id(`SELECT id FROM termine WHERE charge_id = ? AND art = 'abholung'`, cId);
 const tLief = id(`SELECT id FROM termine WHERE charge_id = ? AND art = 'lieferung'`, cId);
 
-// Angebot: nur offene Charge mit Bestellschluss in der Zukunft
+// Angebot: nur offene Bestellrunde mit Bestellschluss in der Zukunft
 let r = ok(await api('GET', 'angebot'));
 assert.deepEqual(r.chargen.map((c) => c.titel), ['Masthühner Test']);
 const nudelArtikel = r.chargen[0].artikel.find((a) => a.id === aNudeln);
@@ -67,7 +67,16 @@ assert.equal(nudelArtikel.allergene, 'Weizen (Gluten), Ei');
 assert.equal(r.chargen[0].artikel.find((a) => a.id === aHuhn).frei, 4);
 assert.equal(r.liefergebiet.length, 4);
 assert.ok(r.produkte.length >= 14);
-console.log('✓ Angebot: nur offene Chargen, freie Menge, Pflichtangaben der Nudeln, Liefergebiet');
+assert.equal(r.chargen[0].artikel.find((a) => a.id === aNudeln).produktId, nudeln);
+const sortimentNudeln = r.produkte.find((p) => p.id === nudeln);
+assert.deepEqual([sortimentNudeln.art, sortimentNudeln.kategorie], ['stueck', 'nudeln']);
+assert.match(sortimentNudeln.pflichtangaben, /Hartweizengrieß/);
+assert.deepEqual([r.produkte.find((p) => p.id === huhn).richtVonG, r.produkte.find((p) => p.id === huhn).richtBisG], [1800, 2400]);
+// Ausgeblendete Produkte erscheinen nicht im Sortiment
+roh.prepare(`UPDATE produkte SET aktiv = 0 WHERE name = 'Alpakaseife'`).run();
+assert.ok(!ok(await api('GET', 'angebot')).produkte.some((p) => p.name === 'Alpakaseife'));
+roh.prepare(`UPDATE produkte SET aktiv = 1 WHERE name = 'Alpakaseife'`).run();
+console.log('✓ Angebot: nur offene Bestellrunden, freie Menge, Pflichtangaben der Nudeln, Liefergebiet, Sortiment');
 
 // Bestellung – Pflichtfelder und Regeln
 const basis = {
@@ -186,6 +195,53 @@ for (const falsch of ['', 'abc', schluessel1.slice(0, -1) + (schluessel1.endsWit
 roh.exec(`UPDATE kunden_links SET gesperrt_am = datetime('now')`);
 assert.equal((await api('GET', 'meine', null, { 'X-Link-Schluessel': schluessel1 })).status, 404, 'gesperrter Link');
 console.log('✓ Meine Bestellungen: eigener Kunde, Voranmeldungen, falsche und gesperrte Links abgelehnt');
+
+// Vertrag widerrufen (§ 13a FAGG)
+roh.exec(`UPDATE kunden_links SET gesperrt_am = NULL`);
+const mariaNr = roh.prepare(`SELECT nummer FROM bestellungen WHERE status = 'vorgemerkt' ORDER BY id LIMIT 1`).get().nummer;
+mails.length = 0;
+// a) über „Meine Bestellungen": Kunde aus dem Link, ganze Bestellung
+r = ok(await api('POST', 'widerruf', { bestellnummer: mariaNr, umfang: 'ganz' }, { 'X-Link-Schluessel': schluessel1 }));
+assert.equal(r.umfang, 'Ganze Bestellung');
+assert.match(r.eingegangen, /^\d{2}\.\d{2}\.\d{4},? \d{2}:\d{2}$/);
+assert.equal(mails.length, 2);
+assert.equal(mails[0].to, 'maria@example.at');
+assert.match(mails[0].subject, /Eingangsbestätigung/);
+assert.match(mails[0].html, new RegExp(mariaNr));
+assert.match(mails[0].html, /Eingegangen am/);
+let w = roh.prepare('SELECT * FROM widerrufe ORDER BY id DESC').get();
+assert.deepEqual([w.quelle, w.status, w.name, w.bestellung_id != null], ['link', 'offen', 'Maria Web', true]);
+assert.equal(roh.prepare('SELECT status FROM bestellungen WHERE nummer = ?').get(mariaNr).status, 'vorgemerkt', 'storniert nicht selbst');
+r = ok(await api('GET', 'meine', null, { 'X-Link-Schluessel': schluessel1 }));
+assert.equal(r.bestellungen.find((b) => b.nummer === mariaNr).widerrufe[0].umfang, 'Ganze Bestellung');
+// fremde Bestellnummer über den Link → abgelehnt
+assert.equal((await api('POST', 'widerruf', { bestellnummer: '1999-999', umfang: 'ganz' }, { 'X-Link-Schluessel': schluessel1 })).status, 400);
+// b) über das Formular: passende E-Mail (andere Schreibweise), nur Teile
+mails.length = 0;
+r = ok(await api('POST', 'widerruf', { name: 'Maria Web', email: 'MARIA@example.at', bestellnummer: mariaNr, umfang: 'teil', produkte: '1× Nudeln' }));
+assert.equal(r.umfang, '1× Nudeln');
+w = roh.prepare('SELECT * FROM widerrufe ORDER BY id DESC').get();
+assert.deepEqual([w.quelle, w.bestellung_id != null, w.email], ['formular', true, 'maria@example.at']);
+// c) Formular mit falscher Nummer: trotzdem gespeichert und bestätigt, Hof wird gewarnt
+mails.length = 0;
+ok(await api('POST', 'widerruf', { name: 'Jemand', email: 'jemand@example.at', bestellnummer: '2026-999', umfang: 'ganz' }));
+assert.equal(roh.prepare('SELECT bestellung_id FROM widerrufe ORDER BY id DESC').get().bestellung_id, null);
+assert.match(mails[1].html, /passen zu keiner Bestellung/);
+// Pflichtfelder und Spam-Falle
+for (const [eingabe, muster] of [
+  [{ email: 'a@b.at', bestellnummer: '1', umfang: 'ganz' }, /Namen/],
+  [{ name: 'Max', email: 'x', bestellnummer: '1', umfang: 'ganz' }, /E-Mail/],
+  [{ name: 'Max', email: 'a@b.at', umfang: 'ganz' }, /Bestellnummer/],
+  [{ name: 'Max', email: 'a@b.at', bestellnummer: '1', umfang: 'teil', produkte: '' }, /welche Produkte/],
+]) {
+  const x = await api('POST', 'widerruf', eingabe);
+  assert.equal(x.status, 400);
+  assert.match(x.error, muster);
+}
+const vorher = roh.prepare('SELECT COUNT(*) n FROM widerrufe').get().n;
+ok(await api('POST', 'widerruf', { name: 'Bot', email: 'b@b.at', bestellnummer: '1', umfang: 'ganz', 'bot-field': 'x' }));
+assert.equal(roh.prepare('SELECT COUNT(*) n FROM widerrufe').get().n, vorher);
+console.log('✓ Widerruf: über Link und Formular, Eingangsbestätigung mit Zeitpunkt, falsche Nummer trotzdem gespeichert, Pflichtfelder');
 
 // Ohne Mail-Schlüssel wird trotzdem gespeichert
 delete env.RESEND_API_KEY;

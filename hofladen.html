@@ -101,14 +101,26 @@
       </div>
     </section>
 
+    <!-- SORTIMENT (wird von js/hofladen.js gefüllt, Produkte aus der Verwaltung) -->
+    <section class="section" id="sortiment" aria-labelledby="hl-sortiment-titel" hidden>
+      <div class="container">
+        <span class="section-label">Was es bei uns gibt</span>
+        <h2 id="hl-sortiment-titel">Unser Sortiment</h2>
+        <div class="divider" style="margin-left:0;"></div>
+        <p class="hl-sortiment-einleitung">Nicht alles gibt es das ganze Jahr – Fleisch nur zu bestimmten Zeiten.
+           Was gerade nicht vorrätig ist, könnt ihr euch unverbindlich vormerken lassen.</p>
+        <div id="hl-sortiment"></div>
+      </div>
+    </section>
+
     <!-- VORANMELDUNG -->
-    <section class="section" id="vormerken" aria-labelledby="hl-vormerken-titel">
+    <section class="section section-alt" id="vormerken" aria-labelledby="hl-vormerken-titel">
       <div class="container hl-schmal">
         <span class="section-label">Für später</span>
         <h2 id="hl-vormerken-titel">Vormerken lassen</h2>
         <div class="divider" style="margin-left:0;"></div>
         <p>Die nächste Gans zu Martini, im Frühjahr wieder Hühner? Meldet euch unverbindlich vor –
-           sobald die passende Charge feststeht, melden wir uns mit Preis und Termin. Wer sich zuerst
+           sobald die passende Bestellrunde feststeht, melden wir uns mit Preis und Termin. Wer sich zuerst
            meldet, kommt zuerst dran.</p>
         <form id="hl-voranmeldung" class="contact-form hl-formular" novalidate>
           <p style="display:none;" aria-hidden="true">
@@ -164,7 +176,7 @@
     <!-- BESTELLBEDINGUNGEN
          ENTWURF – vor der Veröffentlichung von der Landwirtschaftskammer Tirol
          bzw. Rechtsberatung prüfen lassen (docs/HOFLADEN-VORBESTELLUNG.md, Abschnitt 10). -->
-    <section class="section section-alt" id="bedingungen" aria-labelledby="hl-bedingungen-titel">
+    <section class="section" id="bedingungen" aria-labelledby="hl-bedingungen-titel">
       <div class="container hl-schmal">
         <h2 id="hl-bedingungen-titel">Bestellbedingungen</h2>
         <div class="divider" style="margin-left:0;"></div>
@@ -197,12 +209,69 @@
           <h3>Rücktrittsrecht</h3>
           <p>Frisches Fleisch ist als schnell verderbliche Ware vom 14-tägigen Rücktrittsrecht bei
              Fernabsatzverträgen ausgenommen (§ 18 Abs. 1 Z 4 FAGG). Für Nudeln, Honig und Seife gilt das
-             gesetzliche Rücktrittsrecht von 14 Tagen ab Übergabe; eine formlose Nachricht an
-             <a href="mailto:info@kruckenhaus.at">info@kruckenhaus.at</a> genügt.</p>
+             gesetzliche Rücktrittsrecht von 14 Tagen ab Übergabe. Zum Widerrufen genügt der Knopf
+             <a href="#widerrufen">„Vertrag widerrufen"</a> (auch unter „Meine Bestellungen"), eine formlose
+             Nachricht an <a href="mailto:info@kruckenhaus.at">info@kruckenhaus.at</a> oder das
+             Muster-Widerrufsformular unten. Bereits bezahlte Beträge erstatten wir innerhalb von 14 Tagen.</p>
+          <h3>Muster-Widerrufsformular</h3>
+          <p>(Wenn Sie den Vertrag widerrufen wollen, dann füllen Sie bitte dieses Formular aus und senden Sie es zurück.)</p>
+          <ul>
+            <li>An Florian Häusler, Hof Kruckenhaus, Oberberg 70, 6252 Breitenbach am Inn,
+                <a href="mailto:info@kruckenhaus.at">info@kruckenhaus.at</a>:</li>
+            <li>Hiermit widerrufe(n) ich/wir (*) den von mir/uns (*) abgeschlossenen Vertrag über den Kauf der folgenden Waren:</li>
+            <li>Bestellt am (*) / erhalten am (*):</li>
+            <li>Name des/der Verbraucher(s):</li>
+            <li>Anschrift des/der Verbraucher(s):</li>
+            <li>Unterschrift des/der Verbraucher(s) (nur bei Mitteilung auf Papier):</li>
+            <li>Datum:</li>
+          </ul>
+          <p>(*) Unzutreffendes streichen.</p>
           <h3>Zutaten und Allergene</h3>
           <p>Zutaten, Allergene und weitere Angaben findet ihr beim jeweiligen Produkt unter
              „Zutaten &amp; Angaben". Fragen dazu beantworten wir gern.</p>
         </div>
+      </div>
+    </section>
+
+    <!-- VERTRAG WIDERRUFEN (§ 13a FAGG) – Formular, js/hofladen.js -->
+    <section class="section section-alt" id="widerrufen" aria-labelledby="hl-widerrufen-titel">
+      <div class="container hl-schmal">
+        <h2 id="hl-widerrufen-titel">Vertrag widerrufen</h2>
+        <div class="divider" style="margin-left:0;"></div>
+        <p>Für Nudeln, Honig und Seife könnt ihr innerhalb von 14 Tagen ab Übergabe ohne Angabe von Gründen
+           vom Kauf zurücktreten (für frisches Fleisch gilt das nicht). Am einfachsten geht es über
+           „Meine Bestellungen" – den Link findet ihr in eurer Bestätigungsmail. Oder hier mit eurer Bestellnummer:</p>
+        <button type="button" class="btn btn-outline hl-widerruf-knopf" aria-expanded="false" aria-controls="hl-widerruf">Vertrag widerrufen</button>
+        <form id="hl-widerruf" class="hl-widerruf-form contact-form" hidden novalidate>
+          <p style="display:none;" aria-hidden="true">
+            <label>Nicht ausfüllen: <input name="bot-field" tabindex="-1" autocomplete="off" /></label>
+          </p>
+          <div class="hl-zweispaltig">
+            <div class="form-group">
+              <label for="wr-name">Name</label>
+              <input id="wr-name" name="name" autocomplete="name" required />
+            </div>
+            <div class="form-group">
+              <label for="wr-nummer">Bestellnummer <span style="font-weight:400;opacity:0.7;">(z. B. 2026-014)</span></label>
+              <input id="wr-nummer" name="bestellnummer" required />
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="wr-email">E-Mail-Adresse, mit der ihr bestellt habt</label>
+            <input id="wr-email" name="email" type="email" autocomplete="email" required />
+          </div>
+          <fieldset class="hl-feldgruppe">
+            <legend>Was wollt ihr widerrufen?</legend>
+            <label class="hl-auswahl"><input type="radio" name="umfang" value="ganz" checked /> <span>Die ganze Bestellung</span></label>
+            <label class="hl-auswahl"><input type="radio" name="umfang" value="teil" /> <span>Nur einzelne Produkte</span></label>
+          </fieldset>
+          <div class="form-group" data-produkte hidden>
+            <label for="wr-produkte">Welche Produkte?</label>
+            <textarea id="wr-produkte" name="produkte" rows="2" placeholder="z. B. 2× Honig 500 g"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary hl-knopf-breit">Widerruf bestätigen</button>
+          <p class="hl-meldung" role="status" aria-live="polite"></p>
+        </form>
       </div>
     </section>
 
@@ -247,6 +316,7 @@
       <div class="footer-bottom">
         <p>&copy; 2026 Kruckenhaus – Florian Häusler | Breitenbach am Inn, Tirol</p>
         <div class="footer-links">
+          <a href="#widerrufen">Vertrag widerrufen</a>
           <a href="datenschutz.html">Datenschutzerklärung</a>
           <a href="impressum.html">Impressum</a>
         </div>

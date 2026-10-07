@@ -2,9 +2,10 @@
  * TEST – Schnittstelle der Hofladen-Verwaltung
  * ============================================================
  * Spielt einen typischen Ablauf gegen functions/api/verwaltung/[[pfad]].js
- * durch – so, wie ihn die Oberfläche auslöst: Charge anlegen, Bestellungen
+ * durch – so, wie ihn die Oberfläche auslöst: Bestellrunde anlegen, Bestellungen
  * erfassen (neuer und bekannter Kunde), Warteliste, wiegen, übergeben,
- * bezahlen, Termin setzen, Voranmeldungen übernehmen, Charge bearbeiten.
+ * bezahlen, Termin setzen, Voranmeldungen übernehmen, Bestellrunde bearbeiten,
+ * Produkte anlegen, bearbeiten und ausblenden.
  * Die Zugangsprüfung ist in test-hofladen-zugang.mjs getestet.
  *
  * Aufruf (Node 22 oder neuer):  node scripts/test-hofladen-api.mjs
@@ -40,7 +41,7 @@ assert.deepEqual(s.tourReihenfolge, ['Breitenbach am Inn', 'Kramsach', 'Brixlegg
 assert.equal(s.preisVorschlaege.find((v) => v.produktId === String(produkt('Masthuhn ganz'))).preisCent, 1200);
 console.log('✓ Stand: 14 Produkte, Liefergebiet, Startpreise als Vorschlag');
 
-// Charge anlegen
+// Bestellrunde anlegen
 const huhn = produkt('Masthuhn ganz');
 const nudeln = produkt('Eiernudeln Spaghetti 500 g');
 let r = ok(await api('POST', 'charge', {
@@ -61,7 +62,7 @@ assert.equal(ch.titel, 'Masthühner Herbst');
 assert.equal(ch.termine.length, 2);
 const [tLief, tAbh] = [ch.termine.find((t) => t.art === 'lieferung').id, ch.termine.find((t) => t.art === 'abholung').id];
 const [aHuhn, aNudeln] = [ch.artikel.find((a) => a.name === 'Masthuhn ganz').id, ch.artikel.find((a) => a.name.includes('Spaghetti')).id];
-console.log('✓ Charge mit Terminen und Artikeln angelegt');
+console.log('✓ Bestellrunde mit Terminen und Artikeln angelegt');
 
 // Bestellung: neuer Kunde, Lieferung ohne Adresse → Fehler
 r = await api('POST', 'bestellung', { chargeId, kunde: { name: 'Maria Test' }, terminId: tLief, positionen: [{ artikelId: aHuhn, menge: 2 }] });
@@ -132,7 +133,7 @@ r = await api('POST', `voranmeldung/${r.voranmeldungId}/absagen`, {});
 assert.equal(r.status, 400, 'zweimal absagen geht nicht');
 console.log('✓ Voranmeldung erfassen, übernehmen, Termin, Zahlart und Kontakt bestätigen, absagen');
 
-// Charge bearbeiten: Preis ändern (alte Bestellungen behalten Preis), Termin ergänzen,
+// Bestellrunde bearbeiten: Preis ändern (alte Bestellungen behalten Preis), Termin ergänzen,
 // benutzten Artikel nicht entfernen
 s = ok(await api('GET', 'stand'));
 const c = s.chargen[0];
@@ -152,7 +153,48 @@ assert.equal(r.status, 400);
 assert.match(r.error, /schon bestellt/);
 r = await api('POST', `charge/${chargeId}`, { ...neu, artikel: [...neu.artikel, { produktId: huhn, preisCent: 1, kontingent: 1 }] });
 assert.match(r.error, /doppelt/);
-console.log('✓ Charge bearbeiten: Preisänderung nur für neue Bestellungen, Termin ergänzt, Schutz vor Löschen/Doppelten');
+console.log('✓ Bestellrunde bearbeiten: Preisänderung nur für neue Bestellungen, Termin ergänzt, Schutz vor Löschen/Doppelten');
+
+// Produkte: anlegen, bearbeiten, ausblenden
+r = ok(await api('POST', 'produkt', {
+  name: 'Honig 250 g', kategorie: 'honig', art: 'stueck', startpreisCent: 700,
+  beschreibung: 'Kleines Glas.', pflichtangaben: 'Herkunft: Tirol', allergene: '', bild: 'images/hofladen/honig.jpg',
+}));
+const honigKlein = r.produktId;
+s = ok(await api('GET', 'stand'));
+let pNeu = s.produkte.find((p) => p.id === honigKlein);
+assert.deepEqual([pNeu.name, pNeu.art, pNeu.aktiv, pNeu.verwendet, pNeu.bild], ['Honig 250 g', 'stueck', true, false, 'images/hofladen/honig.jpg']);
+assert.ok(roh.prepare('SELECT reihenfolge FROM produkte WHERE id = ?').get(honigKlein).reihenfolge > 210, 'ans Ende des Bereichs');
+r = await api('POST', 'produkt', { name: 'honig 250 G', kategorie: 'honig', art: 'stueck' });
+assert.match(r.error, /gibt es schon/);
+r = await api('POST', 'produkt', { name: 'Suppenhuhn', kategorie: 'fleisch', art: 'gewicht' });
+assert.match(r.error, /Richtgewicht/);
+r = await api('POST', 'produkt', { name: 'Bild', kategorie: 'seife', art: 'stueck', bild: 'https://fremd.example/x.jpg' });
+assert.match(r.error, /Foto/);
+// Art darf sich ändern, solange das Produkt nie angeboten wurde
+ok(await api('POST', `produkt/${honigKlein}`, { name: 'Honig 250 g', kategorie: 'honig', art: 'paket', aktiv: false }));
+s = ok(await api('GET', 'stand'));
+pNeu = s.produkte.find((p) => p.id === honigKlein);
+assert.deepEqual([pNeu.art, pNeu.aktiv, pNeu.bild], ['paket', false, '']);
+// Bereits angeboten: Art fix, Name und Angaben änderbar (gilt auch in Bestellungen)
+r = await api('POST', `produkt/${nudeln}`, { name: 'Spaghetti 500 g', kategorie: 'nudeln', art: 'gewicht', richtVonG: 1, richtBisG: 2 });
+assert.match(r.error, /Art lässt sich nicht mehr ändern/);
+ok(await api('POST', `produkt/${nudeln}`, { name: 'Spaghetti 500 g', kategorie: 'nudeln', art: 'stueck', allergene: 'Ei, Gluten' }));
+s = ok(await api('GET', 'stand'));
+assert.ok(s.chargen[0].artikel.some((a) => a.name === 'Spaghetti 500 g'));
+assert.equal((await api('POST', 'produkt/99999', { name: 'X', kategorie: 'seife', art: 'stueck' })).error, 'Produkt nicht gefunden.');
+console.log('✓ Produkte: anlegen, doppelte Namen, Richtgewicht, Foto-Pfad, ausblenden, Art fix nach Angebot');
+
+// Widerrufe: im Stand sichtbar, als erledigt markieren
+roh.prepare(`INSERT INTO widerrufe (bestellung_id, bestellnummer, name, email, umfang, quelle)
+             VALUES (?, '2026-001', 'Maria Test', 'm@example.at', 'Ganze Bestellung', 'link')`).run(b1);
+s = ok(await api('GET', 'stand'));
+assert.equal(s.widerrufe.length, 1);
+assert.deepEqual([s.widerrufe[0].bestellungId, s.widerrufe[0].umfang], [String(b1), 'Ganze Bestellung']);
+ok(await api('POST', `widerruf/${s.widerrufe[0].id}/erledigt`, {}));
+assert.equal(ok(await api('GET', 'stand')).widerrufe.length, 0);
+assert.equal((await api('POST', `widerruf/${s.widerrufe[0].id}/erledigt`, {})).status, 400, 'nur einmal');
+console.log('✓ Widerrufe: im Stand, erledigt markieren');
 
 // Schutz und Fehler
 r = await api('POST', 'bestellung', { chargeId }, { typ: 'text/plain' });

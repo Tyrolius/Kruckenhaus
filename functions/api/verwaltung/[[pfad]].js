@@ -9,11 +9,14 @@
  *   POST /api/verwaltung/bestellung/<id>          Bestellung ändern ({ aktion, … }):
  *        uebergeben, bezahlt, zahlart, termin, kontakt, notiz, stornieren,
  *        nachruecken, gewicht
- *   POST /api/verwaltung/charge                   Charge anlegen
- *   POST /api/verwaltung/charge/<id>              Charge bearbeiten
+ *   POST /api/verwaltung/charge                   Bestellrunde anlegen
+ *   POST /api/verwaltung/charge/<id>              Bestellrunde bearbeiten
+ *   POST /api/verwaltung/produkt                  Produkt anlegen
+ *   POST /api/verwaltung/produkt/<id>             Produkt bearbeiten (auch ausblenden)
  *   POST /api/verwaltung/voranmeldung             Voranmeldung erfassen
  *   POST /api/verwaltung/voranmeldung/<id>/absagen
  *   POST /api/verwaltung/voranmeldungen/uebernehmen
+ *   POST /api/verwaltung/widerruf/<id>/erledigt   Widerruf als erledigt markieren
  *
  * POST nur mit Content-Type application/json – fremde Seiten können so
  * keine Änderungen im Namen eines angemeldeten Nutzers auslösen.
@@ -37,6 +40,8 @@ import {
 const QUELLEN = ['web', 'whatsapp', 'telefon', 'persoenlich'];
 const ZAHLARTEN = ['bar', 'ueberweisung'];
 const CHARGE_STATUS = ['entwurf', 'stammkunden', 'offen', 'geschlossen', 'archiviert'];
+const PRODUKT_ARTEN = ['gewicht', 'paket', 'stueck'];
+const KATEGORIEN = ['fleisch', 'nudeln', 'honig', 'seife', 'saison'];
 
 function nummer(wert, name = 'Nummer') {
   const n = Number(wert);
@@ -79,7 +84,7 @@ const id = (wert) => (wert == null ? null : String(wert));
 
 async function standLaden(db, bank = null) {
   const aktiv = `SELECT id FROM chargen WHERE status <> 'archiviert'`;
-  const [chargen, artikel, termine, bestellungen, positionen, kunden, produkte, voranmeldungen, liefergebiet] =
+  const [chargen, artikel, termine, bestellungen, positionen, kunden, produkte, voranmeldungen, liefergebiet, widerrufe] =
     (await db.batch([
       db.prepare(`SELECT id, titel, status, bestellschluss FROM chargen
                   WHERE status <> 'archiviert' ORDER BY bestellschluss, id`),
@@ -98,11 +103,14 @@ async function standLaden(db, bank = null) {
                   WHERE b.charge_id IN (${aktiv}) ORDER BY p.id`),
       db.prepare(`SELECT id, name, telefon, email, strasse, plz, ort, stammkunde, notiz FROM kunden ORDER BY name`),
       db.prepare(`SELECT id, name, art, kategorie, richtgewicht_von_g, richtgewicht_bis_g, startpreis_cent,
-                         aktiv, beschreibung
+                         aktiv, beschreibung, pflichtangaben, allergene, bild,
+                         EXISTS (SELECT 1 FROM charge_artikel ca WHERE ca.produkt_id = produkte.id) AS verwendet
                   FROM produkte ORDER BY kategorie, reihenfolge, name`),
       db.prepare(`SELECT id, kunde_id, produkt_id, menge, zeitraum, jahr, quelle, status, notiz, erstellt_am
                   FROM voranmeldungen WHERE status = 'offen' ORDER BY erstellt_am, id`),
       db.prepare(`SELECT plz, ort, liefergebuehr_cent, gratis_ab_cent FROM liefergebiet ORDER BY tour_reihenfolge, ort`),
+      db.prepare(`SELECT id, bestellung_id, bestellnummer, name, email, umfang, quelle, eingegangen_am
+                  FROM widerrufe WHERE status = 'offen' ORDER BY eingegangen_am, id`),
     ])).map((r) => r.results);
 
   const jePos = new Map();
@@ -140,7 +148,8 @@ async function standLaden(db, bank = null) {
     produkte: produkte.map((p) => ({
       id: id(p.id), name: p.name, art: p.art, kategorie: p.kategorie, aktiv: Boolean(p.aktiv),
       richtVonG: p.richtgewicht_von_g, richtBisG: p.richtgewicht_bis_g, startpreisCent: p.startpreis_cent,
-      beschreibung: p.beschreibung || '',
+      beschreibung: p.beschreibung || '', pflichtangaben: p.pflichtangaben || '', allergene: p.allergene || '',
+      bild: p.bild || '', verwendet: Boolean(p.verwendet),
     })),
     voranmeldungen: voranmeldungen.map((v) => ({
       id: id(v.id), kundeId: id(v.kunde_id), produktId: id(v.produkt_id), menge: v.menge,
@@ -151,6 +160,10 @@ async function standLaden(db, bank = null) {
       plz: l.plz, ort: l.ort, liefergebuehrCent: l.liefergebuehr_cent, gratisAbCent: l.gratis_ab_cent,
     })),
     tourReihenfolge: liefergebiet.map((l) => l.ort),
+    widerrufe: widerrufe.map((w) => ({
+      id: id(w.id), bestellungId: id(w.bestellung_id), nummer: w.bestellnummer, name: w.name, email: w.email,
+      umfang: w.umfang, quelle: w.quelle, eingegangen: w.eingegangen_am,
+    })),
     bank,
     preisVorschlaege: (await preisVorschlaege(db)).map((v) => ({
       produktId: id(v.produktId), preisCent: v.preisCent, kontingent: v.kontingent,
@@ -196,12 +209,12 @@ async function kundeSichern(db, kundeId, kunde = {}) {
    4. BESTELLUNGEN
    ------------------------------------------------------------ */
 async function bestellungErfassen(db, e) {
-  const chargeId = nummer(e.chargeId, 'Charge');
+  const chargeId = nummer(e.chargeId, 'Bestellrunde');
   const terminId = e.terminId ? nummer(e.terminId, 'Termin') : null;
   let lieferadresse = null;
   if (terminId) {
     const termin = await db.prepare('SELECT art FROM termine WHERE id = ? AND charge_id = ?').bind(terminId, chargeId).first();
-    if (!termin) throw new EingabeFehler('Termin gehört nicht zu dieser Charge.');
+    if (!termin) throw new EingabeFehler('Termin gehört nicht zu dieser Bestellrunde.');
     if (termin.art === 'lieferung') {
       const k = e.kunde || {};
       if (!text(k.strasse) || !text(k.ort)) throw new EingabeFehler('Für die Lieferung bitte Adresse eintragen.');
@@ -255,7 +268,7 @@ async function bestellungAendern(db, bestellungId, e) {
         `UPDATE bestellungen SET termin_id = ?, geaendert_am = datetime('now')
          WHERE id = ? AND EXISTS (SELECT 1 FROM termine t WHERE t.id = ? AND t.charge_id = bestellungen.charge_id)`
       ).bind(tid, bid, tid).run();
-      if (!r.meta.changes) throw new EingabeFehler('Termin gehört nicht zu dieser Charge.');
+      if (!r.meta.changes) throw new EingabeFehler('Termin gehört nicht zu dieser Bestellrunde.');
       break;
     }
     case 'kontakt': {
@@ -318,7 +331,7 @@ function chargePruefen(e) {
     max: ganzzahl(a.maxProBestellung, 'Höchstmenge', { min: 1, max: 100000, leer: true }),
   }));
   if (new Set(artikel.map((a) => a.produktId)).size !== artikel.length) {
-    throw new EingabeFehler('Ein Produkt ist doppelt in der Charge.');
+    throw new EingabeFehler('Ein Produkt ist doppelt in der Bestellrunde.');
   }
   return {
     titel,
@@ -361,10 +374,10 @@ async function chargeAnlegen(db, e) {
 }
 
 async function chargeBearbeiten(db, chargeId, e) {
-  const cid = nummer(chargeId, 'Charge');
+  const cid = nummer(chargeId, 'Bestellrunde');
   const c = chargePruefen(e);
   const vorhanden = await db.prepare('SELECT id FROM chargen WHERE id = ?').bind(cid).first();
-  if (!vorhanden) throw new EingabeFehler('Charge nicht gefunden.');
+  if (!vorhanden) throw new EingabeFehler('Bestellrunde nicht gefunden.');
 
   const [alteTermine, alteArtikel] = (await db.batch([
     db.prepare(`SELECT t.id, EXISTS (SELECT 1 FROM bestellungen b WHERE b.termin_id = t.id) AS benutzt
@@ -376,10 +389,10 @@ async function chargeBearbeiten(db, chargeId, e) {
   const bleibendeTermine = new Set(c.termine.filter((t) => t.id).map((t) => t.id));
   const bleibendeArtikel = new Set(c.artikel.filter((a) => a.id).map((a) => a.id));
   for (const t of c.termine) {
-    if (t.id && !alteTermine.some((x) => x.id === t.id)) throw new EingabeFehler('Termin gehört nicht zu dieser Charge.');
+    if (t.id && !alteTermine.some((x) => x.id === t.id)) throw new EingabeFehler('Termin gehört nicht zu dieser Bestellrunde.');
   }
   for (const a of c.artikel) {
-    if (a.id && !alteArtikel.some((x) => x.id === a.id)) throw new EingabeFehler('Artikel gehört nicht zu dieser Charge.');
+    if (a.id && !alteArtikel.some((x) => x.id === a.id)) throw new EingabeFehler('Artikel gehört nicht zu dieser Bestellrunde.');
   }
   const entfernteTermine = alteTermine.filter((t) => !bleibendeTermine.has(t.id));
   const entfernteArtikel = alteArtikel.filter((a) => !bleibendeArtikel.has(a.id));
@@ -405,7 +418,86 @@ async function chargeBearbeiten(db, chargeId, e) {
 }
 
 /* ------------------------------------------------------------
-   6. VORANMELDUNGEN
+   6. PRODUKTE (Katalog)
+   Preise stehen je Bestellrunde, hier nur der Vorschlag für die erste.
+   Produkte werden nie gelöscht, nur ausgeblendet (aktiv = 0) – alte
+   Bestellungen verweisen weiter darauf. Die Art (Gewicht/Paket/Stück)
+   lässt sich nur ändern, solange das Produkt in keiner Bestellrunde war,
+   sonst stimmen die Beträge alter Bestellungen nicht mehr.
+   ------------------------------------------------------------ */
+function produktPruefen(e) {
+  const name = text(e.name, 120);
+  if (!name) throw new EingabeFehler('Bitte einen Namen eintragen.');
+  const art = auswahl(e.art, PRODUKT_ARTEN, 'Art');
+  let richtVon = null;
+  let richtBis = null;
+  if (art === 'gewicht') {
+    richtVon = ganzzahl(e.richtVonG, 'Richtgewicht von', { min: 1, max: 200000 });
+    richtBis = ganzzahl(e.richtBisG, 'Richtgewicht bis', { min: 1, max: 200000 });
+    if (richtBis < richtVon) throw new EingabeFehler('Richtgewicht: „bis" muss mindestens so groß sein wie „von".');
+  }
+  const bild = text(e.bild, 200).replace(/^\/+/, '');
+  if (bild && !/^images\/[a-z0-9/_-]+\.(jpe?g|png|webp)$/i.test(bild)) {
+    throw new EingabeFehler('Foto: bitte einen Pfad wie images/hofladen/honig.jpg eintragen.');
+  }
+  return {
+    name,
+    art,
+    kategorie: auswahl(e.kategorie, KATEGORIEN, 'Bereich'),
+    beschreibung: textOderNull(e.beschreibung, 1000),
+    pflichtangaben: textOderNull(e.pflichtangaben, 1500),
+    allergene: textOderNull(e.allergene, 200),
+    richtVon,
+    richtBis,
+    startpreisCent: ganzzahl(e.startpreisCent, 'Preis', { max: 10000000, leer: true }),
+    bild: bild || null,
+    aktiv: e.aktiv === false ? 0 : 1,
+  };
+}
+
+async function nameFrei(db, name, ausser = 0) {
+  const gleich = await db.prepare('SELECT id FROM produkte WHERE lower(name) = lower(?) AND id <> ?').bind(name, ausser).first();
+  if (gleich) throw new EingabeFehler(`Ein Produkt „${name}" gibt es schon.`);
+}
+
+async function produktAnlegen(db, e) {
+  const p = produktPruefen(e);
+  await nameFrei(db, p.name);
+  // Neue Produkte ans Ende ihres Bereichs
+  const zeile = await db.prepare(
+    `INSERT INTO produkte (name, art, kategorie, beschreibung, pflichtangaben, allergene,
+                           richtgewicht_von_g, richtgewicht_bis_g, startpreis_cent, bild, aktiv, reihenfolge)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+             (SELECT COALESCE(MAX(reihenfolge), 0) + 10 FROM produkte WHERE kategorie = ?))
+     RETURNING id`
+  ).bind(p.name, p.art, p.kategorie, p.beschreibung, p.pflichtangaben, p.allergene,
+    p.richtVon, p.richtBis, p.startpreisCent, p.bild, p.aktiv, p.kategorie).first();
+  return { produktId: id(zeile.id) };
+}
+
+async function produktBearbeiten(db, produktId, e) {
+  const pid = nummer(produktId, 'Produktnummer');
+  const p = produktPruefen(e);
+  const alt = await db.prepare(
+    `SELECT art, EXISTS (SELECT 1 FROM charge_artikel ca WHERE ca.produkt_id = produkte.id) AS verwendet
+     FROM produkte WHERE id = ?`
+  ).bind(pid).first();
+  if (!alt) throw new EingabeFehler('Produkt nicht gefunden.');
+  if (alt.verwendet && alt.art !== p.art) {
+    throw new EingabeFehler('Die Art lässt sich nicht mehr ändern, weil das Produkt schon angeboten wurde – bitte ein neues Produkt anlegen.');
+  }
+  await nameFrei(db, p.name, pid);
+  await db.prepare(
+    `UPDATE produkte SET name = ?, art = ?, kategorie = ?, beschreibung = ?, pflichtangaben = ?, allergene = ?,
+            richtgewicht_von_g = ?, richtgewicht_bis_g = ?, startpreis_cent = ?, bild = ?, aktiv = ?
+     WHERE id = ?`
+  ).bind(p.name, p.art, p.kategorie, p.beschreibung, p.pflichtangaben, p.allergene,
+    p.richtVon, p.richtBis, p.startpreisCent, p.bild, p.aktiv, pid).run();
+  return { produktId: id(pid) };
+}
+
+/* ------------------------------------------------------------
+   7. VORANMELDUNGEN
    ------------------------------------------------------------ */
 async function voranmeldungErfassen(db, e) {
   const kundeId = await kundeSichern(db, e.kundeId, e.kunde);
@@ -424,7 +516,7 @@ async function voranmeldungErfassen(db, e) {
 }
 
 /* ------------------------------------------------------------
-   7. VERTEILER
+   8. VERTEILER
    ------------------------------------------------------------ */
 export async function onRequest({ request, env, params, data }) {
   if (!env.DB) return json({ ok: false, error: 'Datenbank nicht verbunden.' }, 503);
@@ -449,6 +541,8 @@ export async function onRequest({ request, env, params, data }) {
     else if (bereich === 'bestellung' && pfad.length === 2) ergebnis = await bestellungAendern(db, teilId, eingabe);
     else if (bereich === 'charge' && pfad.length === 1) ergebnis = await chargeAnlegen(db, eingabe);
     else if (bereich === 'charge' && pfad.length === 2) ergebnis = await chargeBearbeiten(db, teilId, eingabe);
+    else if (bereich === 'produkt' && pfad.length === 1) ergebnis = await produktAnlegen(db, eingabe);
+    else if (bereich === 'produkt' && pfad.length === 2) ergebnis = await produktBearbeiten(db, teilId, eingabe);
     else if (bereich === 'voranmeldung' && pfad.length === 1) ergebnis = await voranmeldungErfassen(db, eingabe);
     else if (bereich === 'voranmeldung' && unteraktion === 'absagen' && pfad.length === 3) {
       const r = await db.prepare(
@@ -456,8 +550,14 @@ export async function onRequest({ request, env, params, data }) {
       ).bind(nummer(teilId, 'Voranmeldung')).run();
       if (!r.meta.changes) throw new EingabeFehler('Voranmeldung nicht gefunden oder nicht mehr offen.');
       ergebnis = {};
+    } else if (bereich === 'widerruf' && unteraktion === 'erledigt' && pfad.length === 3) {
+      const r = await db.prepare(
+        `UPDATE widerrufe SET status = 'erledigt', erledigt_am = datetime('now') WHERE id = ? AND status = 'offen'`
+      ).bind(nummer(teilId, 'Widerruf')).run();
+      if (!r.meta.changes) throw new EingabeFehler('Widerruf nicht gefunden oder schon erledigt.');
+      ergebnis = {};
     } else if (bereich === 'voranmeldungen' && teilId === 'uebernehmen' && pfad.length === 2) {
-      const erg = await voranmeldungenUebernehmen(db, nummer(eingabe.chargeId, 'Charge'), eingabe.ids || []);
+      const erg = await voranmeldungenUebernehmen(db, nummer(eingabe.chargeId, 'Bestellrunde'), eingabe.ids || []);
       ergebnis = {
         bestellungen: erg.bestellungen.map((b) => ({ id: id(b.id), nummer: b.nummer, status: b.status })),
         uebersprungen: erg.uebersprungen.map(id),

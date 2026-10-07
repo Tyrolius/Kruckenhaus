@@ -15,7 +15,7 @@ const ENTWURF_DATEN = {
   // (Vorschlag, wie in hofladen-produkte.sql). Andere Orte: nur Abholung.
   tourReihenfolge: ['Breitenbach am Inn', 'Kramsach', 'Brixlegg', 'Kundl'],
 
-  // Produktkatalog (Preise stehen je Charge) – echtes Sortiment, Stand 09/2026
+  // Produktkatalog (Preise stehen je Bestellrunde) – echtes Sortiment, Stand 09/2026
   // Gleiche Felder wie /api/verwaltung/stand
   produkte: [
     { id: 'p1', name: 'Masthuhn ganz', art: 'gewicht', kategorie: 'fleisch', richtVonG: 1800, richtBisG: 2400, startpreisCent: 1200 },
@@ -35,7 +35,7 @@ const ENTWURF_DATEN = {
   ],
 
   // Termine, Mengen und Bestellungen sind erfunden; Preise wie angegeben.
-  // Nudeln: je Charge nur die Sorten, die gerade da sind.
+  // Nudeln: je Bestellrunde nur die Sorten, die gerade da sind.
   chargen: [
     {
       id: 'c1',
@@ -146,5 +146,11 @@ const ENTWURF_DATEN = {
       positionen: [{ artikelId: 'a4', menge: 1 }, { artikelId: 'a6', menge: 1 }] },
     { id: 'b19', nummer: '2026-019', chargeId: 'c2', kundeId: 'k2', quelle: 'whatsapp', erstellt: '2026-09-24', status: 'vorgemerkt', terminId: 't4', zahlart: 'bar', bezahlt: null, uebergeben: false, anmerkung: '',
       positionen: [{ artikelId: 'a5', menge: 1 }] },
+  ],
+
+  // Ein erfundener Widerruf (Formular „Vertrag widerrufen"), Zeit in UTC
+  widerrufe: [
+    { id: 'w1', bestellungId: 'b1', nummer: '2026-001', name: 'Maria Huber', email: 'maria@example.at',
+      umfang: 'Eiernudeln Bandnudeln 500 g', quelle: 'link', eingegangen: '2026-09-18 07:42:00' },
   ],
 };
