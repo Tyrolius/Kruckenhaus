@@ -1776,7 +1776,7 @@ p {
   font-family: var(--font-accent);
   font-size: 0.7em;
   display: block;
-  color: var(--color-primary);
+  color: var(--color-green);  /* Teal statt Waldgrün – auf dem dunklen Footer sonst kaum lesbar */
 }
 
 .footer-tagline {
@@ -4783,9 +4783,8 @@ body.season-winter .winter-image { display: block; }
   .start-intro { padding-block: var(--spacing-xl); }
   .start-intro-grid { grid-template-columns: 1fr 1fr; gap: var(--spacing-xl); }
   .start-karten,
-  .start-stimmen-grid,
-  .hofchronik-liste { grid-template-columns: repeat(4, 1fr); }
-  .hofchronik-liste { gap: 2.5rem; }
+  .start-stimmen-grid { grid-template-columns: repeat(4, 1fr); }
+  .hofchronik-liste { grid-template-columns: repeat(5, 1fr); gap: 2.5rem; }
   .start-erwartet { padding-block: var(--spacing-xl); }
   .start-cta-inhalt {
     flex-direction: row;
