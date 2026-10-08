@@ -42,7 +42,7 @@ const PREISE = {
     {
       key:        'neben',
       label:      'Nebensaison',
-      zeitraum:   'März bis Mai · September bis Mitte Dezember (außer Ostern)',
+      zeitraum:   'März bis Mai · September bis 19. Dezember (außer Ostern)',
       zeitraeume: [ ['03-01', '05-31'], ['09-01', '12-19'] ],
       preis:      125,   // € pro Nacht, ganze Wohnung
       mindest:    2,     // Nächte
@@ -210,7 +210,7 @@ const PREISE = {
     // Storno
     setze('storno-kostenlos', p.storno.kostenlosBis + ' Tage');
     setze('storno-teil', p.storno.teilrueckerstattungBis + '–' + (p.storno.kostenlosBis - 1) + ' Tage');
-    setze('storno-verfall', p.storno.teilrueckerstattungBis + ' Tagen');
+    setze('storno-verfall', p.storno.teilrueckerstattungBis + ' Tage');
     setze('storno-bearbeitungsgebuehr', fmtEur(p.storno.bearbeitungsgebuehr));
 
     // Gesamtpreis-Beispiele (preise.html): data-beispiel="saisonKey:naechte:personen"
