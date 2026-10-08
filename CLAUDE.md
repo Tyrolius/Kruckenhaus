@@ -51,9 +51,8 @@ functions/_lib/zugang.js   Prüfung der Cloudflare-Access-Anmeldung
 functions/_lib/mail.js     gemeinsame Mail-Vorlage (Logo, Absenderblock) + Nur-Text-Fassung
 functions/api/verwaltung/  Schnittstelle der Verwaltung (_middleware.js = Zugang)
 verwaltung/                Hofladen-Verwaltung (inkl. Produktkatalog); ?entwurf = Beispielmodus
-hofladen.html + js/hofladen.js   Bestellseite mit Sortiment für Kunden (noch noindex; nur über den Wegweiser der Startseite verlinkt)
-vorschau.html              Übergangs-Startseite, solange Fotos fehlen; aktiv über den
-                           Block „VORSCHAU-MODUS“ in _redirects (zum Livegang löschen)
+hofladen.html + js/hofladen.js   Bestellseite mit Sortiment für Kunden (noch noindex und nicht verlinkt,
+                           bis die Bestellbedingungen geprüft sind; Wegweiser zeigt bis dahin auf bauernhof.html#hofladen)
 meine-bestellungen.html + js/meine-bestellungen.js   Ansicht zum persönlichen Link
 functions/api/hofladen/    öffentliche Schnittstelle: Angebot, Bestellung, Voranmeldung, „meine"
 js/qrcode.js               Überweisungs-QR-Code (EPC-QR), eigener Kodierer ohne Bibliothek
@@ -92,7 +91,7 @@ nach sich. Vor dem Abschließen jeweils prüfen:
 
 | Änderung | Überall anpassen |
 |---|---|
-| **Preis** | `js/preise-config.js` (Quelle der Wahrheit) **und** die hartkodierten „ab 120 €"-Stellen in `index.html` (Text, `priceRange`, `makesOffer`-JSON-LD), `ferienwohnung.html`, `preise.html` (og:description), `workation.html` (og:description), `vorschau.html` (solange es sie gibt) **und** `llms.txt` |
+| **Preis** | `js/preise-config.js` (Quelle der Wahrheit) **und** die hartkodierten „ab 125 €"-Stellen in `index.html` (Text, `priceRange`, `makesOffer`-JSON-LD), `ferienwohnung.html`, `preise.html` (og:description), `workation.html` (og:description) **und** `llms.txt` |
 | **Telefon / E-Mail** | alle `.html` (E-Mail steht in 11 Dateien) und `js/main.js` |
 | **Navigationspunkt** | in *jeder* `.html` zweimal: `.nav-menu` (Desktop) und `.nav-overlay` (Mobile); ggf. zusätzlich `.bottom-tab-bar`; dazu `sitemap.xml` |
 | **FAQ-Text** | `kontakt.html` **zweimal**: sichtbar als `<details>` und im FAQPage-JSON-LD im `<head>` – beide identisch halten |
@@ -202,12 +201,13 @@ Es gibt keine automatisierten Tests und keinen Linter.
 ## Offene Punkte (Stand der Checkliste im README)
 
 - Fotos sind großteils da (`images/wohnung/`, `hof/`, `bauernhof/`,
-  `berglsteiner-see/`, `umgebung/`); es fehlen Terrasse, Workation,
-  See im Herbst/Frühling, Hofladen und Ausflugsziele – dort `TODO:`-Platzhalter.
+  `berglsteiner-see/`, `umgebung/`); es fehlen Terrasse, Workation (bis dahin
+  Ersatzfotos) und See im Herbst/Frühling – dort `TODO:`-Kommentare. Ausflugsziele
+  und Hofladen-Kühlschrank bleiben bewusst ohne Foto.
   Neue Uploads landen oft lose in `images/` oder im Projektstamm: ansehen,
   sprechend benennen, in den Themenordner verschieben, dann einbauen.
-- Vorschau-Modus in `_redirects` ist noch aktiv (Livegang auf Zuruf).
-- Alpaka-Namen (Stuten und Jungtiere) fehlen noch.
+- Website ist seit Oktober 2026 live (Vorschau-Modus und vorschau.html entfernt).
+- Alpakas: 3 Stuten und 2 Fohlen – Namen werden bewusst nicht genannt.
 - Hofladen: noch `noindex` und nicht in der Navigation. Produktfotos lädt die
   Verwaltung direkt hoch (`POST /api/verwaltung/foto`, Tabelle `produkt_fotos`,
   ausgeliefert über `/api/hofladen/foto/<id>`); zusätzlich wählbar sind die Fotos

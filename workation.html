@@ -24,12 +24,11 @@
     <div class="nav-container">
       <a href="index.html" class="nav-logo" aria-label="Kruckenhaus – Zur Startseite">
         <div class="logo-placeholder">
-          <img src="images/logo.png" alt="Kruckenhaus Logo" class="logo-img"
-               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-          <div class="logo-fallback">
-            <span class="logo-text">Kruckenhaus</span>
-            <span class="logo-sub">Hof &amp; Ferienwohnung</span>
-          </div>
+          <!-- Hell über dem Foto, dunkel in der weißen Kopfzeile nach dem Scrollen -->
+          <img src="images/logo/kruckenhaus-logo-kopf-hell.png" alt="Bergbauernhof Kruckenhaus"
+               class="logo-img logo-img--hell" width="323" height="112" />
+          <img src="images/logo/kruckenhaus-logo-kopf-dunkel.png" alt=""
+               class="logo-img logo-img--dunkel" width="323" height="112" />
         </div>
       </a>
       <nav class="nav-menu" role="navigation" aria-label="Hauptnavigation">
@@ -79,11 +78,10 @@
       <div class="container">
         <div class="intro-grid">
           <div class="intro-image slide-left">
-            <!-- TODO: workation/arbeitsplatz-bergblick.jpg -->
-            <div class="img-placeholder" style="background:linear-gradient(135deg,#a0a8c0,#6878a0);">
-              <strong>Workation Kruckenhaus</strong>
-              <small>Foto: Arbeitsplatz mit Bergblick einfügen</small>
-            </div>
+            <!-- TODO: workation/arbeitsplatz-bergblick.jpg – bis dahin die Stube -->
+            <img src="images/wohnung/wohnung-stube.jpg"
+                 alt="Stube der Ferienwohnung mit großem Tisch und Blick ins Freie"
+                 width="1600" height="1066" loading="lazy" decoding="async" />
           </div>
           <div class="intro-text slide-right">
             <span class="section-label">Remote Work am Bergbauernhof in Breitenbach am Inn</span>

@@ -115,12 +115,11 @@
     <div class="nav-container">
       <a href="index.html" class="nav-logo" aria-label="Kruckenhaus – Zur Startseite">
         <div class="logo-placeholder">
-          <img src="images/logo.png" alt="Kruckenhaus Logo" class="logo-img"
-               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-          <div class="logo-fallback">
-            <span class="logo-text">Kruckenhaus</span>
-            <span class="logo-sub">Hof &amp; Ferienwohnung</span>
-          </div>
+          <!-- Hell über dem Foto, dunkel in der weißen Kopfzeile nach dem Scrollen -->
+          <img src="images/logo/kruckenhaus-logo-kopf-hell.png" alt="Bergbauernhof Kruckenhaus"
+               class="logo-img logo-img--hell" width="323" height="112" />
+          <img src="images/logo/kruckenhaus-logo-kopf-dunkel.png" alt=""
+               class="logo-img logo-img--dunkel" width="323" height="112" />
         </div>
       </a>
       <nav class="nav-menu" role="navigation" aria-label="Hauptnavigation">
@@ -192,14 +191,16 @@
             <span class="wegweiser-link">Ferienwohnung ansehen <span aria-hidden="true">→</span></span>
           </div>
         </a>
-        <a href="hofladen.html" class="wegweiser-karte">
+        <!-- Bis zur Freigabe der Bestellbedingungen zum Hofladen-Abschnitt der Bauernhof-Seite;
+             zum Start der Online-Vorbestellung wieder auf hofladen.html zeigen lassen -->
+        <a href="bauernhof.html#hofladen" class="wegweiser-karte">
           <img src="images/bauernhof/bienen-kinder-waben.jpg"
                alt="Unsere Kinder in Imkeranzügen zeigen zwei Bienenwaben"
                width="1600" height="739" loading="lazy" decoding="async" />
           <div class="wegweiser-text">
             <span class="start-label">Vom Hof</span>
             <h2>Hofladen</h2>
-            <p>Fleisch, Eiernudeln und Raphaels Honig auf Vorbestellung – zum Abholen am Hof oder kostenlos geliefert in die Umgebung.</p>
+            <p>Eier, Nudeln, Fleisch und Raphaels Honig vom Hof. Die Online-Vorbestellung startet bald – bis dahin einfach anrufen oder per WhatsApp bestellen.</p>
             <span class="wegweiser-link">Zum Hofladen <span aria-hidden="true">→</span></span>
           </div>
         </a>
@@ -256,7 +257,7 @@
             <li class="hofchronik-neu">
               <span class="hofchronik-jahr">2026</span>
               <h3>Die Alpakas kommen</h3>
-              <p>Seit März leben Alpaka-Stuten am Hof – zu beobachten direkt von der Terrasse der Ferienwohnung.</p>
+              <p>Seit März leben Alpaka-Stuten am Hof, inzwischen mit zwei Fohlen – zu beobachten direkt von der Terrasse der Ferienwohnung.</p>
             </li>
           </ol>
         </div>
@@ -283,11 +284,13 @@
                  alt="Alpakas grasen gemeinsam auf der Weide am Hof"
                  width="1600" height="900" loading="lazy" decoding="async" />
             <h3>Alpakas &amp; Bauernhof</h3>
-            <p>Alpaka-Stuten, Legehennen und Schafe – ein arbeitender Hof.</p>
+            <p>Alpakas mit Fohlen, Legehennen und Schafe – ein arbeitender Hof.</p>
           </a>
           <a href="workation.html" class="start-karte">
-            <!-- TODO: Laptop auf Terrasse mit Bergblick (1600x1200) -->
-            <div class="start-karte-platzhalter">Foto: Arbeitsplatz mit Bergblick</div>
+            <!-- TODO: Laptop auf Terrasse mit Bergblick (1600x1200) – bis dahin Ausblick vom Hof -->
+            <img src="images/hof/hof-sommer-regenbogen.jpg"
+                 alt="Regenbogen über dem Tal – Ausblick vom Hof Kruckenhaus"
+                 width="1600" height="739" loading="lazy" decoding="async" />
             <h3>Workation</h3>
             <p>Starlink mit 200+ Mbit/s – stabil für Videokonferenzen.</p>
           </a>
