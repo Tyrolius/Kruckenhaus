@@ -28,6 +28,11 @@ const MAX_WIDTH = 1600;
 const MAX_BYTES = 300 * 1024;
 const JPEG_QUALITY_STEPS = [82, 75, 68, 60, 52];
 
+// Handyfotos enthalten manchmal ein paar überzählige Bytes im JPEG-Datenstrom
+// („Corrupt JPEG data: … extraneous bytes"). Das Bild ist trotzdem einwandfrei,
+// sharp bricht standardmäßig aber ab – daher solche Warnungen tolerieren.
+const SHARP_OPTIONEN = { failOn: 'none' };
+
 // Dateinamen (ohne Pfad), die nie automatisch verändert werden sollen.
 const EXCLUDE = new Set(['logo.png', 'favicon.png']);
 
@@ -48,7 +53,7 @@ function listImageFiles(dir) {
 async function optimizeJpeg(buffer, needsResize) {
   let best = null;
   for (const quality of JPEG_QUALITY_STEPS) {
-    const out = await sharp(buffer)
+    const out = await sharp(buffer, SHARP_OPTIONEN)
       .rotate() // EXIF-Ausrichtung übernehmen, Tag danach entfernen
       .resize(needsResize ? { width: MAX_WIDTH, withoutEnlargement: true } : undefined)
       .jpeg({ quality, mozjpeg: true })
@@ -62,7 +67,7 @@ async function optimizeJpeg(buffer, needsResize) {
 async function optimizePng(buffer, needsResize) {
   // PNG wird verlustfrei komprimiert (kein Qualitätsverlust) – für Fotos
   // ist JPEG die bessere Wahl, PNG kommt meist nur bei Grafiken vor.
-  return sharp(buffer)
+  return sharp(buffer, SHARP_OPTIONEN)
     .rotate()
     .resize(needsResize ? { width: MAX_WIDTH, withoutEnlargement: true } : undefined)
     .png({ compressionLevel: 9, effort: 10 })
@@ -80,7 +85,7 @@ async function main() {
 
   for (const file of files) {
     const original = fs.readFileSync(file);
-    const meta = await sharp(original).metadata();
+    const meta = await sharp(original, SHARP_OPTIONEN).metadata();
     const needsResize = (meta.width ?? 0) > MAX_WIDTH;
     const alreadyFine = !needsResize && original.length <= MAX_BYTES;
 
