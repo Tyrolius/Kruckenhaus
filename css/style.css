@@ -5634,3 +5634,17 @@ html, body { overflow-x: clip; }
 
   .vw-bereich-zeile .vw-feld { margin-bottom: 0; }
 }
+
+/* ============================================================
+   51. SEITENKÖPFE MIT EIGENEM FOTO
+   Ersetzt das gemeinsame Luftbild aus Abschnitt 25 auf einzelnen Seiten
+   ============================================================ */
+.page-hero--ferienwohnung {
+  background-image: url('../images/hof/hof-sommer-hang.jpg');
+  background-position: center 45%;
+}
+
+.page-hero--see {
+  background-image: url('../images/berglsteiner-see/berglsteiner-see-sommer-spiegelung.jpg');
+  background-position: center 55%;
+}
