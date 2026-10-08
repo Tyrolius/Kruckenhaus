@@ -206,9 +206,10 @@ Es gibt keine automatisierten Tests und keinen Linter.
   sprechend benennen, in den Themenordner verschieben, dann einbauen.
 - Vorschau-Modus in `_redirects` ist noch aktiv (Livegang auf Zuruf).
 - Alpaka-Namen (Stuten und Jungtiere) fehlen noch.
-- Hofladen: noch `noindex` und nicht in der Navigation. Produktfotos wählt die
-  Verwaltung aus `images/fotos.json` (schreibt `.github/scripts/optimize-images.js`);
-  die Schnittstelle nimmt nur Pfade unter `images/` an.
+- Hofladen: noch `noindex` und nicht in der Navigation. Produktfotos lädt die
+  Verwaltung direkt hoch (`POST /api/verwaltung/foto`, Tabelle `produkt_fotos`,
+  ausgeliefert über `/api/hofladen/foto/<id>`); zusätzlich wählbar sind die Fotos
+  aus `images/fotos.json` (schreibt `.github/scripts/optimize-images.js`).
 
 Wenn eine Anfrage einen dieser Punkte berührt, das gleich miterledigen bzw.
 kurz darauf hinweisen.

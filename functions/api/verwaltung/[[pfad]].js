@@ -18,7 +18,9 @@
  *   POST /api/verwaltung/tour                     Reihenfolge der Liefertour speichern
  *   POST /api/verwaltung/produkt                  Produkt anlegen (Sortiment)
  *   POST /api/verwaltung/produkt/<id>             Produkt bearbeiten / aus- und einblenden
- *        (Feld bild: Pfad eines Fotos aus images/fotos.json oder leer)
+ *        (Feld bild: Pfad eines Fotos aus images/fotos.json, ein hochgeladenes
+ *        Foto 'api/hofladen/foto/<id>' oder leer)
+ *   POST /api/verwaltung/foto                     Produktfoto hochladen ({ daten: „data:image/jpeg;base64,…" })
  *   POST /api/verwaltung/bereich                  Bereich anlegen ({ name })
  *   POST /api/verwaltung/bereich/<id>             Bereich umbenennen ({ name })
  *   POST /api/verwaltung/bereich/<id>/loeschen    leeren Bereich löschen
@@ -81,12 +83,15 @@ function ganzzahl(wert, name, { min = 0, max = 1e9, leer = false } = {}) {
 const text = (wert, max = 500) => String(wert ?? '').trim().slice(0, max);
 const textOderNull = (wert, max) => text(wert, max) || null;
 
-// Produktfoto: Pfad zu einem Foto der Website (Auswahl aus images/fotos.json).
+// Produktfoto: Pfad zu einem Foto der Website (Auswahl aus images/fotos.json)
+// oder zu einem in der Verwaltung hochgeladenen Foto (Tabelle produkt_fotos).
 // Nur Bilddateien unter images/, kein „..", keine Adressen fremder Server.
 const FOTO_PFAD = /^images\/[\w\-. /äöüÄÖÜß()]+\.(jpe?g|png|webp)$/i;
+const EIGENES_FOTO = /^api\/hofladen\/foto\/[1-9]\d{0,9}$/;
 function fotoOderNull(wert) {
   const pfad = text(wert, 200);
   if (!pfad) return null;
+  if (EIGENES_FOTO.test(pfad)) return pfad;
   if (!FOTO_PFAD.test(pfad) || pfad.includes('..') || pfad.includes('//')) {
     throw new EingabeFehler('Ungültiges Foto – bitte eines aus der Liste wählen.');
   }
@@ -187,6 +192,7 @@ async function standLaden(db, bank = null) {
       positionen: jePos.get(b.id) || [],
     })),
     bereiche: bereiche.map((b) => ({ id: id(b.id), name: b.name, produkte: b.produkte })),
+    eigeneFotos: await eigeneFotos(db),
     produkte: produkte.map((p) => ({
       id: id(p.id), name: p.name, art: p.art, bereichId: id(p.bereich), aktiv: Boolean(p.aktiv),
       richtVonG: p.richtgewicht_von_g, richtBisG: p.richtgewicht_bis_g, startpreisCent: p.startpreis_cent,
@@ -556,6 +562,55 @@ async function produktBearbeiten(db, produktId, e) {
   ).bind(p.name, p.art, kategorie, p.bereichId, p.startpreisCent, p.beschreibung, p.pflichtangaben, p.allergene,
     p.bild, p.richtVonG, p.richtBisG, p.aktiv, pid).run();
   return { produktId: id(pid) };
+}
+
+/* ------------------------------------------------------------
+   4c1. PRODUKTFOTOS hochladen
+   Das Handy schickt das schon verkleinerte JPEG als data:-Adresse. Hier
+   nur prüfen (wirklich JPEG, Größe) und speichern; zugeordnet wird es erst
+   beim Speichern des Produkts (Feld bild).
+   ------------------------------------------------------------ */
+const FOTO_MAX_BYTES = 1500000;
+
+async function fotoHochladen(db, e) {
+  const treffer = /^data:image\/jpeg;base64,([A-Za-z0-9+/]+={0,2})$/.exec(String(e.daten || ''));
+  if (!treffer) throw new EingabeFehler('Das Foto konnte nicht gelesen werden – bitte ein anderes wählen.');
+  const base64 = treffer[1];
+  let bytes;
+  try { bytes = atob(base64.slice(0, 8)); } catch { throw new EingabeFehler('Das Foto konnte nicht gelesen werden.'); }
+  // JPEG beginnt immer mit FF D8 FF
+  if (bytes.charCodeAt(0) !== 0xff || bytes.charCodeAt(1) !== 0xd8 || bytes.charCodeAt(2) !== 0xff) {
+    throw new EingabeFehler('Das ist kein JPEG-Foto.');
+  }
+  const groesse = Math.floor((base64.length * 3) / 4) - (base64.endsWith('==') ? 2 : base64.endsWith('=') ? 1 : 0);
+  if (groesse < 500) throw new EingabeFehler('Das Foto ist leer.');
+  if (groesse > FOTO_MAX_BYTES) throw new EingabeFehler('Das Foto ist zu groß.');
+  try {
+    // Aufräumen: hochgeladen, aber nach einem Tag noch keinem Produkt zugeordnet
+    await db.prepare(
+      `DELETE FROM produkt_fotos WHERE erstellt_am < datetime('now', '-1 day')
+         AND NOT EXISTS (SELECT 1 FROM produkte WHERE bild = 'api/hofladen/foto/' || produkt_fotos.id)`
+    ).run();
+    const zeile = await db.prepare('INSERT INTO produkt_fotos (daten, groesse) VALUES (?, ?) RETURNING id')
+      .bind(base64, groesse).first();
+    return { bild: `api/hofladen/foto/${zeile.id}` };
+  } catch (fehler) {
+    if (/no such table/i.test(String(fehler && fehler.message))) {
+      throw new EingabeFehler('Fotos hochladen ist noch nicht eingerichtet: schema-hofladen.sql einmal in der D1-Konsole ausführen.');
+    }
+    throw fehler;
+  }
+}
+
+// Hochgeladene Fotos für die Auswahl (neueste zuerst); fehlt die Tabelle
+// noch, bleibt die Liste leer statt die ganze Verwaltung zu blockieren
+async function eigeneFotos(db) {
+  try {
+    const { results } = await db.prepare('SELECT id FROM produkt_fotos ORDER BY id DESC').all();
+    return results.map((f) => `api/hofladen/foto/${f.id}`);
+  } catch {
+    return [];
+  }
 }
 
 /* ------------------------------------------------------------
@@ -993,6 +1048,7 @@ export async function onRequest({ request, env, params, data }) {
     else if (bereich === 'bereich' && pfad.length === 2) ergebnis = await bereichUmbenennen(db, teilId, eingabe);
     else if (bereich === 'bereich' && unteraktion === 'loeschen' && pfad.length === 3) ergebnis = await bereichLoeschen(db, teilId);
     else if (bereich === 'bereiche' && teilId === 'reihenfolge' && pfad.length === 2) ergebnis = await bereicheOrdnen(db, eingabe);
+    else if (bereich === 'foto' && pfad.length === 1) ergebnis = await fotoHochladen(db, eingabe);
     else if (bereich === 'produkt' && pfad.length === 1) ergebnis = await produktAnlegen(db, eingabe);
     else if (bereich === 'produkt' && pfad.length === 2) ergebnis = await produktBearbeiten(db, teilId, eingabe);
     else if (bereich === 'voranmeldung' && unteraktion === 'absagen' && pfad.length === 3) {

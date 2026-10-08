@@ -18,7 +18,7 @@ Offizielle Website der Ferienwohnung **Hof Kruckenhaus** in Breitenbach am Inn, 
 | Fotos | ✅ Wohnung, Hof, Alpakas, See, Bienen eingebaut – ein paar Motive fehlen noch (siehe [Fotos](#fotos-hochladen-und-einbauen)) |
 | Logo | ✅ als Symbol im Browser-Tab (`favicon.ico`); in der Kopfzeile steht weiter der Schriftzug |
 | Startseite | ✅ Wegweiser nach dem großen Bild: links Ferienwohnung, rechts Hofladen |
-| Hofladen-Vorbestellung | 🛠 programmiert und getestet; Produktfotos in der Verwaltung wählbar; offen: Bestellbedingungen prüfen lassen, Verwaltungs-Anmeldung einrichten, Produktfotos aufnehmen – Details in `docs/HOFLADEN-VORBESTELLUNG.md` |
+| Hofladen-Vorbestellung | 🛠 programmiert und getestet; Produktfotos direkt in der Verwaltung hochladen (vorher einmal `schema-hofladen.sql` in der D1-Konsole ausführen); offen: Bestellbedingungen prüfen lassen, Verwaltungs-Anmeldung einrichten, Produktfotos aufnehmen – Details in `docs/HOFLADEN-VORBESTELLUNG.md` |
 | Arbeitsweise | Änderungen entstehen auf einem Arbeitszweig (`claude/…`) und gehen erst live, wenn sie in `master` übernommen werden |
 
 ---
@@ -252,7 +252,7 @@ eingesetzt.
 | `images/bauernhof/` | Alpakas, Heuernte, Bienen |
 | `images/berglsteiner-see/` | Berglsteiner See |
 | `images/umgebung/` | Ausflugsziele, Skigebiete |
-| `images/hofladen/` | Produktfotos für den Hofladen (in der Verwaltung beim Produkt wählbar) |
+| `images/hofladen/` | optional: Produktfotos über GitHub (einfacher: direkt in der Verwaltung hochladen) |
 | `images/logo/` | Logo (Hirsch mit Schriftzug); daraus sind `favicon.ico` und `apple-touch-icon.png` im Hauptordner erstellt |
 
 Bildnachweis im Impressum: Florian Häusler, Kathrin Häusler, Philippphoto.
@@ -651,15 +651,14 @@ die Verwaltung mit erfundenen Daten; dabei wird nichts gespeichert.
 **Produkte und Bestellrunden im Alltag:**
 - *Produkte* (Menüpunkt in der Verwaltung, am Handy über die Übersicht):
   alles, was es grundsätzlich gibt – Name, Beschreibung, Zutaten/Allergene.
-  **Produktfotos:** Foto hochladen nach
-  https://github.com/Tyrolius/Kruckenhaus/upload/master/images/hofladen
-  (der Link steht auch im Produktformular). Nach etwa 3 Minuten ist es
-  verkleinert und steht beim Bearbeiten des Produkts oben zur Wahl –
-  antippen, speichern. Unter „Foto von der Website nehmen" lassen sich auch
-  die übrigen Fotos wählen (z. B. das Bienenfoto für den Honig). Die Liste
-  der Fotos schreibt die Bild-Automatik in `images/fotos.json`. In der
-  Sortiment-Liste zeigt ein kleines Bild bzw. „kein Foto", wo noch eines
-  fehlt. Eingeblendete Produkte erscheinen
+  **Produktfotos:** Beim Produkt auf **„Foto aufnehmen oder wählen"** tippen –
+  das Handy bietet Kamera oder Galerie an. Das Foto wird am Handy verkleinert
+  (max. 1200 px), in der Datenbank gespeichert (Tabelle `produkt_fotos`) und
+  ist gleich ausgewählt; dann **Speichern**. Bereits hochgeladene Fotos lassen
+  sich bei anderen Produkten wiederverwenden, unter „Foto von der Website
+  nehmen" auch alle Fotos der Website. Hochgeladene, aber nie gespeicherte
+  Fotos werden nach einem Tag gelöscht. In der Sortiment-Liste zeigt ein
+  kleines Bild bzw. „kein Foto", wo noch eines fehlt. Eingeblendete Produkte erscheinen
   auf der Hofladen-Seite im Abschnitt „Unser Sortiment"; nicht mehr
   erhältliche Produkte ausblenden statt löschen.
 - *Bestellrunde*: was gerade bestellbar ist, mit Preis, Menge und Terminen.

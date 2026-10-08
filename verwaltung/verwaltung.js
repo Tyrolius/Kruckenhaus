@@ -1890,7 +1890,7 @@ function ansichtSortiment() {
     ${gruppen.map(([b, liste]) => `<section class="vw-karte"><h2>${esc(b.name)}</h2>
       ${liste.map((p) => `<div class="vw-produkt-zeile${p.aktiv === false ? ' vw-zeile--grau' : ''}">
         <div class="vw-produkt-info">${p.bild
-          ? `<img class="vw-produkt-foto" src="/${esc(p.bild)}" alt="" loading="lazy" decoding="async" />`
+          ? `<img class="vw-produkt-foto" src="${esc(fotoSrc(p.bild))}" alt="" loading="lazy" decoding="async" />`
           : '<span class="vw-produkt-foto vw-produkt-foto--leer">kein Foto</span>'}<div><strong>${esc(p.name)}</strong>${p.aktiv === false ? ' <span class="vw-marke">ausgeblendet</span>' : ''}<br>
           <span class="vw-klein">${p.art === 'gewicht' ? 'nach Gewicht' : 'Fixpreis'}${p.startpreisCent != null
             ? ` · Vorschlag ${euro(p.startpreisCent)}${p.art === 'gewicht' ? '/kg' : ''}` : ''}${p.allergene ? ` · Allergene: ${esc(p.allergene)}` : ''}</span></div></div>
@@ -1910,10 +1910,12 @@ function produktFormStarten(id) {
   if (fotoliste === null) fotolisteLaden();
 }
 
-// Produktfotos: Liste aller Fotos der Website aus images/fotos.json (schreibt
-// die Bild-Automatik auf GitHub). Fotos aus images/hofladen/ stehen oben.
+// Produktfotos: Am einfachsten direkt hier vom Handy hochladen (Kamera oder
+// Galerie) – das Foto wird vorher im Browser verkleinert und in der
+// Datenbank gespeichert. Zusätzlich wählbar: alle Fotos der Website aus
+// images/fotos.json (schreibt die Bild-Automatik auf GitHub).
 let fotoliste = null;
-const FOTO_HOCHLADEN = 'https://github.com/Tyrolius/Kruckenhaus/upload/master/images/hofladen';
+const fotoSrc = (pfad) => (pfad.startsWith('data:') ? pfad : `/${pfad}`);
 
 async function fotolisteLaden() {
   fotoliste = [];
@@ -1935,27 +1937,83 @@ const fotoName = (pfad) => pfad.split('/').pop().replace(/\.[a-z]+$/i, '').repla
 function fotoWahl(pfad, gewaehlt) {
   return `<label class="vw-foto-wahl">
     <input type="radio" name="bild" value="${esc(pfad)}" ${gewaehlt === pfad ? 'checked' : ''} />
-    ${pfad ? `<img src="/${esc(pfad)}" alt="" loading="lazy" decoding="async" />` : '<span class="vw-foto-leer">Kein Foto</span>'}
-    <span class="vw-foto-name">${pfad ? esc(fotoName(pfad)) : 'ohne Bild'}</span></label>`;
+    ${pfad ? `<img src="${esc(fotoSrc(pfad))}" alt="" loading="lazy" decoding="async" />` : '<span class="vw-foto-leer">Kein Foto</span>'}
+    ${pfad.startsWith('images/') ? `<span class="vw-foto-name">${esc(fotoName(pfad))}</span>`
+      : pfad ? '' : '<span class="vw-foto-name">ohne Bild</span>'}</label>`;
 }
 
 function fotoAuswahl(f) {
-  if (fotoliste === null) return '<p class="vw-klein">Fotos werden geladen …</p>';
-  const alle = fotoliste.includes(f.bild) || !f.bild ? fotoliste : [f.bild, ...fotoliste];
-  const hofladen = alle.filter((x) => x.startsWith('images/hofladen/'));
-  const weitere = alle.filter((x) => !x.startsWith('images/hofladen/'));
+  const eigene = daten.eigeneFotos || [];
+  const website = fotoliste || [];
+  // Das gewählte Foto immer anbieten, auch wenn es in keiner Liste (mehr) steht
+  const bekannt = !f.bild || eigene.includes(f.bild) || website.includes(f.bild);
+  const oben = [...(bekannt || !f.bild.startsWith('api/') && !f.bild.startsWith('data:') ? [] : [f.bild]), ...eigene,
+    ...website.filter((x) => x.startsWith('images/hofladen/'))];
+  const weitere = [...(bekannt || !f.bild.startsWith('images/') ? [] : [f.bild]),
+    ...website.filter((x) => !x.startsWith('images/hofladen/'))];
   // Zugeklappt, damit der Speichern-Knopf am Handy nah bleibt – außer das
   // gewählte Foto liegt dort
   const weitereOffen = weitere.includes(f.bild);
   return `<fieldset class="vw-feldgruppe"><legend>Foto auf der Hofladen-Seite</legend>
-      <p class="vw-klein">${hofladen.length ? 'Antippen zum Auswählen.' : 'Noch keine Produktfotos vorhanden.'}
-        <a href="${FOTO_HOCHLADEN}" target="_blank" rel="noopener noreferrer">Neues Foto hochladen</a>
-        (Ordner „images/hofladen" auf GitHub) – nach etwa 3 Minuten steht es hier zur Wahl.</p>
-      <div class="vw-foto-raster">${fotoWahl('', f.bild)}${hofladen.map((x) => fotoWahl(x, f.bild)).join('')}</div>
+      <label class="vw-knopf vw-knopf--voll vw-foto-knopf">
+        <input type="file" accept="image/*" data-foto-hochladen />
+        Foto aufnehmen oder wählen</label>
+      <p class="vw-klein" id="vw-foto-status" aria-live="polite">${oben.length ? 'Oder ein vorhandenes Foto antippen:' : ''}</p>
+      <div class="vw-foto-raster">${fotoWahl('', f.bild)}${oben.map((x) => fotoWahl(x, f.bild)).join('')}</div>
       ${weitere.length ? `<details class="vw-foto-weitere" ${weitereOffen ? 'open' : ''}>
         <summary>Foto von der Website nehmen (${weitere.length})</summary>
         <div class="vw-foto-raster">${weitere.map((x) => fotoWahl(x, f.bild)).join('')}</div></details>` : ''}
     </fieldset>`;
+}
+
+// Foto im Browser verkleinern (lange Seite max. 1200 px, JPEG). Browser
+// drehen Handyfotos dabei richtig (EXIF), das Original bleibt am Handy.
+function fotoVerkleinern(datei, max = 1200, qualitaet = 0.82) {
+  return new Promise((ok, fehler) => {
+    const url = URL.createObjectURL(datei);
+    const bild = new Image();
+    bild.onload = () => {
+      const faktor = Math.min(1, max / Math.max(bild.naturalWidth, bild.naturalHeight));
+      const leinwand = document.createElement('canvas');
+      leinwand.width = Math.max(1, Math.round(bild.naturalWidth * faktor));
+      leinwand.height = Math.max(1, Math.round(bild.naturalHeight * faktor));
+      const ctx = leinwand.getContext('2d');
+      ctx.fillStyle = '#ffffff'; // durchsichtige PNG-Flächen weiß statt schwarz
+      ctx.fillRect(0, 0, leinwand.width, leinwand.height);
+      ctx.drawImage(bild, 0, 0, leinwand.width, leinwand.height);
+      URL.revokeObjectURL(url);
+      ok(leinwand.toDataURL('image/jpeg', qualitaet));
+    };
+    bild.onerror = () => { URL.revokeObjectURL(url); fehler(new Error('Foto nicht lesbar')); };
+    bild.src = url;
+  });
+}
+
+async function produktFotoHochladen(eingabeFeld) {
+  const datei = eingabeFeld.files && eingabeFeld.files[0];
+  const f = zustand.produktForm;
+  if (!datei || !f) return;
+  const status = document.getElementById('vw-foto-status');
+  if (status) status.textContent = 'Foto wird vorbereitet …';
+  let daten64;
+  try {
+    daten64 = await fotoVerkleinern(datei);
+  } catch {
+    if (status) status.textContent = '';
+    meldung('Dieses Foto lässt sich nicht öffnen – bitte ein anderes wählen.');
+    return;
+  }
+  if (status) status.textContent = 'Foto wird hochgeladen …';
+  const erg = await speichern('foto', { daten: daten64 }, () => {
+    daten.eigeneFotos = [daten64, ...(daten.eigeneFotos || [])];
+    return { bild: daten64 };
+  }, { neuZeichnen: false });
+  if (!erg) { if (status) status.textContent = ''; return; }
+  // Neues Foto gleich auswählen; nur den Foto-Bereich neu zeichnen
+  f.bild = erg.bild;
+  const bereich = document.getElementById('vw-foto-auswahl');
+  if (bereich) bereich.innerHTML = fotoAuswahl(f);
+  meldung('Foto hochgeladen und ausgewählt – jetzt noch „Speichern" tippen.');
 }
 
 function ansichtProdukt() {
@@ -2732,6 +2790,7 @@ function initEingaben() {
   });
 
   document.addEventListener('change', (e) => {
+    if (e.target.dataset.fotoHochladen !== undefined) produktFotoHochladen(e.target);
     if (e.target.dataset.gewicht) gewichtSpeichern(e.target);
     if (e.target.name === 'termin') adresseUmschalten();
     if (e.target.dataset.wahl === 'charge') {

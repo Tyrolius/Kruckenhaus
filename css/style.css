@@ -5879,3 +5879,26 @@ html, body { overflow-x: clip; }
   color: var(--color-primary);
   padding: 0.4rem 0;
 }
+
+/* Foto hochladen: großer Knopf, das Dateifeld selbst bleibt unsichtbar
+   (am Handy öffnet das Antippen Kamera oder Galerie) */
+.vw-foto-knopf {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-bottom: 0.25rem;
+  cursor: pointer;
+}
+
+.vw-foto-knopf input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.vw-foto-knopf:has(input:focus-visible) {
+  outline: 2px solid var(--color-terracotta);
+  outline-offset: 2px;
+}

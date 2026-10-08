@@ -7,6 +7,7 @@
  *   GET  /api/hofladen/angebot       offene Bestellrunden mit freier Menge, Termine,
  *                                    Liefergebiet, Bereiche, Sortiment (alle
  *                                    eingeblendeten Produkte, auch für Voranmeldungen)
+ *   GET  /api/hofladen/foto/<id>     Produktfoto (in der Verwaltung hochgeladen)
  *   POST /api/hofladen/bestellung    verbindliche Vorbestellung
  *   POST /api/hofladen/voranmeldung  unverbindliche Voranmeldung
  *   GET  /api/hofladen/meine         Bestellungen zum persönlichen Link
@@ -509,6 +510,24 @@ async function widerrufAufnehmen(db, env, schluessel, e) {
 /* ------------------------------------------------------------
    6. VERTEILER
    ------------------------------------------------------------ */
+// Produktfoto aus der Tabelle produkt_fotos (Base64 → JPEG). Ein Foto ändert
+// sich nie – neue Fotos bekommen eine neue Nummer –, darf also lange gecacht werden.
+async function fotoAusliefern(db, fotoId) {
+  const zeile = await db.prepare('SELECT daten FROM produkt_fotos WHERE id = ?').bind(fotoId).first()
+    .catch(() => null);
+  if (!zeile) return new Response('Foto nicht gefunden.', { status: 404, headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+  const roh = atob(zeile.daten);
+  const bytes = new Uint8Array(roh.length);
+  for (let i = 0; i < roh.length; i++) bytes[i] = roh.charCodeAt(i);
+  return new Response(bytes, {
+    headers: {
+      'Content-Type': 'image/jpeg',
+      'Cache-Control': 'public, max-age=31536000, immutable',
+      'X-Content-Type-Options': 'nosniff',
+    },
+  });
+}
+
 export async function onRequest({ request, env, params }) {
   if (!env.DB) return json({ ok: false, error: 'Der Hofladen ist gerade nicht erreichbar.' }, 503);
   const db = env.DB;
@@ -517,6 +536,9 @@ export async function onRequest({ request, env, params }) {
   try {
     if (request.method === 'GET' && pfad === 'angebot') {
       return json({ ok: true, ...(await angebotLaden(db)) });
+    }
+    if (request.method === 'GET' && /^foto\/[1-9]\d{0,9}$/.test(pfad)) {
+      return await fotoAusliefern(db, Number(pfad.slice(5)));
     }
     if (request.method === 'GET' && pfad === 'meine') {
       const daten = await meineLaden(db, request.headers.get('X-Link-Schluessel'));
