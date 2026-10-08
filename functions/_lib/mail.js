@@ -2,20 +2,26 @@
  * E-MAIL-VORLAGE – gemeinsames Aussehen aller Mails (keine Route)
  * ============================================================
  * Alle automatischen Mails (Kontaktformular, Hofladen, Verwaltung) bekommen
- * denselben Rahmen: Kopf „Bergbauernhof Kruckenhaus" in den Hausfarben,
- * gut lesbar am Handy, Fußzeile mit Adresse, Telefon, WhatsApp und
- * Impressum. Dazu eine Nur-Text-Fassung (bessere Zustellung, weniger Spam).
+ * denselben Rahmen: Kopf mit dem Logo, gut lesbar am Handy, Fußzeile mit
+ * Absender (Betrieb, Florian & Kathrin Häusler, Adresse), Telefon, WhatsApp
+ * und Impressum. Dazu eine Nur-Text-Fassung (bessere Zustellung, weniger Spam).
  *
  * Mail-Programme kennen kein CSS aus style.css und keine Custom
  * Properties – deshalb Tabellen-Layout und Farben direkt als Hex-Werte
- * (dieselben wie in :root von css/style.css). Keine Bilder, keine
- * externen Ressourcen: viele Programme blockieren sie ohnehin.
+ * (dieselben wie in :root von css/style.css). Einziges Bild ist das Logo,
+ * geladen von kruckenhaus.at (weißer Hintergrund, damit es auch im
+ * Dunkelmodus lesbar bleibt). Blockiert ein Programm Bilder, steht an seiner
+ * Stelle der Alt-Text „Bergbauernhof Kruckenhaus" – die Mail bleibt vollständig.
  *
  * Bewusst ohne Abhängigkeit zu hofladen.js, damit beide Dateien sich
  * gegenseitig nutzen können.
  * ============================================================ */
 
 export const BETRIEB = 'Bergbauernhof Kruckenhaus';
+export const INHABER = 'Florian & Kathrin Häusler';
+
+// Logo für den Mail-Kopf: 400 px breit, angezeigt mit 160 px (scharf am Handy)
+const LOGO_URL = 'https://www.kruckenhaus.at/images/logo/kruckenhaus-logo-mail.png';
 
 // Hausfarben (css/style.css, Abschnitt 2)
 const FARBE = {
@@ -106,8 +112,10 @@ export function positionenHtml(zeilen) {
 export function mailHtml({ titel = '', inhalt, vorschau = '', art = 'kunde' }) {
   const fuss = art === 'hof'
     ? `Automatische Nachricht der Website · <a href="https://www.kruckenhaus.at/verwaltung/" style="color:${FARBE.hell}">Verwaltung öffnen</a>`
-    : `${BETRIEB} · Kathrin &amp; Florian Häusler<br>
-       Oberberg 70 · 6252 Breitenbach am Inn · Tirol<br>
+    : `<strong style="color:${FARBE.text}">${BETRIEB}</strong><br>
+       ${esc(INHABER)}<br>
+       Oberberg 70<br>
+       6252 Breitenbach am Inn<br>
        <a href="tel:+436642166181" style="color:${FARBE.hell}">+43 664 2166181</a> ·
        <a href="https://wa.me/436642166181" style="color:${FARBE.hell}">WhatsApp</a> ·
        <a href="mailto:info@kruckenhaus.at" style="color:${FARBE.hell}">info@kruckenhaus.at</a><br>
@@ -122,9 +130,9 @@ export function mailHtml({ titel = '', inhalt, vorschau = '', art = 'kunde' }) {
 <span style="display:none;max-height:0;overflow:hidden;opacity:0">${esc(vorschau)}</span>
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:${FARBE.beige}"><tr><td align="center" style="padding:24px 12px">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="max-width:580px;background-color:${FARBE.weiss};border-radius:12px;overflow:hidden">
-    <tr><td style="background-color:${FARBE.primaer};padding:22px 28px">
-      <div style="font-family:${TITELSCHRIFT};font-size:24px;line-height:1.2;color:${FARBE.weiss}">${BETRIEB}</div>
-      <div style="font-family:${SCHRIFT};font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:${FARBE.beige};margin-top:4px">Breitenbach am Inn · Tirol</div>
+    <tr><td align="center" style="background-color:${FARBE.weiss};padding:22px 28px 16px;border-bottom:4px solid ${FARBE.primaer}">
+      <a href="https://www.kruckenhaus.at" style="text-decoration:none"><img src="${LOGO_URL}" width="160" height="143" alt="${BETRIEB}"
+        style="display:block;margin:0 auto;border:0;outline:none;font-family:${TITELSCHRIFT};font-size:22px;line-height:1.3;color:${FARBE.primaer}"></a>
     </td></tr>
     <tr><td style="padding:28px 28px 12px;font-family:${SCHRIFT};font-size:16px;line-height:1.55;color:${FARBE.text}">
       ${titel ? `<h1 style="margin:0 0 18px;font-family:${TITELSCHRIFT};font-size:22px;line-height:1.3;font-weight:normal;color:${FARBE.primaer}">${esc(titel)}</h1>` : ''}
@@ -139,7 +147,7 @@ export function mailHtml({ titel = '', inhalt, vorschau = '', art = 'kunde' }) {
 }
 
 // Gruß am Ende jeder Kunden-Mail
-export const gruss = absatz('Liebe Grüße vom Hof<br>Kathrin &amp; Florian');
+export const gruss = absatz('Liebe Grüße vom Hof<br>Florian &amp; Kathrin');
 
 /* ------------------------------------------------------------
    3. NUR-TEXT-FASSUNG
