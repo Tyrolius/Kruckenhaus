@@ -5680,3 +5680,32 @@ html, body { overflow-x: clip; }
   color: var(--color-text-light);
   text-align: center;
 }
+
+/* ============================================================
+   53. FOTO IN DER JAHRESZEITEN-KARTE & NEUIGKEIT AM HOF
+   index.html (Herbst & Frühling), bauernhof.html (Alpakas)
+   ============================================================ */
+.jahreszeit-bild {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--border-radius);
+  margin-bottom: 1.25rem;
+}
+
+.hof-neuigkeit {
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  border-left: 4px solid var(--color-green);
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+}
+
+.hof-neuigkeit h3 {
+  font-size: 1.15rem;
+  color: var(--color-primary);
+  margin-bottom: 0.5rem;
+}
+
+.hof-neuigkeit p { margin: 0; }
