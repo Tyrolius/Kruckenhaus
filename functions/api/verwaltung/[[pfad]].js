@@ -18,6 +18,7 @@
  *   POST /api/verwaltung/tour                     Reihenfolge der Liefertour speichern
  *   POST /api/verwaltung/produkt                  Produkt anlegen (Sortiment)
  *   POST /api/verwaltung/produkt/<id>             Produkt bearbeiten / aus- und einblenden
+ *        (Feld bild: Pfad eines Fotos aus images/fotos.json oder leer)
  *   POST /api/verwaltung/bereich                  Bereich anlegen ({ name })
  *   POST /api/verwaltung/bereich/<id>             Bereich umbenennen ({ name })
  *   POST /api/verwaltung/bereich/<id>/loeschen    leeren Bereich löschen
@@ -80,6 +81,18 @@ function ganzzahl(wert, name, { min = 0, max = 1e9, leer = false } = {}) {
 const text = (wert, max = 500) => String(wert ?? '').trim().slice(0, max);
 const textOderNull = (wert, max) => text(wert, max) || null;
 
+// Produktfoto: Pfad zu einem Foto der Website (Auswahl aus images/fotos.json).
+// Nur Bilddateien unter images/, kein „..", keine Adressen fremder Server.
+const FOTO_PFAD = /^images\/[\w\-. /äöüÄÖÜß()]+\.(jpe?g|png|webp)$/i;
+function fotoOderNull(wert) {
+  const pfad = text(wert, 200);
+  if (!pfad) return null;
+  if (!FOTO_PFAD.test(pfad) || pfad.includes('..') || pfad.includes('//')) {
+    throw new EingabeFehler('Ungültiges Foto – bitte eines aus der Liste wählen.');
+  }
+  return pfad;
+}
+
 function auswahl(wert, erlaubt, name) {
   if (!erlaubt.includes(wert)) throw new EingabeFehler(`Ungültige Auswahl: ${name}.`);
   return wert;
@@ -127,7 +140,7 @@ async function standLaden(db, bank = null) {
                          t.rang AS tour_rang
                   FROM kunden k LEFT JOIN tour_reihenfolge t ON t.kunde_id = k.id ORDER BY k.name`),
       db.prepare(`SELECT p.id, p.name, p.art, p.bereich, p.richtgewicht_von_g, p.richtgewicht_bis_g, p.startpreis_cent,
-                         p.aktiv, p.beschreibung, p.pflichtangaben, p.allergene,
+                         p.aktiv, p.beschreibung, p.pflichtangaben, p.allergene, p.bild,
                          EXISTS (SELECT 1 FROM charge_artikel ca WHERE ca.produkt_id = p.id) AS verwendet
                   FROM v_produkte p ORDER BY p.bereich_reihenfolge, p.reihenfolge, p.name`),
       db.prepare(`SELECT id, kunde_id, produkt_id, menge, zeitraum, jahr, quelle, status, notiz, erstellt_am
@@ -178,7 +191,7 @@ async function standLaden(db, bank = null) {
       id: id(p.id), name: p.name, art: p.art, bereichId: id(p.bereich), aktiv: Boolean(p.aktiv),
       richtVonG: p.richtgewicht_von_g, richtBisG: p.richtgewicht_bis_g, startpreisCent: p.startpreis_cent,
       beschreibung: p.beschreibung || '', pflichtangaben: p.pflichtangaben || '', allergene: p.allergene || '',
-      verwendet: Boolean(p.verwendet),
+      bild: p.bild || '', verwendet: Boolean(p.verwendet),
     })),
     voranmeldungen: voranmeldungen.map((v) => ({
       id: id(v.id), kundeId: id(v.kunde_id), produktId: id(v.produkt_id), menge: v.menge,
@@ -482,6 +495,7 @@ function produktPruefen(e) {
     beschreibung: textOderNull(e.beschreibung, 1000),
     pflichtangaben: textOderNull(e.pflichtangaben, 1000),
     allergene: textOderNull(e.allergene, 300),
+    bild: fotoOderNull(e.bild),
     aktiv: e.aktiv === false ? 0 : 1,
     richtVonG: null,
     richtBisG: null,
@@ -513,12 +527,12 @@ async function produktAnlegen(db, e) {
   // Neue Produkte ans Ende ihres Bereichs
   const zeile = await db.prepare(
     `INSERT INTO produkte (name, art, kategorie, bereich_id, startpreis_cent, beschreibung, pflichtangaben, allergene,
-                           richtgewicht_von_g, richtgewicht_bis_g, aktiv, reihenfolge)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                           bild, richtgewicht_von_g, richtgewicht_bis_g, aktiv, reihenfolge)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
              (SELECT COALESCE(MAX(reihenfolge), 0) + 10 FROM v_produkte WHERE bereich = ?))
      RETURNING id`
   ).bind(p.name, p.art, kategorie, p.bereichId, p.startpreisCent, p.beschreibung, p.pflichtangaben, p.allergene,
-    p.richtVonG, p.richtBisG, p.aktiv, p.bereichId).first();
+    p.bild, p.richtVonG, p.richtBisG, p.aktiv, p.bereichId).first();
   return { produktId: id(zeile.id) };
 }
 
@@ -537,10 +551,10 @@ async function produktBearbeiten(db, produktId, e) {
   await nameFrei(db, p.name, pid);
   await db.prepare(
     `UPDATE produkte SET name = ?, art = ?, kategorie = ?, bereich_id = ?, startpreis_cent = ?, beschreibung = ?,
-            pflichtangaben = ?, allergene = ?, richtgewicht_von_g = ?, richtgewicht_bis_g = ?, aktiv = ?
+            pflichtangaben = ?, allergene = ?, bild = ?, richtgewicht_von_g = ?, richtgewicht_bis_g = ?, aktiv = ?
      WHERE id = ?`
   ).bind(p.name, p.art, kategorie, p.bereichId, p.startpreisCent, p.beschreibung, p.pflichtangaben, p.allergene,
-    p.richtVonG, p.richtBisG, p.aktiv, pid).run();
+    p.bild, p.richtVonG, p.richtBisG, p.aktiv, pid).run();
   return { produktId: id(pid) };
 }
 

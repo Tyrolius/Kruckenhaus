@@ -49,7 +49,8 @@ jobs:
 
       - name: Änderungen committen
         run: |
-          if git diff --quiet -- images/; then
+          # status statt diff: erfasst auch eine neu entstandene images/fotos.json
+          if [ -z "$(git status --porcelain -- images/)" ]; then
             echo "Alle Bilder sind bereits web-tauglich – nichts zu tun."
             exit 0
           fi

@@ -304,6 +304,21 @@ assert.deepEqual([s.produkte.find((p) => p.id === eier).name, s.produkte.find((p
 assert.ok(!s.preisVorschlaege.some((v) => v.produktId === eier), 'ausgeblendet = kein Vorschlag für neue Bestellrunden');
 console.log('✓ Sortiment: anlegen, doppelte Namen, Richtgewicht, Art bei verkauften Produkten gesperrt, ausblenden');
 
+// Produktfoto: Pfad aus der Fotoliste speichern, fremde Adressen abweisen, leer = kein Foto
+const eiDaten = { name: 'Freilandeier 6 Stück', art: 'stueck', bereichId: bSaison, startpreisCent: 300, aktiv: false };
+ok(await api('POST', `produkt/${eier}`, { ...eiDaten, bild: 'images/hofladen/eier-korb.jpg' }));
+s = ok(await api('GET', 'stand'));
+assert.equal(s.produkte.find((p) => p.id === eier).bild, 'images/hofladen/eier-korb.jpg');
+for (const falsch of ['https://fremd.example/x.jpg', '/images/a.jpg', 'images/../wrangler.toml', 'images/a.jpg"><script>', 'images/hofladen/datei.svg']) {
+  assert.match((await api('POST', `produkt/${eier}`, { ...eiDaten, bild: falsch })).error, /Ungültiges Foto/, falsch);
+}
+ok(await api('POST', `produkt/${eier}`, { ...eiDaten, bild: '' }));
+s = ok(await api('GET', 'stand'));
+assert.equal(s.produkte.find((p) => p.id === eier).bild, '');
+r = ok(await api('POST', 'produkt', { name: 'Honig 250 g', art: 'stueck', bereichId: bSaison, bild: 'images/bauernhof/bienen-kinder-waben.jpg' }));
+assert.equal(roh.prepare('SELECT bild FROM produkte WHERE id = ?').get(Number(r.produktId)).bild, 'images/bauernhof/bienen-kinder-waben.jpg');
+console.log('✓ Produktfoto: speichern, ungültige Pfade abgewiesen, entfernen, beim Anlegen');
+
 // Bereiche: anlegen, umbenennen, Produkt umhängen, ordnen, leere löschen
 r = ok(await api('POST', 'bereich', { name: 'Eier & Marmelade' }));
 const bEier = r.bereichId;

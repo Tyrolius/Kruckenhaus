@@ -1889,9 +1889,11 @@ function ansichtSortiment() {
       </div></div>
     ${gruppen.map(([b, liste]) => `<section class="vw-karte"><h2>${esc(b.name)}</h2>
       ${liste.map((p) => `<div class="vw-produkt-zeile${p.aktiv === false ? ' vw-zeile--grau' : ''}">
-        <div><strong>${esc(p.name)}</strong>${p.aktiv === false ? ' <span class="vw-marke">ausgeblendet</span>' : ''}<br>
+        <div class="vw-produkt-info">${p.bild
+          ? `<img class="vw-produkt-foto" src="/${esc(p.bild)}" alt="" loading="lazy" decoding="async" />`
+          : '<span class="vw-produkt-foto vw-produkt-foto--leer">kein Foto</span>'}<div><strong>${esc(p.name)}</strong>${p.aktiv === false ? ' <span class="vw-marke">ausgeblendet</span>' : ''}<br>
           <span class="vw-klein">${p.art === 'gewicht' ? 'nach Gewicht' : 'Fixpreis'}${p.startpreisCent != null
-            ? ` · Vorschlag ${euro(p.startpreisCent)}${p.art === 'gewicht' ? '/kg' : ''}` : ''}${p.allergene ? ` · Allergene: ${esc(p.allergene)}` : ''}</span></div>
+            ? ` · Vorschlag ${euro(p.startpreisCent)}${p.art === 'gewicht' ? '/kg' : ''}` : ''}${p.allergene ? ` · Allergene: ${esc(p.allergene)}` : ''}</span></div></div>
         <div class="vw-knopfreihe vw-knopfreihe--klein">
           <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="produkt-bearbeiten" data-id="${p.id}">Bearbeiten</button>
           <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="produkt-aktiv" data-id="${p.id}">${p.aktiv === false ? 'Wieder anbieten' : 'Ausblenden'}</button>
@@ -1904,7 +1906,56 @@ function produktFormStarten(id) {
   zustand.produktForm = p
     ? { ...p, preis: textAusCent(p.startpreisCent), von: kgText(p.richtVonG), bis: kgText(p.richtBisG) }
     : { id: null, name: '', art: 'stueck', bereichId: (daten.bereiche[0] || {}).id || '', preis: '', von: '', bis: '', beschreibung: '',
-      pflichtangaben: '', allergene: '', aktiv: true, verwendet: false };
+      pflichtangaben: '', allergene: '', bild: '', aktiv: true, verwendet: false };
+  if (fotoliste === null) fotolisteLaden();
+}
+
+// Produktfotos: Liste aller Fotos der Website aus images/fotos.json (schreibt
+// die Bild-Automatik auf GitHub). Fotos aus images/hofladen/ stehen oben.
+let fotoliste = null;
+const FOTO_HOCHLADEN = 'https://github.com/Tyrolius/Kruckenhaus/upload/master/images/hofladen';
+
+async function fotolisteLaden() {
+  fotoliste = [];
+  try {
+    const antwort = await fetch('/images/fotos.json', { cache: 'no-cache' });
+    if (antwort.ok) {
+      const liste = await antwort.json();
+      fotoliste = Array.isArray(liste) ? liste.filter((f) => typeof f === 'string') : [];
+    }
+  } catch (_) { /* ohne Liste bleibt nur „Kein Foto" bzw. das bisherige Foto */ }
+  // Nur den Foto-Bereich neu zeichnen – schon Getipptes bleibt stehen
+  const bereich = document.getElementById('vw-foto-auswahl');
+  if (bereich && zustand.produktForm) bereich.innerHTML = fotoAuswahl(zustand.produktForm);
+}
+
+// „images/hofladen/honig-glas.jpg" → „honig glas"
+const fotoName = (pfad) => pfad.split('/').pop().replace(/\.[a-z]+$/i, '').replace(/[-_]+/g, ' ');
+
+function fotoWahl(pfad, gewaehlt) {
+  return `<label class="vw-foto-wahl">
+    <input type="radio" name="bild" value="${esc(pfad)}" ${gewaehlt === pfad ? 'checked' : ''} />
+    ${pfad ? `<img src="/${esc(pfad)}" alt="" loading="lazy" decoding="async" />` : '<span class="vw-foto-leer">Kein Foto</span>'}
+    <span class="vw-foto-name">${pfad ? esc(fotoName(pfad)) : 'ohne Bild'}</span></label>`;
+}
+
+function fotoAuswahl(f) {
+  if (fotoliste === null) return '<p class="vw-klein">Fotos werden geladen …</p>';
+  const alle = fotoliste.includes(f.bild) || !f.bild ? fotoliste : [f.bild, ...fotoliste];
+  const hofladen = alle.filter((x) => x.startsWith('images/hofladen/'));
+  const weitere = alle.filter((x) => !x.startsWith('images/hofladen/'));
+  // Zugeklappt, damit der Speichern-Knopf am Handy nah bleibt – außer das
+  // gewählte Foto liegt dort
+  const weitereOffen = weitere.includes(f.bild);
+  return `<fieldset class="vw-feldgruppe"><legend>Foto auf der Hofladen-Seite</legend>
+      <p class="vw-klein">${hofladen.length ? 'Antippen zum Auswählen.' : 'Noch keine Produktfotos vorhanden.'}
+        <a href="${FOTO_HOCHLADEN}" target="_blank" rel="noopener noreferrer">Neues Foto hochladen</a>
+        (Ordner „images/hofladen" auf GitHub) – nach etwa 3 Minuten steht es hier zur Wahl.</p>
+      <div class="vw-foto-raster">${fotoWahl('', f.bild)}${hofladen.map((x) => fotoWahl(x, f.bild)).join('')}</div>
+      ${weitere.length ? `<details class="vw-foto-weitere" ${weitereOffen ? 'open' : ''}>
+        <summary>Foto von der Website nehmen (${weitere.length})</summary>
+        <div class="vw-foto-raster">${weitere.map((x) => fotoWahl(x, f.bild)).join('')}</div></details>` : ''}
+    </fieldset>`;
 }
 
 function ansichtProdukt() {
@@ -1936,6 +1987,7 @@ function ansichtProdukt() {
       <label class="vw-feld"><span>Beschreibung (optional)</span><textarea name="beschreibung" rows="2">${esc(f.beschreibung)}</textarea></label>
       <label class="vw-feld"><span>Zutaten, Füllmenge, Herkunft (bei Lebensmitteln Pflicht)</span><textarea name="pflichtangaben" rows="2">${esc(f.pflichtangaben)}</textarea></label>
       <label class="vw-feld"><span>Allergene (z. B. „Ei, Weizen (Gluten)" – leer, wenn keine)</span><input name="allergene" value="${esc(f.allergene)}" /></label>
+      <div id="vw-foto-auswahl">${fotoAuswahl(f)}</div>
       <div class="vw-knopfreihe">
         <button type="submit" class="vw-knopf vw-knopf--voll">${f.id ? 'Speichern' : 'Produkt anlegen'}</button>
         <a class="vw-knopf" href="#sortiment">Abbrechen</a>
@@ -1947,7 +1999,8 @@ function produktEingabe(f, aenderung = {}) {
   return {
     name: f.name.trim(), art: f.art, bereichId: f.bereichId, startpreisCent: f.preis === '' ? null : centAusText(f.preis),
     richtVonG: f.art === 'gewicht' ? grammAusText(f.von) : null, richtBisG: f.art === 'gewicht' ? grammAusText(f.bis) : null,
-    beschreibung: f.beschreibung, pflichtangaben: f.pflichtangaben, allergene: f.allergene, aktiv: f.aktiv !== false,
+    beschreibung: f.beschreibung, pflichtangaben: f.pflichtangaben, allergene: f.allergene, bild: f.bild || '',
+    aktiv: f.aktiv !== false,
     ...aenderung,
   };
 }
@@ -1957,6 +2010,8 @@ async function produktSpeichern(form) {
   ['name', 'bereichId', 'preis', 'von', 'bis', 'beschreibung', 'pflichtangaben', 'allergene'].forEach((n) => { f[n] = feld(form, n).value; });
   const art = form.querySelector('input[name="art"]:checked');
   f.art = art ? art.value : f.art;
+  const bild = form.querySelector('input[name="bild"]:checked');
+  if (bild) f.bild = bild.value;
   const eingabe = produktEingabe(f);
   if (!eingabe.name) return meldung('Bitte einen Namen eintragen.');
   if (f.preis !== '' && eingabe.startpreisCent == null) return meldung('Bitte den Preis als Zahl eintragen, z. B. 4,50.');
