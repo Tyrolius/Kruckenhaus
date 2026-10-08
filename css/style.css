@@ -5648,3 +5648,25 @@ html, body { overflow-x: clip; }
   background-image: url('../images/berglsteiner-see/berglsteiner-see-sommer-spiegelung.jpg');
   background-position: center 55%;
 }
+
+/* ============================================================
+   52. LAGE – FOTO UNTER DER SKIGEBIETE-TABELLE
+   ============================================================ */
+.ski-foto {
+  margin: var(--spacing-md) 0 0;
+}
+
+.ski-foto img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.ski-foto figcaption {
+  margin-top: 0.5rem;
+  font-size: 0.9rem;
+  color: var(--color-text-light);
+  text-align: center;
+}
