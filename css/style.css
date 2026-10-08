@@ -232,6 +232,17 @@
   --color-scrim-oben: rgba(20, 34, 28, 0.45);  /* Hero: Abdunkelung hinter der Navigation */
   --color-scrim-unten: rgba(20, 34, 28, 0.72); /* Hero: Abdunkelung hinter dem Text */
   --color-weiss-90:   rgba(255, 255, 255, 0.90); /* Fließtext auf dunklem Grund */
+  /* Wegkarte Berglsteiner See (berglsteiner-see.html) */
+  --karte-wiese:      #DCE3C8;
+  --karte-wiese-2:    #CFD9B6;
+  --karte-wald:       #4F7458;
+  --karte-wald-punkt: #3E6149;
+  --karte-see:        #79C0BC;
+  --karte-see-rand:   #5FA8A4;
+  --karte-strasse:    #FBF7F1;
+  --karte-gebaeude:   #A39B90;
+  --karte-text:       #2B2925;
+  --karte-halo:       #F7F2EA;
 
   /* Typografie – Destillierte Natur */
   --font-heading:     'Playfair Display', 'Libre Baskerville', Georgia, serif;
@@ -4824,13 +4835,6 @@ body.season-winter .winter-image { display: block; }
   color: var(--color-text-light);
 }
 
-.see-route-bild {
-  width: 100%;
-  height: 320px;
-  object-fit: cover;
-  border-radius: var(--border-radius-lg);
-}
-
 /* Foto-Platzhalter neutral statt bunter Farbverläufe – überschreibt die
    Inline-Farben, bis echte Fotos eingesetzt sind */
 .img-placeholder {
@@ -5982,4 +5986,84 @@ html, body { overflow-x: clip; }
   margin-top: 0.75rem;
   font-size: 0.9rem;
   color: var(--color-text-light);
+}
+
+/* ============================================================
+   60. WEGKARTE BERGLSTEINER SEE (berglsteiner-see.html)
+   Gezeichnete Karte als Inline-SVG; am Handy breiter als der
+   Bildschirm und seitlich wischbar, Stationen stehen daneben/darüber.
+   ============================================================ */
+.wegkarte-liste { align-self: center; min-width: 0; }
+.wegkarte-stationen {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 1.25rem;
+}
+.wegkarte-stationen li {
+  display: grid;
+  grid-template-columns: 2.25rem 1fr;
+  gap: 0.75rem;
+  align-items: start;
+}
+.wegkarte-stationen li > div { min-width: 0; }
+.wegkarte-nr {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  color: var(--color-white);
+  background: var(--color-primary);
+}
+.wegkarte-nr.wegkarte-ziel { background: var(--color-terracotta); }
+.wegkarte-stationen h4 { margin: 0.2rem 0 0.1rem; }
+.wegkarte-wert {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--color-terracotta);
+  font-variant-numeric: tabular-nums;
+}
+.wegkarte-stationen p { margin: 0.25rem 0 0; font-size: 0.95rem; color: var(--color-text-light); }
+
+.wegkarte {
+  margin: var(--spacing-md) 0 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  overflow: hidden;
+  background: var(--karte-wiese);
+}
+.wegkarte-scroll { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.wegkarte-svg { display: block; width: 100%; height: auto; }
+.wegkarte figcaption {
+  font-size: 0.85rem;
+  color: var(--color-text-light);
+  padding: 0.5rem 0.9rem;
+  background: var(--color-white);
+  border-top: 1px solid var(--color-border);
+}
+.wegkarte-wischen { display: none; }
+.wegkarte-text {
+  font-family: var(--font-body);
+  font-weight: 700;
+  fill: var(--karte-text);
+  paint-order: stroke;
+  stroke: var(--karte-halo);
+  stroke-width: 7px;
+  stroke-linejoin: round;
+}
+.wegkarte-klein {
+  font-family: var(--font-body);
+  font-style: italic;
+  fill: var(--karte-text);
+  opacity: 0.75;
+  paint-order: stroke;
+  stroke: var(--karte-halo);
+  stroke-width: 5px;
+}
+@media (max-width: 767px) {
+  .wegkarte-svg { width: 680px; max-width: none; }
+  .wegkarte-wischen { display: inline; }
 }
