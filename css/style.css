@@ -5962,3 +5962,24 @@ html, body { overflow-x: clip; }
   .knopf-reihe { max-width: 420px; margin-inline: auto; }
   .knopf-reihe--links { margin-inline: 0; }
 }
+
+/* ============================================================
+   59. SPEEDTEST-SCREENSHOT (workation.html)
+   Echter Speedtest als Beleg unter dem Speedtest-Kasten.
+   ============================================================ */
+.speedtest-beleg {
+  max-width: 320px;
+  margin: var(--spacing-md) auto 0;
+  text-align: center;
+}
+.speedtest-beleg img {
+  width: 100%;
+  height: auto;
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-md);
+}
+.speedtest-beleg figcaption {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+  color: var(--color-text-light);
+}
