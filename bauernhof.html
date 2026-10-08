@@ -24,12 +24,11 @@
     <div class="nav-container">
       <a href="index.html" class="nav-logo" aria-label="Kruckenhaus – Zur Startseite">
         <div class="logo-placeholder">
-          <img src="images/logo.png" alt="Kruckenhaus Logo" class="logo-img"
-               onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-          <div class="logo-fallback">
-            <span class="logo-text">Kruckenhaus</span>
-            <span class="logo-sub">Hof &amp; Ferienwohnung</span>
-          </div>
+          <!-- Hell über dem Foto, dunkel in der weißen Kopfzeile nach dem Scrollen -->
+          <img src="images/logo/kruckenhaus-logo-kopf-hell.png" alt="Bergbauernhof Kruckenhaus"
+               class="logo-img logo-img--hell" width="323" height="112" />
+          <img src="images/logo/kruckenhaus-logo-kopf-dunkel.png" alt=""
+               class="logo-img logo-img--dunkel" width="323" height="112" />
         </div>
       </a>
       <nav class="nav-menu" role="navigation" aria-label="Hauptnavigation">
@@ -95,8 +94,8 @@
                 <div style="font-size:0.95rem;">Legehennen</div>
               </div>
               <div style="background:var(--color-cream);padding:1rem;border-radius:8px;text-align:center;">
-                <strong style="font-size:2rem;color:var(--color-primary);font-family:var(--font-heading);">3</strong>
-                <div style="font-size:0.95rem;">Alpaka-Stuten</div>
+                <strong style="font-size:2rem;color:var(--color-primary);font-family:var(--font-heading);">3 + 2</strong>
+                <div style="font-size:0.95rem;">Alpaka-Stuten und Fohlen</div>
               </div>
             </div>
           </div>
@@ -119,9 +118,8 @@
             <p>Beobachten könnt ihr sie ganz bequem von der Terrasse der Ferienwohnung aus oder im Vorbeigehen am Weg zum Berglsteiner See.</p>
             <div class="hof-neuigkeit">
               <h3>Nachwuchs am Hof</h3>
-              <p>2026 sind bei uns die ersten Alpaka-Jungtiere zur Welt gekommen. Mit etwas Glück seht ihr die Kleinen zusammen mit ihren Müttern direkt von der Terrasse aus auf der Weide.</p>
+              <p>Zurzeit leben drei Alpaka-Stuten und zwei Fohlen bei uns am Hof. Mit etwas Glück seht ihr die Kleinen zusammen mit ihren Müttern direkt von der Terrasse aus auf der Weide.</p>
             </div>
-            <!-- TODO: Namen der Stuten und Jungtiere ergänzen, sobald sie feststehen -->
           </div>
           <div class="intro-image slide-right">
             <img src="images/bauernhof/alpakas-stute-mit-jungtier.jpg"
@@ -184,7 +182,7 @@
             <span class="feature-icon" aria-hidden="true" style="font-size:2rem;"><svg class="linien-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2.25l8.25 4.75v9.5L12 21.25 3.75 16.5V7L12 2.25z"/></svg></span>
             <div>
               <h4>Bienen</h4>
-              <p>Unser Sohn Raphael (11) ist Jungimker und betreut zurzeit drei Bienenvölker. Seinen Honig gibt es im <a href="hofladen.html">Hofladen</a> – der Erlös fließt zur Gänze in den Aufbau seiner Imkerei.</p>
+              <p>Unser Sohn Raphael (11) ist Jungimker und betreut zurzeit drei Bienenvölker. Seinen Honig gibt es im <a href="#hofladen">Hofladen</a> – der Erlös fließt zur Gänze in den Aufbau seiner Imkerei.</p>
             </div>
           </article>
         </div>
@@ -192,15 +190,15 @@
     </section>
 
     <!-- HOFLADEN -->
-    <section class="section section-alt" aria-label="Hofladen">
+    <section class="section section-alt" id="hofladen" aria-label="Hofladen">
       <div class="container">
-        <div class="intro-grid">
-          <div class="intro-text slide-left">
+        <div>
+          <div class="intro-text slide-up">
             <span class="section-label">Selbstbedienung rund um die Uhr</span>
             <h2>Unser Hofladen</h2>
             <div class="divider" style="margin-left:0;"></div>
             <p>Am Weg zum Berglsteiner See befindet sich unser Selbstbedienungs-Kühlschrank – ein beliebter Stopp für alle, die auf dem Wanderweg vorbeikommen. Rund um die Uhr geöffnet, bezahlt wird nach Vertrauensprinzip.</p>
-            <ul style="list-style:none;padding:0;margin:1.5rem 0;display:grid;grid-template-columns:1fr 1fr;gap:0.75rem;">
+            <ul style="list-style:none;padding:0;margin:1.5rem 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:0.75rem;">
               <li style="background:var(--color-white);padding:1rem;border-radius:8px;text-align:center;box-shadow:var(--shadow-sm);">
                 <span style="font-size:1.8rem;display:block;"><svg class="linien-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 3c-3.5 0-6 5.2-6 9.5a6 6 0 0012 0C18 8.2 15.5 3 12 3z"/></svg></span>
                 <strong>Frische Eier</strong>
@@ -230,12 +228,15 @@
             <p style="font-size:0.9rem;">Eier und Nudeln gibt es das ganze Jahr. Marmeladen,
                Schnäpse, Liköre und Fleisch je nach Saison – fragt uns einfach, wir zeigen
                euch gern, was gerade frisch verfügbar ist.</p>
-          </div>
-          <div class="intro-image slide-right">
-            <!-- TODO: bauernhof/hofladen-kuehlschrank.jpg -->
-            <div class="img-placeholder" style="background:linear-gradient(135deg,#e0c890,#c0a060);">
-              <strong>Hofladen</strong>
-              <small>Foto: Hofladen Selbstbedienung einfügen</small>
+            <!-- Bis zur Freigabe der Bestellbedingungen: Hinweis statt Link auf hofladen.html.
+                 Zum Start der Online-Vorbestellung durch einen Knopf „Jetzt vorbestellen" ersetzen. -->
+            <div class="hof-neuigkeit">
+              <h3>Fleisch, Nudeln &amp; Honig vorbestellen</h3>
+              <p>Die Online-Vorbestellung startet bald. Bis dahin bestellt ihr ganz einfach telefonisch oder per WhatsApp.</p>
+              <div class="hof-neuigkeit-knoepfe">
+                <a href="tel:+436642166181" class="btn btn-primary">Anrufen</a>
+                <a href="https://wa.me/436642166181" class="btn btn-green" target="_blank" rel="noopener noreferrer">WhatsApp</a>
+              </div>
             </div>
           </div>
         </div>

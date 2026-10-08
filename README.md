@@ -14,10 +14,10 @@ Offizielle Website der Ferienwohnung **Hof Kruckenhaus** in Breitenbach am Inn, 
 |---|---|
 | Hosting, Domain, HTTPS, E-Mail | ✅ läuft (Schritte 1–4 erledigt) |
 | Kontaktformular, Airbnb-Kalender | ✅ läuft |
-| Startadresse kruckenhaus.at | ⏸ zeigt noch die **Vorschau-Seite** – siehe [Vorschau-Modus](#vorschau-modus-übergangs-startseite) |
+| Website | ✅ seit Oktober 2026 vollständig live (Vorschau-Modus beendet) |
 | Fotos | ✅ Wohnung, Hof, Alpakas, See, Bienen eingebaut – ein paar Motive fehlen noch (siehe [Fotos](#fotos-hochladen-und-einbauen)) |
-| Logo | ✅ als Symbol im Browser-Tab (`favicon.ico`); in der Kopfzeile steht weiter der Schriftzug |
-| Startseite | ✅ Wegweiser nach dem großen Bild: links Ferienwohnung, rechts Hofladen |
+| Logo | ✅ in der Kopfzeile (hell über dem Foto, dunkel nach dem Scrollen), im Browser-Tab und in allen Mails |
+| Startseite | ✅ Wegweiser nach dem großen Bild: links Ferienwohnung, rechts Hofladen (führt bis zum Start der Online-Vorbestellung zum Hofladen-Abschnitt der Bauernhof-Seite: anrufen oder WhatsApp) |
 | Hofladen-Vorbestellung | 🛠 programmiert und getestet; Produktfotos direkt in der Verwaltung hochladen (vorher einmal `schema-hofladen.sql` in der D1-Konsole ausführen); offen: Bestellbedingungen prüfen lassen, Verwaltungs-Anmeldung einrichten, Produktfotos aufnehmen – Details in `docs/HOFLADEN-VORBESTELLUNG.md` |
 | Arbeitsweise | Änderungen entstehen auf einem Arbeitszweig (`claude/…`) und gehen erst live, wenn sie in `master` übernommen werden |
 
@@ -253,7 +253,7 @@ eingesetzt.
 | `images/berglsteiner-see/` | Berglsteiner See |
 | `images/umgebung/` | Ausflugsziele, Skigebiete |
 | `images/hofladen/` | optional: Produktfotos über GitHub (einfacher: direkt in der Verwaltung hochladen) |
-| `images/logo/` | Logo (Hirsch mit Schriftzug); daraus sind `favicon.ico` und `apple-touch-icon.png` im Hauptordner erstellt |
+| `images/logo/` | Logo (Hirsch mit Schriftzug); daraus: Kopfzeile (`…-kopf-hell/-dunkel.png`), Mails (`…-mail.png`), `favicon.ico` und `apple-touch-icon.png` im Hauptordner |
 
 Bildnachweis im Impressum: Florian Häusler, Kathrin Häusler, Philippphoto.
 
@@ -262,32 +262,12 @@ Bildnachweis im Impressum: Florian Häusler, Kathrin Häusler, Philippphoto.
 | Motiv | wofür |
 |---|---|
 | Terrasse mit Bergblick | Galerie der Ferienwohnung |
-| Arbeitsplatz mit Laptop und Bergblick, Speedtest-Screenshot | Workation-Seite, Startseite |
+| Arbeitsplatz mit Laptop und Bergblick, Speedtest-Screenshot | Workation-Seite, Startseite (bis dahin Stube bzw. Regenbogen-Ausblick) |
 | Berglsteiner See im Herbst und Frühling | See-Seite |
-| Hofladen-Kühlschrank am Weg zum See | Bauernhof-Seite |
-| Hofprodukte (Fleischpaket, Nudeln, Honig, Seife) | Hofladen-Seite und Produktkarten |
-| Ausflugsziele (Kaisergebirge, Kufstein, Rattenberg, Alpbach, Achensee, Innsbruck) | Lage & Umgebung |
+| Hofprodukte (Fleischpaket, Nudeln, Honig, Seife) | direkt in der Verwaltung beim Produkt hochladen |
 
 > Fotos mit erkennbaren Personen nur mit deren Einverständnis verwenden –
 > bei Kindern mit dem der Eltern.
-
----
-
-## Vorschau-Modus (Übergangs-Startseite)
-
-Unter der Startadresse erscheint derzeit noch **`vorschau.html`**:
-Drohnenvideo, das Wichtigste zur Wohnung, „ab 125 €" und das Anfrageformular
-(landet wie gewohnt in D1 und per E-Mail bei info@). Alle anderen
-Inhaltsseiten leiten vorübergehend (302) auf die Startseite um; Impressum,
-Datenschutz, Hofladen, Verwaltung und die Schnittstellen bleiben erreichbar.
-
-Der Modus war für die Zeit gedacht, solange Fotos fehlen. Die wichtigsten
-Fotos sind inzwischen da.
-
-**Ganze Website live schalten:** In `_redirects` den Block „VORSCHAU-MODUS"
-löschen (von der Linie bis zur Linie) und committen – nach 1–2 Minuten ist die
-richtige Startseite online. `vorschau.html` und der CSS-Abschnitt 46 können
-danach ebenfalls weg.
 
 ---
 
@@ -305,16 +285,13 @@ danach ebenfalls weg.
       Satz bei künftigen Änderungen in `js/preise-config.js` anpassen.
       (Die Abgabenübersicht des Landes Tirol nennt für den TVB Alpbachtal ab
       1. 5. 2026 einen Satz von 4,00 € – beim TVB gegenprüfen.)
+- [x] Vorschau-Modus beendet, Sitemap aktualisiert, Logo in der Kopfzeile
 - [ ] Website einmal komplett am **Handy** durchklicken
-- [ ] **Alpaka-Namen** (Stuten und Jungtiere) auf der Bauernhof-Seite ergänzen
 - [ ] **Airbnb-Preise angleichen:** Die Website verspricht „Bestpreis" (nie
       teurer als auf Portalen). Die Saisonpreise in `js/preise-config.js` mit
       den Airbnb-Preisen abstimmen, sodass Airbnb nie günstiger ist.
 - [ ] Impressum & Datenschutz einmal von WKO Tirol / Anwalt gegenlesen lassen
       (Texte sind ausgearbeitet, aber das ist keine Rechtsberatung)
-- [ ] `node scripts/sitemap-lastmod.js` laufen lassen, damit die Änderungsdaten
-      in `sitemap.xml` zum Stand der Seiten passen
-- [ ] Vorschau-Modus beenden (siehe oben)
 
 ---
 
@@ -446,7 +423,6 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ```
 /
 ├── index.html               → Startseite (Hero-Video, Wegweiser Ferienwohnung/Hofladen)
-├── vorschau.html            → Übergangs-Startseite, solange der Vorschau-Modus aktiv ist
 ├── ferienwohnung.html       → Wohnung, Galerie, Ausstattung, Verfügbarkeitskalender
 ├── preise.html              → Preise, Zahlungsarten, Storno, Kalender
 ├── bauernhof.html           → Hof, Alpakas, weitere Tiere, Bienen, Hofladen
@@ -454,7 +430,7 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ├── workation.html           → Arbeiten mit Starlink-Internet
 ├── lage.html                → Lage & Umgebung: Anfahrt, Karte, Aktivitäten, Skigebiete
 ├── kontakt.html             → Kontaktformular, FAQ
-├── hofladen.html            → Bestellseite des Hofladens (noch „noindex", verlinkt nur über den Wegweiser)
+├── hofladen.html            → Bestellseite des Hofladens (noch „noindex" und nicht verlinkt, bis die Bestellbedingungen geprüft sind)
 ├── meine-bestellungen.html  → Bestellungen zum persönlichen Link aus der Mail
 ├── impressum.html           → Impressum (§ 5 ECG, § 25 MedienG, UID), Bildnachweis
 ├── datenschutz.html         → Datenschutzerklärung (DSGVO)
@@ -463,7 +439,7 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ├── hero.mp4 / hero.webm / hero-poster.jpg → Drohnenvideo der Startseite und Standbild
 ├── wrangler.toml            → Cloudflare-Pages-Konfiguration (nicht löschen!)
 ├── _headers                 → HTTP-Header & Cache-Regeln (Cloudflare Pages)
-├── _redirects               → Weiterleitungen; Vorschau-Modus; sperrt interne Dateien (docs/, README, Schemata …)
+├── _redirects               → Weiterleitungen; sperrt interne Dateien (docs/, README, Schemata …)
 ├── schema.sql               → D1-Datenbankschema (Tabelle „anfragen", Buchungsmodell)
 ├── schema-hofladen.sql      → D1-Schema der Hofladen-Vorbestellung
 ├── hofladen-produkte.sql    → Produktkatalog zur Erstbefüllung (Startpreise)
@@ -551,8 +527,15 @@ Bestätigungen (über Resend, wie das Kontaktformular). Jede Bestätigung enthä
 einen persönlichen Link auf `meine-bestellungen.html` – ohne Kundenkonto, ohne
 Cookies. Die Seite steht noch auf **„noindex"** (Google zeigt sie nicht an) und
 ist nicht in der Navigation, bis die Bestellbedingungen geprüft sind (siehe
-`docs/HOFLADEN-VORBESTELLUNG.md`). Von der Startseite führt der Wegweiser
-bereits hin.
+`docs/HOFLADEN-VORBESTELLUNG.md`). Bis dahin führt der Wegweiser der
+Startseite zum Hofladen-Abschnitt der Bauernhof-Seite („Online-Vorbestellung
+startet bald", Anrufen/WhatsApp).
+
+**Zum Start der Online-Vorbestellung:** in `index.html` die Wegweiser-Kachel
+wieder auf `hofladen.html` zeigen lassen, in `bauernhof.html` den Kasten
+„startet bald" durch einen Knopf „Jetzt vorbestellen" ersetzen (beide Stellen
+sind im Code kommentiert), in `hofladen.html` das „noindex" entfernen,
+Navigation und `sitemap.xml` ergänzen.
 
 ---
 
