@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description" content="Ferienwohnung am Berglsteiner See – nur 15 Gehminuten vom Hof Kruckenhaus. Spazieren, Erholen und Natur genießen in Breitenbach am Inn, Tirol." />
+  <meta name="description" content="Ferienwohnung am Berglsteiner See – nur 15 Gehminuten vom Kruckenhaushof. Spazieren, Erholen und Natur genießen in Breitenbach am Inn, Tirol." />
   <meta name="keywords" content="Ferienwohnung Berglsteiner See, Unterkunft nahe Berglsteiner See, Berglsteiner See Breitenbach, Kruckenhaus Tirol" />
   <meta name="robots" content="index, follow" />
   <meta property="og:title" content="Ferienwohnung am Berglsteiner See – 15 Gehminuten | Kruckenhaus Tirol" />
@@ -68,7 +68,7 @@
         </nav>
         <span class="section-label" style="color: var(--color-beige);">Naturjuwel Tirols</span>
         <h1>Der Berglsteiner See</h1>
-        <p>15 Gehminuten vom Hof Kruckenhaus – zu jeder Jahreszeit ein Erlebnis</p>
+        <p>15 Gehminuten vom Kruckenhaushof – zu jeder Jahreszeit ein Erlebnis</p>
       </div>
     </section>
 
@@ -164,23 +164,131 @@
         <div class="intro-grid">
           <div class="intro-text slide-left">
             <h3>15 Minuten Spaziergang</h3>
-            <p>Die Route vom Hof Kruckenhaus zum Berglsteiner See ist ein entspannter Spaziergang durch Wiesen und Wald – perfekt für einen Morgenspaziergang oder einen ruhigen Ausklang des Tages.</p>
+            <p>Die Route vom Kruckenhaushof zum Berglsteiner See ist ein entspannter Spaziergang durch Wiesen und Wald – perfekt für einen Morgenspaziergang oder einen ruhigen Ausklang des Tages.</p>
             <ul style="list-style:none;padding:0;margin:1rem 0;">
-              <li style="padding:0.5rem 0;border-bottom:1px solid var(--color-cream);"><strong>Start:</strong> Hof Kruckenhaus, Oberberg 70</li>
+              <li style="padding:0.5rem 0;border-bottom:1px solid var(--color-cream);"><strong>Start:</strong> Kruckenhaushof, Oberberg 70</li>
               <li style="padding:0.5rem 0;border-bottom:1px solid var(--color-cream);"><strong>Gehzeit:</strong> ca. 15 Minuten (hin)</li>
               <li style="padding:0.5rem 0;border-bottom:1px solid var(--color-cream);"><strong>Schwierigkeit:</strong> Leicht</li>
-              <li style="padding:0.5rem 0;border-bottom:1px solid var(--color-cream);"><strong>Wegcharakter:</strong> Forstweg, gut markiert</li>
+              <li style="padding:0.5rem 0;border-bottom:1px solid var(--color-cream);"><strong>Wegcharakter:</strong> Straße, erst durch Wiesen, dann durch den Wald</li>
               <li style="padding:0.5rem 0;"><strong>Reintalersee:</strong> 25 Minuten vom Hof</li>
             </ul>
             <a href="preise.html#buchung" class="btn btn-green">Verfügbarkeit prüfen</a>
           </div>
-          <div class="intro-image slide-right">
-            <!-- TODO: Karte der Wanderroute vom Hof zum See einfügen (bis dahin Luftbild vom Hof) -->
-            <img class="see-route-bild" src="images/hof/hof-luftbild-tal.jpg"
-                 alt="Der Hof am Oberberg aus der Luft – Ausgangspunkt für den Spaziergang zum Berglsteiner See"
-                 width="1280" height="720" loading="lazy" decoding="async" />
+          <div class="wegkarte-liste slide-right">
+            <ol class="wegkarte-stationen">
+              <li>
+                <span class="wegkarte-nr" aria-hidden="true">1</span>
+                <div>
+                  <h4>Kruckenhaushof</h4>
+                  <span class="wegkarte-wert">Start · Oberberg 70</span>
+                  <p>Kurz die Straße entlang bis zur Abzweigung, dann links. Rundherum Wiesen, unterwegs kommt ihr am Hof Salberg vorbei.</p>
+                </div>
+              </li>
+              <li>
+                <span class="wegkarte-nr" aria-hidden="true">2</span>
+                <div>
+                  <h4>Parkplatz Oberberg / Salberg</h4>
+                  <span class="wegkarte-wert">ca. 0,8 km · ca. 10 Min.</span>
+                  <p>Ab hier führt die Straße in Kurven durch den Wald.</p>
+                </div>
+              </li>
+              <li>
+                <span class="wegkarte-nr wegkarte-ziel" aria-hidden="true">3</span>
+                <div>
+                  <h4>Berglsteiner See</h4>
+                  <span class="wegkarte-wert">ca. 1,1 km · ca. 15 Min.</span>
+                  <p>Am Ufer angekommen. Wer mag, spaziert am Wasser entlang weiter.</p>
+                </div>
+              </li>
+            </ol>
           </div>
         </div>
+        <!-- Wegkarte: eigene Zeichnung (SVG), kein externer Kartendienst -->
+        <figure class="wegkarte slide-up">
+          <div class="wegkarte-scroll">
+          <svg class="wegkarte-svg" viewBox="40 20 1340 760" role="img" aria-labelledby="wegkarte-titel wegkarte-beschr">
+          <title id="wegkarte-titel">Wegkarte vom Kruckenhaushof zum Berglsteiner See</title>
+          <desc id="wegkarte-beschr">Der Weg beginnt am Hof oben rechts, führt die Straße entlang zur Abzweigung, dann nach Südwesten am Hof Salberg und am Parkplatz Oberberg/Salberg vorbei, in Kurven durch den Wald und erreicht unten links das Ufer des Berglsteiner Sees.</desc>
+          <defs>
+          <pattern id="wegkarte-baeume" width="22" height="22" patternUnits="userSpaceOnUse" patternTransform="rotate(18)">
+          <rect width="22" height="22" style="fill:var(--karte-wald)"/>
+          <circle cx="6" cy="7" r="4.2" style="fill:var(--karte-wald-punkt)"/>
+          <circle cx="17" cy="16" r="3.6" style="fill:var(--karte-wald-punkt)"/>
+          </pattern>
+          </defs>
+
+          <!-- Wiesen-Grund -->
+          <rect x="40" y="20" width="1340" height="760" style="fill:var(--karte-wiese)"/>
+          <path d="M560 250 C700 210 880 170 1060 150 L1200 120 L1230 330 C1100 380 900 420 760 430 C680 440 600 420 560 380 Z" style="fill:var(--karte-wiese-2)"/>
+
+          <!-- Wald oben und links -->
+          <path d="M40 20 H1180 C1140 70 1080 110 990 120 C860 135 760 170 640 215 C560 245 520 300 470 330 C420 360 380 420 330 470 C260 540 160 560 40 560 Z" fill="url(#wegkarte-baeume)"/>
+          <!-- Wald unten und rechts -->
+          <path d="M520 470 C620 430 720 470 820 520 C900 560 1000 520 1080 440 C1160 380 1260 380 1380 410 V780 H260 C330 720 420 640 470 560 C490 520 500 490 520 470 Z" fill="url(#wegkarte-baeume)"/>
+          <path d="M1290 110 C1330 90 1360 90 1380 100 V300 C1350 290 1320 250 1310 200 Z" fill="url(#wegkarte-baeume)" opacity="0.9"/>
+
+          <!-- See -->
+          <path d="M40 600 C110 588 230 582 330 600 C352 640 250 700 110 762 L40 780 Z" stroke-width="3" style="fill:var(--karte-see);stroke:var(--karte-see-rand)"/>
+          <text x="60" y="655" class="wegkarte-klein" font-size="24">Berglsteiner See</text>
+
+          <!-- Straßen (Hintergrund) -->
+          <g fill="none" stroke-linecap="round" stroke-linejoin="round" style="stroke:var(--karte-strasse)">
+          <path d="M1250 60 C1290 45 1340 42 1380 40" stroke-width="14"/>
+          <path d="M1305 225 C1330 300 1325 400 1312 520" stroke-width="10" opacity="0.8"/>
+          <path id="weg-strasse" d="M1300 210 L1250 62 C1220 120 1170 150 1100 170 C1010 198 960 262 900 298 C850 322 805 334 782 336 C758 330 752 292 735 290 C680 300 600 322 530 350 L490 440 C430 458 370 468 346 494 C330 522 392 514 398 540 C402 574 396 600 390 615 L336 612" stroke-width="16"/>
+          </g>
+
+          <!-- Nachbarhof Salberg am Weg -->
+          <g style="fill:var(--karte-gebaeude)">
+          <rect x="712" y="262" width="54" height="30" rx="2" transform="rotate(-18 739 277)"/>
+          <rect x="742" y="342" width="44" height="26" rx="2" transform="rotate(22 764 355)"/>
+          <rect x="705" y="376" width="22" height="16" rx="2"/>
+          </g>
+          <text x="745" y="248" text-anchor="middle" class="wegkarte-klein" font-size="22">Salberg</text>
+
+          <!-- Route: Gehweg bis zum Ufer -->
+          <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1300 210 L1250 62 C1220 120 1170 150 1100 170 C1010 198 960 262 900 298 C850 322 805 334 782 336 C758 330 752 292 735 290 C680 300 600 322 530 350 L490 440 C430 458 370 468 346 494 C330 522 392 514 398 540 C402 574 396 600 390 615 L336 612" stroke-width="7" stroke-dasharray="18 11" style="stroke:var(--color-terracotta)"/>
+          </g>
+
+          <!-- 1 Start: Hof -->
+          <g>
+          <path d="M1272 206 L1300 182 L1328 206 V236 H1272 Z" stroke-width="4" stroke-linejoin="round" style="fill:var(--color-primary);stroke:var(--karte-halo)"/>
+          <circle cx="1300" cy="270" r="22" stroke-width="4" style="fill:var(--color-primary);stroke:var(--karte-halo)"/>
+          <text x="1300" y="278" text-anchor="middle" font-size="24" font-weight="700" style="fill:var(--karte-halo);font-family:var(--font-body)">1</text>
+          <text x="1265" y="322" text-anchor="end" class="wegkarte-text" font-size="26">Kruckenhaushof</text>
+          <text x="1265" y="350" text-anchor="end" class="wegkarte-klein" font-size="21">Start</text>
+          </g>
+
+          <!-- 2 Parkplatz -->
+          <g>
+          <circle cx="525" cy="370" r="22" stroke-width="4" style="fill:var(--color-primary);stroke:var(--karte-halo)"/>
+          <text x="525" y="378" text-anchor="middle" font-size="24" font-weight="700" style="fill:var(--karte-halo);font-family:var(--font-body)">2</text>
+          <text x="560" y="392" class="wegkarte-text" font-size="24">Parkplatz Oberberg / Salberg</text>
+          </g>
+
+          <!-- 3 Ziel: Seeufer -->
+          <g>
+          <circle cx="336" cy="612" r="25" stroke-width="4" style="fill:var(--color-terracotta);stroke:var(--karte-halo)"/>
+          <text x="336" y="621" text-anchor="middle" font-size="25" font-weight="700" style="fill:var(--karte-halo);font-family:var(--font-body)">3</text>
+          <text x="374" y="606" class="wegkarte-text" font-size="26">Seeufer</text>
+          <text x="374" y="634" class="wegkarte-klein" font-size="21">ca. 15 Min. vom Hof</text>
+          </g>
+
+          <!-- Nordpfeil und Maßstab -->
+          <g transform="translate(1320 700)">
+          <path d="M0 -34 L12 4 L0 -4 L-12 4 Z" style="fill:var(--karte-text)"/>
+          <text x="0" y="30" text-anchor="middle" font-size="20" font-weight="700" style="fill:var(--karte-text);font-family:var(--font-body)">N</text>
+          </g>
+          <g transform="translate(980 735)">
+          <rect x="-10" y="-30" width="270" height="52" rx="6" opacity="0.85" style="fill:var(--karte-halo)"/>
+          <path d="M0 0 H247 M0 -9 V9 M247 -9 V9" stroke-width="3" fill="none" style="stroke:var(--karte-text)"/>
+          <text x="123" y="-10" text-anchor="middle" font-size="18" style="fill:var(--karte-text);font-family:var(--font-body)">ca. 200 m</text>
+          </g>
+          </svg>
+          </div>
+          <figcaption><span class="wegkarte-wischen">Karte seitlich wischen. </span>Vereinfachte Zeichnung, nicht maßstabsgetreu im Detail.</figcaption>
+        </figure>
       </div>
     </section>
 

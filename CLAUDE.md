@@ -203,7 +203,9 @@ Es gibt keine automatisierten Tests und keinen Linter.
 - Fotos sind großteils da (`images/wohnung/`, `hof/`, `bauernhof/`,
   `berglsteiner-see/`, `umgebung/`); es fehlen Terrasse, Workation (bis dahin
   Ersatzfotos) und See im Herbst/Frühling – dort `TODO:`-Kommentare. Ausflugsziele
-  und Hofladen-Kühlschrank bleiben bewusst ohne Foto.
+  bleiben bewusst ohne Foto. Einen Selbstbedienungs-Hofladen gibt es derzeit nicht
+  (Verkauf nur auf Vorbestellung); Schnäpse werden nicht mehr verkauft, Eierlikör
+  nur vor Weihnachten.
   Neue Uploads landen oft lose in `images/` oder im Projektstamm: ansehen,
   sprechend benennen, in den Themenordner verschieben, dann einbauen.
 - Website ist seit Oktober 2026 live (Vorschau-Modus und vorschau.html entfernt).
