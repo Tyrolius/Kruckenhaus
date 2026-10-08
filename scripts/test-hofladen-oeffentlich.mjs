@@ -252,6 +252,19 @@ mails.length = 0;
 r = ok(await api('POST', 'bestellung', { ...basis, email: 'ohne@example.at', positionen: [{ artikelId: aNudeln, menge: 1 }] }));
 assert.equal(mails.length, 0);
 assert.equal(roh.prepare('SELECT COUNT(*) n FROM bestellungen').get().n, 3);
+// Produktfoto ausliefern: JPEG aus der Datenbank, lange cachebar, unbekannt = 404
+const fotoBytes = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(600, 3)]);
+const fotoId = roh.prepare('INSERT INTO produkt_fotos (daten, groesse) VALUES (?, ?) RETURNING id')
+  .get(fotoBytes.toString('base64'), fotoBytes.length).id;
+const holen = (pfad) => onRequest({ request: new Request(`https://x/api/hofladen/${pfad}`), env: { DB: db }, params: { pfad: pfad.split('/') } });
+let foto = await holen(`foto/${fotoId}`);
+assert.equal(foto.status, 200);
+assert.equal(foto.headers.get('Content-Type'), 'image/jpeg');
+assert.match(foto.headers.get('Cache-Control'), /immutable/);
+assert.deepEqual(Buffer.from(await foto.arrayBuffer()), fotoBytes);
+assert.equal((await holen('foto/999999')).status, 404);
+assert.equal((await holen('foto/abc')).status, 404);
+console.log('✓ Produktfoto ausliefern: JPEG, Cache, unbekannt 404');
 assert.equal((await onRequest({ request: new Request('https://x/api/hofladen/angebot'), env: {}, params: { pfad: ['angebot'] } })).status, 503);
 console.log('✓ Ohne Mail-Schlüssel gespeichert, ohne Datenbank 503');
 

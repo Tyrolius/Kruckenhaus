@@ -304,6 +304,46 @@ assert.deepEqual([s.produkte.find((p) => p.id === eier).name, s.produkte.find((p
 assert.ok(!s.preisVorschlaege.some((v) => v.produktId === eier), 'ausgeblendet = kein Vorschlag für neue Bestellrunden');
 console.log('✓ Sortiment: anlegen, doppelte Namen, Richtgewicht, Art bei verkauften Produkten gesperrt, ausblenden');
 
+// Produktfoto: Pfad aus der Fotoliste speichern, fremde Adressen abweisen, leer = kein Foto
+const eiDaten = { name: 'Freilandeier 6 Stück', art: 'stueck', bereichId: bSaison, startpreisCent: 300, aktiv: false };
+ok(await api('POST', `produkt/${eier}`, { ...eiDaten, bild: 'images/hofladen/eier-korb.jpg' }));
+s = ok(await api('GET', 'stand'));
+assert.equal(s.produkte.find((p) => p.id === eier).bild, 'images/hofladen/eier-korb.jpg');
+for (const falsch of ['https://fremd.example/x.jpg', '/images/a.jpg', 'images/../wrangler.toml', 'images/a.jpg"><script>', 'images/hofladen/datei.svg']) {
+  assert.match((await api('POST', `produkt/${eier}`, { ...eiDaten, bild: falsch })).error, /Ungültiges Foto/, falsch);
+}
+ok(await api('POST', `produkt/${eier}`, { ...eiDaten, bild: '' }));
+s = ok(await api('GET', 'stand'));
+assert.equal(s.produkte.find((p) => p.id === eier).bild, '');
+r = ok(await api('POST', 'produkt', { name: 'Honig 250 g', art: 'stueck', bereichId: bSaison, bild: 'images/bauernhof/bienen-kinder-waben.jpg' }));
+assert.equal(roh.prepare('SELECT bild FROM produkte WHERE id = ?').get(Number(r.produktId)).bild, 'images/bauernhof/bienen-kinder-waben.jpg');
+console.log('✓ Produktfoto: speichern, ungültige Pfade abgewiesen, entfernen, beim Anlegen');
+
+// Foto vom Handy hochladen: nur JPEG, Größe begrenzt, danach dem Produkt zuordnen
+const jpeg = Buffer.concat([Buffer.from([0xff, 0xd8, 0xff, 0xe0]), Buffer.alloc(800, 7), Buffer.from([0xff, 0xd9])]);
+const alsDaten = (buf, typ = 'jpeg') => `data:image/${typ};base64,${buf.toString('base64')}`;
+r = ok(await api('POST', 'foto', { daten: alsDaten(jpeg) }));
+assert.match(r.bild, /^api\/hofladen\/foto\/\d+$/);
+const fotoPfad = r.bild;
+assert.equal(roh.prepare('SELECT groesse FROM produkt_fotos WHERE id = ?').get(Number(fotoPfad.split('/').pop())).groesse, jpeg.length);
+const png = Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47]), Buffer.alloc(800)]);
+assert.match((await api('POST', 'foto', { daten: alsDaten(png) })).error, /kein JPEG/);
+assert.match((await api('POST', 'foto', { daten: alsDaten(png, 'png') })).error, /nicht gelesen/);
+assert.match((await api('POST', 'foto', { daten: 'https://fremd.example/x.jpg' })).error, /nicht gelesen/);
+assert.match((await api('POST', 'foto', { daten: alsDaten(Buffer.concat([jpeg, Buffer.alloc(1600000)])) })).error, /zu groß/);
+ok(await api('POST', `produkt/${eier}`, { ...eiDaten, bild: fotoPfad }));
+s = ok(await api('GET', 'stand'));
+assert.equal(s.produkte.find((p) => p.id === eier).bild, fotoPfad);
+assert.ok(s.eigeneFotos.includes(fotoPfad), 'hochgeladene Fotos stehen zur Auswahl');
+assert.match((await api('POST', `produkt/${eier}`, { ...eiDaten, bild: 'api/hofladen/foto/1/../x' })).error, /Ungültiges Foto/);
+// Aufräumen: nicht zugeordnete Fotos verschwinden nach einem Tag, zugeordnete bleiben
+const verwaist = ok(await api('POST', 'foto', { daten: alsDaten(jpeg) })).bild;
+roh.exec(`UPDATE produkt_fotos SET erstellt_am = datetime('now', '-2 days')`);
+ok(await api('POST', 'foto', { daten: alsDaten(jpeg) }));
+const fotoIds = roh.prepare('SELECT id FROM produkt_fotos').all().map((x) => `api/hofladen/foto/${x.id}`);
+assert.ok(fotoIds.includes(fotoPfad) && !fotoIds.includes(verwaist), 'nur das verwaiste Foto gelöscht');
+console.log('✓ Foto hochladen: nur JPEG, Größenlimit, zuordnen, verwaiste nach einem Tag aufgeräumt');
+
 // Bereiche: anlegen, umbenennen, Produkt umhängen, ordnen, leere löschen
 r = ok(await api('POST', 'bereich', { name: 'Eier & Marmelade' }));
 const bEier = r.bereichId;

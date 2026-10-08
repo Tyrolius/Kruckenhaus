@@ -14,6 +14,7 @@
   <link rel="canonical" href="https://www.kruckenhaus.at/bauernhof.html" />
   <title>Alpaka Bauernhof Ferienwohnung Tirol – Kruckenhaus Breitenbach am Inn</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -59,8 +60,7 @@
 
   <main id="main-content" tabindex="-1">
 
-    <section class="page-hero" aria-label="Bauernhof und Alpakas">
-      <!-- TODO: Foto Alpakas auf Weide mit Bergpanorama (1920x600) -->
+    <section class="page-hero page-hero--bauernhof" aria-label="Bauernhof und Alpakas">
       <div class="page-hero-content container">
         <nav class="breadcrumb" aria-label="Brotkrümelpfad">
           <a href="index.html">Home</a>
@@ -78,11 +78,9 @@
       <div class="container">
         <div class="intro-grid">
           <div class="intro-image slide-left">
-            <!-- TODO: bauernhof/hof-uebersicht.jpg -->
-            <div class="img-placeholder" style="background:linear-gradient(135deg,#8aa870,#5a7a50);">
-              <strong>Hof Kruckenhaus</strong>
-              <small>Foto: Hof-Übersicht einfügen</small>
-            </div>
+            <img src="images/hof/hof-luftbild-herbst-weide.jpg"
+                 alt="Hof Kruckenhaus aus der Luft im Herbst – Wohnhaus, Stall, Weiden und Bergwald"
+                 width="1600" height="900" loading="lazy" decoding="async" />
           </div>
           <div class="intro-text slide-right">
             <span class="section-label">Oberberg 70, Breitenbach am Inn</span>
@@ -119,37 +117,34 @@
           <div class="intro-text slide-left">
             <p>Seit März 2026 leben drei Alpaka-Stuten bei uns am Hof. Die neugierigen Tiere weiden direkt neben dem Haus – ihre ruhige, sanfte Art gehört mittlerweile genauso zum Kruckenhaus wie der Blick auf die Tiroler Bergwelt.</p>
             <p>Beobachten könnt ihr sie ganz bequem von der Terrasse der Ferienwohnung aus oder im Vorbeigehen am Weg zum Berglsteiner See.</p>
-            <!-- TODO: Neuigkeiten-Kasten wieder einsetzen, sobald es etwas Aktuelles gibt
-                 (z. B. Jungtiere, Namen der Stuten). Der alte Text „Jungtiere im April
-                 und Juni 2026 erwartet" war überholt. -->
+            <div class="hof-neuigkeit">
+              <h3>Nachwuchs am Hof</h3>
+              <p>2026 sind bei uns die ersten Alpaka-Jungtiere zur Welt gekommen. Mit etwas Glück seht ihr die Kleinen zusammen mit ihren Müttern direkt von der Terrasse aus auf der Weide.</p>
+            </div>
+            <!-- TODO: Namen der Stuten und Jungtiere ergänzen, sobald sie feststehen -->
           </div>
           <div class="intro-image slide-right">
-            <!-- TODO: bauernhof/alpakas-weide.jpg – Alpakas auf der Weide mit Bergpanorama -->
-            <div class="img-placeholder" style="background:linear-gradient(135deg,#b8c8a8,#7a9a6a);">
-              <strong>Unsere Alpakas</strong>
-              <small>Foto: Alpakas auf der Weide einfügen</small>
-            </div>
+            <img src="images/bauernhof/alpakas-stute-mit-jungtier.jpg"
+                 alt="Braune Alpaka-Stute mit hellem Jungtier auf der Weide am Waldrand"
+                 width="1600" height="739" loading="lazy" decoding="async" />
           </div>
         </div>
 
         <div class="gallery-grid" role="list" aria-label="Alpaka-Fotos" style="grid-template-columns:repeat(auto-fit,minmax(240px,1fr));">
           <div class="gallery-item slide-up delay-1" role="listitem">
-            <!-- TODO: bauernhof/alpakas-portrait.jpg – Alpaka-Porträt -->
-            <div class="img-placeholder" style="min-height:auto;height:100%;background:linear-gradient(135deg,#c8b8a0,#9a8a70);">
-              <small>Alpaka-Porträt</small>
-            </div>
+            <img src="images/bauernhof/alpaka-jungtier-weide.jpg"
+                 alt="Junges weißes Alpaka grast auf der Weide am Hof"
+                 width="1600" height="2000" loading="lazy" decoding="async" />
           </div>
           <div class="gallery-item slide-up delay-2" role="listitem">
-            <!-- TODO: bauernhof/alpakas-gruppe.jpg – Die drei Stuten gemeinsam -->
-            <div class="img-placeholder" style="min-height:auto;height:100%;background:linear-gradient(135deg,#a8c0b0,#6a8a78);">
-              <small>Die drei Stuten</small>
-            </div>
+            <img src="images/bauernhof/alpakas-drei-stuten-wohnhaus.jpg"
+                 alt="Die drei Alpaka-Stuten auf der Weide vor dem Wohnhaus"
+                 width="1600" height="2000" loading="lazy" decoding="async" />
           </div>
           <div class="gallery-item slide-up delay-3" role="listitem">
-            <!-- TODO: bauernhof/alpakas-balkonblick.jpg – Blick vom Balkon auf die Weide -->
-            <div class="img-placeholder" style="min-height:auto;height:100%;background:linear-gradient(135deg,#b0b8c8,#78889a);">
-              <small>Blick von der Terrasse</small>
-            </div>
+            <img src="images/bauernhof/alpakas-gruppe-weide.jpg"
+                 alt="Alpakas grasen gemeinsam auf der eingezäunten Weide"
+                 width="1600" height="900" loading="lazy" decoding="async" />
           </div>
         </div>
       </div>
@@ -183,6 +178,13 @@
             <div>
               <h4>Rinder</h4>
               <p>Echte Tiroler Almwirtschaft – unsere Rinder geniessen die frische Bergluft und die saftigen Kräuterwiesen rund um Breitenbach am Inn.</p>
+            </div>
+          </article>
+          <article class="feature-item slide-up delay-4">
+            <span class="feature-icon" aria-hidden="true" style="font-size:2rem;"><svg class="linien-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" aria-hidden="true"><path stroke-linecap="round" stroke-linejoin="round" d="M12 2.25l8.25 4.75v9.5L12 21.25 3.75 16.5V7L12 2.25z"/></svg></span>
+            <div>
+              <h4>Bienen</h4>
+              <p>Unser Sohn Raphael (11) ist Jungimker und betreut zurzeit drei Bienenvölker. Seinen Honig gibt es im <a href="hofladen.html">Hofladen</a> – der Erlös fließt zur Gänze in den Aufbau seiner Imkerei.</p>
             </div>
           </article>
         </div>

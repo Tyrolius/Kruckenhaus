@@ -8,6 +8,21 @@ Offizielle Website der Ferienwohnung **Hof Kruckenhaus** in Breitenbach am Inn, 
 
 ---
 
+## Aktueller Stand (Oktober 2026)
+
+| Bereich | Stand |
+|---|---|
+| Hosting, Domain, HTTPS, E-Mail | ✅ läuft (Schritte 1–4 erledigt) |
+| Kontaktformular, Airbnb-Kalender | ✅ läuft |
+| Startadresse kruckenhaus.at | ⏸ zeigt noch die **Vorschau-Seite** – siehe [Vorschau-Modus](#vorschau-modus-übergangs-startseite) |
+| Fotos | ✅ Wohnung, Hof, Alpakas, See, Bienen eingebaut – ein paar Motive fehlen noch (siehe [Fotos](#fotos-hochladen-und-einbauen)) |
+| Logo | ✅ als Symbol im Browser-Tab (`favicon.ico`); in der Kopfzeile steht weiter der Schriftzug |
+| Startseite | ✅ Wegweiser nach dem großen Bild: links Ferienwohnung, rechts Hofladen |
+| Hofladen-Vorbestellung | 🛠 programmiert und getestet; Produktfotos direkt in der Verwaltung hochladen (vorher einmal `schema-hofladen.sql` in der D1-Konsole ausführen); offen: Bestellbedingungen prüfen lassen, Verwaltungs-Anmeldung einrichten, Produktfotos aufnehmen – Details in `docs/HOFLADEN-VORBESTELLUNG.md` |
+| Arbeitsweise | Änderungen entstehen auf einem Arbeitszweig (`claude/…`) und gehen erst live, wenn sie in `master` übernommen werden |
+
+---
+
 ## Wie das Ganze zusammenspielt (kurz erklärt)
 
 Ein paar Dienste arbeiten zusammen – die meisten richtet ihr nur einmal ein:
@@ -31,6 +46,11 @@ Pages veröffentlicht es automatisch nach 1–2 Minuten. FTP-Uploads wie früher
 braucht es nicht.
 
 ---
+
+## Einrichtung (Schritte 1–4 – erledigt, zum Nachschlagen)
+
+Die folgenden Schritte sind abgeschlossen. Sie bleiben hier stehen, falls
+etwas neu eingerichtet werden muss (z. B. ein neuer Resend-Schlüssel).
 
 ## Schritt 1: Website auf Cloudflare Pages veröffentlichen (ca. 10 Min.)
 
@@ -197,95 +217,104 @@ Cloudflare stellt automatisch ein kostenloses SSL-Zertifikat aus. Prüfen:
 
 ---
 
-## Schritt 5: Fotos einfügen (der wichtigste Schritt!)
+## Fotos hochladen und einbauen
 
-Die Website zeigt aktuell überall farbige Platzhalter. **Für eine
-Ferienunterkunft sind echte Fotos das wichtigste Verkaufsargument** – bitte vor
-dem Livegang erledigen. Die wichtigsten Motive:
+**Hochladen – am einfachsten direkt vom Handy:**
 
-| Priorität | Motiv | Verwendung |
-|---|---|---|
-| ★★★ | Hof-Panorama mit Bergen | Startseite (groß), Vorschaubild beim Teilen |
-| ★★★ | Wohnzimmer, Schlafzimmer, Küche, Bad, Balkon | Ferienwohnungs-Galerie |
-| ★★★ | Alpakas auf der Weide | Startseite, Bauernhof-Seite |
-| ★★ | Berglsteiner See (Sommer & Herbst) | See-Seite, Galerie |
-| ★★ | Hofladen / Selbstbedienungs-Kühlschrank | Bauernhof-Seite |
-| ★★ | Arbeitsplatz mit Bergblick + Speedtest-Screenshot | Workation-Seite |
-| ★ | Logo als `images/logo.png`, Favicon als `favicon.ico` | Kopfzeile, Browser-Tab |
-| ★ | Kurzes Hof-Video als `hero.mp4` + Standbild `hero-poster.jpg` | Startseiten-Video (optional – ohne Video einfach ein Foto verwenden) |
+1. Im Handy-Browser (nicht in der GitHub-App) öffnen:
+   **https://github.com/Tyrolius/Kruckenhaus/upload/master/images**
+2. **„choose your files"** → **Galerie/Fotos** → mehrere Fotos markieren.
+3. Unten **„Commit changes"** tippen.
 
-**Praktische Umsetzung als Website-Neuling:** Die Bilder einfach in den
-Ordner `images/` hochladen (auf github.com: Ordner öffnen → **Add file →
-Upload files**) – auch direkt vom Handy, ganz ohne Vorbearbeitung. Ein
-GitHub Action (`.github/workflows/optimize-images.yml`) verkleinert und
-komprimiert jedes Foto danach automatisch auf Web-taugliche Maße (siehe
-Kasten unten). Anschließend in einer **claude.ai/code-Sitzung** den Auftrag
-geben: *„Ersetze die Foto-Platzhalter durch die hochgeladenen Bilder in
-images/"* – die Platzhalter sind im Code als `TODO:`-Kommentare markiert,
-inklusive gewünschtem Motiv.
+Fehlt der Upload-Knopf: im Browser-Menü die **Desktop-Version** einschalten.
+Am iPhone unter *Einstellungen → Kamera → Formate* **„Maximale
+Kompatibilität"** wählen – HEIC-Fotos verkleinert die Automatik nicht.
+Fotos bitte in `images/` hochladen, nicht in den Hauptordner.
 
-> **Automatische Foto-Optimierung:** Jedes Bild unter `images/` (auch in
-> Unterordnern) wird bei jedem Push automatisch auf max. 1600 px Breite und
-> ca. 300 KB gebracht – ihr müsst nichts mehr manuell verkleinern. Bilder,
-> die diese Werte schon einhalten, fasst der Workflow nicht an, damit
-> wiederholtes Komprimieren nicht unnötig an Qualität kostet. Ausgenommen
-> ist `images/logo.png` (Markenbild, feste Maße). Ergebnis in wenigen
-> Minuten im Reiter **Actions** des Repositories nachvollziehbar; das
-> optimierte Bild landet als eigener Commit im selben Branch.
+**Automatische Verkleinerung:** Jedes Foto unter `images/` (auch in
+Unterordnern) wird nach dem Hochladen automatisch auf max. 1600 px Breite
+und ca. 300 KB gebracht (`.github/workflows/optimize-images.yml`, Ergebnis
+im Reiter **Actions**). Fotos, die das schon einhalten, bleiben unverändert.
+Ausgenommen sind `logo.png` und `favicon.png`. Dabei entsteht auch `images/fotos.json`, die Liste
+aller Fotos für die Foto-Auswahl der Hofladen-Verwaltung.
 
-> **Wichtig für die Ladezeit:** Die eingefügten Galeriebilder brauchen
-> `loading="lazy"` und `decoding="async"`, damit sie erst beim Scrollen geladen
-> werden. Ausgenommen ist das große Startseiten-Bild „above the fold". Wer die
-> Fotos per claude.ai/code einsetzen lässt, bekommt das automatisch mit erledigt.
-> Ebenso sollte dann `images/hero/hof-panorama.jpg` existieren – darauf zeigt
-> bereits das `og:image` der Startseite (Vorschaubild beim Teilen).
+**Einbauen:** In einer claude.ai/code-Sitzung Bescheid geben („neue Fotos
+hochgeladen, bitte einbauen"). Die Fotos werden dann angesehen, sprechend
+umbenannt, in den passenden Ordner verschoben und auf der richtigen Seite
+eingesetzt.
+
+**Ordner:**
+
+| Ordner | Inhalt |
+|---|---|
+| `images/wohnung/` | Innenräume der Ferienwohnung (Profi-Fotos von Philippphoto) |
+| `images/hof/` | Hof von außen, Luftbilder, Jahreszeiten |
+| `images/bauernhof/` | Alpakas, Heuernte, Bienen |
+| `images/berglsteiner-see/` | Berglsteiner See |
+| `images/umgebung/` | Ausflugsziele, Skigebiete |
+| `images/hofladen/` | optional: Produktfotos über GitHub (einfacher: direkt in der Verwaltung hochladen) |
+| `images/logo/` | Logo (Hirsch mit Schriftzug); daraus sind `favicon.ico` und `apple-touch-icon.png` im Hauptordner erstellt |
+
+Bildnachweis im Impressum: Florian Häusler, Kathrin Häusler, Philippphoto.
+
+**Noch gesucht** (im Code als `TODO:`-Kommentar mit Wunschmotiv markiert):
+
+| Motiv | wofür |
+|---|---|
+| Terrasse mit Bergblick | Galerie der Ferienwohnung |
+| Arbeitsplatz mit Laptop und Bergblick, Speedtest-Screenshot | Workation-Seite, Startseite |
+| Berglsteiner See im Herbst und Frühling | See-Seite |
+| Hofladen-Kühlschrank am Weg zum See | Bauernhof-Seite |
+| Hofprodukte (Fleischpaket, Nudeln, Honig, Seife) | Hofladen-Seite und Produktkarten |
+| Ausflugsziele (Kaisergebirge, Kufstein, Rattenberg, Alpbach, Achensee, Innsbruck) | Lage & Umgebung |
+
+> Fotos mit erkennbaren Personen nur mit deren Einverständnis verwenden –
+> bei Kindern mit dem der Eltern.
 
 ---
 
-## Vorschau-Modus (solange die Fotos fehlen)
+## Vorschau-Modus (Übergangs-Startseite)
 
-Unter der Startadresse erscheint derzeit **`vorschau.html`**: Drohnenvideo,
-das Wichtigste zur Wohnung, „ab 125 €“ und das Anfrageformular (landet wie
-gewohnt in D1 und per E-Mail bei info@). Alle anderen Inhaltsseiten leiten
-vorübergehend (302) auf die Startseite um; Impressum, Datenschutz, Hofladen,
-Verwaltung und die Schnittstellen bleiben erreichbar.
+Unter der Startadresse erscheint derzeit noch **`vorschau.html`**:
+Drohnenvideo, das Wichtigste zur Wohnung, „ab 125 €" und das Anfrageformular
+(landet wie gewohnt in D1 und per E-Mail bei info@). Alle anderen
+Inhaltsseiten leiten vorübergehend (302) auf die Startseite um; Impressum,
+Datenschutz, Hofladen, Verwaltung und die Schnittstellen bleiben erreichbar.
 
-**Ganze Website live schalten:** In `_redirects` den Block „VORSCHAU-MODUS“
+Der Modus war für die Zeit gedacht, solange Fotos fehlen. Die wichtigsten
+Fotos sind inzwischen da.
+
+**Ganze Website live schalten:** In `_redirects` den Block „VORSCHAU-MODUS"
 löschen (von der Linie bis zur Linie) und committen – nach 1–2 Minuten ist die
 richtige Startseite online. `vorschau.html` und der CSS-Abschnitt 46 können
 danach ebenfalls weg.
 
 ---
 
-## Schritt 6: Checkliste vor dem Livegang
+## Checkliste vor dem Livegang
 
 - [x] Testanfrage über das Kontaktformular kommt per E-Mail an (Schritt 2)
 - [x] Belegungskalender zeigt die Airbnb-Buchungen (Schritt 3)
 - [x] `https://www.kruckenhaus.at` lädt mit Schloss-Symbol (Schritt 4)
 - [x] E-Mail-Empfang (info@kruckenhaus.at) funktioniert nach dem DNS-Umzug noch
-- [ ] Fotos eingefügt (Schritt 5)
-- [ ] Website einmal komplett am **Handy** durchklicken
-- [ ] **Gästestimmen ersetzen:** Die vier Bewertungen auf der Startseite sind
-      Platzhalter-Texte. Vor dem Livegang durch echte Zitate (z. B. aus euren
-      Airbnb-Bewertungen, mit Einverständnis) ersetzen oder entfernen –
-      erfundene Bewertungen sind wettbewerbsrechtlich heikel.
-- [ ] **Alpaka-Namen eintragen:** Auf der Bauernhof-Seite stehen noch
-      „Alpaka-Stute 1/2/3" – echte Namen (Noblesse, Bellissima, Marée) einsetzen
-- [ ] Social-Media-Links im Footer der Startseite führen noch auf `#` –
-      echte Profile verlinken oder Icons entfernen
+- [x] Fotos eingefügt – Restliste siehe [Fotos](#fotos-hochladen-und-einbauen)
+- [x] Gästestimmen auf der Startseite sind echte Zitate aus Airbnb
+- [x] Logo als Symbol im Browser-Tab
 - [x] Aufenthaltsabgabe (3,50 € p. P./Nacht) und die steuerliche Einordnung als
       Vermietung und Verpachtung mit 10 % USt sind steuerlich abgeklärt.
       Satz bei künftigen Änderungen in `js/preise-config.js` anpassen.
-- [ ] `node scripts/sitemap-lastmod.js` laufen lassen, damit die Änderungsdaten
-      in `sitemap.xml` zum Stand der Seiten passen
       (Die Abgabenübersicht des Landes Tirol nennt für den TVB Alpbachtal ab
       1. 5. 2026 einen Satz von 4,00 € – beim TVB gegenprüfen.)
-- [ ] **Airbnb-Preise angleichen:** Die Website verspricht „Bestpreis“ (nie
-      teurer als auf Portalen). Die Saisonpreise in `js/preise-config.js` sind
-      ein Vorschlag aus `docs/OPTIMIERUNGSPLAN.md` – vor dem Livegang mit den
-      Airbnb-Preisen abstimmen, sodass Airbnb nie günstiger ist.
+- [ ] Website einmal komplett am **Handy** durchklicken
+- [ ] **Alpaka-Namen** (Stuten und Jungtiere) auf der Bauernhof-Seite ergänzen
+- [ ] **Airbnb-Preise angleichen:** Die Website verspricht „Bestpreis" (nie
+      teurer als auf Portalen). Die Saisonpreise in `js/preise-config.js` mit
+      den Airbnb-Preisen abstimmen, sodass Airbnb nie günstiger ist.
 - [ ] Impressum & Datenschutz einmal von WKO Tirol / Anwalt gegenlesen lassen
       (Texte sind ausgearbeitet, aber das ist keine Rechtsberatung)
+- [ ] `node scripts/sitemap-lastmod.js` laufen lassen, damit die Änderungsdaten
+      in `sitemap.xml` zum Stand der Seiten passen
+- [ ] Vorschau-Modus beenden (siehe oben)
 
 ---
 
@@ -371,7 +400,9 @@ sondern bekommen von Cloudflare eine eigene Vorschau-Adresse:
 | Texte einer Seite | jeweilige `.html`-Datei (z. B. `bauernhof.html`) |
 | Telefon/E-Mail | in allen `.html`-Dateien (Suchen & Ersetzen) |
 | Farben & Schriften | `css/style.css`, Abschnitt `:root { --color-… }` |
-| Copyright-Jahr | Footer aller `.html`-Dateien (`© 2025`) |
+| Fotos | siehe [Fotos hochladen und einbauen](#fotos-hochladen-und-einbauen) |
+| **Hofladen-Produkte, Preise, Bestellrunden** | in der Verwaltung (`/verwaltung/`), nicht im Code |
+| Copyright-Jahr | Footer aller `.html`-Dateien (`© 2026`) |
 | Airbnb-/Booking-Kalenderlinks | Cloudflare-Secret `AIRBNB_ICAL_URL` |
 | **Preise für Google & KI-Systeme** | nach einer Preisänderung auch `llms.txt`, den `makesOffer`-Block in `index.html` und die „ab 125 €“-Angaben auf Start-, Ferienwohnungs- und Workation-Seite anpassen |
 | Änderungsdatum in der Sitemap | `node scripts/sitemap-lastmod.js` ausführen – trägt die Daten automatisch nach |
@@ -414,43 +445,53 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 
 ```
 /
-├── index.html               → Startseite
-├── ferienwohnung.html       → Wohnung, Galerie, Verfügbarkeitskalender
+├── index.html               → Startseite (Hero-Video, Wegweiser Ferienwohnung/Hofladen)
+├── vorschau.html            → Übergangs-Startseite, solange der Vorschau-Modus aktiv ist
+├── ferienwohnung.html       → Wohnung, Galerie, Ausstattung, Verfügbarkeitskalender
 ├── preise.html              → Preise, Zahlungsarten, Storno, Kalender
-├── bauernhof.html           → Hof, Alpakas, Hofladen
-├── berglsteiner-see.html    → Der See, Wanderroute
+├── bauernhof.html           → Hof, Alpakas, weitere Tiere, Bienen, Hofladen
+├── berglsteiner-see.html    → Der See, Jahreszeiten, Wanderroute
 ├── workation.html           → Arbeiten mit Starlink-Internet
-├── lage.html               → Lage & Umgebung: Anfahrt, Karte, Ausflugsziele
-├── kontakt.html             → Kontaktformular
-├── impressum.html           → Impressum (§ 5 ECG, § 25 MedienG, UID)
-├── datenschutz.html         → Datenschutzerklärung (DSGVO)
-├── wrangler.toml            → Cloudflare-Pages-Konfiguration (nicht löschen!)
-├── schema.sql               → D1-Datenbankschema (Tabelle „anfragen")
-├── schema-hofladen.sql      → D1-Schema der Hofladen-Vorbestellung (im Aufbau)
-├── hofladen-produkte.sql    → Produktkatalog zum Einspielen (Startpreise)
-├── hofladen.html            → Bestellseite des Hofladens (noch nicht verlinkt)
+├── lage.html                → Lage & Umgebung: Anfahrt, Karte, Aktivitäten, Skigebiete
+├── kontakt.html             → Kontaktformular, FAQ
+├── hofladen.html            → Bestellseite des Hofladens (noch „noindex", verlinkt nur über den Wegweiser)
 ├── meine-bestellungen.html  → Bestellungen zum persönlichen Link aus der Mail
+├── impressum.html           → Impressum (§ 5 ECG, § 25 MedienG, UID), Bildnachweis
+├── datenschutz.html         → Datenschutzerklärung (DSGVO)
+├── 404.html                 → Fehlerseite
+├── favicon.ico, apple-touch-icon.png → Logo-Symbol für Browser-Tab und Handy-Startbildschirm
+├── hero.mp4 / hero.webm / hero-poster.jpg → Drohnenvideo der Startseite und Standbild
+├── wrangler.toml            → Cloudflare-Pages-Konfiguration (nicht löschen!)
 ├── _headers                 → HTTP-Header & Cache-Regeln (Cloudflare Pages)
-├── _redirects               → Weiterleitungen; sperrt interne Dateien (docs/, README, Schemata …)
-├── docs/OPTIMIERUNGSPLAN.md → Interner Plan: Direktbuchungen, Preise, Rechtsprüfung
+├── _redirects               → Weiterleitungen; Vorschau-Modus; sperrt interne Dateien (docs/, README, Schemata …)
+├── schema.sql               → D1-Datenbankschema (Tabelle „anfragen", Buchungsmodell)
+├── schema-hofladen.sql      → D1-Schema der Hofladen-Vorbestellung
+├── hofladen-produkte.sql    → Produktkatalog zur Erstbefüllung (Startpreise)
+├── migration-2026-10-bereiche.sql → einmalige Umstellung auf Bereiche (live erledigt)
 ├── sitemap.xml / robots.txt → Für Google & Co.
 ├── llms.txt                 → Angebotsübersicht für KI-Systeme (ChatGPT, Claude …)
-├── css/style.css            → Design (Farben, Schriften, Layout)
-├── js/main.js               → Navigation, Formular, Animationen
+├── CLAUDE.md                → Arbeitsanleitung für claude.ai/code
+├── UMSETZUNGSPLAN.md        → früherer Umsetzungsplan der Website
+├── docs/                    → interne Pläne (Optimierung, Hofladen, Cloudflare-Anleitung als PDF)
+├── css/style.css            → Design (Farben, Schriften, Layout), nummerierte Abschnitte
+├── js/main.js               → Navigation, Lightbox, Formular, Animationen
+├── js/slider.js             → Bilder-Slider
 ├── js/verfuegbarkeit.js     → Belegungskalender (Anzeige)
 ├── js/preise-config.js      → ALLE Preise zentral
+├── js/hofladen.js, js/meine-bestellungen.js → Bestellseite und „Meine Bestellungen"
+├── js/qrcode.js             → Überweisungs-QR-Code (EPC-QR) für Packzettel und „Meine Bestellungen"
 ├── functions/api/availability.js → Holt den Airbnb-Kalender (Server)
 ├── functions/api/kontakt.js      → Nimmt Formularanfragen entgegen (D1 + E-Mail)
-├── functions/_lib/hofladen.js    → Gemeinsame Helfer der Hofladen-Vorbestellung
+├── functions/api/hofladen/       → öffentliche Schnittstelle: Angebot, Bestellung, Voranmeldung, Widerruf
+├── functions/api/verwaltung/     → Schnittstelle der Verwaltung (Zugangsprüfung + Daten)
+├── functions/_lib/          → gemeinsame Helfer (Hofladen, Zugang, Mail-Vorlage)
 ├── verwaltung/              → Hofladen-Verwaltung (Anmeldung über Cloudflare Access, nicht verlinkt)
-├── functions/api/verwaltung/ → Schnittstelle der Verwaltung (Zugangsprüfung + Daten)
+├── scripts/sitemap-lastmod.js → Trägt die Änderungsdaten in sitemap.xml nach
+├── scripts/test-hofladen-*.mjs → Tests für Datenbank, Schnittstelle, Zugang, Bestellseite und QR-Code
 ├── .github/workflows/optimize-images.yml → Verkleinert hochgeladene Fotos automatisch
 ├── .github/scripts/optimize-images.js    → Das zugehörige Skript (sharp)
-├── scripts/sitemap-lastmod.js → Trägt die Änderungsdaten in sitemap.xml nach
-├── js/qrcode.js             → Überweisungs-QR-Code (EPC-QR) für Packzettel und „Meine Bestellungen"
-├── scripts/test-hofladen-*.mjs → Tests für Datenbank, Schnittstelle, Zugang, Bestellseite und QR-Code
 ├── fonts/                   → Lokal gehostete Schriften (DSGVO – nicht löschen!)
-└── images/                  → Fotos (siehe Schritt 5)
+└── images/                  → Fotos in Themenordnern (siehe „Fotos")
 ```
 
 ---
@@ -508,8 +549,10 @@ node scripts/test-hofladen-qr.mjs
 nimmt Vorbestellungen und unverbindliche Voranmeldungen an und verschickt
 Bestätigungen (über Resend, wie das Kontaktformular). Jede Bestätigung enthält
 einen persönlichen Link auf `meine-bestellungen.html` – ohne Kundenkonto, ohne
-Cookies. Die Seite ist derzeit **noch nicht verlinkt und auf „noindex"**, bis
-die Bestellbedingungen geprüft sind (siehe `docs/HOFLADEN-VORBESTELLUNG.md`).
+Cookies. Die Seite steht noch auf **„noindex"** (Google zeigt sie nicht an) und
+ist nicht in der Navigation, bis die Bestellbedingungen geprüft sind (siehe
+`docs/HOFLADEN-VORBESTELLUNG.md`). Von der Startseite führt der Wegweiser
+bereits hin.
 
 ---
 
@@ -607,8 +650,15 @@ die Verwaltung mit erfundenen Daten; dabei wird nichts gespeichert.
 
 **Produkte und Bestellrunden im Alltag:**
 - *Produkte* (Menüpunkt in der Verwaltung, am Handy über die Übersicht):
-  alles, was es grundsätzlich gibt – Name, Beschreibung, Zutaten/Allergene,
-  optional ein Foto (`images/hofladen/…`). Eingeblendete Produkte erscheinen
+  alles, was es grundsätzlich gibt – Name, Beschreibung, Zutaten/Allergene.
+  **Produktfotos:** Beim Produkt auf **„Foto aufnehmen oder wählen"** tippen –
+  das Handy bietet Kamera oder Galerie an. Das Foto wird am Handy verkleinert
+  (max. 1200 px), in der Datenbank gespeichert (Tabelle `produkt_fotos`) und
+  ist gleich ausgewählt; dann **Speichern**. Bereits hochgeladene Fotos lassen
+  sich bei anderen Produkten wiederverwenden, unter „Foto von der Website
+  nehmen" auch alle Fotos der Website. Hochgeladene, aber nie gespeicherte
+  Fotos werden nach einem Tag gelöscht. In der Sortiment-Liste zeigt ein
+  kleines Bild bzw. „kein Foto", wo noch eines fehlt. Eingeblendete Produkte erscheinen
   auf der Hofladen-Seite im Abschnitt „Unser Sortiment"; nicht mehr
   erhältliche Produkte ausblenden statt löschen.
 - *Bestellrunde*: was gerade bestellbar ist, mit Preis, Menge und Terminen.

@@ -17,6 +17,7 @@
   <link rel="alternate" hreflang="de" href="https://www.kruckenhaus.at/" />
   <title>Ferienwohnung Kruckenhaus – Bergbauernhof in Breitenbach am Inn, Tirol</title>
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="stylesheet" href="css/style.css" />
   <script type="application/ld+json">
   {
@@ -36,7 +37,13 @@
     "telephone": "+436642166181",
     "email": "info@kruckenhaus.at",
     "priceRange": "125-225 EUR",
-    "image": "https://www.kruckenhaus.at/hero-poster.jpg",
+    "image": [
+      "https://www.kruckenhaus.at/images/hof/hof-sommer-bergpanorama.jpg",
+      "https://www.kruckenhaus.at/images/wohnung/wohnung-stube-fruehstueckstisch.jpg",
+      "https://www.kruckenhaus.at/images/wohnung/wohnung-kueche.jpg",
+      "https://www.kruckenhaus.at/images/wohnung/wohnung-schlafzimmer-1.jpg",
+      "https://www.kruckenhaus.at/hero-poster.jpg"
+    ],
     "currenciesAccepted": "EUR",
     "checkinTime": "17:00",
     "checkoutTime": "10:00",
@@ -171,6 +178,34 @@
       </div>
     </section>
 
+    <!-- WEGWEISER: Feriengäste links, Hofladen-Kunden rechts (Handy: untereinander) -->
+    <section class="wegweiser" aria-label="Wegweiser">
+      <div class="container wegweiser-grid">
+        <a href="ferienwohnung.html" class="wegweiser-karte">
+          <img src="images/wohnung/wohnung-stube-fruehstueckstisch.jpg"
+               alt="Holzgetäfelte Stube der Ferienwohnung mit Eckbank und rundem Tisch"
+               width="1600" height="1066" loading="lazy" decoding="async" />
+          <div class="wegweiser-text">
+            <span class="start-label">Urlaub am Hof</span>
+            <h2>Ferienwohnung</h2>
+            <p>100 m² für 2–4 Personen in Alleinlage – mit Kachelofen, Terrasse und den Alpakas vor der Tür.</p>
+            <span class="wegweiser-link">Ferienwohnung ansehen <span aria-hidden="true">→</span></span>
+          </div>
+        </a>
+        <a href="hofladen.html" class="wegweiser-karte">
+          <img src="images/bauernhof/bienen-kinder-waben.jpg"
+               alt="Unsere Kinder in Imkeranzügen zeigen zwei Bienenwaben"
+               width="1600" height="739" loading="lazy" decoding="async" />
+          <div class="wegweiser-text">
+            <span class="start-label">Vom Hof</span>
+            <h2>Hofladen</h2>
+            <p>Fleisch, Eiernudeln und Raphaels Honig auf Vorbestellung – zum Abholen am Hof oder kostenlos geliefert in die Umgebung.</p>
+            <span class="wegweiser-link">Zum Hofladen <span aria-hidden="true">→</span></span>
+          </div>
+        </a>
+      </div>
+    </section>
+
     <!-- INTRO -->
     <section class="section start-intro" aria-label="Willkommen beim Kruckenhaus">
       <div class="container start-intro-grid">
@@ -188,11 +223,9 @@
             <li>Eigener Eingang &amp; Terrasse</li>
           </ul>
         </div>
-        <!-- Standbild aus dem Drohnenvideo – bei Gelegenheit durch ein echtes Foto ersetzen.
-             TODO: Außenansicht Hof mit Bergpanorama (1600x1200) -->
-        <img class="start-intro-bild" src="images/hof/hof-luftbild-haus.jpg"
-             alt="Wohnhaus beim Kruckenhaus mit Balkonen, aus der Luft gesehen"
-             width="1280" height="720" loading="lazy" decoding="async" />
+        <img class="start-intro-bild" src="images/hof/hof-sommer-bergpanorama.jpg"
+             alt="Hof Kruckenhaus am sonnigen Oberberg mit Blick über das Inntal"
+             width="1600" height="1066" loading="lazy" decoding="async" />
       </div>
     </section>
 
@@ -239,14 +272,16 @@
         </div>
         <div class="start-karten">
           <a href="berglsteiner-see.html" class="start-karte">
-            <!-- TODO: Berglsteiner See mit Bergspiegelung (1600x1200) -->
-            <div class="start-karte-platzhalter">Foto: Berglsteiner See</div>
+            <img src="images/berglsteiner-see/berglsteiner-see-sommer-spiegelung.jpg"
+                 alt="Berglsteiner See im Sommer – Bergwald und Felswand spiegeln sich im Wasser"
+                 width="1600" height="739" loading="lazy" decoding="async" />
             <h3>Berglsteiner See</h3>
             <p>15 Gehminuten vom Hof – zum Spazieren, Erholen und die Natur genießen.</p>
           </a>
           <a href="bauernhof.html" class="start-karte">
-            <!-- TODO: Alpakas auf Weide vor Bergkulisse (1600x1200) -->
-            <div class="start-karte-platzhalter">Foto: Alpakas auf der Weide</div>
+            <img src="images/bauernhof/alpakas-gruppe-weide.jpg"
+                 alt="Alpakas grasen gemeinsam auf der Weide am Hof"
+                 width="1600" height="900" loading="lazy" decoding="async" />
             <h3>Alpakas &amp; Bauernhof</h3>
             <p>Alpaka-Stuten, Legehennen und Schafe – ein arbeitender Hof.</p>
           </a>
@@ -257,9 +292,9 @@
             <p>Starlink mit 200+ Mbit/s – stabil für Videokonferenzen.</p>
           </a>
           <a href="lage.html" class="start-karte">
-            <img src="images/hof/hof-luftbild-tal.jpg"
-                 alt="Hof und Wirtschaftsgebäude am Oberberg mit Blick ins Tal"
-                 width="1280" height="720" loading="lazy" decoding="async" />
+            <img src="images/hof/hof-luftbild-herbst.jpg"
+                 alt="Hof Kruckenhaus in Alleinlage am Oberberg, aus der Luft im Herbst"
+                 width="1600" height="900" loading="lazy" decoding="async" />
             <h3>Alleinlage</h3>
             <p>Nur ihr, die Berge und die Tiere.</p>
           </a>
@@ -277,6 +312,9 @@
         </div>
         <div class="jahreszeiten-grid">
           <article class="jahreszeit jahreszeit--herbst">
+            <img class="jahreszeit-bild" src="images/hof/hof-herbst-walnuss.jpg"
+                 alt="Reife Walnuss in der aufgeplatzten Schale am Baum beim Hof"
+                 width="1600" height="3463" loading="lazy" decoding="async" />
             <h3>Herbst</h3>
             <span class="jahreszeit-monate">September bis Mitte Dezember</span>
             <ul>
@@ -287,6 +325,9 @@
             </ul>
           </article>
           <article class="jahreszeit">
+            <img class="jahreszeit-bild" src="images/hof/hof-fruehling-kirschbluete-biene.jpg"
+                 alt="Biene in weißen Kirschblüten vor blauem Himmel"
+                 width="1600" height="1300" loading="lazy" decoding="async" />
             <h3>Frühling</h3>
             <span class="jahreszeit-monate">März bis Mai</span>
             <ul>

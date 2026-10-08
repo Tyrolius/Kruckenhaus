@@ -442,3 +442,19 @@ CREATE TABLE IF NOT EXISTS widerrufe (
 
 CREATE INDEX IF NOT EXISTS idx_widerrufe_status ON widerrufe (status, eingegangen_am);
 CREATE INDEX IF NOT EXISTS idx_widerrufe_bestellung ON widerrufe (bestellung_id);
+
+
+-- ------------------------------------------------------------
+-- PRODUKTFOTOS (in der Verwaltung vom Handy hochgeladen)
+-- Das Handy verkleinert das Foto vor dem Hochladen (max. 1200 px, JPEG).
+-- Gespeichert als Base64-Text (rund 150–400 KB, D1 erlaubt bis 2 MB je Wert).
+-- Öffentlich abrufbar unter /api/hofladen/foto/<id>; produkte.bild verweist
+-- darauf mit 'api/hofladen/foto/<id>'. Fotos, die keinem Produkt zugeordnet
+-- sind, werden nach einem Tag beim nächsten Hochladen gelöscht.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS produkt_fotos (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  daten       TEXT    NOT NULL,           -- JPEG als Base64 (ohne „data:"-Vorspann)
+  groesse     INTEGER NOT NULL,           -- Bytes des JPEG
+  erstellt_am TEXT    NOT NULL DEFAULT (datetime('now'))
+);

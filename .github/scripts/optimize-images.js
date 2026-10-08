@@ -13,6 +13,10 @@
  * GitHub-Actions-Workflow keine leeren Commits erzeugt).
  *
  * Ausgenommen: Markenbilder, die exakte Maße oder Transparenz brauchen.
+ *
+ * Zusätzlich entsteht images/fotos.json – die Liste aller Fotos. Die
+ * Hofladen-Verwaltung bietet daraus die Produktfotos zur Auswahl an
+ * (eine statische Website kann keinen Ordner auflisten).
  */
 
 const fs = require('fs');
@@ -26,6 +30,10 @@ const JPEG_QUALITY_STEPS = [82, 75, 68, 60, 52];
 
 // Dateinamen (ohne Pfad), die nie automatisch verändert werden sollen.
 const EXCLUDE = new Set(['logo.png', 'favicon.png']);
+
+// Liste für die Foto-Auswahl der Verwaltung; Logos gehören nicht hinein
+const FOTOLISTE = path.join(IMAGES_DIR, 'fotos.json');
+const NICHT_IN_LISTE = /^logo\//;
 
 function listImageFiles(dir) {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
@@ -83,8 +91,11 @@ async function main() {
       ? await optimizePng(original, needsResize)
       : await optimizeJpeg(original, needsResize);
 
-    // Nie vergrößern – nur schreiben, wenn tatsächlich kleiner geworden.
-    if (optimized && optimized.length < original.length) {
+    // Nur schreiben, wenn es sich lohnt (mind. 5 % kleiner oder verkleinert).
+    // Fotos mit viel Struktur (Wiese) bleiben auch bei niedriger Qualität über
+    // 300 KB – ohne diese Schwelle würden sie bei jedem Lauf minimal neu
+    // komprimiert, verlören jedes Mal Qualität und erzeugten einen Commit.
+    if (optimized && (needsResize || optimized.length < original.length * 0.95)) {
       fs.writeFileSync(file, optimized);
       changed++;
       console.log(
@@ -99,6 +110,24 @@ async function main() {
       ? 'Alle Bilder sind bereits web-tauglich – nichts zu tun.'
       : `${changed} Bild(er) optimiert.`
   );
+
+  fotolisteSchreiben(files);
+}
+
+// Schreibt images/fotos.json nur, wenn sich die Liste geändert hat –
+// sonst entstünde bei jedem Lauf ein leerer Commit.
+function fotolisteSchreiben(files) {
+  const liste = files
+    .map((f) => path.relative(IMAGES_DIR, f).split(path.sep).join('/'))
+    .filter((f) => !NICHT_IN_LISTE.test(f))
+    .sort((a, b) => a.localeCompare(b, 'de'))
+    .map((f) => `images/${f}`);
+  const neu = `${JSON.stringify(liste, null, 2)}\n`;
+  const alt = fs.existsSync(FOTOLISTE) ? fs.readFileSync(FOTOLISTE, 'utf8') : '';
+  if (neu !== alt) {
+    fs.writeFileSync(FOTOLISTE, neu);
+    console.log(`Fotoliste aktualisiert: ${liste.length} Fotos in images/fotos.json`);
+  }
 }
 
 main().catch((err) => {
