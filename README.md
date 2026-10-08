@@ -283,8 +283,7 @@ Bildnachweis im Impressum: Florian Häusler, Kathrin Häusler, Philippphoto.
 - [x] Aufenthaltsabgabe (3,50 € p. P./Nacht) und die steuerliche Einordnung als
       Vermietung und Verpachtung mit 10 % USt sind steuerlich abgeklärt.
       Satz bei künftigen Änderungen in `js/preise-config.js` anpassen.
-      (Die Abgabenübersicht des Landes Tirol nennt für den TVB Alpbachtal ab
-      1. 5. 2026 einen Satz von 4,00 € – beim TVB gegenprüfen.)
+      (3,50 € im Oktober 2026 beim TVB bestätigt.)
 - [x] Vorschau-Modus beendet, Sitemap aktualisiert, Logo in der Kopfzeile
 - [ ] Website einmal komplett am **Handy** durchklicken
 - [ ] **Airbnb-Preise angleichen:** Die Website verspricht „Bestpreis" (nie

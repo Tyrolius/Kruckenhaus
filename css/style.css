@@ -4463,9 +4463,10 @@ body.season-winter .winter-image { display: block; }
 /* --- Hero --- */
 .start-hero {
   position: relative;
-  min-height: 560px;
-  height: 92svh;
-  max-height: 860px;
+  /* Mindesthöhe statt fester Höhe: Ist der Text höher (kleines Handy, große
+     Schrift), wächst das Bild mit, statt den Text unter die Kopfzeile zu schieben */
+  min-height: clamp(560px, 92svh, 860px);
+  padding-top: calc(var(--header-height) + 1.5rem);
   display: flex;
   align-items: flex-end;
   overflow: hidden;
@@ -5927,4 +5928,38 @@ html, body { overflow-x: clip; }
   margin-top: auto;
   font-weight: 700;
   color: var(--color-primary);
+}
+
+/* ============================================================
+   58. KNOPFGRUPPEN
+   .knopf-reihe: zwei bis drei Knöpfe nebeneinander (Desktop), am Handy
+   untereinander, gleich breit und mit gleichem Abstand. Dieselbe
+   Handy-Regel gilt für die Knöpfe auf der Startseite.
+   ============================================================ */
+.knopf-reihe {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.knopf-reihe--links { justify-content: flex-start; }
+
+@media (max-width: 767px) {
+  .knopf-reihe,
+  .start-hero-buttons,
+  .start-cta-buttons {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .knopf-reihe .btn,
+  .start-hero-buttons .btn,
+  .start-cta-buttons .btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .knopf-reihe { max-width: 420px; margin-inline: auto; }
+  .knopf-reihe--links { margin-inline: 0; }
 }
