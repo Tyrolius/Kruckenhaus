@@ -5709,3 +5709,71 @@ html, body { overflow-x: clip; }
 }
 
 .hof-neuigkeit p { margin: 0; }
+
+/* ============================================================
+   54. WEGWEISER (Startseite)
+   Zwei Foto-Karten direkt nach dem Hero: Ferienwohnung | Hofladen
+   ============================================================ */
+.wegweiser {
+  padding-block: var(--spacing-md);
+}
+
+.wegweiser-grid {
+  display: grid;
+  gap: 1.25rem;
+}
+
+.wegweiser-karte {
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+  color: var(--color-text);
+  transition: box-shadow var(--transition-med), transform var(--transition-med);
+}
+
+.wegweiser-karte img {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+}
+
+.wegweiser-text {
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.wegweiser-text h2 {
+  font-size: 1.75rem;
+  margin: 0.25rem 0 0.5rem;
+}
+
+.wegweiser-text p {
+  margin: 0 0 1rem;
+  line-height: 1.6;
+}
+
+.wegweiser-link {
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.wegweiser-karte:hover,
+.wegweiser-karte:focus-visible {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-3px);
+}
+
+.wegweiser-karte:hover .wegweiser-link { color: var(--color-terracotta); }
+
+@media (min-width: 768px) {
+  .wegweiser { padding-block: var(--spacing-lg) 0; }
+  .wegweiser-grid { grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wegweiser-karte { transition: none; }
+  .wegweiser-karte:hover,
+  .wegweiser-karte:focus-visible { transform: none; }
+}
