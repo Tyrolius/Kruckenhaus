@@ -51,7 +51,7 @@ functions/_lib/zugang.js   Prüfung der Cloudflare-Access-Anmeldung
 functions/_lib/mail.js     gemeinsame Mail-Vorlage („Bergbauernhof Kruckenhaus") + Nur-Text-Fassung
 functions/api/verwaltung/  Schnittstelle der Verwaltung (_middleware.js = Zugang)
 verwaltung/                Hofladen-Verwaltung (inkl. Produktkatalog); ?entwurf = Beispielmodus
-hofladen.html + js/hofladen.js   Bestellseite mit Sortiment für Kunden (noch noindex, nicht verlinkt)
+hofladen.html + js/hofladen.js   Bestellseite mit Sortiment für Kunden (noch noindex; nur über den Wegweiser der Startseite verlinkt)
 vorschau.html              Übergangs-Startseite, solange Fotos fehlen; aktiv über den
                            Block „VORSCHAU-MODUS“ in _redirects (zum Livegang löschen)
 meine-bestellungen.html + js/meine-bestellungen.js   Ansicht zum persönlichen Link
@@ -199,10 +199,15 @@ Es gibt keine automatisierten Tests und keinen Linter.
 
 ## Offene Punkte (Stand der Checkliste im README)
 
-- Echte Fotos fehlen; überall `TODO:`-Platzhalter.
-- Gästestimmen auf der Startseite sind teils Platzhalter.
-- Social-Media-Links im Footer zeigen auf `#`.
-- Alpaka-Namen (Noblesse, Bellissima, Marée) sind noch nicht eingesetzt.
+- Fotos sind großteils da (`images/wohnung/`, `hof/`, `bauernhof/`,
+  `berglsteiner-see/`, `umgebung/`); es fehlen Terrasse, Workation,
+  See im Herbst/Frühling, Hofladen und Ausflugsziele – dort `TODO:`-Platzhalter.
+  Neue Uploads landen oft lose in `images/` oder im Projektstamm: ansehen,
+  sprechend benennen, in den Themenordner verschieben, dann einbauen.
+- Vorschau-Modus in `_redirects` ist noch aktiv (Livegang auf Zuruf).
+- Alpaka-Namen (Stuten und Jungtiere) fehlen noch.
+- Hofladen: noch `noindex` und nicht in der Navigation; Produktfotos lassen
+  sich in der Verwaltung noch nicht auswählen (Feld `produkte.bild` existiert).
 
 Wenn eine Anfrage einen dieser Punkte berührt, das gleich miterledigen bzw.
 kurz darauf hinweisen.
