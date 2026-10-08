@@ -2017,7 +2017,7 @@ p {
   /* Luftbild vom Hof als gemeinsamer Seitenkopf; eigene Fotos je Seite
      können später per Inline-Style oder eigener Klasse gesetzt werden. */
   background-color: var(--color-primary);
-  background-image: url('../images/hof/hof-luftbild-tal.jpg');
+  background-image: url('../images/hof/hof-luftbild-herbst.jpg');
   background-size: cover;
   background-position: center 40%;
   padding-top: calc(var(--header-height) + 4.5rem);
@@ -5641,6 +5641,16 @@ html, body { overflow-x: clip; }
    ============================================================ */
 .page-hero--ferienwohnung {
   background-image: url('../images/hof/hof-sommer-hang.jpg');
+  background-position: center 45%;
+}
+
+.page-hero--bauernhof {
+  background-image: url('../images/bauernhof/heuernte-oberberg.jpg');
+  background-position: center 60%;
+}
+
+.page-hero--lage {
+  background-image: url('../images/hof/hof-luftbild-nebelmeer.jpg');
   background-position: center 45%;
 }
 
