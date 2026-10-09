@@ -52,7 +52,7 @@
   <nav class="nav-overlay" id="nav-overlay" role="navigation" aria-label="Mobile Navigation">
     <a href="index.html" class="nav-link">Home</a>
     <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
-    <a href="preise.html" class="nav-link active" aria-current="page">Preise</a>
+    <a href="preise.html" class="nav-link active" aria-current="page">Preise &amp; Buchung</a>
     <a href="bauernhof.html" class="nav-link">Bauernhof</a>
     <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
     <a href="workation.html" class="nav-link">Workation</a>
@@ -300,8 +300,33 @@
         <div class="section-header">
           <span class="section-label">Direkt bei uns anfragen</span>
           <h2 id="buchung-titel">Verfügbarkeit &amp; Anfrage</h2>
-          <p>Wählt im Kalender euren Zeitraum und schickt uns die Anfrage. Wir melden uns innerhalb von 24 Stunden mit einer verbindlichen Bestätigung – ohne Portalgebühren.</p>
+          <p>Erst die Anfrage, dann unsere Bestätigung innerhalb von 24 Stunden – gebucht ist mit der Anzahlung. Ohne Portalgebühren.</p>
         </div>
+
+        <!-- Ablauf: macht klar, dass die Anfrage noch keine Buchung ist -->
+        <ol class="buchung-ablauf">
+          <li>
+            <span class="buchung-ablauf-nr" aria-hidden="true">1</span>
+            <div>
+              <strong>Zeitraum wählen</strong>
+              <p>Der Kalender zeigt, welche Tage noch frei sind.</p>
+            </div>
+          </li>
+          <li>
+            <span class="buchung-ablauf-nr" aria-hidden="true">2</span>
+            <div>
+              <strong>Anfrage senden</strong>
+              <p>Unverbindlich und kostenlos – noch keine Buchung.</p>
+            </div>
+          </li>
+          <li>
+            <span class="buchung-ablauf-nr" aria-hidden="true">3</span>
+            <div>
+              <strong>Bestätigung</strong>
+              <p>Innerhalb von 24 Stunden per E-Mail. Mit der Anzahlung von <span data-preis="anzahlung-prozent">30 %</span> ist euer Termin fix.</p>
+            </div>
+          </li>
+        </ol>
 
         <div class="buchung-grid">
           <!-- Schritt 1: Kalender -->
@@ -375,7 +400,7 @@
               </div>
 
               <button type="submit" class="btn btn-primary buchung-senden">Anfrage senden</button>
-              <p class="buchung-hinweis">Die Anfrage ist unverbindlich. Lieber persönlich?
+              <p class="buchung-hinweis">Unverbindlich – gebucht ist erst nach unserer Bestätigung. Lieber persönlich?
                 <a href="tel:+436642166181">+43 664 2166181</a> oder
                 <a href="https://wa.me/436642166181?text=Hallo%2C%20ich%20m%C3%B6chte%20die%20Ferienwohnung%20Kruckenhaus%20anfragen." target="_blank" rel="noopener">WhatsApp</a>.</p>
             </form>
