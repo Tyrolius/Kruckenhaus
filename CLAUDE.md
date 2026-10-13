@@ -202,7 +202,7 @@ Es gibt keine automatisierten Tests und keinen Linter.
 
 - Fotos sind großteils da (`images/wohnung/`, `hof/`, `bauernhof/`,
   `berglsteiner-see/`, `umgebung/`); es fehlen Terrasse, Workation (bis dahin
-  Ersatzfotos) und See im Herbst/Frühling – dort `TODO:`-Kommentare. Ausflugsziele
+  Ersatzfotos) und See im Frühling – dort `TODO:`-Kommentare. Ausflugsziele
   bleiben bewusst ohne Foto. Einen Selbstbedienungs-Hofladen gibt es derzeit nicht
   (Verkauf nur auf Vorbestellung); Schnäpse werden nicht mehr verkauft, Eierlikör
   nur vor Weihnachten.
