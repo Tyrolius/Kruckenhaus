@@ -26,3 +26,23 @@ database_id = "421aec56-afab-4d60-9119-9512f904aa5a"
 [vars]
 CONTACT_TO = "info@kruckenhaus.at"
 CONTACT_FROM = "Kruckenhaus Website <website@kruckenhaus.at>"
+
+# ------------------------------------------------------------
+# VORSCHAU-ADRESSEN (*.kruckenhaus.pages.dev, alle Branches außer master)
+# arbeiten mit der eigenen Test-Datenbank „kruckenhaus-test", damit
+# Testbestellungen und Schnittstellen-Tests nie in den echten Daten landen
+# (docs/SCHNITTSTELLE-BERTHA.md, Abschnitt 4.6).
+# Achtung: Wer hier etwas überschreibt, muss bei Cloudflare Pages alle
+# Bindungen und [vars] vollständig wiederholen – sonst lehnt Cloudflare das
+# Deployment ab. Änderungen an [vars] oben also auch hier nachtragen.
+# Secrets (RESEND_API_KEY, BANK_*, ACCESS_*) gelten je Umgebung und werden
+# im Dashboard unter „Preview" eigens eingetragen.
+# ------------------------------------------------------------
+[[env.preview.d1_databases]]
+binding = "DB"
+database_name = "kruckenhaus-test"
+database_id = "1e1bc4a5-045d-4459-b2b5-9daa77f64f36"
+
+[env.preview.vars]
+CONTACT_TO = "info@kruckenhaus.at"
+CONTACT_FROM = "Kruckenhaus Website <website@kruckenhaus.at>"

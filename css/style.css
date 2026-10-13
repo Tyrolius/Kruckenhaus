@@ -6128,3 +6128,61 @@ html, body { overflow-x: clip; }
     line-height: 1.5;
   }
 }
+
+/* ============================================================
+   62. VERWALTUNG: DAUERARTIKEL
+   Häkchen „verfügbar" und „Auch im Bertha-Portal anbieten" im
+   Produkt- und Rundenformular (docs/SCHNITTSTELLE-BERTHA.md, Phase W1).
+   ============================================================ */
+.vw-haken {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+  cursor: pointer;
+}
+
+.vw-haken input { width: 1.2rem; height: 1.2rem; flex-shrink: 0; accent-color: var(--color-primary); }
+
+.vw-haken--gross {
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  padding: 0.75rem;
+  background-color: var(--color-white);
+  font-weight: 600;
+}
+
+.vw-haken--gross input { width: 1.5rem; height: 1.5rem; }
+
+/* ============================================================
+   63. VERWALTUNG: VERBINDUNG ZU BERTHA
+   Ampel (Zustand der Schnittstelle), einmal angezeigter Schlüssel,
+   Fehlerliste (docs/SCHNITTSTELLE-BERTHA.md, Phase W3).
+   ============================================================ */
+.vw-ampel { border-left: 6px solid var(--color-border); }
+.vw-ampel--gruen { border-left-color: var(--color-primary); }
+.vw-ampel--gelb { border-left-color: var(--color-green); }
+.vw-ampel--rot { border-left-color: var(--color-terracotta); }
+
+.vw-bertha-fehler { margin: 0; padding-left: 1.1rem; display: grid; gap: 0.35rem; }
+
+.vw-schluessel { border: 2px solid var(--color-terracotta); }
+
+.vw-schluessel-text {
+  display: block;
+  margin: 0.75rem 0;
+  padding: 0.75rem;
+  border-radius: var(--border-radius);
+  background-color: var(--color-beige);
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+.vw-zugang-formular {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.vw-zugang-formular h3 { font-size: 1.1rem; margin-bottom: 0.75rem; }

@@ -71,6 +71,13 @@ INSERT OR IGNORE INTO bereiche (kennung, name, reihenfolge) VALUES
 -- art: 'gewicht' (Huhn, Pute, Gans – Preis pro kg, Endpreis nach Wiegen)
 --      'paket'   (Rindfleisch 5 kg / 10 kg – Fixpreis)
 --      'stueck'  (Eiernudeln, Honig – Fixpreis)
+-- verkaufsart: 'runde' – Preis und Menge je Bestellrunde (Fleisch)
+--              'dauer' – Dauerartikel (Nudeln, Seife …): fester Preis
+--                        dauerpreis_cent, nur „verfügbar/ausverkauft",
+--                        bestellbar über die ständige Runde „Dauersortiment"
+-- im_portal: auch im Bertha-Portal anbieten (docs/SCHNITTSTELLE-BERTHA.md)
+-- geaendert_am: bei jeder Änderung in der Verwaltung gesetzt (Abgleich)
+-- Vorhandene Datenbank: vorher einmal migration-2026-10-dauerartikel.sql.
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS produkte (
   id                 INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -91,6 +98,11 @@ CREATE TABLE IF NOT EXISTS produkte (
   aktiv              INTEGER NOT NULL DEFAULT 1 CHECK (aktiv IN (0, 1)),
   reihenfolge        INTEGER NOT NULL DEFAULT 0,
   erstellt_am        TEXT    NOT NULL DEFAULT (datetime('now')),
+  verkaufsart        TEXT    NOT NULL DEFAULT 'runde' CHECK (verkaufsart IN ('runde', 'dauer')),
+  dauerpreis_cent    INTEGER CHECK (dauerpreis_cent IS NULL OR dauerpreis_cent >= 0),
+  verfuegbar         INTEGER NOT NULL DEFAULT 1 CHECK (verfuegbar IN (0, 1)),
+  im_portal          INTEGER NOT NULL DEFAULT 1 CHECK (im_portal IN (0, 1)),
+  geaendert_am       TEXT    DEFAULT (datetime('now')),
   -- IS NOT NULL ausdrücklich: ein CHECK mit NULL-Ergebnis gilt sonst als erfüllt
   CHECK (art <> 'gewicht'
          OR (richtgewicht_von_g IS NOT NULL AND richtgewicht_bis_g IS NOT NULL
@@ -107,6 +119,7 @@ CREATE VIEW IF NOT EXISTS v_produkte AS
 SELECT
   p.id, p.name, p.art, p.kategorie, p.startpreis_cent, p.beschreibung, p.pflichtangaben,
   p.allergene, p.richtgewicht_von_g, p.richtgewicht_bis_g, p.bild, p.aktiv, p.reihenfolge,
+  p.verkaufsart, p.dauerpreis_cent, p.verfuegbar, p.im_portal, p.geaendert_am,
   b.id          AS bereich,
   b.name        AS bereich_name,
   b.reihenfolge AS bereich_reihenfolge
@@ -122,6 +135,12 @@ LEFT JOIN bereiche b
 --         'offen'       – für alle bestellbar
 --         'geschlossen' – Bestellschluss vorbei, wird abgewickelt
 --         'archiviert'  – fertig, bleibt für die Jahresübersicht
+-- art:    'runde' – normale Bestellrunde mit Menge und Bestellschluss
+--         'dauer' – die eine ständige Runde „Dauersortiment": immer offen,
+--                   Bestellschluss 9999-12-31, keine Mengenprüfung; ihre
+--                   Artikel bildet dauersortimentAbgleichen() (functions/_lib/
+--                   hofladen.js) aus den Produkten mit verkaufsart 'dauer'
+-- im_portal: Runde auch im Bertha-Portal anbieten
 -- ------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS chargen (
   id                INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -133,10 +152,14 @@ CREATE TABLE IF NOT EXISTS chargen (
   offen_ab          TEXT,
   bestellschluss    TEXT    NOT NULL,
   stammkunden_token TEXT UNIQUE,
-  erstellt_am       TEXT    NOT NULL DEFAULT (datetime('now'))
+  erstellt_am       TEXT    NOT NULL DEFAULT (datetime('now')),
+  art               TEXT    NOT NULL DEFAULT 'runde' CHECK (art IN ('runde', 'dauer')),
+  im_portal         INTEGER NOT NULL DEFAULT 1 CHECK (im_portal IN (0, 1))
 );
 
 CREATE INDEX IF NOT EXISTS idx_chargen_status ON chargen (status);
+-- Höchstens eine ständige Runde „Dauersortiment"
+CREATE UNIQUE INDEX IF NOT EXISTS idx_chargen_dauer ON chargen (art) WHERE art = 'dauer';
 
 
 -- ------------------------------------------------------------
@@ -307,7 +330,8 @@ LEFT JOIN v_positionen v ON v.bestellung_id = b.id
 GROUP BY b.id;
 
 -- Vorschlag für eine neue Bestellrunde: Preis, Menge und Höchstmenge je Produkt
--- aus der zuletzt angelegten Bestellrunde, in der das Produkt vorkam.
+-- aus der zuletzt angelegten Bestellrunde, in der das Produkt vorkam
+-- (ohne das Dauersortiment – dort gibt es keine Menge).
 CREATE VIEW IF NOT EXISTS v_letzter_preis AS
 SELECT
   ca.produkt_id,
@@ -321,7 +345,7 @@ JOIN chargen c ON c.id = ca.charge_id
 WHERE ca.id = (
   SELECT ca2.id FROM charge_artikel ca2
   JOIN chargen c2 ON c2.id = ca2.charge_id
-  WHERE ca2.produkt_id = ca.produkt_id
+  WHERE ca2.produkt_id = ca.produkt_id AND c2.art = 'runde'
   ORDER BY c2.erstellt_am DESC, c2.id DESC
   LIMIT 1
 );
@@ -457,4 +481,72 @@ CREATE TABLE IF NOT EXISTS produkt_fotos (
   daten       TEXT    NOT NULL,           -- JPEG als Base64 (ohne „data:"-Vorspann)
   groesse     INTEGER NOT NULL,           -- Bytes des JPEG
   erstellt_am TEXT    NOT NULL DEFAULT (datetime('now'))
+);
+
+
+-- ============================================================
+-- SCHNITTSTELLE FÜR BERTHA (/api/extern/v1/…)
+-- Plan: docs/SCHNITTSTELLE-BERTHA.md, Abschnitt 2.4 und 3
+-- Nur Server zu Server; der Schlüssel liegt nie in der Datenbank,
+-- sondern nur seine SHA-256-Prüfsumme (wie bei kunden_links).
+-- ============================================================
+
+-- Zugänge: wer die Schnittstelle nutzen darf (z. B. „Bertha", „Bertha Test")
+-- rechte: durch Komma getrennt, z. B. 'katalog,angebot,bestellen'
+-- Gesperrt = gesperrt_am gesetzt (wirkt sofort, ohne Deployment)
+CREATE TABLE IF NOT EXISTS schnittstellen_zugaenge (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  name            TEXT    NOT NULL,
+  schluessel_hash TEXT    NOT NULL UNIQUE,
+  rechte          TEXT    NOT NULL DEFAULT 'katalog',
+  erstellt_am     TEXT    NOT NULL DEFAULT (datetime('now')),
+  zuletzt_genutzt TEXT,
+  gesperrt_am     TEXT
+);
+
+-- Zuordnung Bertha-Kunde ↔ Website-Kunde (ab Phase W4)
+-- externe_id: nicht sprechende Kennung aus Bertha, kein Name, keine E-Mail
+CREATE TABLE IF NOT EXISTS extern_kunden (
+  zugang_id   INTEGER NOT NULL REFERENCES schnittstellen_zugaenge (id),
+  externe_id  TEXT    NOT NULL,
+  kunde_id    INTEGER NOT NULL REFERENCES kunden (id),
+  erstellt_am TEXT    NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (zugang_id, externe_id)
+);
+
+-- Bestellungen über die Schnittstelle (ab W4): Schutz vor Doppelbestellungen
+-- bei Wiederholung (anfrage_id = Idempotency-Key), gespeicherte Antwort und
+-- Nachweis der Zustimmung zu den Bestellbedingungen (Version und Zeitpunkt,
+-- JSON). Eine Bestellung kam „über Bertha", wenn sie hier steht.
+-- Vorhandene Datenbank: vorher einmal migration-2026-10-schnittstelle.sql.
+CREATE TABLE IF NOT EXISTS extern_anfragen (
+  zugang_id     INTEGER NOT NULL REFERENCES schnittstellen_zugaenge (id),
+  anfrage_id    TEXT    NOT NULL,
+  bestellung_id INTEGER REFERENCES bestellungen (id),
+  antwort       TEXT,
+  erstellt_am   TEXT    NOT NULL DEFAULT (datetime('now')),
+  zustimmung    TEXT,
+  PRIMARY KEY (zugang_id, anfrage_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_extern_anfragen_bestellung ON extern_anfragen (bestellung_id);
+
+-- Protokoll OHNE personenbezogene Daten (keine Namen, E-Mails, Adressen,
+-- Bestellinhalte). Einträge älter als 90 Tage werden beim Schreiben gelöscht.
+CREATE TABLE IF NOT EXISTS schnittstellen_protokoll (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  zeitpunkt   TEXT    NOT NULL DEFAULT (datetime('now')),
+  zugang_id   INTEGER,             -- leer, wenn der Schlüssel nicht passte
+  aufruf      TEXT    NOT NULL,    -- z. B. 'GET /katalog'
+  http_status INTEGER NOT NULL,
+  fehlercode  TEXT,
+  dauer_ms    INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_protokoll_zeitpunkt ON schnittstellen_protokoll (zeitpunkt);
+
+-- Einfache Einstellungen, z. B. name 'schnittstelle_pausiert', wert '1'
+CREATE TABLE IF NOT EXISTS einstellungen (
+  name TEXT PRIMARY KEY,
+  wert TEXT
 );
