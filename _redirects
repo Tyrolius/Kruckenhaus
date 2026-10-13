@@ -22,6 +22,9 @@
 /schema.sql / 301
 /schema-hofladen.sql / 301
 /hofladen-produkte.sql / 301
+/migration-2026-10-bereiche.sql / 301
+/migration-2026-10-dauerartikel.sql / 301
+/migration-2026-10-schnittstelle.sql / 301
 /.gitignore / 301
 
 # Umgebung ist seit 09/2026 Teil der Seite „Lage & Umgebung“
