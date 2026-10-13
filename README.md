@@ -263,7 +263,7 @@ Bildnachweis im Impressum: Florian Häusler, Kathrin Häusler, Philippphoto.
 |---|---|
 | Terrasse mit Bergblick | Galerie der Ferienwohnung |
 | Arbeitsplatz mit Laptop und Bergblick, Speedtest-Screenshot | Workation-Seite, Startseite (bis dahin Stube bzw. Regenbogen-Ausblick) |
-| Berglsteiner See im Herbst und Frühling | See-Seite |
+| Berglsteiner See im Frühling | See-Seite |
 | Hofprodukte (Fleischpaket, Nudeln, Honig, Seife) | direkt in der Verwaltung beim Produkt hochladen |
 
 > Fotos mit erkennbaren Personen nur mit deren Einverständnis verwenden –
