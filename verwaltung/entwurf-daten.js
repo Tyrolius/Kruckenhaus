@@ -15,6 +15,19 @@ const ENTWURF_DATEN = {
   // (Vorschlag, wie in hofladen-produkte.sql). Andere Orte: nur Abholung.
   tourReihenfolge: ['Breitenbach am Inn', 'Kramsach', 'Brixlegg', 'Kundl'],
 
+  // Verbindung zu Bertha (erfundener Zustand, Zeitpunkte in UTC)
+  schnittstelle: {
+    pausiert: false,
+    zugaenge: [
+      { id: 'z1', name: 'Bertha', rechte: ['katalog'], erstellt: '2026-10-01 18:00:00', zuletztGenutzt: null, gesperrt: null },
+    ],
+    letzterErfolg: null,
+    fehler: [
+      { zeitpunkt: '2026-10-12 07:15:00', aufruf: 'GET /v1/katalog', status: 401, code: 'nicht_angemeldet', zugang: '' },
+    ],
+    letzte24h: { aufrufe: 0, fehler: 0 },
+  },
+
   // Bereiche des Sortiments (wie die Standard-Bereiche in schema-hofladen.sql)
   bereiche: [
     { id: 'b1', name: 'Fleisch' },
@@ -25,7 +38,9 @@ const ENTWURF_DATEN = {
   ],
 
   // Produktkatalog (Preise stehen je Bestellrunde) – echtes Sortiment, Stand 09/2026
-  // Gleiche Felder wie /api/verwaltung/stand
+  // Gleiche Felder wie /api/verwaltung/stand. Spirelli und Seife als Beispiel
+  // für Dauerartikel (ohne verkaufsart = 'runde'); die ständige Runde
+  // „Dauersortiment" bildet verwaltung.js daraus.
   produkte: [
     { id: 'p1', name: 'Masthuhn ganz', art: 'gewicht', bereichId: 'b1', richtVonG: 1800, richtBisG: 2400, startpreisCent: 1200 },
     { id: 'p8', name: 'Masthuhn halbiert', art: 'gewicht', bereichId: 'b1', richtVonG: 900, richtBisG: 1200, startpreisCent: 1200 },
@@ -35,12 +50,14 @@ const ENTWURF_DATEN = {
     { id: 'p4', name: 'Gans', art: 'gewicht', bereichId: 'b1', richtVonG: 3000, richtBisG: 4500, startpreisCent: 1900 },
     { id: 'p9', name: 'Eiernudeln Spaghetti 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400 },
     { id: 'p11', name: 'Eiernudeln Hörnchen 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400 },
-    { id: 'p10', name: 'Eiernudeln Spirelli 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400 },
+    { id: 'p10', name: 'Eiernudeln Spirelli 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400,
+      verkaufsart: 'dauer', dauerpreisCent: 400, verfuegbar: false, imPortal: true },
     { id: 'p12', name: 'Eiernudeln Rotunde 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400 },
     { id: 'p13', name: 'Eiernudeln Pappardelle 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400 },
     { id: 'p2', name: 'Eiernudeln Bandnudeln 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400 },
     { id: 'p3', name: 'Raphaels Wald- & Blütenhonig 500 g', art: 'stueck', bereichId: 'b3', startpreisCent: 1200 },
-    { id: 'p14', name: 'Alpakaseife', art: 'stueck', bereichId: 'b4', startpreisCent: 450 },
+    { id: 'p14', name: 'Alpakaseife', art: 'stueck', bereichId: 'b4', startpreisCent: 450,
+      verkaufsart: 'dauer', dauerpreisCent: 450, verfuegbar: true, imPortal: true },
   ],
 
   // Termine, Mengen und Bestellungen sind erfunden; Preise wie angegeben.

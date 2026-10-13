@@ -1,6 +1,6 @@
 # Hofladen ↔ Bertha – Umsetzungsplan der Schnittstelle
 
-Stand: Oktober 2026 · Status: **Konzept – noch nichts programmiert**
+Stand: Oktober 2026 · Status: **Phasen W1–W4 (Website) umgesetzt**, B1/B2 (Bertha) offen
 
 > Kurzfassung: Das Sortiment wird **einmal** gepflegt, in der
 > Website-Verwaltung (Artikel, Fotos, Bestellrunden). Bestellt wird an zwei
@@ -78,8 +78,8 @@ nichts, was sich gegenseitig überschreiben oder auseinanderlaufen kann.
 
 ## 2. Änderungen auf der Website (Datenmodell)
 
-Alle Änderungen kommen als **eigene Migrationsdatei**
-(`migration-2026-xx-schnittstelle.sql`), wie schon bei
+Alle Spalten-Änderungen kommen als **eigene Migrationsdatei**
+(`migration-2026-10-dauerartikel.sql`, enthält alle `ALTER TABLE` aus 2.1–2.3), wie schon bei
 `migration-2026-10-bereiche.sql`, weil `ALTER TABLE … ADD COLUMN` nicht
 mehrfach ausführbar ist. `schema-hofladen.sql` wird für neue Datenbanken
 nachgezogen. **Vor jeder Migration eine Sicherung:**
@@ -557,6 +557,59 @@ dort genauso beginnen.
 
 ---
 
+## 8a. Einrichtung Phase W3 (Stand Oktober 2026)
+
+- **Test-Datenbank** `kruckenhaus-test` ist angelegt und befüllt (Schema,
+  Produktkatalog, Tabelle `anfragen`). `wrangler.toml` bindet sie unter
+  `[env.preview]` für alle Vorschau-Adressen.
+- **Live-Datenbank:** einmal diesen Block in der D1-Console ausführen
+  (kommentarfrei, mehrfach ausführbar):
+
+```sql
+CREATE TABLE IF NOT EXISTS schnittstellen_zugaenge ( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, schluessel_hash TEXT NOT NULL UNIQUE, rechte TEXT NOT NULL DEFAULT 'katalog', erstellt_am TEXT NOT NULL DEFAULT (datetime('now')), zuletzt_genutzt TEXT, gesperrt_am TEXT );
+CREATE TABLE IF NOT EXISTS extern_kunden ( zugang_id INTEGER NOT NULL REFERENCES schnittstellen_zugaenge (id), externe_id TEXT NOT NULL, kunde_id INTEGER NOT NULL REFERENCES kunden (id), erstellt_am TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (zugang_id, externe_id) );
+CREATE TABLE IF NOT EXISTS extern_anfragen ( zugang_id INTEGER NOT NULL REFERENCES schnittstellen_zugaenge (id), anfrage_id TEXT NOT NULL, bestellung_id INTEGER REFERENCES bestellungen (id), antwort TEXT, erstellt_am TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (zugang_id, anfrage_id) );
+CREATE TABLE IF NOT EXISTS schnittstellen_protokoll ( id INTEGER PRIMARY KEY AUTOINCREMENT, zeitpunkt TEXT NOT NULL DEFAULT (datetime('now')), zugang_id INTEGER, aufruf TEXT NOT NULL, http_status INTEGER NOT NULL, fehlercode TEXT, dauer_ms INTEGER );
+CREATE INDEX IF NOT EXISTS idx_protokoll_zeitpunkt ON schnittstellen_protokoll (zeitpunkt);
+CREATE TABLE IF NOT EXISTS einstellungen ( name TEXT PRIMARY KEY, wert TEXT );
+```
+
+- **Cloudflare Access** prüfen: Die Access-App darf nur `/verwaltung/*` und
+  `/api/verwaltung/*` schützen, nicht `/api/extern/*`.
+- **Rate Limiting** (zweite Schranke, 4.4): im Dashboard unter Sicherheit →
+  WAF → Rate-Limiting-Regeln eine Regel für Pfade, die mit `/api/extern/`
+  beginnen, z. B. 60 Anfragen pro Minute je IP.
+- Schlüssel für Bertha in der Verwaltung unter **„Bertha"** anlegen: auf der
+  echten Adresse beginnt er mit `kh_live_`, auf der Vorschau mit `kh_test_`.
+
+## 8b. Einrichtung Phase W4 (Stand Oktober 2026)
+
+- **Live-Datenbank:** einmal in der D1-Console (Spalte für den Nachweis der
+  Zustimmung, `migration-2026-10-schnittstelle.sql`):
+
+```sql
+ALTER TABLE extern_anfragen ADD COLUMN zustimmung TEXT; CREATE INDEX IF NOT EXISTS idx_extern_anfragen_bestellung ON extern_anfragen (bestellung_id);
+```
+
+  Die Test-Datenbank `kruckenhaus-test` ist schon umgestellt.
+- **Datenschutzerklärung** ist ergänzt (Oktober 2026): `datenschutz.html#bertha`,
+  dazu Abschnitte 11 (Google/Firebase) und 12 (Zuordnung Kundennummer). Offen:
+  Speicherort der Firebase-Datenbank nachtragen (TODO-Kommentar im Text).
+- **Vor dem Freischalten** des Rechts „Fleisch bestellen" für den echten
+  Zugang: Hinweis im Bertha-Portal (Text unten) und Bestellbedingungen prüfen lassen.
+- **Hinweis im Portal** direkt vor „Fleisch bestellen" (Phase B2), mit Häkchen
+  „Ich akzeptiere die Bestellbedingungen":
+  > Ihre Fleischbestellung wird an unser Bestellsystem auf kruckenhaus.at
+  > übermittelt und dort abgewickelt. Die Bestätigung erhalten Sie per E-Mail von
+  > uns. Es gelten die Bestellbedingungen (`https://kruckenhaus.at/hofladen.html#bedingungen`)
+  > und die Datenschutzerklärung (`https://kruckenhaus.at/datenschutz.html#bertha`)
+  > von kruckenhaus.at.
+- Ergänzungen gegenüber Abschnitt 3: `/angebot` liefert je Termin zusätzlich
+  `text`, je Artikel `preis_je` (`kg`, `Stück`, `Paket`) und bei Gewichtsware
+  `ca_preis_je_stueck_cent`. Fehlercode `in_bearbeitung` (409): dieselbe
+  Anfrage läuft gerade noch – mit demselben Idempotency-Key wiederholen.
+  Wiederholte Antworten tragen den Header `Idempotent-Replayed: true`.
+
 ## 9. Tests
 
 **Website** (`scripts/test-extern-api.mjs`, mit dem vorhandenen
@@ -582,8 +635,8 @@ Test-Datenbank.
 
 | # | Frage | Vorschlag | nötig für |
 |---|---|---|---|
-| 1 | Dauerartikel-Bestellung über die **Website**: Abholung zu festen Zeiten oder nach Absprache? | nach Absprache: Hof meldet sich, wenn es fertig ist (WhatsApp-Knopf) | W2 |
-| 2 | Dürfen Dauerartikel bei einer **Fleischbestellung** mit (Abholung/Zustellung)? | ja, wie heute als Zusatzartikel in der Bestellrunde | W2 |
+| 1 | ~~Dauerartikel-Bestellung über die **Website**: Abholung zu festen Zeiten oder nach Absprache?~~ | **entschieden:** nach Absprache, Hof meldet sich, wenn es fertig ist (WhatsApp-Knopf) | W2 ✓ |
+| 2 | ~~Dürfen Dauerartikel bei einer **Fleischbestellung** mit (Abholung/Zustellung)?~~ | **ja**, wie bisher als Zusatzartikel in der Bestellrunde (mit Menge) | W2 ✓ |
 | 3 | Bezahlung von Fleisch aus dem Portal | wie auf der Website (bar / Überweisung mit QR-Code), getrennt von der Eier-Monatsaufstellung | W4 |
 | 4 | Bekommen Eierkunden den **Stammkunden-Vorlauf** bei Fleischrunden? | später entscheiden; technisch einfach (Recht für Runden mit Status `stammkunden`) | später |
 | 5 | Bestellschluss für Dauerartikel im Portal vor einer Eierlieferung? | z. B. Vortag 18 Uhr, je Organisation einstellbar | B1 |

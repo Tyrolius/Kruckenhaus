@@ -46,9 +46,15 @@ functions/api/availability.js GET /api/availability → Airbnb-iCal parsen
 schema.sql                 D1-Schema (Tabelle „anfragen")
 schema-hofladen.sql        D1-Schema der Hofladen-Vorbestellung (im Aufbau)
 hofladen-produkte.sql      Produktkatalog der Hofladen-Vorbestellung (Erstbefüllung)
+migration-2026-10-*.sql    einmalige Migrationen bestehender Datenbanken (ALTER TABLE)
+docs/SCHNITTSTELLE-BERTHA.md  Plan der Schnittstelle zu Bertha (Phasen W1–W4, B1–B2)
 functions/_lib/hofladen.js gemeinsame Helfer der Hofladen-Functions (keine Route)
 functions/_lib/zugang.js   Prüfung der Cloudflare-Access-Anmeldung
 functions/_lib/mail.js     gemeinsame Mail-Vorlage (Logo, Absenderblock) + Nur-Text-Fassung
+functions/_lib/extern.js   Helfer der Schnittstelle für Bertha (Zugänge, Pausieren, Protokoll)
+functions/_lib/bestellung.js  Bestellungen von außen (hofladen.html und Bertha): Kontaktprüfung,
+                           Kunde wiederfinden, Bestätigungsmails – für beide Wege dieselben
+functions/api/extern/      Schnittstelle für Bertha: _middleware.js (Schlüssel), v1/[[pfad]].js
 functions/api/verwaltung/  Schnittstelle der Verwaltung (_middleware.js = Zugang)
 verwaltung/                Hofladen-Verwaltung (inkl. Produktkatalog); ?entwurf = Beispielmodus
 hofladen.html + js/hofladen.js   Bestellseite mit Sortiment für Kunden (noch noindex und nicht verlinkt,
@@ -56,7 +62,8 @@ hofladen.html + js/hofladen.js   Bestellseite mit Sortiment für Kunden (noch no
 meine-bestellungen.html + js/meine-bestellungen.js   Ansicht zum persönlichen Link
 functions/api/hofladen/    öffentliche Schnittstelle: Angebot, Bestellung, Voranmeldung, „meine"
 js/qrcode.js               Überweisungs-QR-Code (EPC-QR), eigener Kodierer ohne Bibliothek
-scripts/test-hofladen-*.mjs   Tests für Schema/Helfer, Verwaltung, Zugang, Bestellseite, QR-Code
+scripts/test-hofladen-*.mjs   Tests für Schema/Helfer, Verwaltung, Zugang, Bestellseite, QR-Code,
+                              Dauerartikel; scripts/test-extern-api.mjs für die Bertha-Schnittstelle
                               (node, ohne echte D1)
 _headers                   Security- und Cache-Header
 wrangler.toml              Pages-Konfiguration inkl. D1-Binding (nicht löschen!)
@@ -174,11 +181,33 @@ Es gibt keine automatisierten Tests und keinen Linter.
   angebundenes** Buchungsmodell (`einheiten`, `preisperioden`, `buchungen`,
   `naechte`). Nicht löschen, nicht „aufräumen" – Details im README.
 - Hofladen-Vorbestellung: eigenes Schema `schema-hofladen.sql` (mehrfach
-  ausführbar), Plan in `docs/HOFLADEN-VORBESTELLUNG.md`. Anbindung an die
-  App Bertha (Dauerartikel, Bestellungen aus dem Kundenportal): Plan in
-  `docs/SCHNITTSTELLE-BERTHA.md` (Konzept, noch nicht umgesetzt). Nach Änderungen an
+  ausführbar), Plan in `docs/HOFLADEN-VORBESTELLUNG.md`. Nach Änderungen an
   Schema, `functions/_lib/` oder `functions/api/verwaltung/`:
-  `node scripts/test-hofladen-db.mjs`, `…-api.mjs`, `…-zugang.mjs`, `…-oeffentlich.mjs`, `…-qr.mjs`.
+  `node scripts/test-hofladen-db.mjs`, `…-api.mjs`, `…-zugang.mjs`, `…-oeffentlich.mjs`, `…-qr.mjs`,
+  `…-dauer.mjs` und `node scripts/test-extern-api.mjs`.
+- Vorschau-Adressen (`*.pages.dev`) nutzen die Test-Datenbank `kruckenhaus-test`
+  (`[env.preview]` in `wrangler.toml`). Schemaänderungen dort ebenfalls einspielen;
+  `[vars]` immer in beiden Blöcken gleich halten.
+- Schnittstelle für Bertha (`/api/extern/v1/`): nur Server zu Server, keine
+  CORS-Header. Schlüssel nur als SHA-256-Prüfsumme in D1, nie speichern, loggen
+  oder in Beispiele schreiben. Prüfung in `_middleware.js` nie abschwächen
+  (ohne Tabellen: Fehler, nie ungeprüft). Protokoll ohne personenbezogene Daten.
+  Cloudflare Access darf `/api/extern/*` nicht abdecken.
+  Bestellungen über Bertha: `quelle` bleibt `'web'`, erkennbar an `extern_anfragen`
+  (Idempotency-Key, Antwort, Zustimmung). Datenschutzerklärung ist ergänzt
+  (`datenschutz.html#bertha`); Recht „bestellen" erst vergeben, wenn der Hinweis im
+  Bertha-Portal steht und die Bestellbedingungen geprüft sind (Plan, Abschnitt 5).
+- Dauerartikel (Nudeln, Seife …): `produkte.verkaufsart = 'dauer'`, fester Preis,
+  nur „verfügbar/ausverkauft". Bestellt wird über die eine ständige Runde
+  `chargen.art = 'dauer'` („Dauersortiment"), deren Artikel
+  `dauersortimentAbgleichen()` aus dem Sortiment bildet – nie von Hand anlegen,
+  keine Mengenprüfung dort. Auf `hofladen.html` als „Immer erhältlich":
+  ohne Termin, Abholung am Hof nach Absprache; nicht vormerkbar
+  (`docs/SCHNITTSTELLE-BERTHA.md`, Phase W2). Vor jeder Migration sichern:
+  `npx wrangler d1 export kruckenhaus --remote --output=sicherung.sql`
+  (oder `/bookmark` in der D1-Console). Die D1-Console im Dashboard nimmt nur
+  eine Zeile: SQL-Dateien mit `--`-Kommentaren dort nicht einfügen, sondern
+  eine kommentarfreie Fassung der nötigen Anweisungen geben.
 - Überweisungs-QR-Code nur mit genauem Betrag (alles gewogen, nicht bezahlt).
   Bankdaten nur aus den Secrets `BANK_*` (`bankAusEnv`), nie ins Repository.
 - Persönliche Links „Meine Bestellungen": Schlüssel nur hinter `#` in der

@@ -6,7 +6,9 @@
  *
  *   GET  /api/hofladen/angebot       offene Bestellrunden mit freier Menge, Termine,
  *                                    Liefergebiet, Bereiche, Sortiment (alle
- *                                    eingeblendeten Produkte, auch für Voranmeldungen)
+ *                                    eingeblendeten Produkte, auch für Voranmeldungen),
+ *                                    dazu das Dauersortiment („Immer erhältlich",
+ *                                    verfügbar/ausverkauft statt Menge)
  *   GET  /api/hofladen/foto/<id>     Produktfoto (in der Verwaltung hochgeladen)
  *   POST /api/hofladen/bestellung    verbindliche Vorbestellung
  *   POST /api/hofladen/voranmeldung  unverbindliche Voranmeldung
@@ -22,7 +24,9 @@
  * Ablauf einer Bestellung:
  *   1. Spam-Falle (Feld „bot-field"), Pflichtfelder, Zustimmung prüfen
  *   2. Bestellrunde offen und Bestellschluss nicht vorbei, Termin und
- *      Liefergebiet passen, Höchstmengen eingehalten
+ *      Liefergebiet passen, Höchstmengen eingehalten.
+ *      Dauersortiment: kein Termin – Abholung am Hof nach Absprache, nur
+ *      verfügbare Dauerartikel (Plan: docs/SCHNITTSTELLE-BERTHA.md, Phase W2)
  *   3. Kunde über die E-Mail-Adresse wiederfinden oder neu anlegen
  *      (bestehende Daten werden nie überschrieben, nur Lücken gefüllt)
  *   4. Bestellung anlegen – überbuchungssicher, sonst Warteliste
@@ -42,83 +46,24 @@ import {
   bestellungAnlegen, voranmeldungAnlegen, kundenLinkErstellen, kundeAusLink, mailSenden, bankAusEnv,
 } from '../../_lib/hofladen.js';
 import {
-  BETRIEB, mailHtml, absatz, klein, knopf, kasten, gruss, positionenHtml, terminText,
+  BETRIEB, mailHtml, absatz, klein, knopf, kasten, gruss, terminText,
 } from '../../_lib/mail.js';
-
-const ZAHLARTEN = { bar: 'bar bei Übergabe', ueberweisung: 'Überweisung' };
-const MAX_ANFRAGE_BYTES = 20000;
-
-/* ------------------------------------------------------------
-   1. HELFER
-   ------------------------------------------------------------ */
-const text = (wert, max = 200) => String(wert ?? '').trim().slice(0, max);
-
-// Heutiges Datum in Tirol (für den Bestellschluss, inklusive des Tages)
-function heuteInTirol() {
-  return new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Vienna' }).format(new Date());
-}
-
-async function eingabeLesen(request) {
-  if (!(request.headers.get('content-type') || '').includes('application/json')) {
-    throw new EingabeFehler('Ungültige Anfrage.');
-  }
-  const rohtext = await request.text();
-  if (rohtext.length > MAX_ANFRAGE_BYTES) throw new EingabeFehler('Anfrage zu groß.');
-  try {
-    return JSON.parse(rohtext);
-  } catch {
-    throw new EingabeFehler('Ungültige Anfrage.');
-  }
-}
-
-function kontaktPruefen(e) {
-  const kontakt = {
-    name: text(e.name, 120),
-    email: text(e.email, 160).toLowerCase(),
-    telefon: text(e.telefon, 40),
-    strasse: text(e.strasse, 120),
-    plz: text(e.plz, 10),
-    ort: text(e.ort, 80),
-  };
-  if (kontakt.name.length < 2) throw new EingabeFehler('Bitte euren Namen eintragen.');
-  if (!istGueltigeEmail(kontakt.email)) throw new EingabeFehler('Bitte eine gültige E-Mail-Adresse eintragen.');
-  if (kontakt.telefon.replace(/\D/g, '').length < 6) throw new EingabeFehler('Bitte eine Telefonnummer eintragen.');
-  if (e.zustimmung !== true) {
-    throw new EingabeFehler('Bitte bestätigt die Bestellbedingungen und die Datenschutzerklärung.');
-  }
-  return kontakt;
-}
-
-// Kunde über die E-Mail-Adresse wiederfinden; vorhandene Angaben bleiben,
-// nur leere Felder werden ergänzt. Sonst neu anlegen.
-async function kundeFinden(db, k) {
-  const vorhanden = await db.prepare('SELECT id FROM kunden WHERE lower(email) = ? ORDER BY id LIMIT 1')
-    .bind(k.email).first();
-  if (vorhanden) {
-    await db.prepare(
-      `UPDATE kunden SET telefon = COALESCE(telefon, ?), strasse = COALESCE(strasse, ?),
-              plz = COALESCE(plz, ?), ort = COALESCE(ort, ?)
-       WHERE id = ?`
-    ).bind(k.telefon || null, k.strasse || null, k.plz || null, k.ort || null, vorhanden.id).run();
-    return vorhanden.id;
-  }
-  const neu = await db.prepare(
-    'INSERT INTO kunden (name, email, telefon, strasse, plz, ort) VALUES (?, ?, ?, ?, ?, ?) RETURNING id'
-  ).bind(k.name, k.email, k.telefon || null, k.strasse || null, k.plz || null, k.ort || null).first();
-  return neu.id;
-}
-
-const linkAdresse = (request, schluessel) => `${new URL(request.url).origin}/meine-bestellungen.html#${schluessel}`;
+// Gemeinsam mit der Bertha-Schnittstelle
+import {
+  ZAHLARTEN, text, heuteInTirol, eingabeLesen, kontaktPruefen, zustimmungPruefen, kundeFinden,
+  linkAdresse, linkHinweis, DAUER_UEBERGABE, bestellMailsSenden,
+} from '../../_lib/bestellung.js';
 
 /* ------------------------------------------------------------
    2. ANGEBOT
    ------------------------------------------------------------ */
 async function angebotLaden(db) {
   const heute = heuteInTirol();
-  const offen = `SELECT id FROM chargen WHERE status = 'offen' AND bestellschluss >= ?`;
-  const [chargen, artikel, termine, liefergebiet, produkte, bereiche] = (await db.batch([
+  // Bestellrunden; das Dauersortiment (art 'dauer') kommt eigens als „dauer"
+  const offen = `SELECT id FROM chargen WHERE status = 'offen' AND art = 'runde' AND bestellschluss >= ?`;
+  const [chargen, artikel, termine, liefergebiet, produkte, bereiche, dauer] = (await db.batch([
     db.prepare(`SELECT id, titel, beschreibung, bestellschluss FROM chargen
-                WHERE status = 'offen' AND bestellschluss >= ? ORDER BY bestellschluss, id`).bind(heute),
+                WHERE status = 'offen' AND art = 'runde' AND bestellschluss >= ? ORDER BY bestellschluss, id`).bind(heute),
     db.prepare(`SELECT ca.id, ca.charge_id, ca.produkt_id, ca.preis_cent, ca.max_pro_bestellung, v.frei,
                        p.name, p.art, p.bereich, p.beschreibung, p.pflichtangaben, p.allergene,
                        p.richtgewicht_von_g, p.richtgewicht_bis_g
@@ -131,9 +76,17 @@ async function angebotLaden(db) {
                 WHERE charge_id IN (${offen}) ORDER BY datum, von`).bind(heute),
     db.prepare('SELECT plz, ort FROM liefergebiet ORDER BY tour_reihenfolge, ort'),
     db.prepare(`SELECT id, name, art, bereich, beschreibung, pflichtangaben, allergene,
-                       richtgewicht_von_g, richtgewicht_bis_g, bild
+                       richtgewicht_von_g, richtgewicht_bis_g, bild, verkaufsart
                 FROM v_produkte WHERE aktiv = 1 ORDER BY bereich_reihenfolge, reihenfolge, name`),
     db.prepare('SELECT id, name FROM bereiche ORDER BY reihenfolge, id'),
+    // Dauersortiment: nur eingeblendete Dauerartikel, Ausverkauftes mit verfuegbar = 0
+    db.prepare(`SELECT ca.id, ca.charge_id, ca.produkt_id, ca.preis_cent, p.name, p.art, p.bereich, p.beschreibung,
+                       p.pflichtangaben, p.allergene, p.verfuegbar
+                FROM charge_artikel ca
+                JOIN chargen c ON c.id = ca.charge_id
+                JOIN v_produkte p ON p.id = ca.produkt_id
+                WHERE c.art = 'dauer' AND c.status = 'offen' AND p.verkaufsart = 'dauer' AND p.aktiv = 1
+                ORDER BY p.bereich_reihenfolge, p.reihenfolge, p.name`),
   ])).map((r) => r.results);
 
   return {
@@ -161,6 +114,21 @@ async function angebotLaden(db) {
         allergene: a.allergene || '',
       })),
     })),
+    dauer: dauer.length ? {
+      id: dauer[0].charge_id,
+      artikel: dauer.map((a) => ({
+        id: a.id,
+        produktId: a.produkt_id,
+        name: a.name,
+        art: a.art,
+        bereichId: a.bereich,
+        preisCent: a.preis_cent,
+        verfuegbar: Boolean(a.verfuegbar),
+        beschreibung: a.beschreibung || '',
+        pflichtangaben: a.pflichtangaben || '',
+        allergene: a.allergene || '',
+      })),
+    } : null,
     liefergebiet,
     bereiche,
     produkte: produkte.map((p) => ({
@@ -174,6 +142,7 @@ async function angebotLaden(db) {
       richtVonG: p.richtgewicht_von_g,
       richtBisG: p.richtgewicht_bis_g,
       bild: p.bild || '',
+      dauer: p.verkaufsart === 'dauer',
     })),
     zeitraeume: ZEITRAEUME,
   };
@@ -184,18 +153,21 @@ async function angebotLaden(db) {
    ------------------------------------------------------------ */
 async function bestellungAufnehmen(db, env, request, e) {
   const kontakt = kontaktPruefen(e);
+  zustimmungPruefen(e);
   const chargeId = Number(e.chargeId);
   const charge = await db.prepare(
-    `SELECT id, titel FROM chargen WHERE id = ? AND status = 'offen' AND bestellschluss >= ?`
+    `SELECT id, titel, art FROM chargen WHERE id = ? AND status = 'offen' AND bestellschluss >= ?`
   ).bind(Number.isInteger(chargeId) ? chargeId : -1, heuteInTirol()).first();
   if (!charge) throw new EingabeFehler('Für diese Bestellrunde kann nicht mehr bestellt werden (Bestellschluss vorbei).');
+  const dauer = charge.art === 'dauer';
 
-  const termin = await db.prepare('SELECT id, art, datum, von, bis FROM termine WHERE id = ? AND charge_id = ?')
+  // Dauersortiment: ohne Termin, Abholung am Hof nach Absprache
+  const termin = dauer ? null : await db.prepare('SELECT id, art, datum, von, bis FROM termine WHERE id = ? AND charge_id = ?')
     .bind(Number(e.terminId) || -1, charge.id).first();
-  if (!termin) throw new EingabeFehler('Bitte einen Abhol- oder Liefertermin wählen.');
+  if (!dauer && !termin) throw new EingabeFehler('Bitte einen Abhol- oder Liefertermin wählen.');
 
   let lieferadresse = null;
-  if (termin.art === 'lieferung') {
+  if (termin && termin.art === 'lieferung') {
     const gebiet = await db.prepare('SELECT ort FROM liefergebiet WHERE plz = ?').bind(kontakt.plz).first();
     if (!gebiet) throw new EingabeFehler('Diese Postleitzahl liegt leider außerhalb unseres Liefergebiets – bitte Abholung wählen.');
     if (!kontakt.strasse || !kontakt.ort) throw new EingabeFehler('Bitte die Lieferadresse vollständig eintragen.');
@@ -215,7 +187,7 @@ async function bestellungAufnehmen(db, env, request, e) {
   const bestellung = await bestellungAnlegen(db, {
     chargeId: charge.id,
     kundeId,
-    terminId: termin.id,
+    terminId: termin ? termin.id : null,
     quelle: 'web',
     zahlart,
     lieferadresse,
@@ -230,62 +202,12 @@ async function bestellungAufnehmen(db, env, request, e) {
     `SELECT produkt_name, art, menge, einzelpreis_cent, betrag_cent, geschaetzt
      FROM v_positionen WHERE bestellung_id = ? ORDER BY id`
   ).bind(bestellung.id).all();
-  await bestellMailsSenden(env, { kontakt, charge, termin, zahlart, bestellung, zeilen, link, anmerkung: text(e.anmerkung, 1000) });
+  await bestellMailsSenden(env, {
+    kontakt, charge, termin, zahlart, bestellung, zeilen, link, anmerkung: text(e.anmerkung, 1000),
+    terminText: dauer ? DAUER_UEBERGABE : terminText(termin),
+  });
 
   return { nummer: bestellung.nummer, status: bestellung.status, link };
-}
-
-const linkHinweis = klein('Euer persönlicher Link – bitte nicht weitergeben.');
-
-async function bestellMailsSenden(env, d) {
-  const aufWarteliste = d.bestellung.status === 'warteliste';
-  const kundenHtml = mailHtml({
-    titel: aufWarteliste ? 'Ihr steht auf der Warteliste' : 'Eure Vorbestellung ist fix',
-    vorschau: `Bestellung ${d.bestellung.nummer} – ${terminText(d.termin)}`,
-    inhalt: [
-      absatz(`Hallo ${escapeHtml(d.kontakt.name)},`),
-      absatz(aufWarteliste
-        ? 'danke für eure Vorbestellung! Leider ist die gewünschte Menge gerade nicht mehr frei – ihr steht auf der <strong>Warteliste</strong>. Sobald etwas frei wird, melden wir uns.'
-        : 'danke für eure Vorbestellung – sie ist bei uns <strong>fix vorgemerkt</strong>.'),
-      kasten(`<strong>Bestellnummer ${escapeHtml(d.bestellung.nummer)}</strong><br>
-        ${escapeHtml(d.charge.titel)}<br>
-        ${escapeHtml(terminText(d.termin))}<br>
-        Zahlung: ${escapeHtml(ZAHLARTEN[d.zahlart])}`),
-      positionenHtml(d.zeilen),
-      knopf(d.link, 'Meine Bestellungen ansehen'),
-      linkHinweis,
-      absatz(`Etwas ändern oder stornieren? Einfach anrufen oder per WhatsApp melden:
-        <a href="tel:+436642166181">+43 664 2166181</a>.`),
-      klein('Für Nudeln, Honig und Seife habt ihr ein 14-tägiges Rücktrittsrecht – widerrufen könnt ihr direkt unter „Meine Bestellungen".'),
-      gruss,
-    ].join(''),
-  });
-
-  const hofHtml = mailHtml({
-    art: 'hof',
-    titel: `Neue Vorbestellung ${d.bestellung.nummer}${aufWarteliste ? ' (Warteliste)' : ''}`,
-    inhalt: [
-      kasten(`<strong>${escapeHtml(d.kontakt.name)}</strong><br>${escapeHtml(d.kontakt.telefon)} · ${escapeHtml(d.kontakt.email)}`),
-      absatz(`${escapeHtml(d.charge.titel)} – ${escapeHtml(terminText(d.termin))}<br>Zahlung: ${escapeHtml(ZAHLARTEN[d.zahlart])}`),
-      positionenHtml(d.zeilen),
-      d.anmerkung ? absatz(`<strong>Anmerkung:</strong> ${escapeHtml(d.anmerkung)}`) : '',
-    ].join(''),
-  });
-
-  await Promise.all([
-    mailSenden(env, {
-      an: d.kontakt.email,
-      betreff: `Eure Vorbestellung ${d.bestellung.nummer} – ${BETRIEB}`,
-      html: kundenHtml,
-      antwortAn: env.CONTACT_TO || 'info@kruckenhaus.at',
-    }),
-    mailSenden(env, {
-      an: env.CONTACT_TO || 'info@kruckenhaus.at',
-      betreff: `Neue Vorbestellung ${d.bestellung.nummer} von ${d.kontakt.name}`,
-      html: hofHtml,
-      antwortAn: d.kontakt.email,
-    }),
-  ]);
 }
 
 /* ------------------------------------------------------------
@@ -293,7 +215,9 @@ async function bestellMailsSenden(env, d) {
    ------------------------------------------------------------ */
 async function voranmeldungAufnehmen(db, env, request, e) {
   const kontakt = kontaktPruefen(e);
-  const produkt = await db.prepare('SELECT id, name FROM produkte WHERE id = ? AND aktiv = 1')
+  zustimmungPruefen(e);
+  // Dauerartikel sind immer bestellbar – vormerken nur für Bestellrunden-Ware
+  const produkt = await db.prepare(`SELECT id, name FROM produkte WHERE id = ? AND aktiv = 1 AND verkaufsart = 'runde'`)
     .bind(Number(e.produktId) || -1).first();
   if (!produkt) throw new EingabeFehler('Bitte ein Produkt auswählen.');
   const kundeId = await kundeFinden(db, kontakt);
@@ -358,7 +282,7 @@ async function meineLaden(db, schluessel) {
   const [kunden, bestellungen, positionen, voranmeldungen, widerrufe] = (await db.batch([
     db.prepare('SELECT name FROM kunden WHERE id = ?').bind(kundeId),
     db.prepare(`SELECT b.id, b.nummer, b.status, b.zahlart, b.bezahlt_art, b.uebergeben_am, b.lieferadresse,
-                       b.erstellt_am, c.titel, t.art, t.datum, t.von, t.bis, s.gesamt_cent, s.geschaetzt
+                       b.erstellt_am, c.titel, c.art AS charge_art, t.art, t.datum, t.von, t.bis, s.gesamt_cent, s.geschaetzt
                 FROM bestellungen b
                 JOIN chargen c ON c.id = b.charge_id
                 LEFT JOIN termine t ON t.id = b.termin_id
@@ -385,6 +309,7 @@ async function meineLaden(db, schluessel) {
       status: b.status,
       charge: b.titel,
       termin: b.datum ? { art: b.art, datum: b.datum, von: b.von || '', bis: b.bis || '' } : null,
+      nachAbsprache: b.charge_art === 'dauer' && !b.datum,
       lieferadresse: b.lieferadresse || '',
       zahlart: b.zahlart,
       bezahlt: b.bezahlt_art || null,

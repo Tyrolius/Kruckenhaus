@@ -2,7 +2,8 @@
  * HOFLADEN – Vorbestellung und Voranmeldung (hofladen.html)
  * ============================================================
  * Lädt das Angebot von /api/hofladen/angebot, zeigt je offener Bestellrunde ein
- * Bestellformular, darunter das ganze Sortiment (was gerade bestellbar ist
+ * Bestellformular, dazu das Dauersortiment („Immer erhältlich", ohne
+ * Bestellschluss, Abholung nach Absprache), darunter das ganze Sortiment (was gerade bestellbar ist
  * und was man sich vormerken lassen kann), und schickt Bestellungen bzw.
  * Voranmeldungen an /api/hofladen/bestellung und /api/hofladen/voranmeldung.
  * Keine Cookies, kein localStorage (siehe CLAUDE.md).
@@ -86,6 +87,9 @@ function nachBereichen(liste) {
 /* ------------------------------------------------------------
    2. ANGEBOT ANZEIGEN
    ------------------------------------------------------------ */
+// Dauersortiment: keine Menge, nur verfügbar/ausverkauft
+const DAUER_MAX = 20;
+
 function produktZeile(a) {
   const max = Math.min(a.frei, a.maxProBestellung || 99);
   const preis = a.art === 'gewicht'
@@ -96,9 +100,13 @@ function produktZeile(a) {
     a.pflichtangaben && `<p>${esc(a.pflichtangaben)}</p>`,
     a.allergene && `<p><strong>Allergene: ${esc(a.allergene)}</strong></p>`,
   ].filter(Boolean).join('');
-  const verfuegbar = a.frei > 0
-    ? `noch ${a.frei} verfügbar${a.maxProBestellung ? ` · höchstens ${a.maxProBestellung} pro Bestellung` : ''}`
-    : 'ausverkauft – <a href="#vormerken">für später vormerken</a>';
+  let verfuegbar;
+  if (a.dauer) verfuegbar = a.frei > 0 ? 'vorrätig' : 'gerade ausverkauft – bald wieder da';
+  else {
+    verfuegbar = a.frei > 0
+      ? `noch ${a.frei} verfügbar${a.maxProBestellung ? ` · höchstens ${a.maxProBestellung} pro Bestellung` : ''}`
+      : 'ausverkauft – <a href="#vormerken">für später vormerken</a>';
+  }
 
   return `<div class="hl-produkt${a.frei > 0 ? '' : ' hl-produkt--aus'}" data-artikel="${a.id}" data-max="${max}">
     <div class="hl-produkt-text">
@@ -119,11 +127,11 @@ function chargeFormular(ch, liefergebiet) {
   const gruppen = nachBereichen(ch.artikel);
   const hatLieferung = ch.termine.some((t) => t.art === 'lieferung');
 
-  return `<article class="hl-charge" id="charge-${ch.id}">
+  return `<article class="hl-charge${ch.dauer ? ' hl-charge--dauer' : ''}" id="charge-${ch.id}">
     <header class="hl-charge-kopf">
       <h3>${esc(ch.titel)}</h3>
       ${ch.beschreibung ? `<p>${esc(ch.beschreibung)}</p>` : ''}
-      <p class="hl-schluss">${tageBis(ch.bestellschluss) > 60 ? 'Laufend bestellbar' : `Bestellschluss: ${datumLang(ch.bestellschluss)}`}</p>
+      <p class="hl-schluss">${ch.dauer || tageBis(ch.bestellschluss) > 60 ? 'Laufend bestellbar' : `Bestellschluss: ${datumLang(ch.bestellschluss)}`}</p>
     </header>
     <form class="hl-bestellung contact-form hl-formular" data-charge="${ch.id}" novalidate>
       <p style="display:none;" aria-hidden="true">
@@ -131,12 +139,15 @@ function chargeFormular(ch, liefergebiet) {
       </p>
       ${gruppen.map(([b, liste]) => `<div class="hl-kategorie"><h4>${esc(b.name)}</h4>${liste.map(produktZeile).join('')}</div>`).join('')}
 
-      <fieldset class="hl-feldgruppe">
+      ${ch.dauer ? `<fieldset class="hl-feldgruppe">
+        <legend>Abholung</legend>
+        <p class="form-hint">Abholung am Hof nach Absprache – wir melden uns, sobald alles für euch bereitliegt.</p>
+      </fieldset>` : `<fieldset class="hl-feldgruppe">
         <legend>Abholung oder Lieferung</legend>
         ${ch.termine.map((t, i) => `<label class="hl-auswahl">
           <input type="radio" name="terminId" value="${t.id}" data-art="${t.art}" ${i === 0 ? 'checked' : ''} />
           <span>${esc(terminText(t))}${t.hinweis ? ` <small>(${esc(t.hinweis)})</small>` : ''}</span></label>`).join('')}
-      </fieldset>
+      </fieldset>`}
 
       ${hatLieferung ? `<div class="hl-adresse" hidden>
         <p class="form-hint">Kostenlose Lieferung nach ${liefergebiet.map((l) => esc(l.ort)).join(', ')}.</p>
@@ -159,10 +170,12 @@ function chargeFormular(ch, liefergebiet) {
       <fieldset class="hl-feldgruppe">
         <legend>Bezahlung</legend>
         <label class="hl-auswahl"><input type="radio" name="zahlart" value="bar" checked /> <span>bar bei der Übergabe</span></label>
-        <label class="hl-auswahl"><input type="radio" name="zahlart" value="ueberweisung" /> <span>Überweisung (Endbetrag und Bankdaten bekommt ihr bei der Übergabe)</span></label>
+        <label class="hl-auswahl"><input type="radio" name="zahlart" value="ueberweisung" /> <span>${ch.dauer
+          ? 'Überweisung (Bankdaten findet ihr unter „Meine Bestellungen")'
+          : 'Überweisung (Endbetrag und Bankdaten bekommt ihr bei der Übergabe)'}</span></label>
       </fieldset>
 
-      <div class="form-group"><label>Anmerkung <small>(optional, z. B. „Gans lieber größer")</small><textarea name="anmerkung" rows="2"></textarea></label></div>
+      <div class="form-group"><label>Anmerkung <small>(optional, ${ch.dauer ? 'z. B. „Abholung am liebsten samstags"' : 'z. B. „Gans lieber größer"'})</small><textarea name="anmerkung" rows="2"></textarea></label></div>
 
       <div class="hl-summe" aria-live="polite"><span>Summe</span><strong data-summe>€ 0,00</strong></div>
       <p class="form-hint" data-summe-hinweis hidden>Fleisch wird nach Gewicht abgerechnet – den genauen Betrag erfahrt ihr bei der Übergabe.</p>
@@ -172,23 +185,35 @@ function chargeFormular(ch, liefergebiet) {
         <span>Ich akzeptiere die <a href="#bedingungen">Bestellbedingungen</a> und habe die
           <a href="datenschutz.html#hofladen">Datenschutzerklärung</a> gelesen.</span>
       </label>
-      <button type="submit" class="btn btn-primary hl-knopf-breit">Verbindlich vorbestellen</button>
+      <button type="submit" class="btn btn-primary hl-knopf-breit">${ch.dauer ? 'Verbindlich bestellen' : 'Verbindlich vorbestellen'}</button>
       <p class="hl-meldung" role="status" aria-live="polite"></p>
     </form>
   </article>`;
 }
 
+// Dauersortiment als „Bestellrunde" ohne Termine, Menge und Bestellschluss
+function dauerAlsCharge(dauer) {
+  return {
+    id: dauer.id,
+    dauer: true,
+    titel: 'Immer erhältlich',
+    beschreibung: 'Nudeln, Seife und mehr – ohne Bestellschluss. Ihr holt eure Bestellung nach Absprache am Hof ab.',
+    termine: [],
+    artikel: dauer.artikel.map((a) => ({ ...a, dauer: true, frei: a.verfuegbar ? DAUER_MAX : 0, maxProBestellung: null })),
+  };
+}
+
+// Alle bestellbaren „Runden" der Seite: Bestellrunden und Dauersortiment
+const alleChargen = (daten) => daten.chargen.concat(daten.dauer ? [dauerAlsCharge(daten.dauer)] : []);
+
 function angebotZeigen(daten) {
   const ziel = document.getElementById('hl-angebot');
   if (!ziel) return;
-  if (!daten.chargen.length) {
-    ziel.innerHTML = `<div class="hl-leer">
-      <p><strong>Gerade ist keine Vorbestellung offen.</strong></p>
+  const leer = !daten.chargen.length ? `<div class="hl-leer">
+      <p><strong>Gerade ist keine Bestellrunde offen.</strong></p>
       <p>Die nächste Bestellrunde kommt bestimmt – lasst euch gleich <a href="#vormerken">unverbindlich vormerken</a>,
-        dann melden wir uns, sobald es so weit ist.</p></div>`;
-    return;
-  }
-  ziel.innerHTML = daten.chargen.map((ch) => chargeFormular(ch, daten.liefergebiet)).join('');
+        dann melden wir uns, sobald es so weit ist.</p></div>` : '';
+  ziel.innerHTML = leer + alleChargen(daten).map((ch) => chargeFormular(ch, daten.liefergebiet)).join('');
   // Ist der vorausgewählte Termin eine Lieferung, gleich die Adressfelder zeigen
   ziel.querySelectorAll('.hl-bestellung').forEach(adresseUmschalten);
 }
@@ -197,7 +222,7 @@ function angebotZeigen(daten) {
    3. BESTELLFORMULAR
    ------------------------------------------------------------ */
 function chargeVonFormular(form) {
-  return hlAngebot.chargen.find((c) => String(c.id) === form.dataset.charge);
+  return alleChargen(hlAngebot).find((c) => String(c.id) === form.dataset.charge);
 }
 
 function summeAktualisieren(form) {
@@ -262,8 +287,10 @@ async function bestellungAbschicken(form) {
       'bot-field': feld('bot-field').value,
     });
     const warteliste = erg.status === 'warteliste';
+    const dauer = chargeVonFormular(form).dauer;
     form.outerHTML = `<div class="hl-erfolg" tabindex="-1">
-      <h4>${warteliste ? 'Ihr steht auf der Warteliste' : 'Danke – eure Vorbestellung ist fix!'}</h4>
+      <h4>${warteliste ? 'Ihr steht auf der Warteliste' : `Danke – eure ${dauer ? 'Bestellung' : 'Vorbestellung'} ist fix!`}</h4>
+      ${dauer ? '<p>Wir melden uns, sobald alles für euch bereitliegt.</p>' : ''}
       ${erg.nummer ? `<p>Bestellnummer <strong>${esc(erg.nummer)}</strong>. Die Bestätigung ist per E-Mail unterwegs.</p>` : ''}
       ${warteliste ? '<p>Die gewünschte Menge ist gerade nicht mehr frei. Sobald etwas frei wird, melden wir uns.</p>' : ''}
       ${erg.link ? `<p><a class="btn btn-primary" href="${esc(erg.link)}">Meine Bestellungen ansehen</a></p>
@@ -316,7 +343,7 @@ function voranmeldungVorbereiten(daten) {
   const form = document.getElementById('hl-voranmeldung');
   if (!form) return;
   const produkt = form.elements.namedItem('produktId');
-  produkt.innerHTML = nachBereichen(daten.produkte).map(([b, liste]) =>
+  produkt.innerHTML = nachBereichen(daten.produkte.filter((p) => !p.dauer)).map(([b, liste]) =>
     `<optgroup label="${esc(b.name)}">${liste.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</optgroup>`).join('');
   form.elements.namedItem('zeitraum').innerHTML = Object.entries(daten.zeitraeume)
     .map(([wert, text]) => `<option value="${wert}">${esc(text)}</option>`).join('');
@@ -382,7 +409,7 @@ function initVoranmeldung() {
    Voranmeldung (Produkt ist dort schon ausgewählt).
    ------------------------------------------------------------ */
 function sortimentKarte(p, daten) {
-  const angebote = daten.chargen
+  const angebote = alleChargen(daten)
     .map((ch) => ({ ch, a: ch.artikel.find((x) => x.produktId === p.id) }))
     .filter((x) => x.a);
   const frei = angebote.find((x) => x.a.frei > 0);
@@ -394,9 +421,11 @@ function sortimentKarte(p, daten) {
   ].filter(Boolean).join('');
 
   let stand;
-  if (frei) {
+  if (p.dauer && !frei) {
+    stand = '<p class="hl-sortiment-stand">Gerade ausverkauft – bald wieder da</p>';
+  } else if (frei) {
     const preis = frei.a.art === 'gewicht' ? `${euro(frei.a.preisCent)}/kg` : euro(frei.a.preisCent);
-    stand = `<p class="hl-sortiment-stand hl-sortiment-stand--da">Jetzt bestellbar · ${preis}</p>
+    stand = `<p class="hl-sortiment-stand hl-sortiment-stand--da">${frei.ch.dauer ? 'Immer erhältlich' : 'Jetzt bestellbar'} · ${preis}</p>
       <a class="btn btn-primary hl-sortiment-knopf" href="#charge-${frei.ch.id}">Zur Bestellung</a>`;
   } else {
     stand = `<p class="hl-sortiment-stand">${angebote.length ? 'Gerade ausverkauft' : 'Derzeit nicht vorrätig'}</p>
