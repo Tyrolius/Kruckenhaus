@@ -592,9 +592,18 @@ ALTER TABLE extern_anfragen ADD COLUMN zustimmung TEXT; CREATE INDEX IF NOT EXIS
 ```
 
   Die Test-Datenbank `kruckenhaus-test` ist schon umgestellt.
+- **Datenschutzerklärung** ist ergänzt (Oktober 2026): `datenschutz.html#bertha`,
+  dazu Abschnitte 11 (Google/Firebase) und 12 (Zuordnung Kundennummer). Offen:
+  Speicherort der Firebase-Datenbank nachtragen (TODO-Kommentar im Text).
 - **Vor dem Freischalten** des Rechts „Fleisch bestellen" für den echten
-  Zugang: Datenschutzerklärung und Portal-Hinweis ergänzen (Abschnitt 5, nur
-  mit Freigabe) und Bestellbedingungen prüfen lassen.
+  Zugang: Hinweis im Bertha-Portal (Text unten) und Bestellbedingungen prüfen lassen.
+- **Hinweis im Portal** direkt vor „Fleisch bestellen" (Phase B2), mit Häkchen
+  „Ich akzeptiere die Bestellbedingungen":
+  > Ihre Fleischbestellung wird an unser Bestellsystem auf kruckenhaus.at
+  > übermittelt und dort abgewickelt. Die Bestätigung erhalten Sie per E-Mail von
+  > uns. Es gelten die Bestellbedingungen (`https://kruckenhaus.at/hofladen.html#bedingungen`)
+  > und die Datenschutzerklärung (`https://kruckenhaus.at/datenschutz.html#bertha`)
+  > von kruckenhaus.at.
 - Ergänzungen gegenüber Abschnitt 3: `/angebot` liefert je Termin zusätzlich
   `text`, je Artikel `preis_je` (`kg`, `Stück`, `Paket`) und bei Gewichtsware
   `ca_preis_je_stueck_cent`. Fehlercode `in_bearbeitung` (409): dieselbe

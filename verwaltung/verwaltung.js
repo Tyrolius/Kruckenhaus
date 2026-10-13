@@ -2371,7 +2371,7 @@ function ansichtBertha() {
         <fieldset class="vw-feldgruppe"><legend>Was darf Bertha?</legend>
           ${Object.entries(BERTHA_RECHTE).map(([wert, textRecht]) => `<label class="vw-haken">
             <input type="checkbox" name="rechte" value="${wert}" ${wert === 'katalog' ? 'checked' : ''} /> ${esc(textRecht)}</label>`).join('')}
-          <p class="vw-klein">„Fleisch bestellen" erst freischalten, wenn Datenschutzerklärung und Portal-Hinweis ergänzt sind.</p>
+          <p class="vw-klein">„Fleisch bestellen" erst freischalten, wenn der Hinweis im Bertha-Portal steht und die Bestellbedingungen geprüft sind.</p>
         </fieldset>
         <button type="submit" class="vw-knopf vw-knopf--voll">Schlüssel anlegen</button>
       </form>
