@@ -14,6 +14,7 @@
  *   3. Bestellnummern (naechsteBestellnummer)
  *      Preisvorschläge für neue Bestellrunden (preisVorschlaege)
  *   4. Bestellung anlegen / nachrücken – Kontingent sicher prüfen
+ *   4a. Dauersortiment (ständige Runde für Dauerartikel)
  *   5. Voranmeldungen (anlegen, in eine Bestellrunde übernehmen)
  *   6. Persönliche Links „Meine Bestellungen" (kundenLinkErstellen, kundeAusLink)
  *   7. E-Mail über Resend (mailSenden)
@@ -77,13 +78,14 @@ export async function naechsteBestellnummer(db, datum = new Date()) {
 
 /* Preisvorschläge für eine neue Bestellrunde: je aktivem Produkt Preis, Menge
    und Höchstmenge der letzten Bestellrunde, in der es vorkam. Produkte, die noch
-   nie verkauft wurden, bekommen den Startpreis aus dem Katalog (oder null).
+   nie in einer Bestellrunde waren, bekommen den Preis des Dauersortiments
+   bzw. den Startpreis aus dem Katalog (oder null).
    Die Werte werden in der Verwaltung nur vorbelegt und können geändert
    werden – bestehende Bestellungen behalten ihren Preis. */
 export async function preisVorschlaege(db) {
   const { results } = await db.prepare(
     `SELECT p.id AS produktId, p.name, p.art, p.kategorie,
-            COALESCE(v.preis_cent, p.startpreis_cent) AS preisCent, v.kontingent, v.max_pro_bestellung AS maxProBestellung,
+            COALESCE(v.preis_cent, p.dauerpreis_cent, p.startpreis_cent) AS preisCent, v.kontingent, v.max_pro_bestellung AS maxProBestellung,
             v.aus_charge_titel AS ausCharge
      FROM produkte p
      LEFT JOIN v_letzter_preis v ON v.produkt_id = p.id
@@ -103,10 +105,12 @@ export async function preisVorschlaege(db) {
    ------------------------------------------------------------ */
 
 // Setzt die Bestellung mit dieser Nummer auf die Warteliste, falls einer
-// ihrer Artikel überbucht ist.
+// ihrer Artikel überbucht ist. Das Dauersortiment hat keine Mengen und
+// wird nie überbucht.
 const SQL_UEBERBUCHT_ZUR_WARTELISTE =
   `UPDATE bestellungen SET status = 'warteliste', geaendert_am = datetime('now')
-   WHERE nummer = ?1 AND status = 'vorgemerkt' AND EXISTS (
+   WHERE nummer = ?1 AND status = 'vorgemerkt'
+     AND charge_id NOT IN (SELECT id FROM chargen WHERE art = 'dauer') AND EXISTS (
      SELECT 1 FROM bestell_positionen p
      JOIN bestellungen b ON b.id = p.bestellung_id
      JOIN v_bestand v    ON v.charge_artikel_id = p.charge_artikel_id
@@ -131,6 +135,8 @@ export class EingabeFehler extends Error {}
  *   positionen: [{ chargeArtikelId, menge }]
  * @param {object} [optionen]
  *   hoechstmengeIgnorieren – true, wenn die Verwaltung bewusst mehr zulässt
+ *   ausverkauftZulassen – true, wenn die Verwaltung bewusst einen als
+ *                    ausverkauft markierten Dauerartikel einträgt
  *   zusatz(nummer) – liefert weitere Anweisungen, die in derselben
  *                    Transaktion laufen (z. B. Voranmeldung als übernommen
  *                    markieren)
@@ -143,13 +149,22 @@ export async function bestellungAnlegen(db, b, optionen = {}) {
 
   // Artikel müssen zu dieser Bestellrunde gehören; Höchstmengen prüfen
   const { results: artikel } = await db.prepare(
-    'SELECT id, max_pro_bestellung FROM charge_artikel WHERE charge_id = ?'
+    `SELECT ca.id, ca.max_pro_bestellung, c.art AS charge_art, p.name, p.aktiv, p.verkaufsart, p.verfuegbar
+     FROM charge_artikel ca JOIN chargen c ON c.id = ca.charge_id JOIN produkte p ON p.id = ca.produkt_id
+     WHERE ca.charge_id = ?`
   ).bind(b.chargeId).all();
-  const erlaubt = new Map(artikel.map((a) => [a.id, a.max_pro_bestellung]));
+  const erlaubt = new Map(artikel.map((a) => [a.id, a]));
   for (const p of positionen) {
     if (!erlaubt.has(p.chargeArtikelId)) throw new EingabeFehler('Artikel gehört nicht zu dieser Bestellrunde.');
-    const max = erlaubt.get(p.chargeArtikelId);
+    const a = erlaubt.get(p.chargeArtikelId);
+    const max = a.max_pro_bestellung;
     if (max && p.menge > max && !optionen.hoechstmengeIgnorieren) throw new EingabeFehler(`Höchstens ${max} Stück pro Bestellung.`);
+    // Dauersortiment: statt Mengenprüfung nur „verfügbar" (eingeblendet,
+    // weiterhin Dauerartikel, nicht ausverkauft)
+    if (a.charge_art === 'dauer' && !optionen.ausverkauftZulassen
+        && !(a.aktiv && a.verkaufsart === 'dauer' && a.verfuegbar)) {
+      throw new EingabeFehler(`„${a.name}" ist gerade ausverkauft.`);
+    }
   }
 
   if (b.terminId != null) {
@@ -205,6 +220,62 @@ export async function bestellungNachruecken(db, bestellungId) {
     db.prepare('SELECT id, nummer, status FROM bestellungen WHERE nummer = ?').bind(b.nummer),
   ]);
   return ergebnisse[ergebnisse.length - 1].results[0];
+}
+
+/* ------------------------------------------------------------
+   4a. DAUERSORTIMENT
+   Dauerartikel (Nudeln, Seife …) hängen nicht an einer Bestellrunde mit
+   Menge und Bestellschluss. Damit Bestellliste, Übergabe, Zahlungen,
+   Export und „Meine Bestellungen" trotzdem unverändert funktionieren,
+   gibt es genau eine ständige Runde mit art = 'dauer'. Ihre Artikel werden
+   hier aus den Produkten gebildet:
+     – je Produkt mit verkaufsart 'dauer' ein Artikel, Preis = dauerpreis_cent
+     – Preisänderungen gelten nur für neue Bestellungen (Einzelpreis je Position)
+     – Artikel werden nie gelöscht (alte Bestellungen verweisen darauf);
+       was nicht mehr Dauerartikel ist, filtert die Bestellprüfung heraus
+   Die Menge (kontingent) ist bedeutungslos und bleibt 0.
+   ------------------------------------------------------------ */
+export const DAUERSORTIMENT_TITEL = 'Dauersortiment';
+export const DAUER_BESTELLSCHLUSS = '9999-12-31';
+
+/** Liefert die ID der ständigen Runde (oder null, solange es keine gibt). */
+export async function dauersortimentId(db) {
+  const zeile = await db.prepare(`SELECT id FROM chargen WHERE art = 'dauer'`).first();
+  return zeile ? zeile.id : null;
+}
+
+/**
+ * Gleicht die ständige Runde mit dem Sortiment ab. Legt sie an, sobald es
+ * den ersten Dauerartikel mit Preis gibt. Mehrfach aufrufbar.
+ * @returns {Promise<number|null>} ID der Runde
+ */
+export async function dauersortimentAbgleichen(db) {
+  const { results: produkte } = await db.prepare(
+    `SELECT id, dauerpreis_cent FROM produkte
+     WHERE verkaufsart = 'dauer' AND dauerpreis_cent IS NOT NULL ORDER BY id`
+  ).all();
+  let cid = await dauersortimentId(db);
+  if (!cid && !produkte.length) return null;
+  if (!cid) {
+    // INSERT OR IGNORE: der eindeutige Index idx_chargen_dauer verhindert
+    // eine zweite Runde, falls zwei Speichervorgänge gleichzeitig kommen
+    await db.prepare(
+      `INSERT OR IGNORE INTO chargen (titel, beschreibung, status, bestellschluss, art)
+       VALUES (?, 'Immer erhältlich – ohne Bestellschluss.', 'offen', ?, 'dauer')`
+    ).bind(DAUERSORTIMENT_TITEL, DAUER_BESTELLSCHLUSS).run();
+    cid = await dauersortimentId(db);
+  }
+  if (!produkte.length) return cid;
+  await db.batch([
+    // immer offen, nie archiviert
+    db.prepare(`UPDATE chargen SET status = 'offen', bestellschluss = ? WHERE id = ?`).bind(DAUER_BESTELLSCHLUSS, cid),
+    ...produkte.map((p) => db.prepare(
+      `INSERT INTO charge_artikel (charge_id, produkt_id, preis_cent, kontingent)
+       VALUES (?, ?, ?, 0)
+       ON CONFLICT (charge_id, produkt_id) DO UPDATE SET preis_cent = excluded.preis_cent`
+    ).bind(cid, p.id, p.dauerpreis_cent)),
+  ]);
+  return cid;
 }
 
 /* ------------------------------------------------------------

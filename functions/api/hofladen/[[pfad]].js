@@ -115,10 +115,12 @@ const linkAdresse = (request, schluessel) => `${new URL(request.url).origin}/mei
    ------------------------------------------------------------ */
 async function angebotLaden(db) {
   const heute = heuteInTirol();
-  const offen = `SELECT id FROM chargen WHERE status = 'offen' AND bestellschluss >= ?`;
+  // Das Dauersortiment (art 'dauer') kommt erst mit Phase W2 auf die Seite
+  // (docs/SCHNITTSTELLE-BERTHA.md)
+  const offen = `SELECT id FROM chargen WHERE status = 'offen' AND art = 'runde' AND bestellschluss >= ?`;
   const [chargen, artikel, termine, liefergebiet, produkte, bereiche] = (await db.batch([
     db.prepare(`SELECT id, titel, beschreibung, bestellschluss FROM chargen
-                WHERE status = 'offen' AND bestellschluss >= ? ORDER BY bestellschluss, id`).bind(heute),
+                WHERE status = 'offen' AND art = 'runde' AND bestellschluss >= ? ORDER BY bestellschluss, id`).bind(heute),
     db.prepare(`SELECT ca.id, ca.charge_id, ca.produkt_id, ca.preis_cent, ca.max_pro_bestellung, v.frei,
                        p.name, p.art, p.bereich, p.beschreibung, p.pflichtangaben, p.allergene,
                        p.richtgewicht_von_g, p.richtgewicht_bis_g
@@ -186,7 +188,7 @@ async function bestellungAufnehmen(db, env, request, e) {
   const kontakt = kontaktPruefen(e);
   const chargeId = Number(e.chargeId);
   const charge = await db.prepare(
-    `SELECT id, titel FROM chargen WHERE id = ? AND status = 'offen' AND bestellschluss >= ?`
+    `SELECT id, titel FROM chargen WHERE id = ? AND status = 'offen' AND art = 'runde' AND bestellschluss >= ?`
   ).bind(Number.isInteger(chargeId) ? chargeId : -1, heuteInTirol()).first();
   if (!charge) throw new EingabeFehler('Für diese Bestellrunde kann nicht mehr bestellt werden (Bestellschluss vorbei).');
 

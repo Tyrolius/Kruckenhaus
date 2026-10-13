@@ -46,6 +46,8 @@ functions/api/availability.js GET /api/availability → Airbnb-iCal parsen
 schema.sql                 D1-Schema (Tabelle „anfragen")
 schema-hofladen.sql        D1-Schema der Hofladen-Vorbestellung (im Aufbau)
 hofladen-produkte.sql      Produktkatalog der Hofladen-Vorbestellung (Erstbefüllung)
+migration-2026-10-*.sql    einmalige Migrationen bestehender Datenbanken (ALTER TABLE)
+docs/SCHNITTSTELLE-BERTHA.md  Plan der Schnittstelle zu Bertha (Phasen W1–W4, B1–B2)
 functions/_lib/hofladen.js gemeinsame Helfer der Hofladen-Functions (keine Route)
 functions/_lib/zugang.js   Prüfung der Cloudflare-Access-Anmeldung
 functions/_lib/mail.js     gemeinsame Mail-Vorlage (Logo, Absenderblock) + Nur-Text-Fassung
@@ -56,7 +58,8 @@ hofladen.html + js/hofladen.js   Bestellseite mit Sortiment für Kunden (noch no
 meine-bestellungen.html + js/meine-bestellungen.js   Ansicht zum persönlichen Link
 functions/api/hofladen/    öffentliche Schnittstelle: Angebot, Bestellung, Voranmeldung, „meine"
 js/qrcode.js               Überweisungs-QR-Code (EPC-QR), eigener Kodierer ohne Bibliothek
-scripts/test-hofladen-*.mjs   Tests für Schema/Helfer, Verwaltung, Zugang, Bestellseite, QR-Code
+scripts/test-hofladen-*.mjs   Tests für Schema/Helfer, Verwaltung, Zugang, Bestellseite, QR-Code,
+                              Dauerartikel
                               (node, ohne echte D1)
 _headers                   Security- und Cache-Header
 wrangler.toml              Pages-Konfiguration inkl. D1-Binding (nicht löschen!)
@@ -176,7 +179,15 @@ Es gibt keine automatisierten Tests und keinen Linter.
 - Hofladen-Vorbestellung: eigenes Schema `schema-hofladen.sql` (mehrfach
   ausführbar), Plan in `docs/HOFLADEN-VORBESTELLUNG.md`. Nach Änderungen an
   Schema, `functions/_lib/` oder `functions/api/verwaltung/`:
-  `node scripts/test-hofladen-db.mjs`, `…-api.mjs`, `…-zugang.mjs`, `…-oeffentlich.mjs`, `…-qr.mjs`.
+  `node scripts/test-hofladen-db.mjs`, `…-api.mjs`, `…-zugang.mjs`, `…-oeffentlich.mjs`, `…-qr.mjs`,
+  `…-dauer.mjs`.
+- Dauerartikel (Nudeln, Seife …): `produkte.verkaufsart = 'dauer'`, fester Preis,
+  nur „verfügbar/ausverkauft". Bestellt wird über die eine ständige Runde
+  `chargen.art = 'dauer'` („Dauersortiment"), deren Artikel
+  `dauersortimentAbgleichen()` aus dem Sortiment bildet – nie von Hand anlegen,
+  keine Mengenprüfung dort. Auf `hofladen.html` erst ab Phase W2
+  (`docs/SCHNITTSTELLE-BERTHA.md`). Vor jeder Migration sichern:
+  `npx wrangler d1 export kruckenhaus --remote --output=sicherung.sql`.
 - Überweisungs-QR-Code nur mit genauem Betrag (alles gewogen, nicht bezahlt).
   Bankdaten nur aus den Secrets `BANK_*` (`bankAusEnv`), nie ins Repository.
 - Persönliche Links „Meine Bestellungen": Schlüssel nur hinter `#` in der

@@ -19,7 +19,9 @@
  *   POST /api/verwaltung/produkt                  Produkt anlegen (Sortiment)
  *   POST /api/verwaltung/produkt/<id>             Produkt bearbeiten / aus- und einblenden
  *        (Feld bild: Pfad eines Fotos aus images/fotos.json, ein hochgeladenes
- *        Foto 'api/hofladen/foto/<id>' oder leer)
+ *        Foto 'api/hofladen/foto/<id>' oder leer; verkaufsart 'runde' oder
+ *        'dauer' mit dauerpreisCent, verfuegbar, imPortal)
+ *   POST /api/verwaltung/produkt/<id>/verfuegbar  Dauerartikel verfügbar/ausverkauft ({ verfuegbar })
  *   POST /api/verwaltung/foto                     Produktfoto hochladen ({ daten: „data:image/jpeg;base64,…" })
  *   POST /api/verwaltung/bereich                  Bereich anlegen ({ name })
  *   POST /api/verwaltung/bereich/<id>             Bereich umbenennen ({ name })
@@ -28,6 +30,8 @@
  *   POST /api/verwaltung/charge                   Bestellrunde anlegen
  *   POST /api/verwaltung/charge/<id>              Bestellrunde bearbeiten
  *   POST /api/verwaltung/charge/<id>/status       nur den Status ändern (abschließen, wieder öffnen)
+ *        Die ständige Runde „Dauersortiment" (art 'dauer') lässt sich weder
+ *        bearbeiten noch abschließen – ihre Artikel kommen aus dem Sortiment.
  *   POST /api/verwaltung/voranmeldung             Voranmeldung erfassen
  *   POST /api/verwaltung/voranmeldung/<id>/absagen
  *   POST /api/verwaltung/voranmeldungen/uebernehmen
@@ -46,7 +50,7 @@
 
 import {
   json, EingabeFehler, ZEITRAEUME, istGueltigeEmail,
-  bestellungAnlegen, bestellungNachruecken, preisVorschlaege,
+  bestellungAnlegen, bestellungNachruecken, preisVorschlaege, dauersortimentAbgleichen,
   voranmeldungAnlegen, voranmeldungenUebernehmen, bankAusEnv, SQL_ALS_GESEHEN,
   kundenLinkErstellen, mailSenden, escapeHtml,
 } from '../../_lib/hofladen.js';
@@ -61,6 +65,7 @@ const QUELLEN = ['web', 'whatsapp', 'telefon', 'persoenlich'];
 const ZAHLARTEN = ['bar', 'ueberweisung'];
 const CHARGE_STATUS = ['entwurf', 'stammkunden', 'offen', 'geschlossen', 'archiviert'];
 const PRODUKT_ARTEN = ['gewicht', 'paket', 'stueck'];
+const VERKAUFSARTEN = ['runde', 'dauer'];
 // Alte, feste Einteilung (Spalte produkte.kategorie, mit CHECK) – neue
 // Bereiche ohne kennung bekommen dort 'saison'
 const KATEGORIEN = ['fleisch', 'nudeln', 'honig', 'seife', 'saison'];
@@ -116,6 +121,11 @@ function uhrzeit(wert) {
 
 const id = (wert) => (wert == null ? null : String(wert));
 
+// Freie Menge eines Artikels (Platzhalter ?3 = charge_artikel.id). Das
+// Dauersortiment hat keine Mengen – dort ist immer genug frei.
+const SQL_FREI = `(SELECT CASE WHEN c.art = 'dauer' THEN 1000000 ELSE v.frei END
+                   FROM v_bestand v JOIN chargen c ON c.id = v.charge_id WHERE v.charge_artikel_id = ?3)`;
+
 /* ------------------------------------------------------------
    2. STAND LADEN (für die Oberfläche)
    Gleiche Form wie verwaltung/entwurf-daten.js.
@@ -125,7 +135,7 @@ async function standLaden(db, bank = null) {
   const aktiv = `SELECT id FROM chargen WHERE status <> 'archiviert'`;
   const [chargen, artikel, termine, bestellungen, positionen, kunden, produkte, voranmeldungen, liefergebiet, widerrufe, bereiche] =
     (await db.batch([
-      db.prepare(`SELECT id, titel, status, bestellschluss FROM chargen
+      db.prepare(`SELECT id, titel, status, bestellschluss, art, im_portal FROM chargen
                   WHERE status <> 'archiviert' ORDER BY bestellschluss, id`),
       db.prepare(`SELECT ca.id, ca.charge_id, ca.produkt_id, ca.preis_cent, ca.kontingent, ca.max_pro_bestellung,
                          p.name, p.art, p.richtgewicht_von_g, p.richtgewicht_bis_g
@@ -146,6 +156,7 @@ async function standLaden(db, bank = null) {
                   FROM kunden k LEFT JOIN tour_reihenfolge t ON t.kunde_id = k.id ORDER BY k.name`),
       db.prepare(`SELECT p.id, p.name, p.art, p.bereich, p.richtgewicht_von_g, p.richtgewicht_bis_g, p.startpreis_cent,
                          p.aktiv, p.beschreibung, p.pflichtangaben, p.allergene, p.bild,
+                         p.verkaufsart, p.dauerpreis_cent, p.verfuegbar, p.im_portal,
                          EXISTS (SELECT 1 FROM charge_artikel ca WHERE ca.produkt_id = p.id) AS verwendet
                   FROM v_produkte p ORDER BY p.bereich_reihenfolge, p.reihenfolge, p.name`),
       db.prepare(`SELECT id, kunde_id, produkt_id, menge, zeitraum, jahr, quelle, status, notiz, erstellt_am
@@ -169,6 +180,7 @@ async function standLaden(db, bank = null) {
   return {
     chargen: chargen.map((c) => ({
       id: id(c.id), titel: c.titel, status: c.status, bestellschluss: c.bestellschluss,
+      art: c.art, imPortal: Boolean(c.im_portal),
       termine: termine.filter((t) => t.charge_id === c.id).map((t) => ({
         id: id(t.id), art: t.art, datum: t.datum, von: t.von || '', bis: t.bis || '', hinweis: t.hinweis || '',
       })),
@@ -198,6 +210,8 @@ async function standLaden(db, bank = null) {
       richtVonG: p.richtgewicht_von_g, richtBisG: p.richtgewicht_bis_g, startpreisCent: p.startpreis_cent,
       beschreibung: p.beschreibung || '', pflichtangaben: p.pflichtangaben || '', allergene: p.allergene || '',
       bild: p.bild || '', verwendet: Boolean(p.verwendet),
+      verkaufsart: p.verkaufsart, dauerpreisCent: p.dauerpreis_cent, verfuegbar: Boolean(p.verfuegbar),
+      imPortal: Boolean(p.im_portal),
     })),
     voranmeldungen: voranmeldungen.map((v) => ({
       id: id(v.id), kundeId: id(v.kunde_id), produktId: id(v.produkt_id), menge: v.menge,
@@ -284,6 +298,7 @@ async function bestellungErfassen(db, e) {
     })),
   }, {
     hoechstmengeIgnorieren: true,
+    ausverkauftZulassen: true,
     // Selbst erfasst – gilt nicht als „neu"
     zusatz: (nr) => [db.prepare(SQL_ALS_GESEHEN).bind(nr)],
   });
@@ -371,14 +386,14 @@ async function positionSetzen(db, bid, e) {
   } else if (pos) {
     r = await db.prepare(
       `UPDATE bestell_positionen SET menge = ?1, gewicht_g = CASE WHEN menge = ?1 THEN gewicht_g END
-       WHERE id = ?2 AND ?1 - menge <= (SELECT frei FROM v_bestand WHERE charge_artikel_id = ?3)`
+       WHERE id = ?2 AND ?1 - menge <= ${SQL_FREI}`
     ).bind(menge, pos.id, artikelId).run();
     if (!r.meta.changes) throw new EingabeFehler(`Nicht genug frei – noch ${Math.max(0, await frei())} verfügbar.`);
   } else {
     r = await db.prepare(
       `INSERT INTO bestell_positionen (bestellung_id, charge_artikel_id, menge, einzelpreis_cent)
        SELECT ?1, ca.id, ?2, ca.preis_cent FROM charge_artikel ca
-       WHERE ca.id = ?3 AND ?2 <= (SELECT frei FROM v_bestand WHERE charge_artikel_id = ?3)`
+       WHERE ca.id = ?3 AND ?2 <= ${SQL_FREI}`
     ).bind(bid, menge, artikelId).run();
     if (!r.meta.changes) throw new EingabeFehler(`Nicht genug frei – noch ${Math.max(0, await frei())} verfügbar.`);
   }
@@ -408,7 +423,8 @@ async function hofverkauf(db, e) {
   }
 
   const { results: artikel } = await db.prepare(
-    `SELECT ca.id, p.art, v.frei FROM charge_artikel ca JOIN produkte p ON p.id = ca.produkt_id
+    `SELECT ca.id, p.art, CASE WHEN c.art = 'dauer' THEN 1000000 ELSE v.frei END AS frei
+     FROM charge_artikel ca JOIN produkte p ON p.id = ca.produkt_id JOIN chargen c ON c.id = ca.charge_id
      JOIN v_bestand v ON v.charge_artikel_id = ca.id WHERE ca.charge_id = ?`
   ).bind(chargeId).all();
   for (const p of positionen) {
@@ -437,6 +453,7 @@ async function hofverkauf(db, e) {
     positionen,
   }, {
     hoechstmengeIgnorieren: true,
+    ausverkauftZulassen: true,
     zusatz: (nr) => [
       ...positionen.filter((p) => p.gewichtG).map((p) => db.prepare(
         `UPDATE bestell_positionen SET gewicht_g = ?
@@ -488,6 +505,10 @@ async function tourSpeichern(db, e) {
    Produkte werden nie gelöscht, sondern ausgeblendet (aktiv = 0) – alte
    Bestellungen verweisen weiter auf sie. Die Art (Gewicht/Fixpreis) lässt
    sich nur ändern, solange das Produkt noch in keiner Bestellrunde war.
+   Dauerartikel (verkaufsart 'dauer') haben einen festen Preis und nur
+   „verfügbar/ausverkauft"; nach jedem Speichern wird die ständige Runde
+   „Dauersortiment" abgeglichen. geaendert_am wird bei jeder Änderung
+   gesetzt (Abgleich mit Bertha, docs/SCHNITTSTELLE-BERTHA.md).
    ------------------------------------------------------------ */
 function produktPruefen(e) {
   const name = text(e.name, 120);
@@ -503,9 +524,17 @@ function produktPruefen(e) {
     allergene: textOderNull(e.allergene, 300),
     bild: fotoOderNull(e.bild),
     aktiv: e.aktiv === false ? 0 : 1,
+    verkaufsart: auswahl(e.verkaufsart || 'runde', VERKAUFSARTEN, 'Verkaufsart'),
+    dauerpreisCent: ganzzahl(e.dauerpreisCent, 'Preis', { max: 10000000, leer: true }),
+    verfuegbar: e.verfuegbar === false ? 0 : 1,
+    imPortal: e.imPortal === false ? 0 : 1,
     richtVonG: null,
     richtBisG: null,
   };
+  if (p.verkaufsart === 'dauer') {
+    if (art === 'gewicht') throw new EingabeFehler('Ware nach Gewicht kann kein Dauerartikel sein – bitte „Fixpreis" wählen.');
+    if (p.dauerpreisCent == null) throw new EingabeFehler('Bitte den Preis des Dauerartikels eintragen.');
+  }
   if (art === 'gewicht') {
     p.richtVonG = ganzzahl(e.richtVonG, 'Gewicht von', { min: 1, max: 200000 });
     p.richtBisG = ganzzahl(e.richtBisG, 'Gewicht bis', { min: 1, max: 200000 });
@@ -533,19 +562,22 @@ async function produktAnlegen(db, e) {
   // Neue Produkte ans Ende ihres Bereichs
   const zeile = await db.prepare(
     `INSERT INTO produkte (name, art, kategorie, bereich_id, startpreis_cent, beschreibung, pflichtangaben, allergene,
-                           bild, richtgewicht_von_g, richtgewicht_bis_g, aktiv, reihenfolge)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+                           bild, richtgewicht_von_g, richtgewicht_bis_g, aktiv, verkaufsart, dauerpreis_cent,
+                           verfuegbar, im_portal, geaendert_am, reihenfolge)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'),
              (SELECT COALESCE(MAX(reihenfolge), 0) + 10 FROM v_produkte WHERE bereich = ?))
      RETURNING id`
   ).bind(p.name, p.art, kategorie, p.bereichId, p.startpreisCent, p.beschreibung, p.pflichtangaben, p.allergene,
-    p.bild, p.richtVonG, p.richtBisG, p.aktiv, p.bereichId).first();
+    p.bild, p.richtVonG, p.richtBisG, p.aktiv, p.verkaufsart, p.dauerpreisCent, p.verfuegbar, p.imPortal,
+    p.bereichId).first();
+  if (p.verkaufsart === 'dauer') await dauersortimentAbgleichen(db);
   return { produktId: id(zeile.id) };
 }
 
 async function produktBearbeiten(db, produktId, e) {
   const pid = nummer(produktId, 'Produkt');
   const alt = await db.prepare(
-    `SELECT art, EXISTS (SELECT 1 FROM charge_artikel WHERE produkt_id = produkte.id) AS verwendet
+    `SELECT art, verkaufsart, EXISTS (SELECT 1 FROM charge_artikel WHERE produkt_id = produkte.id) AS verwendet
      FROM produkte WHERE id = ?`
   ).bind(pid).first();
   if (!alt) throw new EingabeFehler('Produkt nicht gefunden.');
@@ -557,11 +589,24 @@ async function produktBearbeiten(db, produktId, e) {
   await nameFrei(db, p.name, pid);
   await db.prepare(
     `UPDATE produkte SET name = ?, art = ?, kategorie = ?, bereich_id = ?, startpreis_cent = ?, beschreibung = ?,
-            pflichtangaben = ?, allergene = ?, bild = ?, richtgewicht_von_g = ?, richtgewicht_bis_g = ?, aktiv = ?
+            pflichtangaben = ?, allergene = ?, bild = ?, richtgewicht_von_g = ?, richtgewicht_bis_g = ?, aktiv = ?,
+            verkaufsart = ?, dauerpreis_cent = ?, verfuegbar = ?, im_portal = ?, geaendert_am = datetime('now')
      WHERE id = ?`
   ).bind(p.name, p.art, kategorie, p.bereichId, p.startpreisCent, p.beschreibung, p.pflichtangaben, p.allergene,
-    p.bild, p.richtVonG, p.richtBisG, p.aktiv, pid).run();
+    p.bild, p.richtVonG, p.richtBisG, p.aktiv, p.verkaufsart, p.dauerpreisCent, p.verfuegbar, p.imPortal, pid).run();
+  if (p.verkaufsart === 'dauer' || alt.verkaufsart === 'dauer') await dauersortimentAbgleichen(db);
   return { produktId: id(pid) };
+}
+
+// Schnell umschalten „verfügbar / ausverkauft" (häufigster Handgriff am Handy)
+async function produktVerfuegbar(db, produktId, e) {
+  const pid = nummer(produktId, 'Produkt');
+  if (typeof e.verfuegbar !== 'boolean') throw new EingabeFehler('Ungültige Auswahl: verfügbar.');
+  const r = await db.prepare(
+    `UPDATE produkte SET verfuegbar = ?, geaendert_am = datetime('now') WHERE id = ? AND verkaufsart = 'dauer'`
+  ).bind(e.verfuegbar ? 1 : 0, pid).run();
+  if (!r.meta.changes) throw new EingabeFehler('Nur bei Dauerartikeln möglich.');
+  return {};
 }
 
 /* ------------------------------------------------------------
@@ -845,9 +890,19 @@ function chargePruefen(e) {
     bestellschluss: datum(e.bestellschluss, 'Bestellschluss'),
     status: auswahl(e.status || 'entwurf', CHARGE_STATUS, 'Status'),
     beschreibung: textOderNull(e.beschreibung, 1000),
+    imPortal: e.imPortal === false ? 0 : 1,
     termine,
     artikel,
   };
+}
+
+// Die ständige Runde „Dauersortiment" wird nicht von Hand bearbeitet
+async function keinDauersortiment(db, cid) {
+  const c = await db.prepare('SELECT art FROM chargen WHERE id = ?').bind(cid).first();
+  if (!c) throw new EingabeFehler('Bestellrunde nicht gefunden.');
+  if (c.art === 'dauer') {
+    throw new EingabeFehler('Das Dauersortiment ist immer offen – Preise und „ausverkauft" werden im Sortiment geändert.');
+  }
 }
 
 function terminEinfuegen(db, chargeId, t) {
@@ -865,8 +920,8 @@ function artikelEinfuegen(db, chargeId, a, reihenfolge) {
 async function chargeAnlegen(db, e) {
   const c = chargePruefen(e);
   const zeile = await db.prepare(
-    'INSERT INTO chargen (titel, beschreibung, status, bestellschluss) VALUES (?, ?, ?, ?) RETURNING id'
-  ).bind(c.titel, c.beschreibung, c.status, c.bestellschluss).first();
+    'INSERT INTO chargen (titel, beschreibung, status, bestellschluss, im_portal) VALUES (?, ?, ?, ?, ?) RETURNING id'
+  ).bind(c.titel, c.beschreibung, c.status, c.bestellschluss, c.imPortal).first();
   const anweisungen = [
     ...c.termine.map((t) => terminEinfuegen(db, zeile.id, t)),
     ...c.artikel.map((a, i) => artikelEinfuegen(db, zeile.id, a, i)),
@@ -883,8 +938,7 @@ async function chargeAnlegen(db, e) {
 async function chargeBearbeiten(db, chargeId, e) {
   const cid = nummer(chargeId, 'Bestellrunde');
   const c = chargePruefen(e);
-  const vorhanden = await db.prepare('SELECT id FROM chargen WHERE id = ?').bind(cid).first();
-  if (!vorhanden) throw new EingabeFehler('Bestellrunde nicht gefunden.');
+  await keinDauersortiment(db, cid);
 
   const [alteTermine, alteArtikel] = (await db.batch([
     db.prepare(`SELECT t.id, EXISTS (SELECT 1 FROM bestellungen b WHERE b.termin_id = t.id) AS benutzt
@@ -907,8 +961,8 @@ async function chargeBearbeiten(db, chargeId, e) {
   if (entfernteArtikel.some((a) => a.benutzt)) throw new EingabeFehler('Ein Artikel wurde schon bestellt und kann nicht entfernt werden – Menge stattdessen auf die bestellte Zahl setzen.');
 
   await db.batch([
-    db.prepare('UPDATE chargen SET titel = ?, beschreibung = ?, status = ?, bestellschluss = ? WHERE id = ?')
-      .bind(c.titel, c.beschreibung, c.status, c.bestellschluss, cid),
+    db.prepare('UPDATE chargen SET titel = ?, beschreibung = ?, status = ?, bestellschluss = ?, im_portal = ? WHERE id = ?')
+      .bind(c.titel, c.beschreibung, c.status, c.bestellschluss, c.imPortal, cid),
     ...entfernteTermine.map((t) => db.prepare('DELETE FROM termine WHERE id = ? AND charge_id = ?').bind(t.id, cid)),
     ...entfernteArtikel.map((a) => db.prepare('DELETE FROM charge_artikel WHERE id = ? AND charge_id = ?').bind(a.id, cid)),
     ...c.termine.map((t) => (t.id
@@ -1035,9 +1089,10 @@ export async function onRequest({ request, env, params, data }) {
     else if (bereich === 'charge' && pfad.length === 1) ergebnis = await chargeAnlegen(db, eingabe);
     else if (bereich === 'charge' && pfad.length === 2) ergebnis = await chargeBearbeiten(db, teilId, eingabe);
     else if (bereich === 'charge' && unteraktion === 'status' && pfad.length === 3) {
-      const r = await db.prepare('UPDATE chargen SET status = ? WHERE id = ?')
-        .bind(auswahl(eingabe.status, CHARGE_STATUS, 'Status'), nummer(teilId, 'Bestellrunde')).run();
-      if (!r.meta.changes) throw new EingabeFehler('Bestellrunde nicht gefunden.');
+      const cid = nummer(teilId, 'Bestellrunde');
+      const status = auswahl(eingabe.status, CHARGE_STATUS, 'Status');
+      await keinDauersortiment(db, cid);
+      await db.prepare('UPDATE chargen SET status = ? WHERE id = ?').bind(status, cid).run();
       ergebnis = {};
     }
     else if (bereich === 'voranmeldung' && pfad.length === 1) ergebnis = await voranmeldungErfassen(db, eingabe);
@@ -1051,6 +1106,7 @@ export async function onRequest({ request, env, params, data }) {
     else if (bereich === 'foto' && pfad.length === 1) ergebnis = await fotoHochladen(db, eingabe);
     else if (bereich === 'produkt' && pfad.length === 1) ergebnis = await produktAnlegen(db, eingabe);
     else if (bereich === 'produkt' && pfad.length === 2) ergebnis = await produktBearbeiten(db, teilId, eingabe);
+    else if (bereich === 'produkt' && unteraktion === 'verfuegbar' && pfad.length === 3) ergebnis = await produktVerfuegbar(db, teilId, eingabe);
     else if (bereich === 'voranmeldung' && unteraktion === 'absagen' && pfad.length === 3) {
       const r = await db.prepare(
         `UPDATE voranmeldungen SET status = 'abgesagt', geaendert_am = datetime('now') WHERE id = ? AND status = 'offen'`
