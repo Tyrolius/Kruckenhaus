@@ -174,7 +174,9 @@ Es gibt keine automatisierten Tests und keinen Linter.
   angebundenes** Buchungsmodell (`einheiten`, `preisperioden`, `buchungen`,
   `naechte`). Nicht löschen, nicht „aufräumen" – Details im README.
 - Hofladen-Vorbestellung: eigenes Schema `schema-hofladen.sql` (mehrfach
-  ausführbar), Plan in `docs/HOFLADEN-VORBESTELLUNG.md`. Nach Änderungen an
+  ausführbar), Plan in `docs/HOFLADEN-VORBESTELLUNG.md`. Anbindung an die
+  App Bertha (Dauerartikel, Bestellungen aus dem Kundenportal): Plan in
+  `docs/SCHNITTSTELLE-BERTHA.md` (Konzept, noch nicht umgesetzt). Nach Änderungen an
   Schema, `functions/_lib/` oder `functions/api/verwaltung/`:
   `node scripts/test-hofladen-db.mjs`, `…-api.mjs`, `…-zugang.mjs`, `…-oeffentlich.mjs`, `…-qr.mjs`.
 - Überweisungs-QR-Code nur mit genauem Betrag (alles gewogen, nicht bezahlt).
