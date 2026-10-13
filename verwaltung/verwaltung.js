@@ -87,6 +87,8 @@ function terminText(t) {
 
 const QUELLEN = { web: 'Website', whatsapp: 'WhatsApp', telefon: 'Telefon', persoenlich: 'persönlich' };
 const ZAHLARTEN = { bar: 'bar', ueberweisung: 'Überweisung' };
+// Bestellungen aus dem Bertha-Kundenportal kommen als 'web' an
+const quelleText = (b) => (b.ueberBertha ? 'Bertha-Portal' : QUELLEN[b.quelle] || b.quelle);
 const ZEITRAEUME = {
   naechste: 'nächste Bestellrunde',
   fruehjahr: 'Frühjahr',
@@ -320,12 +322,14 @@ function marken(b) {
   const t = terminVon(b);
   const teile = [];
   if (b.neu) teile.push('<span class="vw-marke vw-marke--neu">neu</span>');
+  if (b.ueberBertha) teile.push('<span class="vw-marke vw-marke--info">über Bertha</span>');
   if (b.status === 'warteliste') teile.push('<span class="vw-marke vw-marke--info">Warteliste</span>');
   if (b.status === 'storniert') teile.push('<span class="vw-marke">storniert</span>');
   if (istHofverkauf(b)) teile.push('<span class="vw-marke">Verkauf am Hof</span>');
   else teile.push(t
     ? `<span class="vw-marke">${t.art === 'abholung' ? 'Abholung' : 'Lieferung'} ${datumKurz(t.datum)}</span>`
-    : '<span class="vw-marke vw-marke--offen">Termin offen</span>');
+    : istDauer(chargeVon(b)) ? '<span class="vw-marke">Abholung nach Absprache</span>'
+      : '<span class="vw-marke vw-marke--offen">Termin offen</span>');
   if (istAktiv(b)) {
     teile.push(b.bezahlt
       ? `<span class="vw-marke vw-marke--gut">bezahlt (${ZAHLARTEN[b.bezahlt]})</span>`
@@ -1886,7 +1890,7 @@ function auswertungExport() {
     'Gewicht kg', 'Betrag €', 'Zahlart', 'Bezahlt am']];
   aw.bestellungen.forEach((b) => b.positionen.forEach((p) => {
     zeilen.push([b.uebergebenAm, b.nummer, runde(b.chargeId), b.kunde,
-      b.hofverkauf ? 'Verkauf am Hof' : `Vorbestellung (${QUELLEN[b.quelle] || b.quelle})`,
+      b.hofverkauf ? 'Verkauf am Hof' : `Vorbestellung (${quelleText(b)})`,
       p.bereich, p.produkt, p.menge, p.gewichtG ? p.gewichtG / 1000 : '', p.cent / 100,
       b.bezahlt ? ZAHLARTEN[b.bezahlt] : `offen (${ZAHLARTEN[b.zahlart]})`, b.bezahltAm || '']);
   }));
@@ -2333,8 +2337,9 @@ function ansichtBertha() {
 
   inhalt().innerHTML = `
     <div class="vw-kopf"><h1>Verbindung zu Bertha</h1>
-      <p class="vw-klein">Über diese Verbindung zeigt das Bertha-Kundenportal euren Eierkunden die Dauerartikel.
-        Gepflegt wird alles hier im Sortiment – Bertha liest nur.</p></div>
+      <p class="vw-klein">Über diese Verbindung zeigt das Bertha-Kundenportal euren Eierkunden die Dauerartikel und – wenn
+        freigeschaltet – die Fleischrunden mit „Auch im Bertha-Portal". Gepflegt wird alles hier; Fleischbestellungen aus dem
+        Portal landen ganz normal in der Bestellliste, mit dem Zeichen „über Bertha".</p></div>
     <section class="vw-karte vw-ampel ${ampel[0]}" aria-label="Zustand"><p><strong>${ampel[1]}</strong></p>
       <p class="vw-klein">Letzte 24 Stunden: ${s.letzte24h.aufrufe} Abrufe${s.letzte24h.fehler ? `, davon ${s.letzte24h.fehler} mit Fehler` : ''}.</p>
       ${s.fehler.length ? `<h2>Letzte Fehler (7 Tage)</h2><ul class="vw-bertha-fehler">${s.fehler.map((f) =>
@@ -2366,7 +2371,7 @@ function ansichtBertha() {
         <fieldset class="vw-feldgruppe"><legend>Was darf Bertha?</legend>
           ${Object.entries(BERTHA_RECHTE).map(([wert, textRecht]) => `<label class="vw-haken">
             <input type="checkbox" name="rechte" value="${wert}" ${wert === 'katalog' ? 'checked' : ''} /> ${esc(textRecht)}</label>`).join('')}
-          <p class="vw-klein">Fleisch lesen und bestellen kommt mit einem späteren Schritt dazu.</p>
+          <p class="vw-klein">„Fleisch bestellen" erst freischalten, wenn Datenschutzerklärung und Portal-Hinweis ergänzt sind.</p>
         </fieldset>
         <button type="submit" class="vw-knopf vw-knopf--voll">Schlüssel anlegen</button>
       </form>
@@ -2481,7 +2486,7 @@ function detailOeffnen(id) {
   dialog.innerHTML = `<div class="vw-dialog-inhalt">
     <div class="vw-dialog-kopf">
       <div><h2 id="vw-dialog-titel">${esc(k.name)}</h2>
-        <span class="vw-klein">${esc(b.nummer)} · ${QUELLEN[b.quelle]} · ${datumKurz(b.erstellt)}${k.stammkunde ? ' · Stammkunde' : ''}</span></div>
+        <span class="vw-klein">${esc(b.nummer)} · ${quelleText(b)} · ${datumKurz(b.erstellt)}${k.stammkunde ? ' · Stammkunde' : ''}</span></div>
       <button type="button" class="vw-schliessen" data-aktion="schliessen" aria-label="Schließen">×</button>
     </div>
     <div class="vw-abschnitt">${marken(b)}
@@ -2592,7 +2597,7 @@ function exportieren() {
         const a = artikelVon(ch, p.artikelId);
         const betrag = positionBetrag(ch, p);
         zeilen.push([b.nummer, b.erstellt, k.name, k.telefon.replace(/^\+/, '00'), k.strasse,
-          `${k.plz} ${k.ort}`.trim(), QUELLEN[b.quelle], b.status,
+          `${k.plz} ${k.ort}`.trim(), quelleText(b), b.status,
           t ? (t.art === 'abholung' ? 'Abholung' : 'Lieferung') : (istHofverkauf(b) ? 'Verkauf am Hof' : 'offen'),
           t ? t.datum : '', a.name, p.menge,
           p.gewichtG ? p.gewichtG / 1000 : '', preisVon(ch, p) / 100, a.art === 'gewicht' ? 'kg' : 'Stück',

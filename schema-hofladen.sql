@@ -514,15 +514,22 @@ CREATE TABLE IF NOT EXISTS extern_kunden (
   PRIMARY KEY (zugang_id, externe_id)
 );
 
--- Schutz vor Doppelbestellungen bei Wiederholung (Idempotency-Key, ab W4)
+-- Bestellungen über die Schnittstelle (ab W4): Schutz vor Doppelbestellungen
+-- bei Wiederholung (anfrage_id = Idempotency-Key), gespeicherte Antwort und
+-- Nachweis der Zustimmung zu den Bestellbedingungen (Version und Zeitpunkt,
+-- JSON). Eine Bestellung kam „über Bertha", wenn sie hier steht.
+-- Vorhandene Datenbank: vorher einmal migration-2026-10-schnittstelle.sql.
 CREATE TABLE IF NOT EXISTS extern_anfragen (
   zugang_id     INTEGER NOT NULL REFERENCES schnittstellen_zugaenge (id),
   anfrage_id    TEXT    NOT NULL,
   bestellung_id INTEGER REFERENCES bestellungen (id),
   antwort       TEXT,
   erstellt_am   TEXT    NOT NULL DEFAULT (datetime('now')),
+  zustimmung    TEXT,
   PRIMARY KEY (zugang_id, anfrage_id)
 );
+
+CREATE INDEX IF NOT EXISTS idx_extern_anfragen_bestellung ON extern_anfragen (bestellung_id);
 
 -- Protokoll OHNE personenbezogene Daten (keine Namen, E-Mails, Adressen,
 -- Bestellinhalte). Einträge älter als 90 Tage werden beim Schreiben gelöscht.

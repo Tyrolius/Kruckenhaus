@@ -52,6 +52,8 @@ functions/_lib/hofladen.js gemeinsame Helfer der Hofladen-Functions (keine Route
 functions/_lib/zugang.js   Prüfung der Cloudflare-Access-Anmeldung
 functions/_lib/mail.js     gemeinsame Mail-Vorlage (Logo, Absenderblock) + Nur-Text-Fassung
 functions/_lib/extern.js   Helfer der Schnittstelle für Bertha (Zugänge, Pausieren, Protokoll)
+functions/_lib/bestellung.js  Bestellungen von außen (hofladen.html und Bertha): Kontaktprüfung,
+                           Kunde wiederfinden, Bestätigungsmails – für beide Wege dieselben
 functions/api/extern/      Schnittstelle für Bertha: _middleware.js (Schlüssel), v1/[[pfad]].js
 functions/api/verwaltung/  Schnittstelle der Verwaltung (_middleware.js = Zugang)
 verwaltung/                Hofladen-Verwaltung (inkl. Produktkatalog); ?entwurf = Beispielmodus
@@ -191,6 +193,9 @@ Es gibt keine automatisierten Tests und keinen Linter.
   oder in Beispiele schreiben. Prüfung in `_middleware.js` nie abschwächen
   (ohne Tabellen: Fehler, nie ungeprüft). Protokoll ohne personenbezogene Daten.
   Cloudflare Access darf `/api/extern/*` nicht abdecken.
+  Bestellungen über Bertha: `quelle` bleibt `'web'`, erkennbar an `extern_anfragen`
+  (Idempotency-Key, Antwort, Zustimmung). Recht „bestellen" erst vergeben, wenn
+  Datenschutzerklärung und Portal-Hinweis ergänzt sind (Plan, Abschnitt 5).
 - Dauerartikel (Nudeln, Seife …): `produkte.verkaufsart = 'dauer'`, fester Preis,
   nur „verfügbar/ausverkauft". Bestellt wird über die eine ständige Runde
   `chargen.art = 'dauer'` („Dauersortiment"), deren Artikel

@@ -1,6 +1,6 @@
 # Hofladen ↔ Bertha – Umsetzungsplan der Schnittstelle
 
-Stand: Oktober 2026 · Status: **Phasen W1, W2 und W3 umgesetzt**, B1 und W4 ff. offen
+Stand: Oktober 2026 · Status: **Phasen W1–W4 (Website) umgesetzt**, B1/B2 (Bertha) offen
 
 > Kurzfassung: Das Sortiment wird **einmal** gepflegt, in der
 > Website-Verwaltung (Artikel, Fotos, Bestellrunden). Bestellt wird an zwei
@@ -581,6 +581,25 @@ CREATE TABLE IF NOT EXISTS einstellungen ( name TEXT PRIMARY KEY, wert TEXT );
   beginnen, z. B. 60 Anfragen pro Minute je IP.
 - Schlüssel für Bertha in der Verwaltung unter **„Bertha"** anlegen: auf der
   echten Adresse beginnt er mit `kh_live_`, auf der Vorschau mit `kh_test_`.
+
+## 8b. Einrichtung Phase W4 (Stand Oktober 2026)
+
+- **Live-Datenbank:** einmal in der D1-Console (Spalte für den Nachweis der
+  Zustimmung, `migration-2026-10-schnittstelle.sql`):
+
+```sql
+ALTER TABLE extern_anfragen ADD COLUMN zustimmung TEXT; CREATE INDEX IF NOT EXISTS idx_extern_anfragen_bestellung ON extern_anfragen (bestellung_id);
+```
+
+  Die Test-Datenbank `kruckenhaus-test` ist schon umgestellt.
+- **Vor dem Freischalten** des Rechts „Fleisch bestellen" für den echten
+  Zugang: Datenschutzerklärung und Portal-Hinweis ergänzen (Abschnitt 5, nur
+  mit Freigabe) und Bestellbedingungen prüfen lassen.
+- Ergänzungen gegenüber Abschnitt 3: `/angebot` liefert je Termin zusätzlich
+  `text`, je Artikel `preis_je` (`kg`, `Stück`, `Paket`) und bei Gewichtsware
+  `ca_preis_je_stueck_cent`. Fehlercode `in_bearbeitung` (409): dieselbe
+  Anfrage läuft gerade noch – mit demselben Idempotency-Key wiederholen.
+  Wiederholte Antworten tragen den Header `Idempotent-Replayed: true`.
 
 ## 9. Tests
 

@@ -174,6 +174,7 @@ async function standLaden(db, bank = null) {
                   FROM bereiche b ORDER BY b.reihenfolge, b.id`),
     ])).map((r) => r.results);
 
+  const ueberBertha = await bestellungenUeberBertha(db, aktiv);
   const jePos = new Map();
   for (const p of positionen) {
     if (!jePos.has(p.bestellung_id)) jePos.set(p.bestellung_id, []);
@@ -207,6 +208,7 @@ async function standLaden(db, bank = null) {
       lieferadresse: b.lieferadresse || '', zahlart: b.zahlart, bezahlt: b.bezahlt_art || null,
       uebergeben: Boolean(b.uebergeben_am), anmerkung: b.anmerkung || '', interneNotiz: b.interne_notiz || '',
       neu: b.quelle === 'web' && !b.gesehen,
+      ueberBertha: ueberBertha.has(b.id),
       positionen: jePos.get(b.id) || [],
     })),
     bereiche: bereiche.map((b) => ({ id: id(b.id), name: b.name, produkte: b.produkte })),
@@ -672,6 +674,20 @@ async function eigeneFotos(db) {
    die ganze Verwaltung zu blockieren. Das Protokoll enthält keine
    personenbezogenen Daten.
    ------------------------------------------------------------ */
+// Bestellungen aus dem Bertha-Portal (stehen in extern_anfragen). Fehlt die
+// Tabelle noch, gibt es eben keine – die Verwaltung läuft weiter.
+async function bestellungenUeberBertha(db, aktiv) {
+  try {
+    const { results } = await db.prepare(
+      `SELECT DISTINCT ea.bestellung_id FROM extern_anfragen ea JOIN bestellungen b ON b.id = ea.bestellung_id
+       WHERE b.charge_id IN (${aktiv})`
+    ).all();
+    return new Set(results.map((r) => r.bestellung_id));
+  } catch {
+    return new Set();
+  }
+}
+
 async function schnittstelleStand(db) {
   try {
     const [zugaenge, letzterErfolg, fehler, heute] = (await db.batch([
