@@ -13,7 +13,7 @@
  * Ansichten (Adresse hinter #):
  *   uebersicht · bestellungen · neu · hofverkauf · uebergabe · voranmeldungen ·
  *   sortiment · bereiche · produkt (bearbeiten) · wiegen · zahlungen ·
- *   charge (bearbeiten) · charge-neu
+ *   charge (bearbeiten) · charge-neu · bertha (Verbindung zu Bertha)
  * Eine Bestellrunde heißt in der Datenbank „charge" (Tabelle chargen).
  * Die ständige Runde „Dauersortiment" (art 'dauer') hat keine Mengen und
  * keinen Bestellschluss; ihre Artikel kommen aus dem Sortiment
@@ -586,6 +586,7 @@ function ansichtUebersicht() {
         ${istDauer(ch) ? '' : mehr('<a href="#charge">Bestellrunde bearbeiten (Preise, Mengen, Termine)</a>')}
         ${mehr('<a href="#charge-neu">Neue Bestellrunde anlegen</a>')}
         ${mehr('<a href="#sortiment">Sortiment – Produkte anlegen und ändern</a>')}
+        ${mehr('<a href="#bertha">Verbindung zu Bertha (Eierkunden-Portal)</a>')}
         ${mehr('<button type="button" data-aktion="ankuendigung">Ankündigung für WhatsApp</button>')}
         ${mehr('<a href="#auswertung">Auswertung für die Buchhaltung (Jahr, Excel)</a>')}
         ${mehr('<button type="button" data-aktion="listen-drucken">Abhol- und Lieferlisten drucken (alle Tage)</button>')}
@@ -2280,6 +2281,143 @@ function bereichLoeschen(id) {
 }
 
 // Ohne Bestellrunde: freundlicher Hinweis statt leerer Ansichten
+// 5.10 Verbindung zu Bertha (Plan: docs/SCHNITTSTELLE-BERTHA.md, Abschnitt 6.1)
+// Bertha holt den Katalog etwa alle 15 Minuten. Ampel: grün, wenn der
+// letzte erfolgreiche Abruf höchstens eine Stunde her ist.
+const BERTHA_RECHTE = {
+  katalog: 'Dauerartikel lesen (Nudeln, Seife …)',
+  angebot: 'Fleischrunden lesen',
+  bestellen: 'Fleisch bestellen',
+};
+const BERTHA_FEHLER = {
+  nicht_angemeldet: 'Schlüssel falsch oder gesperrt',
+  keine_berechtigung: 'Recht fehlt',
+  pausiert: 'Schnittstelle war pausiert',
+  nicht_gefunden: 'unbekannter Aufruf',
+  methode: 'unbekannter Aufruf',
+  ungueltig: 'fehlerhafte Anfrage',
+  zu_viele: 'zu viele Anfragen',
+  intern: 'Fehler auf der Website',
+};
+let neuerSchluessel = null; // nur bis zum Verlassen der Ansicht sichtbar
+
+// D1-Zeit (UTC, „2026-10-13 08:15:00") → Minuten bis jetzt
+function minutenHer(sqlZeit) {
+  return Math.max(0, Math.round((Date.now() - new Date(`${String(sqlZeit).replace(' ', 'T')}Z`)) / 60000));
+}
+function herText(sqlZeit) {
+  const min = minutenHer(sqlZeit);
+  if (min < 1) return 'gerade eben';
+  if (min < 60) return `vor ${min} Minute${min === 1 ? '' : 'n'}`;
+  const std = Math.round(min / 60);
+  if (min < 48 * 60) return `vor ${std} Stunde${std === 1 ? '' : 'n'}`;
+  return `am ${zeitpunktKurz(sqlZeit)}`;
+}
+
+function ansichtBertha() {
+  const s = daten.schnittstelle;
+  if (!s) {
+    inhalt().innerHTML = `<div class="vw-kopf"><h1>Verbindung zu Bertha</h1></div>
+      <section class="vw-karte"><p>Die Schnittstelle ist noch nicht eingerichtet: Die Tabellen fehlen in der Datenbank.
+        Bitte den Block „Schnittstelle" aus docs/SCHNITTSTELLE-BERTHA.md einmal in der D1-Konsole ausführen.</p></section>`;
+    return;
+  }
+  const aktiv = s.zugaenge.filter((z) => !z.gesperrt);
+  let ampel;
+  if (s.pausiert) ampel = ['vw-ampel--rot', 'Schnittstelle pausiert – Bertha bekommt gerade keine Daten.'];
+  else if (!aktiv.length) ampel = ['vw-ampel--grau', 'Noch nicht verbunden – zuerst einen Schlüssel anlegen.'];
+  else if (!s.letzterErfolg) ampel = ['vw-ampel--grau', 'Schlüssel angelegt, Bertha hat aber noch nie abgerufen.'];
+  else if (minutenHer(s.letzterErfolg.zeitpunkt) <= 60) {
+    ampel = ['vw-ampel--gruen', `${esc(s.letzterErfolg.zugang || 'Bertha')} hat zuletzt ${herText(s.letzterErfolg.zeitpunkt)} abgerufen – alles in Ordnung.`];
+  } else ampel = ['vw-ampel--gelb', `Letzter Abruf ${herText(s.letzterErfolg.zeitpunkt)} – Bertha meldet sich gerade nicht.`];
+
+  inhalt().innerHTML = `
+    <div class="vw-kopf"><h1>Verbindung zu Bertha</h1>
+      <p class="vw-klein">Über diese Verbindung zeigt das Bertha-Kundenportal euren Eierkunden die Dauerartikel.
+        Gepflegt wird alles hier im Sortiment – Bertha liest nur.</p></div>
+    <section class="vw-karte vw-ampel ${ampel[0]}" aria-label="Zustand"><p><strong>${ampel[1]}</strong></p>
+      <p class="vw-klein">Letzte 24 Stunden: ${s.letzte24h.aufrufe} Abrufe${s.letzte24h.fehler ? `, davon ${s.letzte24h.fehler} mit Fehler` : ''}.</p>
+      ${s.fehler.length ? `<h2>Letzte Fehler (7 Tage)</h2><ul class="vw-bertha-fehler">${s.fehler.map((f) =>
+        `<li>${esc(zeitpunktKurz(f.zeitpunkt))} · ${esc(BERTHA_FEHLER[f.code] || `Fehler ${f.status}`)}${f.zugang ? ` · ${esc(f.zugang)}` : ''}
+          <span class="vw-klein">(${esc(f.aufruf)})</span></li>`).join('')}</ul>` : ''}
+    </section>
+    ${neuerSchluessel ? `<section class="vw-karte vw-schluessel" aria-label="Neuer Schlüssel">
+      <h2>Neuer Schlüssel für „${esc(neuerSchluessel.name)}"</h2>
+      <p><strong>Jetzt kopieren und in Bertha unter „Hofladen verbinden" einfügen.</strong>
+        Er wird nur dieses eine Mal angezeigt und nirgends gespeichert.</p>
+      <code class="vw-schluessel-text" id="vw-schluessel-text">${esc(neuerSchluessel.schluessel)}</code>
+      <div class="vw-knopfreihe">
+        <button type="button" class="vw-knopf vw-knopf--voll" data-aktion="schluessel-kopieren">Kopieren</button>
+        <button type="button" class="vw-knopf" data-aktion="schluessel-fertig">Fertig – ist eingetragen</button>
+      </div>
+      <p class="vw-klein">Nie per E-Mail oder WhatsApp verschicken. Den alten Schlüssel erst sperren, wenn „Verbindung testen" in Bertha mit dem neuen klappt.</p>
+    </section>` : ''}
+    <section class="vw-karte" aria-label="Schlüssel"><h2>Schlüssel</h2>
+      ${s.zugaenge.length ? s.zugaenge.map((z) => `<div class="vw-produkt-zeile${z.gesperrt ? ' vw-zeile--grau' : ''}">
+        <div><strong>${esc(z.name)}</strong>${z.gesperrt ? ' <span class="vw-marke">gesperrt</span>' : ''}<br>
+          <span class="vw-klein">${z.rechte.map((r) => esc(BERTHA_RECHTE[r] || r)).join(' · ')}<br>
+          angelegt ${esc(zeitpunktKurz(z.erstellt))} · ${z.zuletztGenutzt ? `zuletzt genutzt ${esc(herText(z.zuletztGenutzt))}` : 'noch nie genutzt'}</span></div>
+        ${z.gesperrt ? '' : `<div class="vw-knopfreihe vw-knopfreihe--klein">
+          <button type="button" class="vw-knopf vw-knopf--klein vw-knopf--warnung" data-aktion="zugang-sperren" data-id="${z.id}">Sperren</button></div>`}
+      </div>`).join('') : '<p class="vw-klein">Noch kein Schlüssel angelegt.</p>'}
+      <form id="vw-zugang-formular" class="vw-zugang-formular" novalidate>
+        <h3>Neuen Schlüssel anlegen</h3>
+        <label class="vw-feld"><span>Name</span><input name="name" value="Bertha" placeholder="z. B. Bertha oder Bertha Test" /></label>
+        <fieldset class="vw-feldgruppe"><legend>Was darf Bertha?</legend>
+          ${Object.entries(BERTHA_RECHTE).map(([wert, textRecht]) => `<label class="vw-haken">
+            <input type="checkbox" name="rechte" value="${wert}" ${wert === 'katalog' ? 'checked' : ''} /> ${esc(textRecht)}</label>`).join('')}
+          <p class="vw-klein">Fleisch lesen und bestellen kommt mit einem späteren Schritt dazu.</p>
+        </fieldset>
+        <button type="submit" class="vw-knopf vw-knopf--voll">Schlüssel anlegen</button>
+      </form>
+    </section>
+    <section class="vw-karte" aria-label="Not-Aus"><h2>Schnittstelle ${s.pausiert ? 'pausiert' : 'aktiv'}</h2>
+      <p class="vw-klein">Pausieren stoppt sofort alle Abrufe von Bertha. Die Website und eure Bestellungen laufen normal weiter.</p>
+      <button type="button" class="vw-knopf ${s.pausiert ? 'vw-knopf--voll' : 'vw-knopf--warnung'}" data-aktion="schnittstelle-pausieren"
+        data-wert="${s.pausiert ? '0' : '1'}">${s.pausiert ? 'Wieder einschalten' : 'Schnittstelle pausieren'}</button>
+    </section>`;
+}
+
+async function zugangAnlegenFormular(form) {
+  const name = feld(form, 'name').value.trim();
+  const rechte = [...form.querySelectorAll('input[name="rechte"]:checked')].map((x) => x.value);
+  if (!name) return meldung('Bitte einen Namen eintragen.');
+  if (!rechte.length) return meldung('Bitte mindestens ein Recht auswählen.');
+  const erg = await speichern('schnittstelle/zugang', { name, rechte }, () => {
+    daten.schnittstelle.zugaenge.unshift({ id: `z${Date.now()}`, name, rechte,
+      erstellt: new Date().toISOString().slice(0, 19).replace('T', ' '), zuletztGenutzt: null, gesperrt: null });
+    return { schluessel: 'kh_test_BEISPIEL-nur-im-Beispielmodus-nicht-gueltig' };
+  }, { neuZeichnen: false });
+  if (!erg) return;
+  neuerSchluessel = { name, schluessel: erg.schluessel };
+  zeigen();
+}
+
+async function schluesselKopieren() {
+  if (!neuerSchluessel) return;
+  try {
+    await navigator.clipboard.writeText(neuerSchluessel.schluessel);
+    meldung('Schlüssel kopiert.');
+  } catch {
+    // Ohne Zugriff auf die Zwischenablage: Text markieren, dann selbst kopieren
+    const el = document.getElementById('vw-schluessel-text');
+    if (el) window.getSelection().selectAllChildren(el);
+    meldung('Bitte den markierten Schlüssel selbst kopieren.');
+  }
+}
+
+function zugangSperren(id) {
+  const z = daten.schnittstelle.zugaenge.find((x) => x.id === id);
+  if (!z || !window.confirm(`Schlüssel „${z.name}" sperren? Bertha kann damit sofort nicht mehr abrufen.`)) return;
+  speichern(`schnittstelle/zugang/${id}/sperren`, {}, () => { z.gesperrt = new Date().toISOString(); return {}; },
+    { erfolg: `„${z.name}" ist gesperrt.` });
+}
+
+function schnittstellePausieren(pausiert) {
+  speichern('schnittstelle/pausieren', { pausiert }, () => { daten.schnittstelle.pausiert = pausiert; return {}; },
+    { erfolg: pausiert ? 'Schnittstelle pausiert.' : 'Schnittstelle wieder eingeschaltet.' });
+}
+
 function ansichtLeer() {
   inhalt().innerHTML = `
     <div class="vw-kopf"><h1>Hofladen</h1></div>
@@ -2611,9 +2749,10 @@ const ANSICHTEN = {
   produkt: ansichtProdukt,
   charge: () => ansichtCharge(false),
   'charge-neu': () => ansichtCharge(true),
+  bertha: ansichtBertha,
 };
 // Diese Ansichten funktionieren auch ohne laufende Bestellrunde
-const OHNE_CHARGE = ['voranmeldungen', 'charge-neu', 'sortiment', 'bereiche', 'produkt', 'auswertung'];
+const OHNE_CHARGE = ['voranmeldungen', 'charge-neu', 'sortiment', 'bereiche', 'produkt', 'auswertung', 'bertha'];
 
 function aktuelleAnsicht() {
   const name = location.hash.slice(1);
@@ -2637,6 +2776,8 @@ function zeigen() {
     hofverkauf: 'neu', abgabe: 'uebergabe', produkt: 'sortiment', bereiche: 'sortiment', wiegen: 'uebersicht', zahlungen: 'uebersicht',
     charge: 'uebersicht', 'charge-neu': 'uebersicht',
   }[name] || name;
+  // Neuer Schlüssel nur so lange sichtbar, bis die Ansicht verlassen wird
+  if (name !== 'bertha') neuerSchluessel = null;
   document.querySelectorAll('.vw-nav a[data-ansicht]').forEach((a) => {
     if (a.dataset.ansicht === menuepunkt) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
@@ -2862,6 +3003,19 @@ function initKlicks() {
       case 'produkt-aktiv':
         produktAktivUmschalten(produktVon(el.dataset.id));
         break;
+      case 'schluessel-kopieren':
+        schluesselKopieren();
+        break;
+      case 'schluessel-fertig':
+        neuerSchluessel = null;
+        zeigen();
+        break;
+      case 'zugang-sperren':
+        zugangSperren(el.dataset.id);
+        break;
+      case 'schnittstelle-pausieren':
+        schnittstellePausieren(el.dataset.wert === '1');
+        break;
       case 'produkt-verfuegbar':
         produktVerfuegbarUmschalten(produktVon(el.dataset.id));
         break;
@@ -2943,6 +3097,11 @@ function initEingaben() {
     if (id === 'vw-produkt-formular') {
       e.preventDefault();
       produktSpeichern(e.target);
+      return;
+    }
+    if (id === 'vw-zugang-formular') {
+      e.preventDefault();
+      zugangAnlegenFormular(e.target);
       return;
     }
     if (id === 'vw-bereich-neu' || e.target.classList.contains('vw-bereich-zeile')) {

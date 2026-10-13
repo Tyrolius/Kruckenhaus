@@ -42,3 +42,10 @@
   X-Robots-Tag: noindex, nofollow
   Referrer-Policy: no-referrer
   Cache-Control: no-store
+
+# Schnittstelle für Bertha (nur Server zu Server): nie cachen, nicht indexieren.
+# Die Functions setzen diese Header zusätzlich selbst – _headers gilt bei
+# Cloudflare Pages nur für statische Dateien.
+/api/extern/*
+  X-Robots-Tag: noindex, nofollow
+  Cache-Control: no-store

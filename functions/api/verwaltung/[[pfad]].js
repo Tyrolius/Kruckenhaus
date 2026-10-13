@@ -36,6 +36,11 @@
  *   POST /api/verwaltung/voranmeldung/<id>/absagen
  *   POST /api/verwaltung/voranmeldungen/uebernehmen
  *   POST /api/verwaltung/widerruf/<id>/erledigt   Widerruf als erledigt markieren
+ *   POST /api/verwaltung/schnittstelle/zugang     Schlüssel für Bertha anlegen ({ name, rechte })
+ *        – der Schlüssel steht nur in dieser einen Antwort
+ *   POST /api/verwaltung/schnittstelle/zugang/<id>/sperren
+ *   POST /api/verwaltung/schnittstelle/pausieren  Not-Aus ({ pausiert: true/false })
+ *        (Plan: docs/SCHNITTSTELLE-BERTHA.md, Abschnitt 6.1)
  *
  * POST nur mit Content-Type application/json – fremde Seiten können so
  * keine Änderungen im Namen eines angemeldeten Nutzers auslösen.
@@ -57,6 +62,7 @@ import {
 import {
   BETRIEB, mailHtml, absatz, klein, knopf, kasten, gruss, positionenHtml, terminText,
 } from '../../_lib/mail.js';
+import { RECHTE, rechteLesen, zugangAnlegen, zugangSperren, istPausiert, pausiertSetzen } from '../../_lib/extern.js';
 
 /* ------------------------------------------------------------
    1. EINGABEN PRÜFEN
@@ -205,6 +211,7 @@ async function standLaden(db, bank = null) {
     })),
     bereiche: bereiche.map((b) => ({ id: id(b.id), name: b.name, produkte: b.produkte })),
     eigeneFotos: await eigeneFotos(db),
+    schnittstelle: await schnittstelleStand(db),
     produkte: produkte.map((p) => ({
       id: id(p.id), name: p.name, art: p.art, bereichId: id(p.bereich), aktiv: Boolean(p.aktiv),
       richtVonG: p.richtgewicht_von_g, richtBisG: p.richtgewicht_bis_g, startpreisCent: p.startpreis_cent,
@@ -655,6 +662,63 @@ async function eigeneFotos(db) {
     return results.map((f) => `api/hofladen/foto/${f.id}`);
   } catch {
     return [];
+  }
+}
+
+/* ------------------------------------------------------------
+   4c1a. VERBINDUNG ZU BERTHA (Schnittstelle /api/extern/v1/)
+   Zugänge, letzte Abrufe und Fehler, Not-Aus. Fehlen die Tabellen noch
+   (schema-hofladen.sql nicht ausgeführt), bleibt der Bereich leer statt
+   die ganze Verwaltung zu blockieren. Das Protokoll enthält keine
+   personenbezogenen Daten.
+   ------------------------------------------------------------ */
+async function schnittstelleStand(db) {
+  try {
+    const [zugaenge, letzterErfolg, fehler, heute] = (await db.batch([
+      db.prepare(`SELECT id, name, rechte, erstellt_am, zuletzt_genutzt, gesperrt_am
+                  FROM schnittstellen_zugaenge ORDER BY gesperrt_am IS NOT NULL, id DESC`),
+      db.prepare(`SELECT p.zeitpunkt, z.name FROM schnittstellen_protokoll p
+                  LEFT JOIN schnittstellen_zugaenge z ON z.id = p.zugang_id
+                  WHERE p.http_status < 400 ORDER BY p.id DESC LIMIT 1`),
+      db.prepare(`SELECT p.zeitpunkt, p.aufruf, p.http_status, p.fehlercode, z.name FROM schnittstellen_protokoll p
+                  LEFT JOIN schnittstellen_zugaenge z ON z.id = p.zugang_id
+                  WHERE p.http_status >= 400 AND p.zeitpunkt >= datetime('now', '-7 days')
+                  ORDER BY p.id DESC LIMIT 10`),
+      db.prepare(`SELECT COUNT(*) AS aufrufe, SUM(http_status >= 400) AS fehler FROM schnittstellen_protokoll
+                  WHERE zeitpunkt >= datetime('now', '-1 day')`),
+    ])).map((r) => r.results);
+    return {
+      pausiert: await istPausiert(db),
+      zugaenge: zugaenge.map((z) => ({
+        id: id(z.id), name: z.name, rechte: rechteLesen(z.rechte), erstellt: z.erstellt_am,
+        zuletztGenutzt: z.zuletzt_genutzt, gesperrt: z.gesperrt_am,
+      })),
+      letzterErfolg: letzterErfolg[0] ? { zeitpunkt: letzterErfolg[0].zeitpunkt, zugang: letzterErfolg[0].name || '' } : null,
+      fehler: fehler.map((f) => ({
+        zeitpunkt: f.zeitpunkt, aufruf: f.aufruf, status: f.http_status, code: f.fehlercode || '', zugang: f.name || '',
+      })),
+      letzte24h: { aufrufe: heute[0].aufrufe || 0, fehler: heute[0].fehler || 0 },
+    };
+  } catch {
+    return null;
+  }
+}
+
+async function schnittstelleZugang(db, e, request) {
+  const name = text(e.name, 60);
+  if (!name) throw new EingabeFehler('Bitte einen Namen eintragen, z. B. „Bertha".');
+  const rechte = [...new Set((Array.isArray(e.rechte) ? e.rechte : []).map(String))];
+  if (!rechte.length || rechte.some((r) => !RECHTE[r])) throw new EingabeFehler('Bitte die Rechte auswählen.');
+  // Vorschau-Adressen (*.pages.dev) arbeiten mit der Test-Datenbank
+  const test = new URL(request.url).hostname.endsWith('.pages.dev');
+  try {
+    const z = await zugangAnlegen(db, { name, rechte, test });
+    return { zugangId: id(z.id), schluessel: z.schluessel };
+  } catch (fehler) {
+    if (/no such table/i.test(String(fehler && fehler.message))) {
+      throw new EingabeFehler('Die Schnittstelle ist noch nicht eingerichtet: Tabellen in der D1-Konsole anlegen.');
+    }
+    throw fehler;
   }
 }
 
@@ -1118,6 +1182,15 @@ export async function onRequest({ request, env, params, data }) {
         `UPDATE widerrufe SET status = 'erledigt', erledigt_am = datetime('now') WHERE id = ? AND status = 'offen'`
       ).bind(nummer(teilId, 'Widerruf')).run();
       if (!r.meta.changes) throw new EingabeFehler('Widerruf nicht gefunden oder schon erledigt.');
+      ergebnis = {};
+    } else if (bereich === 'schnittstelle' && teilId === 'zugang' && pfad.length === 2) {
+      ergebnis = await schnittstelleZugang(db, eingabe, request);
+    } else if (bereich === 'schnittstelle' && teilId === 'zugang' && pfad.length === 4 && pfad[3] === 'sperren') {
+      if (!(await zugangSperren(db, nummer(unteraktion, 'Zugang')))) throw new EingabeFehler('Zugang nicht gefunden oder schon gesperrt.');
+      ergebnis = {};
+    } else if (bereich === 'schnittstelle' && teilId === 'pausieren' && pfad.length === 2) {
+      if (typeof eingabe.pausiert !== 'boolean') throw new EingabeFehler('Ungültige Auswahl.');
+      await pausiertSetzen(db, eingabe.pausiert);
       ergebnis = {};
     } else if (bereich === 'voranmeldungen' && teilId === 'uebernehmen' && pfad.length === 2) {
       const erg = await voranmeldungenUebernehmen(db, nummer(eingabe.chargeId, 'Bestellrunde'), eingabe.ids || []);

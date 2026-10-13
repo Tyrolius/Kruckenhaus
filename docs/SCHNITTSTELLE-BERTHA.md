@@ -1,6 +1,6 @@
 # Hofladen ↔ Bertha – Umsetzungsplan der Schnittstelle
 
-Stand: Oktober 2026 · Status: **Phasen W1 und W2 umgesetzt**, W3 ff. offen
+Stand: Oktober 2026 · Status: **Phasen W1, W2 und W3 umgesetzt**, B1 und W4 ff. offen
 
 > Kurzfassung: Das Sortiment wird **einmal** gepflegt, in der
 > Website-Verwaltung (Artikel, Fotos, Bestellrunden). Bestellt wird an zwei
@@ -556,6 +556,31 @@ Für Bertha-Phasen den Plan als Datei ins Bertha-Repository mitnehmen und
 dort genauso beginnen.
 
 ---
+
+## 8a. Einrichtung Phase W3 (Stand Oktober 2026)
+
+- **Test-Datenbank** `kruckenhaus-test` ist angelegt und befüllt (Schema,
+  Produktkatalog, Tabelle `anfragen`). `wrangler.toml` bindet sie unter
+  `[env.preview]` für alle Vorschau-Adressen.
+- **Live-Datenbank:** einmal diesen Block in der D1-Console ausführen
+  (kommentarfrei, mehrfach ausführbar):
+
+```sql
+CREATE TABLE IF NOT EXISTS schnittstellen_zugaenge ( id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, schluessel_hash TEXT NOT NULL UNIQUE, rechte TEXT NOT NULL DEFAULT 'katalog', erstellt_am TEXT NOT NULL DEFAULT (datetime('now')), zuletzt_genutzt TEXT, gesperrt_am TEXT );
+CREATE TABLE IF NOT EXISTS extern_kunden ( zugang_id INTEGER NOT NULL REFERENCES schnittstellen_zugaenge (id), externe_id TEXT NOT NULL, kunde_id INTEGER NOT NULL REFERENCES kunden (id), erstellt_am TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (zugang_id, externe_id) );
+CREATE TABLE IF NOT EXISTS extern_anfragen ( zugang_id INTEGER NOT NULL REFERENCES schnittstellen_zugaenge (id), anfrage_id TEXT NOT NULL, bestellung_id INTEGER REFERENCES bestellungen (id), antwort TEXT, erstellt_am TEXT NOT NULL DEFAULT (datetime('now')), PRIMARY KEY (zugang_id, anfrage_id) );
+CREATE TABLE IF NOT EXISTS schnittstellen_protokoll ( id INTEGER PRIMARY KEY AUTOINCREMENT, zeitpunkt TEXT NOT NULL DEFAULT (datetime('now')), zugang_id INTEGER, aufruf TEXT NOT NULL, http_status INTEGER NOT NULL, fehlercode TEXT, dauer_ms INTEGER );
+CREATE INDEX IF NOT EXISTS idx_protokoll_zeitpunkt ON schnittstellen_protokoll (zeitpunkt);
+CREATE TABLE IF NOT EXISTS einstellungen ( name TEXT PRIMARY KEY, wert TEXT );
+```
+
+- **Cloudflare Access** prüfen: Die Access-App darf nur `/verwaltung/*` und
+  `/api/verwaltung/*` schützen, nicht `/api/extern/*`.
+- **Rate Limiting** (zweite Schranke, 4.4): im Dashboard unter Sicherheit →
+  WAF → Rate-Limiting-Regeln eine Regel für Pfade, die mit `/api/extern/`
+  beginnen, z. B. 60 Anfragen pro Minute je IP.
+- Schlüssel für Bertha in der Verwaltung unter **„Bertha"** anlegen: auf der
+  echten Adresse beginnt er mit `kh_live_`, auf der Vorschau mit `kh_test_`.
 
 ## 9. Tests
 

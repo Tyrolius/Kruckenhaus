@@ -482,3 +482,64 @@ CREATE TABLE IF NOT EXISTS produkt_fotos (
   groesse     INTEGER NOT NULL,           -- Bytes des JPEG
   erstellt_am TEXT    NOT NULL DEFAULT (datetime('now'))
 );
+
+
+-- ============================================================
+-- SCHNITTSTELLE FÜR BERTHA (/api/extern/v1/…)
+-- Plan: docs/SCHNITTSTELLE-BERTHA.md, Abschnitt 2.4 und 3
+-- Nur Server zu Server; der Schlüssel liegt nie in der Datenbank,
+-- sondern nur seine SHA-256-Prüfsumme (wie bei kunden_links).
+-- ============================================================
+
+-- Zugänge: wer die Schnittstelle nutzen darf (z. B. „Bertha", „Bertha Test")
+-- rechte: durch Komma getrennt, z. B. 'katalog,angebot,bestellen'
+-- Gesperrt = gesperrt_am gesetzt (wirkt sofort, ohne Deployment)
+CREATE TABLE IF NOT EXISTS schnittstellen_zugaenge (
+  id              INTEGER PRIMARY KEY AUTOINCREMENT,
+  name            TEXT    NOT NULL,
+  schluessel_hash TEXT    NOT NULL UNIQUE,
+  rechte          TEXT    NOT NULL DEFAULT 'katalog',
+  erstellt_am     TEXT    NOT NULL DEFAULT (datetime('now')),
+  zuletzt_genutzt TEXT,
+  gesperrt_am     TEXT
+);
+
+-- Zuordnung Bertha-Kunde ↔ Website-Kunde (ab Phase W4)
+-- externe_id: nicht sprechende Kennung aus Bertha, kein Name, keine E-Mail
+CREATE TABLE IF NOT EXISTS extern_kunden (
+  zugang_id   INTEGER NOT NULL REFERENCES schnittstellen_zugaenge (id),
+  externe_id  TEXT    NOT NULL,
+  kunde_id    INTEGER NOT NULL REFERENCES kunden (id),
+  erstellt_am TEXT    NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (zugang_id, externe_id)
+);
+
+-- Schutz vor Doppelbestellungen bei Wiederholung (Idempotency-Key, ab W4)
+CREATE TABLE IF NOT EXISTS extern_anfragen (
+  zugang_id     INTEGER NOT NULL REFERENCES schnittstellen_zugaenge (id),
+  anfrage_id    TEXT    NOT NULL,
+  bestellung_id INTEGER REFERENCES bestellungen (id),
+  antwort       TEXT,
+  erstellt_am   TEXT    NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (zugang_id, anfrage_id)
+);
+
+-- Protokoll OHNE personenbezogene Daten (keine Namen, E-Mails, Adressen,
+-- Bestellinhalte). Einträge älter als 90 Tage werden beim Schreiben gelöscht.
+CREATE TABLE IF NOT EXISTS schnittstellen_protokoll (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  zeitpunkt   TEXT    NOT NULL DEFAULT (datetime('now')),
+  zugang_id   INTEGER,             -- leer, wenn der Schlüssel nicht passte
+  aufruf      TEXT    NOT NULL,    -- z. B. 'GET /katalog'
+  http_status INTEGER NOT NULL,
+  fehlercode  TEXT,
+  dauer_ms    INTEGER
+);
+
+CREATE INDEX IF NOT EXISTS idx_protokoll_zeitpunkt ON schnittstellen_protokoll (zeitpunkt);
+
+-- Einfache Einstellungen, z. B. name 'schnittstelle_pausiert', wert '1'
+CREATE TABLE IF NOT EXISTS einstellungen (
+  name TEXT PRIMARY KEY,
+  wert TEXT
+);

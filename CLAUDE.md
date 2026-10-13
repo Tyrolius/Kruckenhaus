@@ -51,6 +51,8 @@ docs/SCHNITTSTELLE-BERTHA.md  Plan der Schnittstelle zu Bertha (Phasen W1–W4, 
 functions/_lib/hofladen.js gemeinsame Helfer der Hofladen-Functions (keine Route)
 functions/_lib/zugang.js   Prüfung der Cloudflare-Access-Anmeldung
 functions/_lib/mail.js     gemeinsame Mail-Vorlage (Logo, Absenderblock) + Nur-Text-Fassung
+functions/_lib/extern.js   Helfer der Schnittstelle für Bertha (Zugänge, Pausieren, Protokoll)
+functions/api/extern/      Schnittstelle für Bertha: _middleware.js (Schlüssel), v1/[[pfad]].js
 functions/api/verwaltung/  Schnittstelle der Verwaltung (_middleware.js = Zugang)
 verwaltung/                Hofladen-Verwaltung (inkl. Produktkatalog); ?entwurf = Beispielmodus
 hofladen.html + js/hofladen.js   Bestellseite mit Sortiment für Kunden (noch noindex und nicht verlinkt,
@@ -59,7 +61,7 @@ meine-bestellungen.html + js/meine-bestellungen.js   Ansicht zum persönlichen L
 functions/api/hofladen/    öffentliche Schnittstelle: Angebot, Bestellung, Voranmeldung, „meine"
 js/qrcode.js               Überweisungs-QR-Code (EPC-QR), eigener Kodierer ohne Bibliothek
 scripts/test-hofladen-*.mjs   Tests für Schema/Helfer, Verwaltung, Zugang, Bestellseite, QR-Code,
-                              Dauerartikel
+                              Dauerartikel; scripts/test-extern-api.mjs für die Bertha-Schnittstelle
                               (node, ohne echte D1)
 _headers                   Security- und Cache-Header
 wrangler.toml              Pages-Konfiguration inkl. D1-Binding (nicht löschen!)
@@ -180,7 +182,15 @@ Es gibt keine automatisierten Tests und keinen Linter.
   ausführbar), Plan in `docs/HOFLADEN-VORBESTELLUNG.md`. Nach Änderungen an
   Schema, `functions/_lib/` oder `functions/api/verwaltung/`:
   `node scripts/test-hofladen-db.mjs`, `…-api.mjs`, `…-zugang.mjs`, `…-oeffentlich.mjs`, `…-qr.mjs`,
-  `…-dauer.mjs`.
+  `…-dauer.mjs` und `node scripts/test-extern-api.mjs`.
+- Vorschau-Adressen (`*.pages.dev`) nutzen die Test-Datenbank `kruckenhaus-test`
+  (`[env.preview]` in `wrangler.toml`). Schemaänderungen dort ebenfalls einspielen;
+  `[vars]` immer in beiden Blöcken gleich halten.
+- Schnittstelle für Bertha (`/api/extern/v1/`): nur Server zu Server, keine
+  CORS-Header. Schlüssel nur als SHA-256-Prüfsumme in D1, nie speichern, loggen
+  oder in Beispiele schreiben. Prüfung in `_middleware.js` nie abschwächen
+  (ohne Tabellen: Fehler, nie ungeprüft). Protokoll ohne personenbezogene Daten.
+  Cloudflare Access darf `/api/extern/*` nicht abdecken.
 - Dauerartikel (Nudeln, Seife …): `produkte.verkaufsart = 'dauer'`, fester Preis,
   nur „verfügbar/ausverkauft". Bestellt wird über die eine ständige Runde
   `chargen.art = 'dauer'` („Dauersortiment"), deren Artikel

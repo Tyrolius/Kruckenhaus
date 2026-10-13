@@ -385,12 +385,12 @@ export async function voranmeldungenUebernehmen(db, chargeId, voranmeldungIds) {
    SHA-256-Prüfsumme. Der Schlüssel steht im Link hinter „#" und wird so
    nie in Server-Protokollen oder als Referrer übertragen.
    ------------------------------------------------------------ */
-async function sha256Hex(text) {
+export async function sha256Hex(text) {
   const bytes = new Uint8Array(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)));
   return [...bytes].map((b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-function zufallsSchluessel() {
+export function zufallsSchluessel() {
   const bytes = crypto.getRandomValues(new Uint8Array(32));
   return btoa(String.fromCharCode(...bytes)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }

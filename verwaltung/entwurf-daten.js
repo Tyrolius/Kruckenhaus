@@ -15,6 +15,19 @@ const ENTWURF_DATEN = {
   // (Vorschlag, wie in hofladen-produkte.sql). Andere Orte: nur Abholung.
   tourReihenfolge: ['Breitenbach am Inn', 'Kramsach', 'Brixlegg', 'Kundl'],
 
+  // Verbindung zu Bertha (erfundener Zustand, Zeitpunkte in UTC)
+  schnittstelle: {
+    pausiert: false,
+    zugaenge: [
+      { id: 'z1', name: 'Bertha', rechte: ['katalog'], erstellt: '2026-10-01 18:00:00', zuletztGenutzt: null, gesperrt: null },
+    ],
+    letzterErfolg: null,
+    fehler: [
+      { zeitpunkt: '2026-10-12 07:15:00', aufruf: 'GET /v1/katalog', status: 401, code: 'nicht_angemeldet', zugang: '' },
+    ],
+    letzte24h: { aufrufe: 0, fehler: 0 },
+  },
+
   // Bereiche des Sortiments (wie die Standard-Bereiche in schema-hofladen.sql)
   bereiche: [
     { id: 'b1', name: 'Fleisch' },
