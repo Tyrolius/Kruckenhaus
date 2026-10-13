@@ -89,7 +89,7 @@ function mbBestellung(b, bank) {
   return `<article class="hl-meine-bestellung${b.status === 'storniert' ? ' hl-meine-bestellung--grau' : ''}">
     <header><strong>${mbEsc(b.charge)}</strong><span class="form-hint">Nr. ${mbEsc(b.nummer)}</span></header>
     <div class="hl-marken">${marken.join('')}</div>
-    <p>${mbEsc(mbTermin(b.termin))}${b.lieferadresse && b.termin && b.termin.art === 'lieferung' ? `<br><small>${mbEsc(b.lieferadresse)}</small>` : ''}</p>
+    <p>${mbEsc(b.nachAbsprache ? 'Abholung am Hof nach Absprache – wir melden uns, sobald alles bereitliegt' : mbTermin(b.termin))}${b.lieferadresse && b.termin && b.termin.art === 'lieferung' ? `<br><small>${mbEsc(b.lieferadresse)}</small>` : ''}</p>
     <table class="hl-tabelle"><tbody>${zeilen}</tbody>
       <tfoot><tr><td>Summe</td><td class="hl-zahl">${b.geschaetzt ? 'ca. ' : ''}${mbEuro.format(b.summeCent / 100)}</td></tr></tfoot>
     </table>

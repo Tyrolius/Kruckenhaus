@@ -106,7 +106,8 @@ const kundeVon = (b) => daten.kunden.find((k) => k.id === b.kundeId);
 const artikelVon = (ch, id) => ch.artikel.find((a) => a.id === id);
 // Übernommene Voranmeldungen haben anfangs keinen Termin (null)
 const terminVon = (b) => chargeVon(b).termine.find((t) => t.id === b.terminId) || null;
-const terminArt = (b) => (terminVon(b) ? terminVon(b).art : null);
+// Dauersortiment ohne Termin: Abholung am Hof nach Absprache
+const terminArt = (b) => (terminVon(b) ? terminVon(b).art : istDauer(chargeVon(b)) ? 'abholung' : null);
 const produktVon = (id) => daten.produkte.find((p) => p.id === id);
 const bestellungVon = (id) => daten.bestellungen.find((b) => b.id === id);
 
@@ -118,7 +119,7 @@ const istDauer = (ch) => Boolean(ch && ch.art === 'dauer');
 // Verkauf am Hof ohne Vorbestellung: kein Termin, gleich übergeben
 const istHofverkauf = (b) => !b.terminId && b.interneNotiz === 'Verkauf am Hof';
 // Ohne Termin und noch zu klären (übernommene Voranmeldungen)
-const ohneTerminOffen = (b) => istAktiv(b) && !terminVon(b) && !istHofverkauf(b);
+const ohneTerminOffen = (b) => istAktiv(b) && !terminVon(b) && !istHofverkauf(b) && !istDauer(chargeVon(b));
 
 function bestellteMenge(ch, artikelId) {
   return bestellungenDerCharge(ch)
@@ -368,6 +369,10 @@ const vorname = (k) => k.name.split(' ')[0];
 function bereitText(b) {
   const k = kundeVon(b);
   const t = terminVon(b);
+  if (!t && istDauer(chargeVon(b))) {
+    return `Hallo ${vorname(k)}, eure Bestellung ${b.nummer} liegt bereit: ${artikelKurz(b)}. `
+      + `Betrag: ${betragText(bestellBetrag(b))}. Wann passt es euch, sie bei uns am Hof abzuholen? Liebe Grüße, Kathrin & Florian`;
+  }
   if (!t) return bestaetigungText(b);
   const wann = t.art === 'abholung'
     ? `Ihr könnt sie am ${datumKurz(t.datum)} zwischen ${uhrzeit(t.von)} und ${uhrzeit(t.bis)} Uhr bei uns am Hof abholen.`
@@ -2518,7 +2523,7 @@ function terminListeHtml(ch, t, bestellungen) {
     </tr>`;
   }).join('');
   return `<section class="vw-druckliste">
-    <h2>${t ? esc(terminText(t)) : 'Ohne Termin'} – ${esc(ch.titel)}</h2>
+    <h2>${t ? esc(terminText(t)) : istDauer(ch) ? 'Abholung nach Absprache' : 'Ohne Termin'} – ${esc(ch.titel)}</h2>
     <p class="vw-druck-klein">${liste.length} Bestellungen · Herrichten: ${summen.map(([a, n]) => `${n}× ${esc(a.name)}`).join(' · ')}</p>
     <table class="vw-druck-tabelle">
       <thead><tr><th>${lieferung ? 'Nr.' : '✓'}</th><th>Kunde</th><th>Artikel (Gewichte je Stück eintragen)</th><th>Betrag</th><th>Zahlung</th></tr></thead>
@@ -2541,7 +2546,8 @@ function listenDrucken(nurAuswahl) {
     .filter(([, liste]) => liste.length)
     .map(([t, liste]) => terminListeHtml(ch, t, liste));
   const ohne = offen.filter((b) => !b.terminId);
-  if (!nurAuswahl && ohne.length) teile.push(terminListeHtml(ch, null, ohne));
+  // Dauersortiment: alles ohne Termin gehört auf die Abholliste
+  if ((!nurAuswahl || istDauer(ch)) && ohne.length) teile.push(terminListeHtml(ch, null, ohne));
   if (!teile.length) return meldung('Keine offenen Bestellungen zum Drucken.');
   druck.innerHTML = teile.join('');
   window.print();

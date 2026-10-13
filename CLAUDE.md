@@ -185,9 +185,13 @@ Es gibt keine automatisierten Tests und keinen Linter.
   nur „verfügbar/ausverkauft". Bestellt wird über die eine ständige Runde
   `chargen.art = 'dauer'` („Dauersortiment"), deren Artikel
   `dauersortimentAbgleichen()` aus dem Sortiment bildet – nie von Hand anlegen,
-  keine Mengenprüfung dort. Auf `hofladen.html` erst ab Phase W2
-  (`docs/SCHNITTSTELLE-BERTHA.md`). Vor jeder Migration sichern:
-  `npx wrangler d1 export kruckenhaus --remote --output=sicherung.sql`.
+  keine Mengenprüfung dort. Auf `hofladen.html` als „Immer erhältlich":
+  ohne Termin, Abholung am Hof nach Absprache; nicht vormerkbar
+  (`docs/SCHNITTSTELLE-BERTHA.md`, Phase W2). Vor jeder Migration sichern:
+  `npx wrangler d1 export kruckenhaus --remote --output=sicherung.sql`
+  (oder `/bookmark` in der D1-Console). Die D1-Console im Dashboard nimmt nur
+  eine Zeile: SQL-Dateien mit `--`-Kommentaren dort nicht einfügen, sondern
+  eine kommentarfreie Fassung der nötigen Anweisungen geben.
 - Überweisungs-QR-Code nur mit genauem Betrag (alles gewogen, nicht bezahlt).
   Bankdaten nur aus den Secrets `BANK_*` (`bankAusEnv`), nie ins Repository.
 - Persönliche Links „Meine Bestellungen": Schlüssel nur hinter `#` in der

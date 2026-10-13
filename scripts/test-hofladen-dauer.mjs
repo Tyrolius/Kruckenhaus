@@ -6,6 +6,8 @@
  * Runde ohne Mengenprüfung, Schnell-Schalter „ausverkauft", Schutz der
  * ständigen Runde vor Bearbeiten/Abschließen. Bestehende Bestellrunden
  * dürfen sich dabei nicht verändern.
+ * Phase W2: Dauersortiment im Angebot von hofladen.html, Bestellung ohne
+ * Termin (Abholung nach Absprache), keine Voranmeldung für Dauerartikel.
  *
  * Berührt die echte D1-Datenbank NICHT.
  *
@@ -119,8 +121,8 @@ r = ok(await api('POST', 'bestellung', {
 assert.equal(r.bestellung.status, 'vorgemerkt');
 const b1 = r.bestellung.id;
 const kunde = roh.prepare('SELECT kunde_id FROM bestellungen WHERE id = ?').get(b1).kunde_id;
-const web = await bestellungAnlegen(db, { chargeId: dauer.id, kundeId: kunde, positionen: [{ chargeArtikelId: spArtikel, menge: 20 }] });
-assert.equal(web.status, 'vorgemerkt', 'nie Warteliste im Dauersortiment');
+const ohneMenge = await bestellungAnlegen(db, { chargeId: dauer.id, kundeId: kunde, positionen: [{ chargeArtikelId: spArtikel, menge: 20 }] });
+assert.equal(ohneMenge.status, 'vorgemerkt', 'nie Warteliste im Dauersortiment');
 ok(await api('POST', `bestellung/${b1}`, { aktion: 'position', artikelId: spArtikel, menge: 60 }));
 const lavArtikel = dauerArtikel.find((a) => a.produkt_id === lavendel).id;
 ok(await api('POST', `bestellung/${b1}`, { aktion: 'position', artikelId: lavArtikel, menge: 3 }));
@@ -185,11 +187,101 @@ assert.equal(roh.prepare('SELECT im_portal FROM chargen WHERE id = ?').get(runde
 assert.equal((await preisVorschlaege(db)).find((v) => v.produktId === spirelli.id).preisCent, 380);
 console.log('✓ Normale Bestellrunde: Kontingent und Warteliste unverändert, „im Portal" umschaltbar');
 
-// Öffentliche Seite: Dauersortiment erst ab Phase W2
-const anfrage = new Request('https://www.kruckenhaus.at/api/hofladen/angebot');
-const angebot = await (await oeffentlich({ request: anfrage, env, params: { pfad: ['angebot'] } })).json();
-assert.equal(angebot.ok, true);
-assert.deepEqual(angebot.chargen.map((c) => c.titel), ['Masthühner Herbst']);
-console.log('✓ hofladen.html zeigt das Dauersortiment noch nicht');
+// ------------------------------------------------------------
+// Phase W2: Dauersortiment auf hofladen.html bestellen
+// ------------------------------------------------------------
+const mails = [];
+globalThis.fetch = async (url, optionen) => {
+  assert.equal(url, 'https://api.resend.com/emails');
+  mails.push(JSON.parse(optionen.body));
+  return new Response('{}', { status: 200 });
+};
+const envWeb = { DB: db, RESEND_API_KEY: 'test', CONTACT_TO: 'hof@example.at' };
+async function web(methode, pfad, eingabe, kopf = {}) {
+  const request = new Request(`https://www.kruckenhaus.at/api/hofladen/${pfad}`, {
+    method: methode,
+    headers: { ...(eingabe ? { 'Content-Type': 'application/json' } : {}), ...kopf },
+    body: eingabe ? JSON.stringify(eingabe) : undefined,
+  });
+  const antwort = await oeffentlich({ request, env: envWeb, params: { pfad: pfad.split('/') } });
+  return { status: antwort.status, ...(await antwort.json()) };
+}
+
+// Seife wieder als Dauerartikel, aber ausverkauft; Lavendel ist inzwischen „Bestellrunde"
+ok(await api('POST', `produkt/${seife.id}`, {
+  name: seife.name, art: 'stueck', bereichId: seife.bereich_id, verkaufsart: 'dauer', dauerpreisCent: 450, verfuegbar: false,
+}));
+let angebot = ok(await web('GET', 'angebot'));
+assert.deepEqual(angebot.chargen.map((c) => c.titel), ['Masthühner Herbst'], 'Dauersortiment nicht unter den Bestellrunden');
+assert.equal(angebot.dauer.id, dauer.id);
+assert.deepEqual(angebot.dauer.artikel.map((a) => [a.name, a.preisCent, a.verfuegbar]).sort(),
+  [['Alpakaseife', 450, false], ['Eiernudeln Spirelli 500 g', 450, true]]);
+assert.ok(angebot.dauer.artikel.every((a) => !('frei' in a)), 'keine Mengen nach außen');
+assert.equal(angebot.produkte.find((p) => p.id === spirelli.id).dauer, true);
+assert.equal(angebot.produkte.find((p) => p.id === huhn).dauer, false);
+console.log('✓ Angebot: Dauersortiment eigens, nur Dauerartikel, ausverkauft sichtbar, ohne Mengen');
+
+// Ausgeblendeter Dauerartikel verschwindet aus dem Angebot
+ok(await api('POST', `produkt/${seife.id}`, {
+  name: seife.name, art: 'stueck', bereichId: seife.bereich_id, verkaufsart: 'dauer', dauerpreisCent: 450, verfuegbar: false, aktiv: false,
+}));
+angebot = ok(await web('GET', 'angebot'));
+assert.deepEqual(angebot.dauer.artikel.map((a) => a.name), ['Eiernudeln Spirelli 500 g']);
+console.log('✓ Ausgeblendete Dauerartikel erscheinen nicht');
+
+const kontakt = { name: 'Lisa Test', email: 'lisa@example.at', telefon: '+43 660 123456', zustimmung: true };
+const seifeArtikel = roh.prepare('SELECT id FROM charge_artikel WHERE charge_id = ? AND produkt_id = ?').get(dauer.id, seife.id).id;
+
+// Bestellen ohne Termin
+r = ok(await web('POST', 'bestellung', {
+  ...kontakt, chargeId: dauer.id, zahlart: 'ueberweisung', anmerkung: 'Samstag wäre fein',
+  positionen: [{ artikelId: spArtikel, menge: 4 }],
+}));
+assert.equal(r.status, 'vorgemerkt');
+const webBestellung = roh.prepare('SELECT * FROM bestellungen WHERE nummer = ?').get(r.nummer);
+assert.deepEqual([webBestellung.termin_id, webBestellung.quelle, webBestellung.zahlart, webBestellung.lieferadresse],
+  [null, 'web', 'ueberweisung', null]);
+assert.equal(mails.length, 2);
+assert.match(mails[0].html, /nach Absprache/);
+assert.match(mails[1].html, /nach Absprache/);
+assert.match(mails[0].html, /Eiernudeln Spirelli/);
+console.log('✓ Bestellung ohne Termin: Abholung nach Absprache, Mails an Kunde und Hof');
+
+// Ein Termin wird beim Dauersortiment ignoriert (kein fremder Termin)
+const fremderTermin = roh.prepare('SELECT id FROM termine LIMIT 1').get();
+if (fremderTermin) {
+  r = ok(await web('POST', 'bestellung', { ...kontakt, chargeId: dauer.id, terminId: fremderTermin.id, positionen: [{ artikelId: spArtikel, menge: 1 }] }));
+  assert.equal(roh.prepare('SELECT termin_id FROM bestellungen WHERE nummer = ?').get(r.nummer).termin_id, null);
+}
+
+// Ausverkauft, ausgeblendet, fremder Artikel → abgelehnt
+ok(await api('POST', `produkt/${spirelli.id}/verfuegbar`, { verfuegbar: false }));
+r = await web('POST', 'bestellung', { ...kontakt, chargeId: dauer.id, positionen: [{ artikelId: spArtikel, menge: 1 }] });
+assert.deepEqual([r.status, r.ok], [400, false]);
+assert.match(r.error, /ausverkauft/);
+r = await web('POST', 'bestellung', { ...kontakt, chargeId: dauer.id, positionen: [{ artikelId: seifeArtikel, menge: 1 }] });
+assert.match(r.error, /ausverkauft/);
+r = await web('POST', 'bestellung', { ...kontakt, chargeId: dauer.id, positionen: [{ artikelId: rundeArtikel, menge: 1 }] });
+assert.match(r.error, /gehört nicht/);
+ok(await api('POST', `produkt/${spirelli.id}/verfuegbar`, { verfuegbar: true }));
+console.log('✓ Ausverkauftes, Ausgeblendetes und fremde Artikel werden abgelehnt');
+
+// Normale Bestellrunde braucht weiter einen Termin
+r = await web('POST', 'bestellung', { ...kontakt, chargeId: rundeId, positionen: [{ artikelId: rundeArtikel, menge: 1 }] });
+assert.match(r.error, /termin/i);
+console.log('✓ Bestellrunden verlangen weiterhin einen Termin');
+
+// Vormerken nur für Bestellrunden-Ware
+r = await web('POST', 'voranmeldung', { ...kontakt, produktId: spirelli.id, menge: 2, zeitraum: 'naechste' });
+assert.equal(r.status, 400);
+ok(await web('POST', 'voranmeldung', { ...kontakt, produktId: huhn, menge: 2, zeitraum: 'naechste' }));
+console.log('✓ Dauerartikel lassen sich nicht vormerken');
+
+// „Meine Bestellungen": Abholung nach Absprache
+const link = mails.find((m) => m.to === kontakt.email).html.match(/meine-bestellungen\.html#([A-Za-z0-9_-]+)/)[1];
+const meine = ok(await web('GET', 'meine', null, { 'X-Link-Schluessel': link }));
+const eintrag = meine.bestellungen.find((b) => b.nummer === webBestellung.nummer);
+assert.deepEqual([eintrag.termin, eintrag.nachAbsprache, eintrag.summeCent], [null, true, 1800]);
+console.log('✓ Meine Bestellungen zeigt „nach Absprache" und den genauen Betrag');
 
 console.log('\nAlle Tests der Dauerartikel bestanden.');

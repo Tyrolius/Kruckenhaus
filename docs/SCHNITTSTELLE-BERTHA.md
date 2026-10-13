@@ -1,6 +1,6 @@
 # Hofladen ↔ Bertha – Umsetzungsplan der Schnittstelle
 
-Stand: Oktober 2026 · Status: **Phase W1 (Dauerartikel) umgesetzt**, W2 ff. offen
+Stand: Oktober 2026 · Status: **Phasen W1 und W2 umgesetzt**, W3 ff. offen
 
 > Kurzfassung: Das Sortiment wird **einmal** gepflegt, in der
 > Website-Verwaltung (Artikel, Fotos, Bestellrunden). Bestellt wird an zwei
@@ -582,8 +582,8 @@ Test-Datenbank.
 
 | # | Frage | Vorschlag | nötig für |
 |---|---|---|---|
-| 1 | Dauerartikel-Bestellung über die **Website**: Abholung zu festen Zeiten oder nach Absprache? | nach Absprache: Hof meldet sich, wenn es fertig ist (WhatsApp-Knopf) | W2 |
-| 2 | Dürfen Dauerartikel bei einer **Fleischbestellung** mit (Abholung/Zustellung)? | ja, wie heute als Zusatzartikel in der Bestellrunde | W2 |
+| 1 | ~~Dauerartikel-Bestellung über die **Website**: Abholung zu festen Zeiten oder nach Absprache?~~ | **entschieden:** nach Absprache, Hof meldet sich, wenn es fertig ist (WhatsApp-Knopf) | W2 ✓ |
+| 2 | ~~Dürfen Dauerartikel bei einer **Fleischbestellung** mit (Abholung/Zustellung)?~~ | **ja**, wie bisher als Zusatzartikel in der Bestellrunde (mit Menge) | W2 ✓ |
 | 3 | Bezahlung von Fleisch aus dem Portal | wie auf der Website (bar / Überweisung mit QR-Code), getrennt von der Eier-Monatsaufstellung | W4 |
 | 4 | Bekommen Eierkunden den **Stammkunden-Vorlauf** bei Fleischrunden? | später entscheiden; technisch einfach (Recht für Runden mit Status `stammkunden`) | später |
 | 5 | Bestellschluss für Dauerartikel im Portal vor einer Eierlieferung? | z. B. Vortag 18 Uhr, je Organisation einstellbar | B1 |
