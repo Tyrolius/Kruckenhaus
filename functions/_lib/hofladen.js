@@ -125,6 +125,11 @@ export const SQL_ALS_GESEHEN =
 
 export class EingabeFehler extends Error {}
 
+// Herkunft und USt-Satz je Produkt (Auswertung für Finanzamt und SVS).
+// USt-Sätze bei Regelbesteuerung (Option); NULL = noch nicht eingestuft.
+export const HERKUNFT = { urprodukt: 'Urprodukt', verarbeitung: 'Be- und Verarbeitung', zukauf: 'Zukauf (Handelsware)' };
+export const UST_SAETZE = [4.9, 10, 13, 20];
+
 /**
  * Legt eine Bestellung samt Positionen an.
  * @param {D1Database} db
@@ -187,11 +192,13 @@ export async function bestellungAnlegen(db, b, optionen = {}) {
       b.terminId ?? null, b.lieferadresse || null, b.zahlart || 'bar',
       b.liefergebuehrCent || 0, b.anmerkung || null, b.interneNotiz || null
     ),
-    // Einzelpreis zum Bestellzeitpunkt aus der Bestellrunde übernehmen
+    // Einzelpreis zum Bestellzeitpunkt aus der Bestellrunde übernehmen,
+    // Herkunft und USt-Satz aus dem Produkt (bleiben fest wie der Preis)
     ...positionen.map((p) => db.prepare(
-      `INSERT INTO bestell_positionen (bestellung_id, charge_artikel_id, menge, einzelpreis_cent)
-       SELECT b.id, ca.id, ?, ca.preis_cent
+      `INSERT INTO bestell_positionen (bestellung_id, charge_artikel_id, menge, einzelpreis_cent, herkunft, ust_satz)
+       SELECT b.id, ca.id, ?, ca.preis_cent, pr.herkunft, pr.ust_satz
        FROM bestellungen b JOIN charge_artikel ca ON ca.charge_id = b.charge_id
+       JOIN produkte pr ON pr.id = ca.produkt_id
        WHERE b.nummer = ? AND ca.id = ?`
     ).bind(p.menge, nummer, p.chargeArtikelId)),
     db.prepare(SQL_UEBERBUCHT_ZUR_WARTELISTE).bind(nummer),

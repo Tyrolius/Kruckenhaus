@@ -57,7 +57,7 @@ import {
   json, EingabeFehler, ZEITRAEUME, istGueltigeEmail,
   bestellungAnlegen, bestellungNachruecken, preisVorschlaege, dauersortimentAbgleichen,
   voranmeldungAnlegen, voranmeldungenUebernehmen, bankAusEnv, SQL_ALS_GESEHEN,
-  kundenLinkErstellen, mailSenden, escapeHtml,
+  kundenLinkErstellen, mailSenden, escapeHtml, HERKUNFT, UST_SAETZE,
 } from '../../_lib/hofladen.js';
 import {
   BETRIEB, mailHtml, absatz, klein, knopf, kasten, gruss, positionenHtml, terminText,
@@ -162,7 +162,7 @@ async function standLaden(db, bank = null) {
                   FROM kunden k LEFT JOIN tour_reihenfolge t ON t.kunde_id = k.id ORDER BY k.name`),
       db.prepare(`SELECT p.id, p.name, p.art, p.bereich, p.richtgewicht_von_g, p.richtgewicht_bis_g, p.startpreis_cent,
                          p.aktiv, p.beschreibung, p.pflichtangaben, p.allergene, p.bild,
-                         p.verkaufsart, p.dauerpreis_cent, p.verfuegbar, p.im_portal,
+                         p.verkaufsart, p.dauerpreis_cent, p.verfuegbar, p.im_portal, p.herkunft, p.ust_satz,
                          EXISTS (SELECT 1 FROM charge_artikel ca WHERE ca.produkt_id = p.id) AS verwendet
                   FROM v_produkte p ORDER BY p.bereich_reihenfolge, p.reihenfolge, p.name`),
       db.prepare(`SELECT id, kunde_id, produkt_id, menge, zeitraum, jahr, quelle, status, notiz, erstellt_am
@@ -220,8 +220,9 @@ async function standLaden(db, bank = null) {
       beschreibung: p.beschreibung || '', pflichtangaben: p.pflichtangaben || '', allergene: p.allergene || '',
       bild: p.bild || '', verwendet: Boolean(p.verwendet),
       verkaufsart: p.verkaufsart, dauerpreisCent: p.dauerpreis_cent, verfuegbar: Boolean(p.verfuegbar),
-      imPortal: Boolean(p.im_portal),
+      imPortal: Boolean(p.im_portal), herkunft: p.herkunft || null, ustSatz: p.ust_satz ?? null,
     })),
+    ustSaetze: UST_SAETZE,
     voranmeldungen: voranmeldungen.map((v) => ({
       id: id(v.id), kundeId: id(v.kunde_id), produktId: id(v.produkt_id), menge: v.menge,
       zeitraum: v.zeitraum, jahr: v.jahr, quelle: v.quelle, status: v.status, notiz: v.notiz || '',
@@ -400,8 +401,9 @@ async function positionSetzen(db, bid, e) {
     if (!r.meta.changes) throw new EingabeFehler(`Nicht genug frei – noch ${Math.max(0, await frei())} verfügbar.`);
   } else {
     r = await db.prepare(
-      `INSERT INTO bestell_positionen (bestellung_id, charge_artikel_id, menge, einzelpreis_cent)
-       SELECT ?1, ca.id, ?2, ca.preis_cent FROM charge_artikel ca
+      `INSERT INTO bestell_positionen (bestellung_id, charge_artikel_id, menge, einzelpreis_cent, herkunft, ust_satz)
+       SELECT ?1, ca.id, ?2, ca.preis_cent, pr.herkunft, pr.ust_satz
+       FROM charge_artikel ca JOIN produkte pr ON pr.id = ca.produkt_id
        WHERE ca.id = ?3 AND ?2 <= ${SQL_FREI}`
     ).bind(bid, menge, artikelId).run();
     if (!r.meta.changes) throw new EingabeFehler(`Nicht genug frei – noch ${Math.max(0, await frei())} verfügbar.`);
@@ -519,6 +521,14 @@ async function tourSpeichern(db, e) {
    „Dauersortiment" abgeglichen. geaendert_am wird bei jeder Änderung
    gesetzt (Abgleich mit Bertha, docs/SCHNITTSTELLE-BERTHA.md).
    ------------------------------------------------------------ */
+// USt-Satz: leer = nicht eingestuft, sonst einer der Sätze aus UST_SAETZE
+function ustSatzPruefen(wert) {
+  if (wert === null || wert === undefined || wert === '') return null;
+  const satz = Number(wert);
+  if (!UST_SAETZE.includes(satz)) throw new EingabeFehler('Bitte einen gültigen USt-Satz wählen.');
+  return satz;
+}
+
 function produktPruefen(e) {
   const name = text(e.name, 120);
   if (!name) throw new EingabeFehler('Bitte einen Namen eintragen.');
@@ -537,6 +547,8 @@ function produktPruefen(e) {
     dauerpreisCent: ganzzahl(e.dauerpreisCent, 'Preis', { max: 10000000, leer: true }),
     verfuegbar: e.verfuegbar === false ? 0 : 1,
     imPortal: e.imPortal === false ? 0 : 1,
+    herkunft: e.herkunft ? auswahl(e.herkunft, Object.keys(HERKUNFT), 'Herkunft') : null,
+    ustSatz: ustSatzPruefen(e.ustSatz),
     richtVonG: null,
     richtBisG: null,
   };
@@ -572,13 +584,13 @@ async function produktAnlegen(db, e) {
   const zeile = await db.prepare(
     `INSERT INTO produkte (name, art, kategorie, bereich_id, startpreis_cent, beschreibung, pflichtangaben, allergene,
                            bild, richtgewicht_von_g, richtgewicht_bis_g, aktiv, verkaufsart, dauerpreis_cent,
-                           verfuegbar, im_portal, geaendert_am, reihenfolge)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'),
+                           verfuegbar, im_portal, herkunft, ust_satz, geaendert_am, reihenfolge)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'),
              (SELECT COALESCE(MAX(reihenfolge), 0) + 10 FROM v_produkte WHERE bereich = ?))
      RETURNING id`
   ).bind(p.name, p.art, kategorie, p.bereichId, p.startpreisCent, p.beschreibung, p.pflichtangaben, p.allergene,
     p.bild, p.richtVonG, p.richtBisG, p.aktiv, p.verkaufsart, p.dauerpreisCent, p.verfuegbar, p.imPortal,
-    p.bereichId).first();
+    p.herkunft, p.ustSatz, p.bereichId).first();
   if (p.verkaufsart === 'dauer') await dauersortimentAbgleichen(db);
   return { produktId: id(zeile.id) };
 }
@@ -599,10 +611,12 @@ async function produktBearbeiten(db, produktId, e) {
   await db.prepare(
     `UPDATE produkte SET name = ?, art = ?, kategorie = ?, bereich_id = ?, startpreis_cent = ?, beschreibung = ?,
             pflichtangaben = ?, allergene = ?, bild = ?, richtgewicht_von_g = ?, richtgewicht_bis_g = ?, aktiv = ?,
-            verkaufsart = ?, dauerpreis_cent = ?, verfuegbar = ?, im_portal = ?, geaendert_am = datetime('now')
+            verkaufsart = ?, dauerpreis_cent = ?, verfuegbar = ?, im_portal = ?, herkunft = ?, ust_satz = ?,
+            geaendert_am = datetime('now')
      WHERE id = ?`
   ).bind(p.name, p.art, kategorie, p.bereichId, p.startpreisCent, p.beschreibung, p.pflichtangaben, p.allergene,
-    p.bild, p.richtVonG, p.richtBisG, p.aktiv, p.verkaufsart, p.dauerpreisCent, p.verfuegbar, p.imPortal, pid).run();
+    p.bild, p.richtVonG, p.richtBisG, p.aktiv, p.verkaufsart, p.dauerpreisCent, p.verfuegbar, p.imPortal,
+    p.herkunft, p.ustSatz, pid).run();
   if (p.verkaufsart === 'dauer' || alt.verkaufsart === 'dauer') await dauersortimentAbgleichen(db);
   return { produktId: id(pid) };
 }
@@ -1080,7 +1094,7 @@ async function auswertung(db, jahrText) {
                 WHERE b.status = 'vorgemerkt' AND substr(b.uebergeben_am, 1, 4) = ?
                 ORDER BY b.uebergeben_am, b.id`).bind(jahr),
     db.prepare(`SELECT v.bestellung_id, v.produkt_name, v.art, v.menge, v.gewicht_g, v.betrag_cent,
-                       p.bereich_name, p.bereich_reihenfolge
+                       v.herkunft, v.ust_satz, p.bereich_name, p.bereich_reihenfolge
                 FROM v_positionen v JOIN v_produkte p ON p.id = v.produkt_id
                 JOIN bestellungen b ON b.id = v.bestellung_id
                 WHERE b.status = 'vorgemerkt' AND substr(b.uebergeben_am, 1, 4) = ?
@@ -1102,6 +1116,7 @@ async function auswertung(db, jahrText) {
       produkt: p.produkt_name, bereich: p.bereich_name || 'Ohne Bereich', bereichRang: p.bereich_reihenfolge ?? 9999,
       art: p.art, menge: p.menge,
       gewichtG: p.gewicht_g ?? null, cent: p.betrag_cent,
+      herkunft: p.herkunft || null, ustSatz: p.ust_satz ?? null,
     });
   }
   return {

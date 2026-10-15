@@ -88,6 +88,14 @@ function terminText(t) {
 
 const QUELLEN = { web: 'Website', whatsapp: 'WhatsApp', telefon: 'Telefon', persoenlich: 'persönlich' };
 const ZAHLARTEN = { bar: 'bar', ueberweisung: 'Überweisung' };
+// Einstufung je Produkt für Steuer und SVS (gleiche Begriffe wie in Bertha)
+const HERKUNFT = { urprodukt: 'Urprodukt', verarbeitung: 'Be- und Verarbeitung', zukauf: 'Zukauf (Handelsware)' };
+const ustSaetze = () => daten.ustSaetze || [4.9, 10, 13, 20];
+const satzText = (satz) => `${String(satz).replace('.', ',')} %`;
+// „Urprodukt · 10 % USt" bzw. „nicht eingestuft"
+const einstufungText = (herkunft, satz) => (herkunft || satz != null
+  ? [herkunft ? HERKUNFT[herkunft] : 'Herkunft offen', satz != null ? `${satzText(satz)} USt` : 'USt-Satz offen'].join(' · ')
+  : 'nicht eingestuft');
 // Bestellungen aus dem Bertha-Kundenportal kommen als 'web' an
 const quelleText = (b) => (b.ueberBertha ? 'Bertha-Portal' : QUELLEN[b.quelle] || b.quelle);
 const ZEITRAEUME = {
@@ -1794,7 +1802,8 @@ function auswertungBeispiel() {
       const a = artikelVon(ch, p.artikelId);
       const produkt = produktVon(a.produktId) || {};
       return { produkt: a.name, bereich: bereichName(produkt.bereichId), bereichRang: bereichRang(produkt.bereichId), art: a.art, menge: p.menge,
-        gewichtG: p.gewichtG || null, cent: positionBetrag(ch, p).cent };
+        gewichtG: p.gewichtG || null, cent: positionBetrag(ch, p).cent,
+        herkunft: produkt.herkunft || null, ustSatz: produkt.ustSatz ?? null };
     });
     return { id: b.id, nummer: b.nummer, chargeId: b.chargeId, kunde: kundeVon(b).name, quelle: b.quelle,
       hofverkauf: istHofverkauf(b), zahlart: b.zahlart, bezahlt: b.bezahlt, bezahltAm: b.bezahlt ? new Date().toISOString().slice(0, 10) : null,
@@ -1853,6 +1862,20 @@ function ansichtAuswertung() {
     .map((name) => [name, produkte.filter((p) => p.bereich === name).reduce((x, p) => x + p.cent, 0)])
     .filter(([, cent]) => cent);
 
+  // Je Einstufung und USt-Satz: Preise sind Bruttopreise (inkl. USt)
+  const jeSteuer = new Map();
+  aw.bestellungen.forEach((b) => b.positionen.forEach((p) => {
+    const schluessel = `${p.herkunft || ''}|${p.ustSatz ?? ''}`;
+    const e = jeSteuer.get(schluessel) || { herkunft: p.herkunft, ustSatz: p.ustSatz, cent: 0 };
+    e.cent += p.cent;
+    jeSteuer.set(schluessel, e);
+  }));
+  const steuer = [...jeSteuer.values()].map((e) => ({ ...e, ...ustAnteil(e.cent, e.ustSatz) }))
+    .sort((x, y) => (x.herkunft || 'zz').localeCompare(y.herkunft || 'zz') || (x.ustSatz ?? 99) - (y.ustSatz ?? 99));
+  const warenCent = steuer.reduce((x, e) => x + e.cent, 0);
+  const lieferCent = summe(aw.bestellungen) - warenCent;
+  const offenEingestuft = steuer.some((e) => !e.herkunft || e.ustSatz == null);
+
   const runden = aw.runden.map((r) => {
     const liste = aw.bestellungen.filter((b) => b.chargeId === r.id);
     const offenCent = summe(liste.filter((b) => !b.bezahlt));
@@ -1883,6 +1906,16 @@ function ansichtAuswertung() {
       ${bereiche.length ? bereiche.map(([name, cent]) => `<div class="vw-zeile-kopf vw-auswertung-zeile"><span>${esc(name)}</span><strong>${euro(cent)}</strong></div>`).join('')
         : '<p class="vw-klein">In diesem Jahr wurde noch nichts übergeben.</p>'}
     </section>
+    ${steuer.length ? `<section class="vw-karte"><h2>Nach Einstufung und USt-Satz</h2>
+      <table class="vw-tabelle vw-auswertung-tabelle"><thead><tr><th>Einstufung</th><th class="vw-zahl">Brutto</th><th class="vw-zahl">Netto</th><th class="vw-zahl">USt</th></tr></thead>
+      <tbody>${steuer.map((e) => `<tr${!e.herkunft || e.ustSatz == null ? ' class="vw-warnung"' : ''}><td>${esc(einstufungText(e.herkunft, e.ustSatz))}</td>
+        <td class="vw-zahl">${euro(e.cent)}</td><td class="vw-zahl">${e.ustSatz != null ? euro(e.nettoCent) : ''}</td>
+        <td class="vw-zahl">${e.ustSatz != null ? euro(e.ustCent) : ''}</td></tr>`).join('')}
+        ${lieferCent ? `<tr><td>Liefergebühren</td><td class="vw-zahl">${euro(lieferCent)}</td><td></td><td></td></tr>` : ''}</tbody></table>
+      <p class="vw-klein">Preise sind Bruttopreise. Es zählt der Satz zum Zeitpunkt der Bestellung.${offenEingestuft
+        ? ' Rot = Produkt noch nicht (ganz) eingestuft – im Sortiment Einstufung und USt-Satz eintragen.' : ''}${lieferCent
+        ? ' Liefergebühren folgen als Nebenleistung dem Satz der gelieferten Ware.' : ''}</p>
+    </section>` : ''}
     ${produkte.length ? `<section class="vw-karte"><h2>Nach Produkt</h2>
       <table class="vw-tabelle vw-auswertung-tabelle"><thead><tr><th>Produkt</th><th class="vw-zahl">Menge</th><th class="vw-zahl">kg</th><th class="vw-zahl">Umsatz</th></tr></thead>
       <tbody>${produkte.map((p) => `<tr><td>${esc(p.produkt)}</td><td class="vw-zahl">${p.menge}</td>
@@ -1892,18 +1925,28 @@ function ansichtAuswertung() {
       <p class="vw-klein">Abgeschlossene Runden verschwinden aus Übersicht, Bestellungen und Übergabe, bleiben hier aber erhalten.</p></section>
     <button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit" data-aktion="auswertung-export" ${aw.bestellungen.length ? '' : 'disabled'}>Für die Buchhaltung herunterladen (Excel)</button>
     <p class="vw-klein">Eine Zeile je verkauftem Artikel mit Datum, Bestellnummer, Kunde, Bereich, Menge, Gewicht, Betrag und Zahlung – zum Weitergeben an die Buchhaltung.
-      Die Einordnung für Steuer und Pauschalierung bitte mit der Buchhaltung klären.</p>`;
+      Mit Einstufung, USt-Satz, Netto und USt je Zeile.</p>`;
+}
+
+// Bruttobetrag → Netto und USt (auf Cent gerundet; Netto = Brutto − USt)
+function ustAnteil(bruttoCent, satz) {
+  if (satz == null) return { nettoCent: bruttoCent, ustCent: 0 };
+  const ustCent = Math.round((bruttoCent * satz) / (100 + satz));
+  return { nettoCent: bruttoCent - ustCent, ustCent };
 }
 
 function auswertungExport() {
   const aw = zustand.auswertung;
   const runde = (id) => (aw.runden.find((r) => r.id === id) || {}).titel || '';
   const zeilen = [['Übergabe am', 'Bestellnr.', 'Bestellrunde', 'Kunde', 'Art', 'Bereich', 'Produkt', 'Menge',
-    'Gewicht kg', 'Betrag €', 'Zahlart', 'Bezahlt am']];
+    'Gewicht kg', 'Betrag €', 'Einstufung', 'USt %', 'Netto €', 'USt €', 'Zahlart', 'Bezahlt am']];
   aw.bestellungen.forEach((b) => b.positionen.forEach((p) => {
+    const anteil = ustAnteil(p.cent, p.ustSatz);
     zeilen.push([b.uebergebenAm, b.nummer, runde(b.chargeId), b.kunde,
       b.hofverkauf ? 'Verkauf am Hof' : `Vorbestellung (${quelleText(b)})`,
       p.bereich, p.produkt, p.menge, p.gewichtG ? p.gewichtG / 1000 : '', p.cent / 100,
+      p.herkunft ? HERKUNFT[p.herkunft] : '', p.ustSatz ?? '',
+      p.ustSatz != null ? anteil.nettoCent / 100 : '', p.ustSatz != null ? anteil.ustCent / 100 : '',
       b.bezahlt ? ZAHLARTEN[b.bezahlt] : `offen (${ZAHLARTEN[b.zahlart]})`, b.bezahltAm || '']);
   }));
   csvHerunterladen(zeilen, `hofladen-auswertung-${aw.jahr}.csv`);
@@ -1956,7 +1999,8 @@ function ansichtSortiment() {
           <span class="vw-klein">${p.verkaufsart === 'dauer'
             ? `immer erhältlich · ${p.dauerpreisCent != null ? euro(p.dauerpreisCent) : 'noch ohne Preis'}`
             : `${p.art === 'gewicht' ? 'nach Gewicht' : 'Fixpreis'}${p.startpreisCent != null
-              ? ` · Vorschlag ${euro(p.startpreisCent)}${p.art === 'gewicht' ? '/kg' : ''}` : ''}`}${p.allergene ? ` · Allergene: ${esc(p.allergene)}` : ''}</span></div></div>
+              ? ` · Vorschlag ${euro(p.startpreisCent)}${p.art === 'gewicht' ? '/kg' : ''}` : ''}`}${p.allergene ? ` · Allergene: ${esc(p.allergene)}` : ''}<br>
+          <span class="${p.herkunft && p.ustSatz != null ? '' : 'vw-warnung'}">${einstufungText(p.herkunft, p.ustSatz)}</span></span></div></div>
         <div class="vw-knopfreihe vw-knopfreihe--klein">
           ${p.verkaufsart === 'dauer' && p.aktiv !== false ? `<button type="button" class="vw-knopf vw-knopf--klein${p.verfuegbar === false ? ' vw-knopf--voll' : ''}" data-aktion="produkt-verfuegbar" data-id="${p.id}">${p.verfuegbar === false ? 'Wieder verfügbar' : 'Ausverkauft'}</button>` : ''}
           <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="produkt-bearbeiten" data-id="${p.id}">Bearbeiten</button>
@@ -1986,7 +2030,7 @@ function produktFormStarten(id, vorlageId = null) {
       aktiv: true, verfuegbar: true, kopieVon: vorlage.name }
     : { id: null, name: '', art: 'stueck', bereichId: (daten.bereiche[0] || {}).id || '', preis: '', von: '', bis: '', beschreibung: '',
       pflichtangaben: '', allergene: '', bild: '', aktiv: true, verwendet: false,
-      verkaufsart: 'runde', dauerpreis: '', verfuegbar: true, imPortal: true };
+      verkaufsart: 'runde', dauerpreis: '', verfuegbar: true, imPortal: true, herkunft: null, ustSatz: null };
   if (fotoliste === null) fotolisteLaden();
 }
 
@@ -2139,6 +2183,15 @@ function ansichtProdukt() {
         <label class="vw-haken"><input type="checkbox" name="imPortal" ${f.imPortal ? 'checked' : ''} />
           Auch im Bertha-Portal anbieten (für Eierkunden)</label>
       </div>
+      <fieldset class="vw-feldgruppe"><legend>Steuer und SVS</legend>
+        <label class="vw-feld"><span>Einstufung</span><select name="herkunft">
+          <option value="">noch nicht eingestuft</option>
+          ${Object.entries(HERKUNFT).map(([wert, text]) => `<option value="${wert}" ${f.herkunft === wert ? 'selected' : ''}>${text}</option>`).join('')}</select></label>
+        <label class="vw-feld"><span>USt-Satz</span><select name="ustSatz">
+          <option value="">noch nicht festgelegt</option>
+          ${ustSaetze().map((satz) => `<option value="${satz}" ${f.ustSatz === satz ? 'selected' : ''}>${satzText(satz)}</option>`).join('')}</select></label>
+        <p class="vw-klein">Gilt für neue Bestellungen; bestehende behalten ihren Satz. Wird auch an Bertha weitergegeben.</p>
+      </fieldset>
       <label class="vw-feld"><span>Beschreibung (optional)</span><textarea name="beschreibung" rows="2">${esc(f.beschreibung)}</textarea></label>
       <label class="vw-feld"><span>Zutaten, Füllmenge, Herkunft (bei Lebensmitteln Pflicht)</span><textarea name="pflichtangaben" rows="2">${esc(f.pflichtangaben)}</textarea></label>
       <label class="vw-feld"><span>Allergene (z. B. „Ei, Weizen (Gluten)" – leer, wenn keine)</span><input name="allergene" value="${esc(f.allergene)}" /></label>
@@ -2157,7 +2210,7 @@ function produktEingabe(f, aenderung = {}) {
     verfuegbar: f.verfuegbar !== false, imPortal: f.imPortal !== false,
     richtVonG: f.art === 'gewicht' ? grammAusText(f.von) : null, richtBisG: f.art === 'gewicht' ? grammAusText(f.bis) : null,
     beschreibung: f.beschreibung, pflichtangaben: f.pflichtangaben, allergene: f.allergene, bild: f.bild || '',
-    aktiv: f.aktiv !== false,
+    aktiv: f.aktiv !== false, herkunft: f.herkunft || null, ustSatz: f.ustSatz ?? null,
     ...aenderung,
   };
 }
@@ -2171,6 +2224,8 @@ async function produktSpeichern(form) {
   f.verkaufsart = verkaufsart ? verkaufsart.value : f.verkaufsart;
   f.verfuegbar = feld(form, 'verfuegbar').checked;
   f.imPortal = feld(form, 'imPortal').checked;
+  f.herkunft = feld(form, 'herkunft').value || null;
+  f.ustSatz = feld(form, 'ustSatz').value === '' ? null : Number(feld(form, 'ustSatz').value);
   const bild = form.querySelector('input[name="bild"]:checked');
   if (bild) f.bild = bild.value;
   const eingabe = produktEingabe(f);

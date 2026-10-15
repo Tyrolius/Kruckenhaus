@@ -116,7 +116,7 @@ const alsDauer = async (name, extra = {}) => {
 };
 r = ok(await extern('katalog', { schluessel }));
 assert.deepEqual(r.artikel, []);
-await alsDauer('Eiernudeln Spirelli 500 g', { bild: 'api/hofladen/foto/7' });
+await alsDauer('Eiernudeln Spirelli 500 g', { bild: 'api/hofladen/foto/7', herkunft: 'verarbeitung', ustSatz: 10 });
 await alsDauer('Eiernudeln Spaghetti 500 g', { verfuegbar: false });
 await alsDauer('Eiernudeln Hörnchen 500 g', { imPortal: false });
 await alsDauer('Eiernudeln Rotunde 500 g', { aktiv: false });
@@ -127,6 +127,9 @@ const spirelli = r.artikel.find((a) => a.name.includes('Spirelli'));
 assert.deepEqual([spirelli.preis_cent, spirelli.einheit, spirelli.bereich, spirelli.allergene, spirelli.bild_version],
   [400, 'Stück', 'Eiernudeln', 'Weizen (Gluten), Ei', '7']);
 assert.equal(spirelli.bild_url, 'https://www.kruckenhaus.at/api/hofladen/foto/7');
+assert.deepEqual([spirelli.herkunft, spirelli.ust_satz], ['verarbeitung', 10], 'Einstufung für Bertha');
+const spaghetti = r.artikel.find((a) => a.name.includes('Spaghetti'));
+assert.deepEqual([spaghetti.herkunft, spaghetti.ust_satz], [null, null], 'nicht eingestuft = null');
 assert.match(spirelli.geaendert_am, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
 assert.ok(r.stand >= spirelli.geaendert_am);
 assert.ok(!r.artikel.some((a) => a.name.includes('Masthuhn')), 'keine Bestellrunden-Ware');

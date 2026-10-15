@@ -46,7 +46,7 @@ functions/api/availability.js GET /api/availability → Airbnb-iCal parsen
 schema.sql                 D1-Schema (Tabelle „anfragen")
 schema-hofladen.sql        D1-Schema der Hofladen-Vorbestellung (im Aufbau)
 hofladen-produkte.sql      Produktkatalog der Hofladen-Vorbestellung (Erstbefüllung)
-migration-2026-10-*.sql    einmalige Migrationen bestehender Datenbanken (ALTER TABLE)
+migration-2026-10-*.sql    einmalige Migrationen bestehender Datenbanken (ALTER TABLE; zuletzt -steuer)
 docs/SCHNITTSTELLE-BERTHA.md  Plan der Schnittstelle zu Bertha (Phasen W1–W4, B1–B2)
 functions/_lib/hofladen.js gemeinsame Helfer der Hofladen-Functions (keine Route)
 functions/_lib/zugang.js   Prüfung der Cloudflare-Access-Anmeldung
@@ -210,6 +210,12 @@ Es gibt keine automatisierten Tests und keinen Linter.
   (oder `/bookmark` in der D1-Console). Die D1-Console im Dashboard nimmt nur
   eine Zeile: SQL-Dateien mit `--`-Kommentaren dort nicht einfügen, sondern
   eine kommentarfreie Fassung der nötigen Anweisungen geben.
+- Herkunft (`urprodukt`/`verarbeitung`/`zukauf`) und USt-Satz (`UST_SAETZE` in
+  `functions/_lib/hofladen.js`, Regelbesteuerung) je Produkt; beim Anlegen einer Position
+  wie der Preis in `bestell_positionen` eingefroren (`v_positionen` fällt auf das Produkt
+  zurück). Jedes neue `INSERT INTO bestell_positionen` muss beide Spalten mitnehmen.
+  Migration: `migration-2026-10-steuer.sql` (Einzeiler für die Console in
+  `docs/SCHNITTSTELLE-BERTHA.md` 8d).
 - Überweisungs-QR-Code nur mit genauem Betrag (alles gewogen, nicht bezahlt).
   Bankdaten nur aus den Secrets `BANK_*` (`bankAusEnv`), nie ins Repository.
 - Persönliche Links „Meine Bestellungen": Schlüssel nur hinter `#` in der

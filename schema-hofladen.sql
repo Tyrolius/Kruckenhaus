@@ -103,6 +103,11 @@ CREATE TABLE IF NOT EXISTS produkte (
   verfuegbar         INTEGER NOT NULL DEFAULT 1 CHECK (verfuegbar IN (0, 1)),
   im_portal          INTEGER NOT NULL DEFAULT 1 CHECK (im_portal IN (0, 1)),
   geaendert_am       TEXT    DEFAULT (datetime('now')),
+  -- Steuer und Herkunft (Auswertung für Finanzamt/SVS; Abgleich mit Bertha)
+  -- herkunft: Urprodukt, Be- und Verarbeitung oder Zukauf (Handelsware)
+  -- ust_satz: USt in Prozent, z. B. 10 oder 4.9; NULL = noch nicht eingestuft
+  herkunft           TEXT    CHECK (herkunft IS NULL OR herkunft IN ('urprodukt', 'verarbeitung', 'zukauf')),
+  ust_satz           REAL    CHECK (ust_satz IS NULL OR (ust_satz >= 0 AND ust_satz < 100)),
   -- IS NOT NULL ausdrücklich: ein CHECK mit NULL-Ergebnis gilt sonst als erfüllt
   CHECK (art <> 'gewicht'
          OR (richtgewicht_von_g IS NOT NULL AND richtgewicht_bis_g IS NOT NULL
@@ -120,6 +125,7 @@ SELECT
   p.id, p.name, p.art, p.kategorie, p.startpreis_cent, p.beschreibung, p.pflichtangaben,
   p.allergene, p.richtgewicht_von_g, p.richtgewicht_bis_g, p.bild, p.aktiv, p.reihenfolge,
   p.verkaufsart, p.dauerpreis_cent, p.verfuegbar, p.im_portal, p.geaendert_am,
+  p.herkunft, p.ust_satz,
   b.id          AS bereich,
   b.name        AS bereich_name,
   b.reihenfolge AS bereich_reihenfolge
@@ -265,7 +271,11 @@ CREATE TABLE IF NOT EXISTS bestell_positionen (
   charge_artikel_id INTEGER NOT NULL REFERENCES charge_artikel (id),
   menge             INTEGER NOT NULL CHECK (menge > 0),
   einzelpreis_cent  INTEGER NOT NULL CHECK (einzelpreis_cent >= 0),
-  gewicht_g         INTEGER CHECK (gewicht_g IS NULL OR gewicht_g > 0)
+  gewicht_g         INTEGER CHECK (gewicht_g IS NULL OR gewicht_g > 0),
+  -- Herkunft und USt-Satz des Produkts zum Bestellzeitpunkt (wie der Preis
+  -- eingefroren); NULL bei älteren Positionen → es gilt die Einstufung des Produkts
+  herkunft          TEXT,
+  ust_satz          REAL
 );
 
 CREATE INDEX IF NOT EXISTS idx_positionen_bestellung ON bestell_positionen (bestellung_id);
@@ -297,7 +307,9 @@ SELECT
     ELSE CAST(ROUND(p.einzelpreis_cent * p.menge
                     * (pr.richtgewicht_von_g + pr.richtgewicht_bis_g) / 2000.0) AS INTEGER)
   END AS betrag_cent,
-  CASE WHEN pr.art = 'gewicht' AND p.gewicht_g IS NULL THEN 1 ELSE 0 END AS geschaetzt
+  CASE WHEN pr.art = 'gewicht' AND p.gewicht_g IS NULL THEN 1 ELSE 0 END AS geschaetzt,
+  COALESCE(p.herkunft, pr.herkunft) AS herkunft,
+  COALESCE(p.ust_satz, pr.ust_satz) AS ust_satz
 FROM bestell_positionen p
 JOIN charge_artikel ca ON ca.id = p.charge_artikel_id
 JOIN produkte pr       ON pr.id = ca.produkt_id;

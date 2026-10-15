@@ -228,7 +228,15 @@ assert.equal(freiHuhn(), 0);
 assert.equal(roh.prepare('SELECT gewicht_g FROM bestell_positionen WHERE id = ?').get(Number(posMaria.id)).gewicht_g, null, 'Gewicht passt nicht mehr zur Stückzahl');
 r = await api('POST', `bestellung/${bMaria.id}`, { aktion: 'position', artikelId: aHuhn, menge: 6 });
 assert.deepEqual([r.status, r.error], [400, 'Nicht genug frei – noch 0 verfügbar.']);
+// Herkunft und USt-Satz werden beim Dazunehmen festgehalten – spätere Änderungen am Produkt nicht
+roh.prepare("UPDATE produkte SET herkunft = 'verarbeitung', ust_satz = 10 WHERE id = ?").run(Number(nudeln));
 ok(await api('POST', `bestellung/${bMaria.id}`, { aktion: 'position', artikelId: aNudeln, menge: 2 }));
+const steuerPos = () => roh.prepare(`SELECT p.herkunft, p.ust_satz, v.ust_satz AS gilt FROM bestell_positionen p
+  JOIN v_positionen v ON v.id = p.id WHERE p.bestellung_id = ? AND p.charge_artikel_id = ?`).get(Number(bMaria.id), Number(aNudeln));
+assert.deepEqual({ ...steuerPos() }, { herkunft: 'verarbeitung', ust_satz: 10, gilt: 10 });
+roh.prepare('UPDATE produkte SET ust_satz = 20 WHERE id = ?').run(Number(nudeln));
+assert.equal(steuerPos().gilt, 10, 'eingefroren');
+roh.prepare('UPDATE produkte SET herkunft = NULL, ust_satz = NULL WHERE id = ?').run(Number(nudeln));
 ok(await api('POST', `bestellung/${bMaria.id}`, { aktion: 'position', artikelId: aNudeln, menge: 0 }));
 assert.equal(roh.prepare('SELECT COUNT(*) AS n FROM bestell_positionen WHERE bestellung_id = ?').get(Number(bMaria.id)).n, 1);
 r = await api('POST', `bestellung/${bMaria.id}`, { aktion: 'position', artikelId: aHuhn, menge: 0 });
@@ -297,6 +305,18 @@ assert.match((await api('POST', 'produkt', { name: 'freilandeier 10 stück', art
 assert.match((await api('POST', 'produkt', { name: 'Ohne', art: 'stueck', bereichId: 99999 })).error, /Bereich/);
 assert.equal((await api('POST', 'produkt', { name: 'Ente', art: 'gewicht', bereichId: bFleisch })).status, 400, 'Gewichtsware braucht Richtgewicht');
 ok(await api('POST', 'produkt', { name: 'Ente', art: 'gewicht', bereichId: bFleisch, richtVonG: 1800, richtBisG: 2500 }));
+// Einstufung für Steuer und SVS
+r = ok(await api('POST', 'produkt', { name: 'Testgans', art: 'stueck', bereichId: bFleisch, herkunft: 'urprodukt', ustSatz: 10 }));
+s = ok(await api('GET', 'stand'));
+assert.deepEqual((({ herkunft, ustSatz }) => ({ herkunft, ustSatz }))(s.produkte.find((p) => p.id === r.produktId)), { herkunft: 'urprodukt', ustSatz: 10 });
+assert.deepEqual(s.ustSaetze, [4.9, 10, 13, 20]);
+ok(await api('POST', `produkt/${r.produktId}`, { name: 'Testgans', art: 'stueck', bereichId: bFleisch, herkunft: 'zukauf', ustSatz: '4.9' }));
+assert.deepEqual({ ...roh.prepare('SELECT herkunft, ust_satz FROM produkte WHERE id = ?').get(Number(r.produktId)) }, { herkunft: 'zukauf', ust_satz: 4.9 });
+assert.match((await api('POST', `produkt/${r.produktId}`, { name: 'Testgans', art: 'stueck', bereichId: bFleisch, ustSatz: 12 })).error, /USt-Satz/);
+assert.equal((await api('POST', `produkt/${r.produktId}`, { name: 'Testgans', art: 'stueck', bereichId: bFleisch, herkunft: 'irgendwas' })).status, 400);
+ok(await api('POST', `produkt/${r.produktId}`, { name: 'Testgans', art: 'stueck', bereichId: bFleisch }));
+assert.deepEqual({ ...roh.prepare('SELECT herkunft, ust_satz FROM produkte WHERE id = ?').get(Number(r.produktId)) }, { herkunft: null, ust_satz: null });
+console.log('✓ Produkte: Einstufung und USt-Satz speichern, prüfen, leeren');
 assert.match((await api('POST', `produkt/${huhn}`, { name: 'Masthuhn ganz', art: 'stueck', bereichId: bFleisch })).error, /schon verkauft/);
 ok(await api('POST', `produkt/${eier}`, { name: 'Freilandeier 6 Stück', art: 'stueck', bereichId: bSaison, startpreisCent: 300, aktiv: false }));
 s = ok(await api('GET', 'stand'));
@@ -370,7 +390,8 @@ s = ok(await api('GET', 'stand'));
 assert.ok(!s.bereiche.some((b) => b.id === bSeife));
 assert.equal(s.produkte.find((p) => p.id === seife.id).bereichId, bSaison);
 // Auswertung zeigt den Namen des Bereichs
-assert.ok(ok(await api('GET', 'auswertung')).bestellungen.every((b) => b.positionen.every((p) => typeof p.bereich === 'string')));
+assert.ok(ok(await api('GET', 'auswertung')).bestellungen.every((b) => b.positionen.every((p) => typeof p.bereich === 'string'
+  && 'herkunft' in p && 'ustSatz' in p)));
 console.log('✓ Bereiche: anlegen, doppelte Namen, umbenennen, Produkt umhängen, ordnen, nur leere löschen');
 
 // Auswertung für die Buchhaltung: nach Tag der Übergabe, auch abgeschlossene Runden
