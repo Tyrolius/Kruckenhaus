@@ -1,6 +1,6 @@
 # Hofladen ↔ Bertha – Umsetzungsplan der Schnittstelle
 
-Stand: Oktober 2026 · Status: **Phasen W1–W4 (Website) umgesetzt**, B1/B2 (Bertha) offen
+Stand: Oktober 2026 · Status: **Phasen W1–W4 (Website) und B1/B2 (Bertha) umgesetzt**, Ende-zu-Ende-Test gegen die Vorschau offen
 
 > Kurzfassung: Das Sortiment wird **einmal** gepflegt, in der
 > Website-Verwaltung (Artikel, Fotos, Bestellrunden). Bestellt wird an zwei
@@ -457,33 +457,52 @@ die Verwaltung kennt, findet alles an derselben Stelle.
 
 ### 6.2 Bertha (Einstellungen der Organisation)
 
-- **„Hofladen verbinden“:** Adresse (`https://kruckenhaus.at`) und Schlüssel
-  einfügen, dann **„Verbindung testen“**. Das ruft `/ping` auf und zeigt
-  „Verbunden mit: Bertha“. Der Schlüssel geht beim Speichern direkt an den
-  Server und wird danach nie wieder angezeigt.
+So umgesetzt (Oktober 2026):
+
+- **„Hofladen verbinden“** (Betriebseinstellungen, nur Inhaber/Admin): Adresse
+  (`https://kruckenhaus.at`) und Schlüssel einfügen, dann **„Verbindung testen
+  und speichern“**. Das ruft `/ping` auf und zeigt „Verbunden mit: Bertha ·
+  Schlüssel …abcd“ (nur die letzten vier Zeichen). Der Schlüssel geht direkt
+  an den Server und wird nie wieder angezeigt. Dazu **„Jetzt abgleichen“**
+  und **„Trennen“**; der Status zeigt Artikelzahl, letzten Abgleich, Fehler
+  und ob das Recht „bestellen“ fehlt.
 - **Dauerartikel aus dem Hofladen** erscheinen in der Artikelverwaltung mit
-  dem Kennzeichen *„vom Hofladen“*. Name, Preis und Foto sind dort
-  schreibgeschützt („wird auf kruckenhaus.at gepflegt“). Kategorie (Farbe)
-  und Reihenfolge lassen sich wie gewohnt setzen.
+  dem Kennzeichen *„vom Hofladen“* (bzw. „ausverkauft“, „nicht mehr im
+  Hofladen“). Name, Preis und Einheit sind schreibgeschützt (auch in den
+  Firestore-Regeln), löschen geht nicht. Kategorie, Reihenfolge, Emoji, aktiv
+  und „im Portal anbieten“ setzt der Betrieb in Bertha.
+- **Bestehende Bertha-Artikel** (z. B. Honig, Nudeln) werden nicht doppelt
+  angelegt: auf der Website als Dauerartikel anlegen, in Bertha abgleichen,
+  dann am bestehenden Artikel **„Mit Hofladen-Artikel verknüpfen“**. Ab dann
+  pflegt die Website Name, Preis, Foto und „ausverkauft“ dieses Artikels;
+  Verlauf, Wochen-Extras, Herkunft und Steuersatz bleiben in Bertha.
+- **Bestellschluss** für Zusatzartikel aus dem Portal: Vortag 18 Uhr, je
+  Betrieb einstellbar (offene Frage 5).
 - **Lieferrunde:** Dauerartikel-Bestellungen aus dem Portal stehen beim
   Kunden wie Extras und auf dem Lieferschein. Der Preis wird zum
-  Bestellzeitpunkt eingefroren.
+  Bestellzeitpunkt eingefroren. Bestellungen **„nach Vereinbarung“** (ohne
+  Termin) erscheinen in der Kundenliste als „N Bestellungen ohne Termin“;
+  der Betrieb legt dort den Liefertag fest.
 
 ### 6.3 Kundenportal (Eierkunden)
 
 Zwei klar getrennte Bereiche, damit niemand Fleisch mit der Eierlieferung
 erwartet:
 
-1. **„Zur nächsten Eierlieferung dazu“** – Nudeln, Seife u. a. Antippen,
-   Menge wählen, fertig. Ausverkauftes erscheint ausgegraut.
-2. **„Fleisch vorbestellen“** – offene Runden mit Foto, Preis (bei
-   Gewichtsware „ca.“), Bestellschluss. Abholung am Hof oder Zustellung
-   wählen, Termin wählen. Kontaktdaten sind aus Bertha vorausgefüllt und
-   werden nur bestätigt. Ein deutlicher Satz: *„Fleisch kommt nicht mit den
-   Eiern, sondern zum gewählten Termin.“*
+1. **„Dazubestellen“** – Nudeln, Seife u. a. mit Foto, Preis, Zutaten und
+   Allergenen. Antippen, Menge wählen, Liefertermin wählen – oder **„Nach
+   Vereinbarung“** (der Hof meldet sich). Ausverkauftes erscheint ausgegraut.
+   Feste Preise, kein „ca.“.
+2. **„Fleisch vorbestellen“** – in **zwei Schritten**: (1) Artikel mit Foto
+   und Preis (nur Gewichtsware „ca.“), Abholung am Hof oder Zustellung,
+   Termin; (2) Kontaktdaten (aus Bertha vorausgefüllt, nur bestätigen),
+   Bezahlung, Anmerkung, Pflichtangaben und Allergene, Hinweistext (Du-Form,
+   Abschnitt 8b) mit Häkchen. Oben ein deutlicher Satz: *„Fleisch kommt nicht
+   mit den Eiern, sondern zum gewählten Termin.“* Offene Angebote zeigt die
+   Übersicht des Portals als Karte mit „bis …“.
 
-Nach der Fleischbestellung: Bestätigung im Portal (Nummer, Termin,
-„ca.“-Summe), die Mail kommt von kruckenhaus.at.
+Nach der Fleischbestellung: Bestätigung im Portal (Nummer, Termin, Summe –
+„ca.“ nur bei Gewichtsware), die Mail kommt von kruckenhaus.at.
 
 ### 6.4 Wenn etwas nicht klappt
 
@@ -533,12 +552,12 @@ sofort nützlich.
 
 | Phase | Wo | Inhalt | Ergebnis |
 |---|---|---|---|
-| **W1 – Dauerartikel** | W | Migration (2.1, 2.2), Produktformular, Schnell-Schalter „ausverkauft“, ständige Runde „Dauersortiment“, Überbuchungsprüfung anpassen, Tests | Nudeln und Seife ohne Bestellrunde pflegen |
-| **W2 – Dauersortiment bestellen** | W | `hofladen.html`: Bereich „Immer erhältlich“, Bestellung ohne Bestellschluss, Übergabe laut offener Frage 1 | Alle Kunden können Dauerartikel bestellen |
-| **W3 – Schnittstelle: Grundgerüst** | W | Tabellen (2.4), Test-Datenbank (4.6), Middleware, `/ping`, `/katalog` mit ETag, Protokoll, Bereich „Verbindung zu Bertha“ in der Verwaltung, `_headers`, Tests | Bertha kann den Katalog lesen |
-| **B1 – Katalog in Bertha** | B | Einstellung „Hofladen verbinden“, Schlüssel nur serverseitig, zeitgesteuerter Abgleich, Fotos kopieren, Artikel „vom Hofladen“, Portal-Bereich „Zur Eierlieferung dazu“, Lieferschein | Eierkunden bestellen Dauerartikel im Portal |
-| **W4 – Fleisch bestellen über die Schnittstelle** | W | `/angebot`, `POST /bestellungen` mit Idempotenz, `extern_kunden`, Limits, Kennzeichnung „über Bertha“, Pausieren, Tests | Website nimmt Portal-Bestellungen an |
-| **B2 – Fleisch im Portal** | B | Bereich „Fleisch vorbestellen“, Pflichtangaben und Bestellbedingungen, Fehlerfälle (6.4), Wiederholung mit Idempotenz | Eierkunden bestellen Fleisch im Portal |
+| **W1 – Dauerartikel** ✓ | W | Migration (2.1, 2.2), Produktformular, Schnell-Schalter „ausverkauft“, ständige Runde „Dauersortiment“, Überbuchungsprüfung anpassen, Tests | Nudeln und Seife ohne Bestellrunde pflegen |
+| **W2 – Dauersortiment bestellen** ✓ | W | `hofladen.html`: Bereich „Immer erhältlich“, Bestellung ohne Bestellschluss, Übergabe laut offener Frage 1 | Alle Kunden können Dauerartikel bestellen |
+| **W3 – Schnittstelle: Grundgerüst** ✓ | W | Tabellen (2.4), Test-Datenbank (4.6), Middleware, `/ping`, `/katalog` mit ETag, Protokoll, Bereich „Verbindung zu Bertha“ in der Verwaltung, `_headers`, Tests | Bertha kann den Katalog lesen |
+| **B1 – Katalog in Bertha** ✓ | B | Einstellung „Hofladen verbinden“, Schlüssel nur serverseitig, zeitgesteuerter Abgleich, Fotos kopieren, Artikel „vom Hofladen“, Portal-Bereich „Zur Eierlieferung dazu“, Lieferschein | Eierkunden bestellen Dauerartikel im Portal |
+| **W4 – Fleisch bestellen über die Schnittstelle** ✓ | W | `/angebot`, `POST /bestellungen` mit Idempotenz, `extern_kunden`, Limits, Kennzeichnung „über Bertha“, Pausieren, Tests | Website nimmt Portal-Bestellungen an |
+| **B2 – Fleisch im Portal** ✓ | B | Bereich „Fleisch vorbestellen“, Pflichtangaben und Bestellbedingungen, Fehlerfälle (6.4), Wiederholung mit Idempotenz | Eierkunden bestellen Fleisch im Portal |
 | **T – Testlauf** | W+B | Auf der Vorschau mit Test-Datenbank und „Bertha Test“, danach eine kleine echte Runde mit 2–3 Eierkunden | Freigabe |
 | **später** | W+B | Bestellstatus im Portal (`GET /bestellungen`), Stornieren bis Bestellschluss, Stammkunden-Vorlauf für Eierkunden, andere Höfe anbinden | nach Bedarf |
 
@@ -599,16 +618,37 @@ ALTER TABLE extern_anfragen ADD COLUMN zustimmung TEXT; CREATE INDEX IF NOT EXIS
   Zugang: Hinweis im Bertha-Portal (Text unten) und Bestellbedingungen prüfen lassen.
 - **Hinweis im Portal** direkt vor „Fleisch bestellen" (Phase B2), mit Häkchen
   „Ich akzeptiere die Bestellbedingungen":
-  > Ihre Fleischbestellung wird an unser Bestellsystem auf kruckenhaus.at
-  > übermittelt und dort abgewickelt. Die Bestätigung erhalten Sie per E-Mail von
-  > uns. Es gelten die Bestellbedingungen (`https://kruckenhaus.at/hofladen.html#bedingungen`)
+  > Deine Fleischbestellung geht an unser Bestellsystem auf kruckenhaus.at und
+  > wird dort abgewickelt. Die Bestätigung bekommst du per E-Mail von uns. Es
+  > gelten die Bestellbedingungen (`https://kruckenhaus.at/hofladen.html#bedingungen`)
   > und die Datenschutzerklärung (`https://kruckenhaus.at/datenschutz.html#bertha`)
   > von kruckenhaus.at.
+  >
+  > (Oktober 2026: auf Wunsch in Du-Form, wie das übrige Bertha-Portal.)
 - Ergänzungen gegenüber Abschnitt 3: `/angebot` liefert je Termin zusätzlich
   `text`, je Artikel `preis_je` (`kg`, `Stück`, `Paket`) und bei Gewichtsware
   `ca_preis_je_stueck_cent`. Fehlercode `in_bearbeitung` (409): dieselbe
   Anfrage läuft gerade noch – mit demselben Idempotency-Key wiederholen.
   Wiederholte Antworten tragen den Header `Idempotent-Replayed: true`.
+
+## 8c. Bertha-Seite (B1/B2, Stand Oktober 2026)
+
+Umgesetzt im Bertha-Repository (`Tyrolius/eiermann`), Übersicht dort in
+`docs/APP_OVERVIEW.md` §9 „Hofladen verbinden“:
+
+- **Schlüssel** nur in Firestore `external_shops/{orgId}`, Rules `allow read, write: if false`;
+  App sieht nur Zugangsname, Rechte und die letzten vier Zeichen.
+- **B1:** „Hofladen verbinden“ in den Betriebseinstellungen (`/ping`), Abgleich alle 15 Minuten
+  mit ETag plus „Jetzt abgleichen“, Fotos nach Firebase Storage nur bei neuer `bild_version`,
+  Artikel „vom Hofladen“ (Name, Preis, Foto schreibgeschützt), entfernte Artikel ausgeblendet,
+  Ausverkauftes im Portal ausgegraut, Preis bei der Bestellung eingefroren.
+- **B2:** Portal-Bereich „Fleisch vorbestellen“ mit dem Hinweistext aus 8b und Häkchen,
+  Pflichtangaben und Allergenen vor dem Bestellen, Idempotency-Key je Bestellinhalt,
+  10 Sekunden Timeout, bis zu drei Versuche mit demselben Schlüssel, keine Warteschlange.
+- **Einrichtung:** Zugang „Bertha Test“ (`kh_test_…`, Rechte `katalog, angebot, bestellen`)
+  auf der Vorschau anlegen, in einer Test-Organisation verbinden und Ende-zu-Ende testen.
+  Danach Zugang „Bertha“ auf der echten Adresse – das Recht `bestellen` erst nach der
+  Prüfung des Hinweistexts und der Bestellbedingungen. Die Bertha-Demo bekommt keinen Live-Schlüssel.
 
 ## 9. Tests
 
@@ -639,9 +679,9 @@ Test-Datenbank.
 | 2 | ~~Dürfen Dauerartikel bei einer **Fleischbestellung** mit (Abholung/Zustellung)?~~ | **ja**, wie bisher als Zusatzartikel in der Bestellrunde (mit Menge) | W2 ✓ |
 | 3 | Bezahlung von Fleisch aus dem Portal | wie auf der Website (bar / Überweisung mit QR-Code), getrennt von der Eier-Monatsaufstellung | W4 |
 | 4 | Bekommen Eierkunden den **Stammkunden-Vorlauf** bei Fleischrunden? | später entscheiden; technisch einfach (Recht für Runden mit Status `stammkunden`) | später |
-| 5 | Bestellschluss für Dauerartikel im Portal vor einer Eierlieferung? | z. B. Vortag 18 Uhr, je Organisation einstellbar | B1 |
-| 6 | Haben alle Eierkunden in Bertha eine E-Mail-Adresse? | für Fleisch Pflicht (Bestätigung, Widerruf); fehlt sie, fragt das Portal danach | B2 |
-| 7 | Wie melden sich Kunden im Portal an, und welche Kennung wird `externe_id`? | im Bertha-Repository prüfen | B1 |
+| 5 | ~~Bestellschluss für Dauerartikel im Portal vor einer Eierlieferung?~~ | **entschieden:** Vortag 18 Uhr, in Bertha je Organisation einstellbar (gilt für alle Zusatzartikel im Portal) | B1 ✓ |
+| 6 | ~~Haben alle Eierkunden in Bertha eine E-Mail-Adresse?~~ | **ja, im Portal immer:** Anmeldung nur per E-Mail-Link; die Adresse ist vorausgefüllt und änderbar | B2 ✓ |
+| 7 | ~~Wie melden sich Kunden im Portal an, und welche Kennung wird `externe_id`?~~ | **geklärt:** Anmeldung per E-Mail-Link (Firebase Auth); `externe_id` = Dokument-ID des Kunden in Bertha (nicht sprechend) | B1 ✓ |
 
 ---
 

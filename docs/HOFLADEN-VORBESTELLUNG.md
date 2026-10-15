@@ -92,8 +92,9 @@ darf deshalb auch vor der Access-Einrichtung auf `master`.
 - Nudeln, Honig und Seife laufen als **Zusatzartikel** in jeder Bestellrunde mit.
 - **Seit Oktober 2026:** Nudeln, Seife u. a. können **Dauerartikel** ohne
   Bestellrunde sein (nur verfügbar/ausverkauft, auf `hofladen.html` unter
-  „Immer erhältlich") und sind über die Schnittstelle auch für das
-  Bertha-Kundenportal vorbereitet – siehe `docs/SCHNITTSTELLE-BERTHA.md`.
+  „Immer erhältlich") und erscheinen über die Schnittstelle auch im
+  Bertha-Kundenportal (Bertha-Seite umgesetzt, Oktober 2026) – siehe
+  `docs/SCHNITTSTELLE-BERTHA.md`.
 
 ## 2. So läuft eine Bestellrunde ab (Alltag)
 

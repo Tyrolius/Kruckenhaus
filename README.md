@@ -19,6 +19,7 @@ Offizielle Website der Ferienwohnung **Hof Kruckenhaus** in Breitenbach am Inn, 
 | Logo | ✅ in der Kopfzeile (hell über dem Foto, dunkel nach dem Scrollen), im Browser-Tab und in allen Mails |
 | Startseite | ✅ Wegweiser nach dem großen Bild: links Ferienwohnung, rechts Hofladen (führt bis zum Start der Online-Vorbestellung zum Hofladen-Abschnitt der Bauernhof-Seite: anrufen oder WhatsApp) |
 | Hofladen-Vorbestellung | 🛠 programmiert und getestet; Produktfotos direkt in der Verwaltung hochladen (vorher einmal `schema-hofladen.sql` in der D1-Konsole ausführen); offen: Bestellbedingungen prüfen lassen, Verwaltungs-Anmeldung einrichten, Produktfotos aufnehmen – Details in `docs/HOFLADEN-VORBESTELLUNG.md` |
+| Schnittstelle zu Bertha | 🛠 Website (W1–W4) und Bertha-Seite (B1/B2) programmiert und getestet; offen: Zugang „Bertha Test“ auf der Vorschau anlegen und Ende-zu-Ende testen, danach echter Zugang (Recht „bestellen“ erst nach Prüfung der Bestellbedingungen) – Details in `docs/SCHNITTSTELLE-BERTHA.md` |
 | Arbeitsweise | Änderungen entstehen auf einem Arbeitszweig (`claude/…`) und gehen erst live, wenn sie in `master` übernommen werden |
 
 ---
@@ -517,6 +518,8 @@ node scripts/test-hofladen-api.mjs
 node scripts/test-hofladen-zugang.mjs
 node scripts/test-hofladen-oeffentlich.mjs
 node scripts/test-hofladen-qr.mjs
+node scripts/test-hofladen-dauer.mjs
+node scripts/test-extern-api.mjs
 ```
 
 **Bestellseite für Kunden:** `hofladen.html` zeigt die offenen Bestellrunden (Status
