@@ -471,6 +471,11 @@ So umgesetzt (Oktober 2026):
   Hofladen“). Name, Preis und Einheit sind schreibgeschützt (auch in den
   Firestore-Regeln), löschen geht nicht. Kategorie, Reihenfolge, Emoji, aktiv
   und „im Portal anbieten“ setzt der Betrieb in Bertha.
+- **Bestehende Bertha-Artikel** (z. B. Honig, Nudeln) werden nicht doppelt
+  angelegt: auf der Website als Dauerartikel anlegen, in Bertha abgleichen,
+  dann am bestehenden Artikel **„Mit Hofladen-Artikel verknüpfen“**. Ab dann
+  pflegt die Website Name, Preis, Foto und „ausverkauft“ dieses Artikels;
+  Verlauf, Wochen-Extras, Herkunft und Steuersatz bleiben in Bertha.
 - **Bestellschluss** für Zusatzartikel aus dem Portal: Vortag 18 Uhr, je
   Betrieb einstellbar (offene Frage 5).
 - **Lieferrunde:** Dauerartikel-Bestellungen aus dem Portal stehen beim
