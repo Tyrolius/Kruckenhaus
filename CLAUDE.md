@@ -195,8 +195,10 @@ Es gibt keine automatisierten Tests und keinen Linter.
   Cloudflare Access darf `/api/extern/*` nicht abdecken.
   Bestellungen über Bertha: `quelle` bleibt `'web'`, erkennbar an `extern_anfragen`
   (Idempotency-Key, Antwort, Zustimmung). Datenschutzerklärung ist ergänzt
-  (`datenschutz.html#bertha`); Recht „bestellen" erst vergeben, wenn der Hinweis im
-  Bertha-Portal steht und die Bestellbedingungen geprüft sind (Plan, Abschnitt 5).
+  (`datenschutz.html#bertha`). Die Bertha-Seite (B1/B2) ist umgesetzt, der Hinweis steht
+  im Bertha-Portal (Du-Form, Plan Abschnitt 8b/8c); Recht „bestellen" für den echten
+  Zugang erst vergeben, wenn die Bestellbedingungen geprüft und der Ende-zu-Ende-Test auf
+  der Vorschau gelaufen ist.
 - Dauerartikel (Nudeln, Seife …): `produkte.verkaufsart = 'dauer'`, fester Preis,
   nur „verfügbar/ausverkauft". Bestellt wird über die eine ständige Runde
   `chargen.art = 'dauer'` („Dauersortiment"), deren Artikel
