@@ -599,11 +599,13 @@ ALTER TABLE extern_anfragen ADD COLUMN zustimmung TEXT; CREATE INDEX IF NOT EXIS
   Zugang: Hinweis im Bertha-Portal (Text unten) und Bestellbedingungen prüfen lassen.
 - **Hinweis im Portal** direkt vor „Fleisch bestellen" (Phase B2), mit Häkchen
   „Ich akzeptiere die Bestellbedingungen":
-  > Ihre Fleischbestellung wird an unser Bestellsystem auf kruckenhaus.at
-  > übermittelt und dort abgewickelt. Die Bestätigung erhalten Sie per E-Mail von
-  > uns. Es gelten die Bestellbedingungen (`https://kruckenhaus.at/hofladen.html#bedingungen`)
+  > Deine Fleischbestellung geht an unser Bestellsystem auf kruckenhaus.at und
+  > wird dort abgewickelt. Die Bestätigung bekommst du per E-Mail von uns. Es
+  > gelten die Bestellbedingungen (`https://kruckenhaus.at/hofladen.html#bedingungen`)
   > und die Datenschutzerklärung (`https://kruckenhaus.at/datenschutz.html#bertha`)
   > von kruckenhaus.at.
+  >
+  > (Oktober 2026: auf Wunsch in Du-Form, wie das übrige Bertha-Portal.)
 - Ergänzungen gegenüber Abschnitt 3: `/angebot` liefert je Termin zusätzlich
   `text`, je Artikel `preis_je` (`kg`, `Stück`, `Paket`) und bei Gewichtsware
   `ca_preis_je_stueck_cent`. Fehlercode `in_bearbeitung` (409): dieselbe
