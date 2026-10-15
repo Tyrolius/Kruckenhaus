@@ -1,6 +1,6 @@
 # Hofladen ↔ Bertha – Umsetzungsplan der Schnittstelle
 
-Stand: Oktober 2026 · Status: **Phasen W1–W4 (Website) umgesetzt**, B1/B2 (Bertha) offen
+Stand: Oktober 2026 · Status: **Phasen W1–W4 (Website) und B1/B2 (Bertha) umgesetzt**, Ende-zu-Ende-Test gegen die Vorschau offen
 
 > Kurzfassung: Das Sortiment wird **einmal** gepflegt, in der
 > Website-Verwaltung (Artikel, Fotos, Bestellrunden). Bestellt wird an zwei
@@ -610,6 +610,25 @@ ALTER TABLE extern_anfragen ADD COLUMN zustimmung TEXT; CREATE INDEX IF NOT EXIS
   Anfrage läuft gerade noch – mit demselben Idempotency-Key wiederholen.
   Wiederholte Antworten tragen den Header `Idempotent-Replayed: true`.
 
+## 8c. Bertha-Seite (B1/B2, Stand Oktober 2026)
+
+Umgesetzt im Bertha-Repository (`Tyrolius/eiermann`), Übersicht dort in
+`docs/APP_OVERVIEW.md` §9 „Hofladen verbinden“:
+
+- **Schlüssel** nur in Firestore `external_shops/{orgId}`, Rules `allow read, write: if false`;
+  App sieht nur Zugangsname, Rechte und die letzten vier Zeichen.
+- **B1:** „Hofladen verbinden“ in den Betriebseinstellungen (`/ping`), Abgleich alle 15 Minuten
+  mit ETag plus „Jetzt abgleichen“, Fotos nach Firebase Storage nur bei neuer `bild_version`,
+  Artikel „vom Hofladen“ (Name, Preis, Foto schreibgeschützt), entfernte Artikel ausgeblendet,
+  Ausverkauftes im Portal ausgegraut, Preis bei der Bestellung eingefroren.
+- **B2:** Portal-Bereich „Fleisch vorbestellen“ mit dem Hinweistext aus 8b und Häkchen,
+  Pflichtangaben und Allergenen vor dem Bestellen, Idempotency-Key je Bestellinhalt,
+  10 Sekunden Timeout, bis zu drei Versuche mit demselben Schlüssel, keine Warteschlange.
+- **Einrichtung:** Zugang „Bertha Test“ (`kh_test_…`, Rechte `katalog, angebot, bestellen`)
+  auf der Vorschau anlegen, in einer Test-Organisation verbinden und Ende-zu-Ende testen.
+  Danach Zugang „Bertha“ auf der echten Adresse – das Recht `bestellen` erst nach der
+  Prüfung des Hinweistexts und der Bestellbedingungen. Die Bertha-Demo bekommt keinen Live-Schlüssel.
+
 ## 9. Tests
 
 **Website** (`scripts/test-extern-api.mjs`, mit dem vorhandenen
@@ -639,9 +658,9 @@ Test-Datenbank.
 | 2 | ~~Dürfen Dauerartikel bei einer **Fleischbestellung** mit (Abholung/Zustellung)?~~ | **ja**, wie bisher als Zusatzartikel in der Bestellrunde (mit Menge) | W2 ✓ |
 | 3 | Bezahlung von Fleisch aus dem Portal | wie auf der Website (bar / Überweisung mit QR-Code), getrennt von der Eier-Monatsaufstellung | W4 |
 | 4 | Bekommen Eierkunden den **Stammkunden-Vorlauf** bei Fleischrunden? | später entscheiden; technisch einfach (Recht für Runden mit Status `stammkunden`) | später |
-| 5 | Bestellschluss für Dauerartikel im Portal vor einer Eierlieferung? | z. B. Vortag 18 Uhr, je Organisation einstellbar | B1 |
-| 6 | Haben alle Eierkunden in Bertha eine E-Mail-Adresse? | für Fleisch Pflicht (Bestätigung, Widerruf); fehlt sie, fragt das Portal danach | B2 |
-| 7 | Wie melden sich Kunden im Portal an, und welche Kennung wird `externe_id`? | im Bertha-Repository prüfen | B1 |
+| 5 | ~~Bestellschluss für Dauerartikel im Portal vor einer Eierlieferung?~~ | **entschieden:** Vortag 18 Uhr, in Bertha je Organisation einstellbar (gilt für alle Zusatzartikel im Portal) | B1 ✓ |
+| 6 | ~~Haben alle Eierkunden in Bertha eine E-Mail-Adresse?~~ | **ja, im Portal immer:** Anmeldung nur per E-Mail-Link; die Adresse ist vorausgefüllt und änderbar | B2 ✓ |
+| 7 | ~~Wie melden sich Kunden im Portal an, und welche Kennung wird `externe_id`?~~ | **geklärt:** Anmeldung per E-Mail-Link (Firebase Auth); `externe_id` = Dokument-ID des Kunden in Bertha (nicht sprechend) | B1 ✓ |
 
 ---
 
