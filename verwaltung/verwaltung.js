@@ -31,6 +31,7 @@ let ladeFehler = '';
 let beschaeftigt = false;    // verhindert doppeltes Absenden
 const zustand = {
   chargeId: null,
+  aendernOffen: null,      // Bestellung, deren „Menge ändern" aufgeklappt ist
   filter: 'alle',
   suche: '',
   uebergabeArt: 'abholung',
@@ -1092,7 +1093,6 @@ function ansichtAbgabe() {
     return;
   }
 
-  const dazu = ch.artikel.filter((a) => !b.positionen.some((p) => p.artikelId === a.id) && freieMenge(ch, a.id) > 0);
   const positionen = b.positionen.map((p) => {
     const a = artikelVon(ch, p.artikelId);
     const gewicht = a.art === 'gewicht';
@@ -1124,20 +1124,7 @@ function ansichtAbgabe() {
     <section class="vw-karte">
       ${hatGewicht ? '<p class="vw-klein">Gewichte vom Etikett eintippen (kg).</p>' : ''}
       ${positionen}
-      <details class="vw-aendern"><summary>Menge ändern oder Artikel dazu</summary>
-        ${b.positionen.map((p) => {
-          const a = artikelVon(ch, p.artikelId);
-          return `<div class="vw-pos-kopf vw-pos-aendern"><span>${esc(a.name)}</span>
-            <div class="vw-zaehler">
-              <button type="button" data-aktion="pos-menge" data-id="${b.id}" data-artikel="${a.id}" data-wert="${p.menge - 1}" aria-label="${esc(a.name)} eins weniger">−</button>
-              <output>${p.menge}</output>
-              <button type="button" data-aktion="pos-menge" data-id="${b.id}" data-artikel="${a.id}" data-wert="${p.menge + 1}" aria-label="${esc(a.name)} eins mehr">+</button>
-            </div></div>`;
-        }).join('')}
-        ${dazu.length ? `<select class="vw-dazu" data-dazu="${b.id}" aria-label="Artikel dazu">
-          <option value="">+ Artikel dazu …</option>
-          ${dazu.map((a) => `<option value="${a.id}">${esc(a.name)} (${freiText(ch, a.id)})</option>`).join('')}</select>` : ''}
-      </details>
+      ${mengeAendernBlock(b)}
       <div class="vw-summe"><span>Summe</span><strong data-betrag="${b.id}">${betrag}</strong></div>
       ${haupt}
       ${neben ? `<p class="vw-mitte">${neben}</p>` : ''}
@@ -1189,6 +1176,31 @@ async function uebergabeAbschliessen(b, zahlung) {
   } else if (info) {
     zahlungsinfoOeffnen(aktuell);
   }
+}
+
+// „Menge ändern oder Artikel dazu" – bei der Übergabe und in den Details
+// einer vorgemerkten Bestellung (z. B. Kunde will eine zweite Gans). Bleibt
+// nach jedem Tippen offen (zustand.aendernOffen), weil neu gezeichnet wird.
+function mengeAendernBlock(b) {
+  const ch = chargeVon(b);
+  const dazu = ch.artikel.filter((a) => !b.positionen.some((p) => p.artikelId === a.id) && freieMenge(ch, a.id) > 0);
+  return `<details class="vw-aendern" data-aendern="${b.id}" ${zustand.aendernOffen === b.id ? 'open' : ''}>
+    <summary>Menge ändern oder Artikel dazu</summary>
+    ${b.positionen.map((p) => {
+      const a = artikelVon(ch, p.artikelId);
+      return `<div class="vw-pos-kopf vw-pos-aendern"><span>${esc(a.name)}<br><span class="vw-klein">${freiText(ch, a.id)}</span></span>
+        <div class="vw-zaehler">
+          <button type="button" data-aktion="pos-menge" data-id="${b.id}" data-artikel="${a.id}" data-wert="${p.menge - 1}" aria-label="${esc(a.name)} eins weniger">−</button>
+          <output>${p.menge}</output>
+          <button type="button" data-aktion="pos-menge" data-id="${b.id}" data-artikel="${a.id}" data-wert="${p.menge + 1}" aria-label="${esc(a.name)} eins mehr">+</button>
+        </div></div>`;
+    }).join('')}
+    ${dazu.length ? `<select class="vw-dazu" data-dazu="${b.id}" aria-label="Artikel dazu">
+      <option value="">+ Artikel dazu …</option>
+      ${dazu.map((a) => `<option value="${a.id}">${esc(a.name)} (${freiText(ch, a.id)})</option>`).join('')}</select>` : ''}
+    ${b.positionen.some((p) => artikelVon(ch, p.artikelId).art === 'gewicht')
+      ? '<p class="vw-klein">Bei Ware nach Gewicht wird ein schon eingetragenes Gewicht beim Ändern der Stückzahl gelöscht – bitte neu wiegen.</p>' : ''}
+  </details>`;
 }
 
 // Menge eines Artikels ändern bzw. Artikel dazu (bei der Übergabe)
@@ -2528,6 +2540,7 @@ function detailOeffnen(id) {
     <div class="vw-abschnitt">
       <table class="vw-tabelle"><tbody>${positionen}</tbody>
         <tfoot><tr><td>Summe</td><td class="vw-zahl">${betragText(summe)}</td></tr></tfoot></table>
+      ${b.status === 'vorgemerkt' && !b.uebergeben ? mengeAendernBlock(b) : ''}
       <div class="vw-knopfreihe" role="group" aria-label="Zahlung gewünscht">
         <span class="vw-klein">Zahlung gewünscht:</span>
         ${Object.entries(ZAHLARTEN).map(([wert, text]) => `<button type="button" class="vw-chip" data-aktion="zahlart-setzen" data-id="${b.id}" data-wert="${wert}" aria-pressed="${b.zahlart === wert}">${text}</button>`).join('')}
@@ -3068,6 +3081,12 @@ function initEingaben() {
     }
   });
 
+  // „Menge ändern" bleibt offen, auch wenn nach dem Speichern neu gezeichnet wird
+  // (toggle steigt nicht auf – daher in der Capture-Phase)
+  document.addEventListener('toggle', (e) => {
+    const id = e.target.dataset && e.target.dataset.aendern;
+    if (id) zustand.aendernOffen = e.target.open ? id : null;
+  }, true);
   document.addEventListener('change', (e) => {
     if (e.target.dataset.fotoHochladen !== undefined) produktFotoHochladen(e.target);
     if (e.target.dataset.gewicht) gewichtSpeichern(e.target);
