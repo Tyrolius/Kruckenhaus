@@ -1948,6 +1948,8 @@ function ansichtSortiment() {
         <div class="vw-knopfreihe vw-knopfreihe--klein">
           ${p.verkaufsart === 'dauer' && p.aktiv !== false ? `<button type="button" class="vw-knopf vw-knopf--klein${p.verfuegbar === false ? ' vw-knopf--voll' : ''}" data-aktion="produkt-verfuegbar" data-id="${p.id}">${p.verfuegbar === false ? 'Wieder verfügbar' : 'Ausverkauft'}</button>` : ''}
           <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="produkt-bearbeiten" data-id="${p.id}">Bearbeiten</button>
+          <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="produkt-kopieren" data-id="${p.id}"
+            aria-label="${esc(p.name)} als neues Produkt kopieren">Kopieren</button>
           <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="produkt-aktiv" data-id="${p.id}">${p.aktiv === false ? 'Wieder anbieten' : 'Ausblenden'}</button>
         </div>
       </div>`).join('')}</section>`).join('')}`;
@@ -1960,10 +1962,16 @@ const produktFormWerte = (p) => ({
   verfuegbar: p.verfuegbar !== false, imPortal: p.imPortal !== false,
 });
 
-function produktFormStarten(id) {
+// vorlageId: „Kopieren" – neues Produkt mit allen Angaben der Vorlage
+// (z. B. weitere Nudelsorte), nur Name mit „(Kopie)", wieder angeboten.
+function produktFormStarten(id, vorlageId = null) {
   const p = id ? produktVon(id) : null;
+  const vorlage = !p && vorlageId ? produktVon(vorlageId) : null;
   zustand.produktForm = p
     ? produktFormWerte(p)
+    : vorlage
+    ? { ...produktFormWerte(vorlage), id: null, name: `${vorlage.name} (Kopie)`, verwendet: false,
+      aktiv: true, verfuegbar: true, kopieVon: vorlage.name }
     : { id: null, name: '', art: 'stueck', bereichId: (daten.bereiche[0] || {}).id || '', preis: '', von: '', bis: '', beschreibung: '',
       pflichtangaben: '', allergene: '', bild: '', aktiv: true, verwendet: false,
       verkaufsart: 'runde', dauerpreis: '', verfuegbar: true, imPortal: true };
@@ -2082,7 +2090,8 @@ function ansichtProdukt() {
   const arten = f.art === 'paket' ? ARTEN : { gewicht: ARTEN.gewicht, stueck: ARTEN.stueck };
   const artGesperrt = f.id && f.verwendet;
   inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>${f.id ? 'Produkt bearbeiten' : 'Neues Produkt'}</h1></div>
+    <div class="vw-kopf"><h1>${f.id ? 'Produkt bearbeiten' : 'Neues Produkt'}</h1>
+      ${!f.id && f.kopieVon ? `<p class="vw-klein">Kopie von „${esc(f.kopieVon)}" – alle Angaben sind übernommen. Bitte den Namen anpassen und Foto, Pflichtangaben und Allergene prüfen.</p>` : ''}</div>
     <form class="vw-karte" id="vw-produkt-formular" novalidate>
       <label class="vw-feld"><span>Name (so sehen ihn die Kunden)</span>
         <input name="name" value="${esc(f.name)}" placeholder="z. B. Freilandeier 10 Stück" required /></label>
@@ -3001,7 +3010,9 @@ function initKlicks() {
         break;
       case 'produkt-neu':
       case 'produkt-bearbeiten':
-        produktFormStarten(el.dataset.aktion === 'produkt-neu' ? null : el.dataset.id);
+      case 'produkt-kopieren':
+        if (el.dataset.aktion === 'produkt-kopieren') produktFormStarten(null, el.dataset.id);
+        else produktFormStarten(el.dataset.aktion === 'produkt-neu' ? null : el.dataset.id);
         if (aktuelleAnsicht() === 'produkt') zeigen();
         else location.hash = '#produkt';
         break;
