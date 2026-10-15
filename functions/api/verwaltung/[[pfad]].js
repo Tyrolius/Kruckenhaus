@@ -564,6 +564,72 @@ function produktPruefen(e) {
   return p;
 }
 
+/* ------------------------------------------------------------
+   4b. KUNDEN ÜBERNEHMEN (z. B. Kundenliste aus Bertha, einmalig)
+   Wiedererkannt wird wie überall: zuerst an der E-Mail, sonst am gleichen
+   Namen. Bekannte Kunden werden nur ergänzt (leere Felder), nie
+   überschrieben; „Stammkunde" wird nur gesetzt, nie entfernt.
+   ------------------------------------------------------------ */
+const IMPORT_MAX = 2000;
+
+async function kundenImportieren(db, e) {
+  const zeilen = Array.isArray(e.kunden) ? e.kunden : [];
+  if (!zeilen.length) throw new EingabeFehler('Keine Kunden in der Liste.');
+  if (zeilen.length > IMPORT_MAX) throw new EingabeFehler(`Höchstens ${IMPORT_MAX} Kunden auf einmal.`);
+  const stammkunde = e.stammkunde === true ? 1 : 0;
+
+  const { results: vorhanden } = await db.prepare('SELECT id, name, email FROM kunden').all();
+  const nachEmail = new Map();
+  const nachName = new Map();
+  for (const k of vorhanden) {
+    if (k.email && !nachEmail.has(k.email.toLowerCase())) nachEmail.set(k.email.toLowerCase(), k.id);
+    if (!nachName.has(k.name.trim().toLowerCase())) nachName.set(k.name.trim().toLowerCase(), k.id);
+  }
+
+  const anweisungen = [];
+  let neu = 0;
+  let ergaenzt = 0;
+  let uebersprungen = 0;
+  const schonGesehen = new Set();
+  for (const z of zeilen) {
+    const name = text(z && z.name, 120);
+    if (!name) { uebersprungen++; continue; }
+    let email = text(z.email, 160).toLowerCase() || null;
+    if (email && !istGueltigeEmail(email)) email = null;
+    const k = {
+      name, email,
+      telefon: textOderNull(z.telefon, 40),
+      strasse: textOderNull(z.strasse, 120),
+      plz: textOderNull(z.plz, 10),
+      ort: textOderNull(z.ort, 80),
+      notiz: textOderNull(z.notiz, 1000),
+    };
+    const schluessel = email || `name:${name.toLowerCase()}`;
+    if (schonGesehen.has(schluessel)) { uebersprungen++; continue; } // doppelt in der Liste
+    schonGesehen.add(schluessel);
+
+    const id = (email && nachEmail.get(email)) || nachName.get(name.toLowerCase());
+    if (id) {
+      ergaenzt++;
+      anweisungen.push(db.prepare(
+        `UPDATE kunden SET email = COALESCE(NULLIF(email, ''), ?), telefon = COALESCE(NULLIF(telefon, ''), ?),
+                strasse = COALESCE(NULLIF(strasse, ''), ?), plz = COALESCE(NULLIF(plz, ''), ?),
+                ort = COALESCE(NULLIF(ort, ''), ?), notiz = COALESCE(NULLIF(notiz, ''), ?),
+                stammkunde = MAX(stammkunde, ?)
+         WHERE id = ?`
+      ).bind(k.email, k.telefon, k.strasse, k.plz, k.ort, k.notiz, stammkunde, id));
+    } else {
+      neu++;
+      anweisungen.push(db.prepare(
+        'INSERT INTO kunden (name, email, telefon, strasse, plz, ort, notiz, stammkunde) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+      ).bind(k.name, k.email, k.telefon, k.strasse, k.plz, k.ort, k.notiz, stammkunde));
+    }
+  }
+  // In Paketen – ein batch() ist je Paket eine Transaktion
+  for (let i = 0; i < anweisungen.length; i += 100) await db.batch(anweisungen.slice(i, i + 100));
+  return { neu, ergaenzt, uebersprungen };
+}
+
 // Bereich muss existieren; liefert die alte kategorie dazu (CHECK der Spalte)
 async function bereichPruefen(db, bereichId) {
   const b = await db.prepare('SELECT id, kennung FROM bereiche WHERE id = ?').bind(bereichId).first();
@@ -1199,6 +1265,7 @@ export async function onRequest({ request, env, params, data }) {
     else if (bereich === 'bereich' && unteraktion === 'loeschen' && pfad.length === 3) ergebnis = await bereichLoeschen(db, teilId);
     else if (bereich === 'bereiche' && teilId === 'reihenfolge' && pfad.length === 2) ergebnis = await bereicheOrdnen(db, eingabe);
     else if (bereich === 'foto' && pfad.length === 1) ergebnis = await fotoHochladen(db, eingabe);
+    else if (bereich === 'kunden-import' && pfad.length === 1) ergebnis = await kundenImportieren(db, eingabe);
     else if (bereich === 'produkt' && pfad.length === 1) ergebnis = await produktAnlegen(db, eingabe);
     else if (bereich === 'produkt' && pfad.length === 2) ergebnis = await produktBearbeiten(db, teilId, eingabe);
     else if (bereich === 'produkt' && unteraktion === 'verfuegbar' && pfad.length === 3) ergebnis = await produktVerfuegbar(db, teilId, eingabe);

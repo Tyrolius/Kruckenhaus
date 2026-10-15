@@ -32,6 +32,7 @@ let beschaeftigt = false;    // verhindert doppeltes Absenden
 const zustand = {
   chargeId: null,
   aendernOffen: null,      // Bestellung, deren „Menge ändern" aufgeklappt ist
+  kundenImport: null,      // Vorschau „Kunden übernehmen" (Bertha-Seite)
   filter: 'alle',
   suche: '',
   uebergabeArt: 'abholung',
@@ -2394,6 +2395,114 @@ function herText(sqlZeit) {
   return `am ${zeitpunktKurz(sqlZeit)}`;
 }
 
+// Kunden übernehmen – z. B. einmalig die Kundenliste aus Bertha (dort:
+// Einstellungen → Hofladen → „Kundenliste exportieren"). Jede CSV mit den
+// Spalten Name, Telefon, E-Mail, Straße, PLZ, Ort (Notiz optional) geht.
+// Erst Vorschau, dann übernehmen; bekannte Kunden werden nur ergänzt.
+const IMPORT_SPALTEN = {
+  name: ['name'], telefon: ['telefon', 'tel', 'phone'], email: ['e-mail', 'email', 'mail'],
+  strasse: ['straße', 'strasse', 'adresse'], plz: ['plz'], ort: ['ort'], notiz: ['notiz', 'anmerkung'],
+};
+
+function csvLesen(text) {
+  const inhalt = text.replace(/^\ufeff/, '');
+  const trenner = (inhalt.split(/\r?\n/)[0].match(/;/g) || []).length >= (inhalt.split(/\r?\n/)[0].match(/,/g) || []).length ? ';' : ',';
+  const zeilen = [];
+  let zeile = [];
+  let feld = '';
+  let inAnf = false;
+  for (let i = 0; i < inhalt.length; i++) {
+    const c = inhalt[i];
+    if (inAnf) {
+      if (c === '"' && inhalt[i + 1] === '"') { feld += '"'; i++; } else if (c === '"') inAnf = false; else feld += c;
+    } else if (c === '"') inAnf = true;
+    else if (c === trenner) { zeile.push(feld); feld = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && inhalt[i + 1] === '\n') i++;
+      zeile.push(feld); feld = '';
+      if (zeile.some((x) => x.trim())) zeilen.push(zeile);
+      zeile = [];
+    } else feld += c;
+  }
+  zeile.push(feld);
+  if (zeile.some((x) => x.trim())) zeilen.push(zeile);
+  // Excel-Schutz aus dem Export ('+43 …) wieder entfernen
+  return zeilen.map((z) => z.map((x) => x.trim().replace(/^'(?=[=+\-@])/, '')));
+}
+
+function kundenAusCsv(text) {
+  const [kopf, ...rest] = csvLesen(text);
+  if (!kopf) return { fehler: 'Die Datei ist leer.' };
+  const spalte = {};
+  kopf.forEach((titel, i) => {
+    const t = titel.toLowerCase();
+    Object.entries(IMPORT_SPALTEN).forEach(([feld, namen]) => { if (spalte[feld] == null && namen.includes(t)) spalte[feld] = i; });
+  });
+  if (spalte.name == null) return { fehler: 'Keine Spalte „Name" gefunden – bitte die CSV aus Bertha verwenden.' };
+  const kunden = rest.map((z) => Object.fromEntries(Object.entries(spalte).map(([feld, i]) => [feld, z[i] || ''])))
+    .filter((k) => k.name);
+  const bekannt = (k) => daten.kunden.some((x) => (k.email && x.email && x.email.toLowerCase() === k.email.toLowerCase())
+    || x.name.trim().toLowerCase() === k.name.trim().toLowerCase());
+  return { kunden, bekannt: kunden.filter(bekannt).length };
+}
+
+function kundenImportKarte() {
+  const imp = zustand.kundenImport;
+  if (!imp) {
+    return `<section class="vw-karte" aria-label="Kunden übernehmen"><h2>Kunden übernehmen</h2>
+      <p class="vw-klein">Einmalig die Kundenliste aus Bertha holen: in der Bertha-App unter Einstellungen → Hofladen
+        „Kundenliste exportieren", die Datei hier auswählen. Ihr seht zuerst eine Vorschau. Schon bekannte Kunden
+        (gleiche E-Mail oder gleicher Name) werden nur ergänzt, nie überschrieben.</p>
+      <label class="vw-knopf"><input type="file" accept=".csv,text/csv" data-kunden-import hidden /> CSV-Datei wählen …</label>
+    </section>`;
+  }
+  if (imp.fehler) {
+    return `<section class="vw-karte"><h2>Kunden übernehmen</h2><p class="vw-warnung">${esc(imp.fehler)}</p>
+      <button type="button" class="vw-knopf" data-aktion="kunden-import-verwerfen">Andere Datei wählen</button></section>`;
+  }
+  const n = imp.kunden.length;
+  return `<section class="vw-karte" aria-label="Kunden übernehmen"><h2>Kunden übernehmen – Vorschau</h2>
+    <p><strong>${n} Kunden</strong> in der Datei: ${n - imp.bekannt} neu, ${imp.bekannt} schon bekannt (werden nur ergänzt).</p>
+    <table class="vw-tabelle"><tbody>${imp.kunden.slice(0, 8).map((k) => `<tr><td>${esc(k.name)}<br>
+      <span class="vw-klein">${esc([k.telefon, k.email, [k.strasse, `${k.plz || ''} ${k.ort || ''}`.trim()].filter(Boolean).join(', ')].filter(Boolean).join(' · '))}</span></td></tr>`).join('')}
+      ${n > 8 ? `<tr><td class="vw-klein">… und ${n - 8} weitere</td></tr>` : ''}</tbody></table>
+    <label class="vw-haken"><input type="checkbox" id="vw-import-stamm" /> Alle als Stammkunden markieren</label>
+    <p class="vw-klein">Stammkunden bekommen den Vorlauf bei Bestellrunden (Stammkunden-Link).</p>
+    <div class="vw-knopfreihe">
+      <button type="button" class="vw-knopf vw-knopf--voll" data-aktion="kunden-import">${n} Kunden übernehmen</button>
+      <button type="button" class="vw-knopf" data-aktion="kunden-import-verwerfen">Abbrechen</button>
+    </div></section>`;
+}
+
+function kundenImportDatei(input) {
+  const datei = input.files && input.files[0];
+  if (!datei) return;
+  const leser = new FileReader();
+  leser.onload = () => { zustand.kundenImport = kundenAusCsv(String(leser.result || '')); zeigen(); };
+  leser.onerror = () => meldung('Die Datei konnte nicht gelesen werden.');
+  leser.readAsText(datei, 'utf-8');
+}
+
+async function kundenImportieren() {
+  const imp = zustand.kundenImport;
+  if (!imp || !imp.kunden) return;
+  const stamm = Boolean((document.getElementById('vw-import-stamm') || {}).checked);
+  const erg = await speichern('kunden-import', { kunden: imp.kunden, stammkunde: stamm }, () => {
+    let neu = 0;
+    imp.kunden.forEach((k) => {
+      if (daten.kunden.some((x) => x.name.toLowerCase() === k.name.toLowerCase())) return;
+      neu++;
+      daten.kunden.push({ id: `k${Date.now()}${neu}`, name: k.name, telefon: k.telefon || '', email: k.email || '',
+        strasse: k.strasse || '', plz: k.plz || '', ort: k.ort || '', stammkunde: stamm, notiz: k.notiz || '' });
+    });
+    return { neu, ergaenzt: imp.kunden.length - neu, uebersprungen: 0 };
+  }, { neuZeichnen: false });
+  if (!erg) return;
+  zustand.kundenImport = null;
+  zeigen();
+  meldung(`Kunden übernommen – neu: ${erg.neu}, ergänzt: ${erg.ergaenzt}${erg.uebersprungen ? `, übersprungen: ${erg.uebersprungen}` : ''}.`);
+}
+
 function ansichtBertha() {
   const s = daten.schnittstelle;
   if (!s) {
@@ -2452,6 +2561,7 @@ function ansichtBertha() {
         <button type="submit" class="vw-knopf vw-knopf--voll">Schlüssel anlegen</button>
       </form>
     </section>
+    ${kundenImportKarte()}
     <section class="vw-karte" aria-label="Not-Aus"><h2>Schnittstelle ${s.pausiert ? 'pausiert' : 'aktiv'}</h2>
       <p class="vw-klein">Pausieren stoppt sofort alle Abrufe von Bertha. Die Website und eure Bestellungen laufen normal weiter.</p>
       <button type="button" class="vw-knopf ${s.pausiert ? 'vw-knopf--voll' : 'vw-knopf--warnung'}" data-aktion="schnittstelle-pausieren"
@@ -3094,6 +3204,13 @@ function initKlicks() {
         neuerSchluessel = null;
         zeigen();
         break;
+      case 'kunden-import':
+        kundenImportieren();
+        break;
+      case 'kunden-import-verwerfen':
+        zustand.kundenImport = null;
+        zeigen();
+        break;
       case 'zugang-sperren':
         zugangSperren(el.dataset.id);
         break;
@@ -3143,6 +3260,7 @@ function initEingaben() {
     if (id) zustand.aendernOffen = e.target.open ? id : null;
   }, true);
   document.addEventListener('change', (e) => {
+    if (e.target.dataset.kundenImport !== undefined) kundenImportDatei(e.target);
     if (e.target.dataset.fotoHochladen !== undefined) produktFotoHochladen(e.target);
     if (e.target.dataset.gewicht) gewichtSpeichern(e.target);
     if (e.target.name === 'termin') adresseUmschalten();

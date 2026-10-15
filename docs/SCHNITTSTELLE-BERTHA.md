@@ -676,6 +676,16 @@ ALTER TABLE produkte ADD COLUMN herkunft TEXT CHECK (herkunft IS NULL OR herkunf
 
   Dasselbe danach in der Test-Datenbank `kruckenhaus-test`.
 
+## 8e. Kunden aus Bertha übernehmen (einmalig, Stand Oktober 2026)
+
+Ohne Schnittstelle, bewusst als Datei, damit sichtbar ist, was übergeben wird:
+Bertha → Einstellungen → Hofladen → „Kundenliste für den Hofladen exportieren“ erzeugt eine
+CSV (Name, Telefon, E-Mail, Straße, PLZ, Ort, Notiz „Eierkunde (Bertha)“; nur aktive Kund:innen,
+keine Preise oder Salden). Verwaltung → „Verbindung zu Bertha“ → „Kunden übernehmen“ liest sie
+mit Vorschau ein (`POST /api/verwaltung/kunden-import`). Wiedererkannt wird wie überall an der
+E-Mail, sonst am gleichen Namen; bekannte Kunden werden nur ergänzt, nie überschrieben,
+„Stammkunde“ wahlweise für alle gesetzt. Jede CSV mit diesen Spaltennamen geht.
+
 ## 9. Tests
 
 **Website** (`scripts/test-extern-api.mjs`, mit dem vorhandenen

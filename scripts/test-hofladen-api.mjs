@@ -317,6 +317,24 @@ assert.equal((await api('POST', `produkt/${r.produktId}`, { name: 'Testgans', ar
 ok(await api('POST', `produkt/${r.produktId}`, { name: 'Testgans', art: 'stueck', bereichId: bFleisch }));
 assert.deepEqual({ ...roh.prepare('SELECT herkunft, ust_satz FROM produkte WHERE id = ?').get(Number(r.produktId)) }, { herkunft: null, ust_satz: null });
 console.log('✓ Produkte: Einstufung und USt-Satz speichern, prüfen, leeren');
+
+// Kunden übernehmen (z. B. aus Bertha): neu anlegen, Bekannte nur ergänzen, Doppelte überspringen
+roh.prepare("INSERT INTO kunden (name, email, telefon) VALUES ('Imke Import', 'imke@example.at', '')").run();
+roh.prepare("INSERT INTO kunden (name, telefon, ort) VALUES ('Nora Name', '0660 1', 'Kramsach')").run();
+r = ok(await api('POST', 'kunden-import', { stammkunde: true, kunden: [
+  { name: 'Imke Import', email: 'IMKE@example.at', telefon: '0664 2', ort: 'Brixlegg' },
+  { name: 'nora name', telefon: '0699 9', ort: 'Wörgl', strasse: 'Dorf 1' },
+  { name: 'Neu Nina', email: 'kaputt', telefon: '0676 3', strasse: 'Weg 2', plz: '6252', ort: 'Breitenbach', notiz: 'Eierkunde' },
+  { name: 'Neu Nina', telefon: '0676 3' },
+  { name: '' },
+] }));
+assert.deepEqual([r.neu, r.ergaenzt, r.uebersprungen], [1, 2, 2]);
+const kunde = (name) => ({ ...roh.prepare('SELECT name, email, telefon, strasse, plz, ort, notiz, stammkunde FROM kunden WHERE name = ?').get(name) });
+assert.deepEqual(kunde('Imke Import'), { name: 'Imke Import', email: 'imke@example.at', telefon: '0664 2', strasse: null, plz: null, ort: 'Brixlegg', notiz: null, stammkunde: 1 }, 'leere Felder ergänzt');
+assert.deepEqual([kunde('Nora Name').telefon, kunde('Nora Name').ort, kunde('Nora Name').strasse], ['0660 1', 'Kramsach', 'Dorf 1'], 'nichts überschrieben');
+assert.deepEqual(kunde('Neu Nina'), { name: 'Neu Nina', email: null, telefon: '0676 3', strasse: 'Weg 2', plz: '6252', ort: 'Breitenbach', notiz: 'Eierkunde', stammkunde: 1 }, 'ungültige E-Mail weggelassen');
+assert.match((await api('POST', 'kunden-import', { kunden: [] })).error, /Keine Kunden/);
+console.log('✓ Kunden übernehmen: neu, ergänzt (ohne Überschreiben), Doppelte übersprungen');
 assert.match((await api('POST', `produkt/${huhn}`, { name: 'Masthuhn ganz', art: 'stueck', bereichId: bFleisch })).error, /schon verkauft/);
 ok(await api('POST', `produkt/${eier}`, { name: 'Freilandeier 6 Stück', art: 'stueck', bereichId: bSaison, startpreisCent: 300, aktiv: false }));
 s = ok(await api('GET', 'stand'));
