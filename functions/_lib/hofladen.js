@@ -285,6 +285,27 @@ export async function dauersortimentAbgleichen(db) {
   return cid;
 }
 
+/* Weitere Fotos je Produkt (Tabelle produkt_bilder, zur Beschreibung) als
+   Map produkt_id → [Pfad, …]. Fehlt die Tabelle noch (schema-hofladen.sql
+   nicht ausgeführt), bleibt die Map leer und moeglich = false – Verwaltung
+   und Bestellseite laufen dann ohne weitere Fotos weiter. */
+export async function weitereBilderLaden(db) {
+  const jeProdukt = new Map();
+  try {
+    const { results } = await db.prepare(
+      'SELECT produkt_id, bild FROM produkt_bilder ORDER BY produkt_id, reihenfolge, id'
+    ).all();
+    for (const z of results) {
+      if (!jeProdukt.has(z.produkt_id)) jeProdukt.set(z.produkt_id, []);
+      jeProdukt.get(z.produkt_id).push(z.bild);
+    }
+    return { jeProdukt, moeglich: true };
+  } catch (fehler) {
+    if (!/no such table/i.test(String(fehler && fehler.message))) throw fehler;
+    return { jeProdukt, moeglich: false };
+  }
+}
+
 /* ------------------------------------------------------------
    5. VORANMELDUNGEN
    Unverbindlich, ohne Preis und Termin. Zählen nicht vom Kontingent ab,

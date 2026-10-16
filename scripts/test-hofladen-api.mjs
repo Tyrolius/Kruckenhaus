@@ -382,6 +382,39 @@ const fotoIds = roh.prepare('SELECT id FROM produkt_fotos').all().map((x) => `ap
 assert.ok(fotoIds.includes(fotoPfad) && !fotoIds.includes(verwaist), 'nur das verwaiste Foto gelöscht');
 console.log('✓ Foto hochladen: nur JPEG, Größenlimit, zuordnen, verwaiste nach einem Tag aufgeräumt');
 
+// Weitere Fotos zur Beschreibung: bis zu 4, gleiche Pfadregeln, Feld fehlt = bleibt,
+// leere Liste = alle entfernt, hochgeladene weitere Fotos werden nicht aufgeräumt
+const weitere = ['images/bauernhof/bienen-kinder-waben.jpg', fotoPfad, 'images/hofladen/eier-korb.jpg'];
+ok(await api('POST', `produkt/${eier}`, { ...eiDaten, bild: fotoPfad, weitereBilder: [...weitere, weitere[0], ''] }));
+s = ok(await api('GET', 'stand'));
+assert.equal(s.weitereBilderMoeglich, true);
+assert.deepEqual(s.produkte.find((p) => p.id === eier).weitereBilder, weitere, 'Reihenfolge bleibt, Doppelte und Leere fallen weg');
+assert.deepEqual(s.produkte.find((p) => p.id !== eier).weitereBilder, []);
+ok(await api('POST', `produkt/${eier}`, { ...eiDaten, bild: fotoPfad }));
+assert.equal(roh.prepare('SELECT COUNT(*) AS n FROM produkt_bilder WHERE produkt_id = ?').get(Number(eier)).n, 3, 'ohne Feld bleibt die Liste');
+assert.match((await api('POST', `produkt/${eier}`, { ...eiDaten, weitereBilder: ['images/a.jpg', 'images/b.jpg', 'images/c.jpg', 'images/d.jpg', 'images/e.jpg'] })).error, /Höchstens 4/);
+assert.match((await api('POST', `produkt/${eier}`, { ...eiDaten, weitereBilder: ['https://fremd.example/x.jpg'] })).error, /Ungültiges Foto/);
+assert.match((await api('POST', `produkt/${eier}`, { ...eiDaten, weitereBilder: 'images/a.jpg' })).error, /weitere Fotos/);
+const nurWeiteres = ok(await api('POST', 'foto', { daten: alsDaten(jpeg) })).bild;
+ok(await api('POST', `produkt/${eier}`, { ...eiDaten, bild: fotoPfad, weitereBilder: [nurWeiteres] }));
+roh.exec(`UPDATE produkt_fotos SET erstellt_am = datetime('now', '-2 days')`);
+ok(await api('POST', 'foto', { daten: alsDaten(jpeg) }));
+assert.ok(roh.prepare('SELECT 1 FROM produkt_fotos WHERE id = ?').get(Number(nurWeiteres.split('/').pop())), 'weiteres Foto bleibt beim Aufräumen');
+r = ok(await api('POST', 'produkt', { name: 'Honig 1 kg', art: 'stueck', bereichId: bSaison, weitereBilder: [weitere[0]] }));
+assert.deepEqual(roh.prepare('SELECT bild FROM produkt_bilder WHERE produkt_id = ?').all(Number(r.produktId)).map((x) => x.bild), [weitere[0]]);
+ok(await api('POST', `produkt/${eier}`, { ...eiDaten, bild: fotoPfad, weitereBilder: [] }));
+assert.deepEqual(ok(await api('GET', 'stand')).produkte.find((p) => p.id === eier).weitereBilder, []);
+// Ohne Tabelle (schema-hofladen.sql noch nicht ausgeführt): Verwaltung läuft weiter
+roh.exec('ALTER TABLE produkt_bilder RENAME TO produkt_bilder_weg');
+s = ok(await api('GET', 'stand'));
+assert.equal(s.weitereBilderMoeglich, false);
+ok(await api('POST', `produkt/${eier}`, { ...eiDaten, bild: fotoPfad, weitereBilder: [] }));
+r = await api('POST', `produkt/${eier}`, { ...eiDaten, bild: fotoPfad, weitereBilder: [weitere[0]] });
+assert.match(r.error, /schema-hofladen\.sql/);
+ok(await api('POST', 'foto', { daten: alsDaten(jpeg) }));
+roh.exec('ALTER TABLE produkt_bilder_weg RENAME TO produkt_bilder');
+console.log('✓ Weitere Fotos: bis zu 4, Pfade geprüft, Liste ersetzen/behalten, Aufräumen, ohne Tabelle');
+
 // Bereiche: anlegen, umbenennen, Produkt umhängen, ordnen, leere löschen
 r = ok(await api('POST', 'bereich', { name: 'Eier & Marmelade' }));
 const bEier = r.bereichId;

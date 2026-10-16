@@ -495,6 +495,21 @@ CREATE TABLE IF NOT EXISTS produkt_fotos (
   erstellt_am TEXT    NOT NULL DEFAULT (datetime('now'))
 );
 
+-- ------------------------------------------------------------
+-- WEITERE FOTOS je Produkt (zur Beschreibung, höchstens 4)
+-- Das Hauptfoto bleibt produkte.bild (Sortimentskarte, Bertha). Die weiteren
+-- zeigt hofladen.html beim Aufklappen der Angaben. bild wie produkte.bild:
+-- Pfad unter images/ oder 'api/hofladen/foto/<id>'. Beim Speichern eines
+-- Produkts wird die Liste ganz ersetzt.
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS produkt_bilder (
+  id          INTEGER PRIMARY KEY AUTOINCREMENT,
+  produkt_id  INTEGER NOT NULL REFERENCES produkte (id),
+  bild        TEXT    NOT NULL,
+  reihenfolge INTEGER NOT NULL DEFAULT 0
+);
+CREATE INDEX IF NOT EXISTS idx_produkt_bilder_produkt ON produkt_bilder (produkt_id, reihenfolge);
+
 
 -- ============================================================
 -- SCHNITTSTELLE FÜR BERTHA (/api/extern/v1/…)

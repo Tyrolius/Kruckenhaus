@@ -81,6 +81,19 @@ assert.ok(!ok(await api('GET', 'angebot')).produkte.some((p) => p.name === 'Alpa
 roh.prepare(`UPDATE produkte SET aktiv = 1 WHERE name = 'Alpakaseife'`).run();
 console.log('✓ Angebot: nur offene Bestellrunden, freie Menge, Pflichtangaben der Nudeln, Liefergebiet, Sortiment');
 
+// Weitere Fotos zur Beschreibung: am Artikel der Runde und im Sortiment, sonst leer;
+// ohne Tabelle erscheint das Angebot trotzdem
+roh.prepare(`INSERT INTO produkt_bilder (produkt_id, bild, reihenfolge) VALUES (?, 'images/hofladen/b.jpg', 20), (?, 'images/hofladen/a.jpg', 10)`).run(nudeln, nudeln);
+r = ok(await api('GET', 'angebot'));
+assert.deepEqual(r.chargen[0].artikel.find((a) => a.id === aNudeln).fotos, ['images/hofladen/a.jpg', 'images/hofladen/b.jpg']);
+assert.deepEqual(r.produkte.find((p) => p.id === nudeln).fotos, ['images/hofladen/a.jpg', 'images/hofladen/b.jpg']);
+assert.deepEqual(r.produkte.find((p) => p.id === huhn).fotos, []);
+roh.exec('ALTER TABLE produkt_bilder RENAME TO produkt_bilder_weg');
+assert.deepEqual(ok(await api('GET', 'angebot')).produkte.find((p) => p.id === nudeln).fotos, []);
+roh.exec('ALTER TABLE produkt_bilder_weg RENAME TO produkt_bilder');
+roh.prepare('DELETE FROM produkt_bilder').run();
+console.log('✓ Weitere Fotos im Angebot, ohne Tabelle trotzdem erreichbar');
+
 // Bestellung – Pflichtfelder und Regeln
 const basis = {
   chargeId: cId, terminId: tAbh, name: 'Maria Web', email: 'Maria@Example.at', telefon: '+43 660 1234567',

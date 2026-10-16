@@ -2017,6 +2017,7 @@ const produktFormWerte = (p) => ({
   ...p, preis: textAusCent(p.startpreisCent), von: kgText(p.richtVonG), bis: kgText(p.richtBisG),
   verkaufsart: p.verkaufsart || 'runde', dauerpreis: textAusCent(p.dauerpreisCent),
   verfuegbar: p.verfuegbar !== false, imPortal: p.imPortal !== false,
+  weitereBilder: [...(p.weitereBilder || [])],
 });
 
 // vorlageId: „Kopieren" – neues Produkt mit allen Angaben der Vorlage
@@ -2030,7 +2031,7 @@ function produktFormStarten(id, vorlageId = null) {
     ? { ...produktFormWerte(vorlage), id: null, name: `${vorlage.name} (Kopie)`, verwendet: false,
       aktiv: true, verfuegbar: true, kopieVon: vorlage.name }
     : { id: null, name: '', art: 'stueck', bereichId: (daten.bereiche[0] || {}).id || '', preis: '', von: '', bis: '', beschreibung: '',
-      pflichtangaben: '', allergene: '', bild: '', aktiv: true, verwendet: false,
+      pflichtangaben: '', allergene: '', bild: '', weitereBilder: [], aktiv: true, verwendet: false,
       verkaufsart: 'runde', dauerpreis: '', verfuegbar: true, imPortal: true, herkunft: null, ustSatz: null };
   if (fotoliste === null) fotolisteLaden();
 }
@@ -2051,9 +2052,17 @@ async function fotolisteLaden() {
       fotoliste = Array.isArray(liste) ? liste.filter((f) => typeof f === 'string') : [];
     }
   } catch (_) { /* ohne Liste bleibt nur „Kein Foto" bzw. das bisherige Foto */ }
-  // Nur den Foto-Bereich neu zeichnen – schon Getipptes bleibt stehen
-  const bereich = document.getElementById('vw-foto-auswahl');
-  if (bereich && zustand.produktForm) bereich.innerHTML = fotoAuswahl(zustand.produktForm);
+  // Nur die Foto-Bereiche neu zeichnen – schon Getipptes bleibt stehen
+  fotoBereicheZeichnen();
+}
+
+function fotoBereicheZeichnen() {
+  const f = zustand.produktForm;
+  if (!f) return;
+  const haupt = document.getElementById('vw-foto-auswahl');
+  if (haupt) haupt.innerHTML = fotoAuswahl(f);
+  const weitere = document.getElementById('vw-weitere-fotos');
+  if (weitere) weitere.innerHTML = weitereFotosAuswahl(f);
 }
 
 // „images/hofladen/honig-glas.jpg" → „honig glas"
@@ -2090,6 +2099,63 @@ function fotoAuswahl(f) {
     </fieldset>`;
 }
 
+// Weitere Fotos zur Beschreibung (höchstens WEITERE_FOTOS_MAX): gewählte mit
+// „Entfernen", darunter hochladen oder ein vorhandenes Foto antippen. Die
+// Kunden sehen alle im gleichen quadratischen Format – Hochformat oder
+// Querformat ist egal, nur das Wichtige sollte in der Mitte sein.
+const WEITERE_FOTOS_MAX = 4;
+
+function weitereFotosAuswahl(f) {
+  const titel = `<legend>Weitere Fotos zur Beschreibung <span class="vw-klein">(höchstens ${WEITERE_FOTOS_MAX})</span></legend>`;
+  if (daten.weitereBilderMoeglich === false) {
+    return `<fieldset class="vw-feldgruppe">${titel}
+      <p class="vw-klein">Noch nicht eingerichtet: dafür einmal schema-hofladen.sql in der D1-Konsole ausführen.</p></fieldset>`;
+  }
+  const gewaehlt = f.weitereBilder || [];
+  const voll = gewaehlt.length >= WEITERE_FOTOS_MAX;
+  const angebot = [...new Set([...(daten.eigeneFotos || []), ...(fotoliste || [])])]
+    .filter((x) => !gewaehlt.includes(x));
+  return `<fieldset class="vw-feldgruppe">${titel}
+      <p class="vw-klein">Die Kunden sehen sie beim Aufklappen der Angaben, alle gleich groß und quadratisch zugeschnitten
+        – das Wichtige sollte in der Bildmitte sein. Antippen vergrößert sie.</p>
+      ${gewaehlt.length ? `<div class="vw-foto-raster">${gewaehlt.map((x, i) => `<div class="vw-foto-gewaehlt">
+          <img src="${esc(fotoSrc(x))}" alt="Weiteres Foto ${i + 1}" loading="lazy" decoding="async" />
+          <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="weiteres-foto-weg" data-wert="${i}"
+            aria-label="Weiteres Foto ${i + 1} entfernen">Entfernen</button></div>`).join('')}</div>`
+        : '<p class="vw-klein">Noch keine weiteren Fotos.</p>'}
+      ${voll ? `<p class="vw-klein">Vier Fotos sind das Höchste – zum Tauschen erst eines entfernen.</p>` : `
+      <label class="vw-knopf vw-knopf--voll vw-foto-knopf">
+        <input type="file" accept="image/*" data-weiteres-foto-hochladen />
+        Weiteres Foto aufnehmen oder wählen</label>
+      <p class="vw-klein" id="vw-weitere-status" aria-live="polite"></p>
+      ${angebot.length ? `<details class="vw-foto-weitere">
+        <summary>Vorhandenes Foto hinzufügen (${angebot.length})</summary>
+        <div class="vw-foto-raster">${angebot.map((x) => `<button type="button" class="vw-foto-wahl" data-aktion="weiteres-foto-dazu"
+          data-wert="${esc(x)}"><img src="${esc(fotoSrc(x))}" alt="" loading="lazy" decoding="async" />
+          ${x.startsWith('images/') ? `<span class="vw-foto-name">${esc(fotoName(x))}</span>` : ''}</button>`).join('')}</div>
+      </details>` : ''}`}
+    </fieldset>`;
+}
+
+function weiteresFotoDazu(pfad) {
+  const f = zustand.produktForm;
+  if (!f || !pfad) return;
+  f.weitereBilder = f.weitereBilder || [];
+  if (f.weitereBilder.includes(pfad)) return;
+  if (f.weitereBilder.length >= WEITERE_FOTOS_MAX) { meldung(`Höchstens ${WEITERE_FOTOS_MAX} weitere Fotos.`); return; }
+  f.weitereBilder.push(pfad);
+  fotoBereicheZeichnen();
+  meldung('Foto hinzugefügt – jetzt noch „Speichern" tippen.');
+}
+
+function weiteresFotoWeg(index) {
+  const f = zustand.produktForm;
+  if (!f || !f.weitereBilder) return;
+  f.weitereBilder.splice(index, 1);
+  fotoBereicheZeichnen();
+  meldung('Foto entfernt – jetzt noch „Speichern" tippen.');
+}
+
 // Foto im Browser verkleinern (lange Seite max. 1200 px, JPEG). Browser
 // drehen Handyfotos dabei richtig (EXIF), das Original bleibt am Handy.
 function fotoVerkleinern(datei, max = 1200, qualitaet = 0.82) {
@@ -2113,11 +2179,12 @@ function fotoVerkleinern(datei, max = 1200, qualitaet = 0.82) {
   });
 }
 
-async function produktFotoHochladen(eingabeFeld) {
+// weiteres = true: als weiteres Foto zur Beschreibung statt als Hauptfoto
+async function produktFotoHochladen(eingabeFeld, weiteres = false) {
   const datei = eingabeFeld.files && eingabeFeld.files[0];
   const f = zustand.produktForm;
   if (!datei || !f) return;
-  const status = document.getElementById('vw-foto-status');
+  const status = document.getElementById(weiteres ? 'vw-weitere-status' : 'vw-foto-status');
   if (status) status.textContent = 'Foto wird vorbereitet …';
   let daten64;
   try {
@@ -2133,10 +2200,16 @@ async function produktFotoHochladen(eingabeFeld) {
     return { bild: daten64 };
   }, { neuZeichnen: false });
   if (!erg) { if (status) status.textContent = ''; return; }
-  // Neues Foto gleich auswählen; nur den Foto-Bereich neu zeichnen
+  if (!erg.bild.startsWith('data:') && !(daten.eigeneFotos || []).includes(erg.bild)) {
+    daten.eigeneFotos = [erg.bild, ...(daten.eigeneFotos || [])];
+  }
+  if (weiteres) {
+    weiteresFotoDazu(erg.bild);
+    return;
+  }
+  // Neues Foto gleich auswählen; nur die Foto-Bereiche neu zeichnen
   f.bild = erg.bild;
-  const bereich = document.getElementById('vw-foto-auswahl');
-  if (bereich) bereich.innerHTML = fotoAuswahl(f);
+  fotoBereicheZeichnen();
   meldung('Foto hochgeladen und ausgewählt – jetzt noch „Speichern" tippen.');
 }
 
@@ -2193,6 +2266,7 @@ function ansichtProdukt() {
         <p class="vw-klein">Gilt für neue Bestellungen; bestehende behalten ihren Satz. Wird auch an Bertha weitergegeben.</p>
       </fieldset>
       <label class="vw-feld"><span>Beschreibung (optional)</span><textarea name="beschreibung" rows="2">${esc(f.beschreibung)}</textarea></label>
+      <div id="vw-weitere-fotos">${weitereFotosAuswahl(f)}</div>
       <label class="vw-feld"><span>Zutaten, Füllmenge, Herkunft (bei Lebensmitteln Pflicht)</span><textarea name="pflichtangaben" rows="2">${esc(f.pflichtangaben)}</textarea></label>
       <label class="vw-feld"><span>Allergene (z. B. „Ei, Weizen (Gluten)" – leer, wenn keine)</span><input name="allergene" value="${esc(f.allergene)}" /></label>
       <div id="vw-foto-auswahl">${fotoAuswahl(f)}</div>
@@ -2210,6 +2284,7 @@ function produktEingabe(f, aenderung = {}) {
     verfuegbar: f.verfuegbar !== false, imPortal: f.imPortal !== false,
     richtVonG: f.art === 'gewicht' ? grammAusText(f.von) : null, richtBisG: f.art === 'gewicht' ? grammAusText(f.bis) : null,
     beschreibung: f.beschreibung, pflichtangaben: f.pflichtangaben, allergene: f.allergene, bild: f.bild || '',
+    weitereBilder: [...(f.weitereBilder || [])],
     aktiv: f.aktiv !== false, herkunft: f.herkunft || null, ustSatz: f.ustSatz ?? null,
     ...aenderung,
   };
@@ -3196,6 +3271,12 @@ function initKlicks() {
       case 'produkt-aktiv':
         produktAktivUmschalten(produktVon(el.dataset.id));
         break;
+      case 'weiteres-foto-dazu':
+        weiteresFotoDazu(el.dataset.wert);
+        break;
+      case 'weiteres-foto-weg':
+        weiteresFotoWeg(Number(el.dataset.wert));
+        break;
       case 'schluessel-kopieren':
         schluesselKopieren();
         break;
@@ -3261,6 +3342,7 @@ function initEingaben() {
   document.addEventListener('change', (e) => {
     if (e.target.dataset.kundenImport !== undefined) kundenImportDatei(e.target);
     if (e.target.dataset.fotoHochladen !== undefined) produktFotoHochladen(e.target);
+    if (e.target.dataset.weiteresFotoHochladen !== undefined) produktFotoHochladen(e.target, true);
     if (e.target.dataset.gewicht) gewichtSpeichern(e.target);
     if (e.target.name === 'termin') adresseUmschalten();
     if (e.target.dataset.wahl === 'charge') {
