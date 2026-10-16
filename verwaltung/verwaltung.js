@@ -2070,22 +2070,21 @@ function fotoWahl(pfad, gewaehlt) {
 function fotoAuswahl(f) {
   const eigene = daten.eigeneFotos || [];
   const website = fotoliste || [];
-  // Das gewählte Foto immer anbieten, auch wenn es in keiner Liste (mehr) steht
-  const bekannt = !f.bild || eigene.includes(f.bild) || website.includes(f.bild);
-  const oben = [...(bekannt || !f.bild.startsWith('api/') && !f.bild.startsWith('data:') ? [] : [f.bild]), ...eigene,
-    ...website.filter((x) => x.startsWith('images/hofladen/'))];
-  const weitere = [...(bekannt || !f.bild.startsWith('images/') ? [] : [f.bild]),
-    ...website.filter((x) => !x.startsWith('images/hofladen/'))];
-  // Zugeklappt, damit der Speichern-Knopf am Handy nah bleibt – außer das
-  // gewählte Foto liegt dort
-  const weitereOffen = weitere.includes(f.bild);
+  const hofladen = website.filter((x) => x.startsWith('images/hofladen/'));
+  // Das gewählte Foto steht immer oben neben „Kein Foto" – auch ein Website-Foto
+  // oder eines, das in keiner Liste (mehr) steht –, damit es beim Bearbeiten
+  // gleich zu sehen ist und nicht zwischen allen Website-Fotos untergeht
+  const aktuell = f.bild && !eigene.includes(f.bild) && !hofladen.includes(f.bild) ? [f.bild] : [];
+  const oben = [...aktuell, ...eigene, ...hofladen];
+  // Zugeklappt, damit der Speichern-Knopf am Handy nah bleibt
+  const weitere = website.filter((x) => !x.startsWith('images/hofladen/') && x !== f.bild);
   return `<fieldset class="vw-feldgruppe"><legend>Foto auf der Hofladen-Seite</legend>
       <label class="vw-knopf vw-knopf--voll vw-foto-knopf">
         <input type="file" accept="image/*" data-foto-hochladen />
         Foto aufnehmen oder wählen</label>
       <p class="vw-klein" id="vw-foto-status" aria-live="polite">${oben.length ? 'Oder ein vorhandenes Foto antippen:' : ''}</p>
       <div class="vw-foto-raster">${fotoWahl('', f.bild)}${oben.map((x) => fotoWahl(x, f.bild)).join('')}</div>
-      ${weitere.length ? `<details class="vw-foto-weitere" ${weitereOffen ? 'open' : ''}>
+      ${weitere.length ? `<details class="vw-foto-weitere">
         <summary>Foto von der Website nehmen (${weitere.length})</summary>
         <div class="vw-foto-raster">${weitere.map((x) => fotoWahl(x, f.bild)).join('')}</div></details>` : ''}
     </fieldset>`;
