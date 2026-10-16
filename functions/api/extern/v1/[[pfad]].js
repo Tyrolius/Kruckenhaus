@@ -73,7 +73,7 @@ async function katalog(context) {
   const origin = new URL(context.request.url).origin;
   const { results } = await db.prepare(
     `SELECT id, name, art, bereich_name, dauerpreis_cent, verfuegbar, beschreibung, pflichtangaben,
-            allergene, bild, geaendert_am
+            allergene, bild, herkunft, ust_satz, geaendert_am
      FROM v_produkte
      WHERE verkaufsart = 'dauer' AND aktiv = 1 AND im_portal = 1 AND dauerpreis_cent IS NOT NULL
      ORDER BY bereich_reihenfolge, reihenfolge, name`
@@ -91,6 +91,9 @@ async function katalog(context) {
       beschreibung: p.beschreibung || '',
       pflichtangaben: p.pflichtangaben || '',
       allergene: p.allergene || '',
+      // Steuer und Herkunft (null = auf der Website nicht eingestuft)
+      herkunft: p.herkunft || null,
+      ust_satz: p.ust_satz ?? null,
       bild_url: p.bild ? `${origin}/${encodeURI(p.bild)}` : null,
       bild_version: p.bild ? (eigenesFoto ? eigenesFoto[1] : p.bild) : null,
       geaendert_am: isoZeit(p.geaendert_am),

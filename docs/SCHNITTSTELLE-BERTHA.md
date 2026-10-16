@@ -218,6 +218,8 @@ der Verwaltung mit Cloudflare Access.
       "beschreibung": "…",
       "pflichtangaben": "Hartweizengrieß, Eier, Salz, Wasser …",
       "allergene": "Weizen (Gluten), Ei",
+      "herkunft": "verarbeitung",
+      "ust_satz": 10,
       "bild_url": "https://kruckenhaus.at/api/hofladen/foto/7",
       "bild_version": "7",
       "geaendert_am": "2026-10-12T17:40:00Z"
@@ -225,6 +227,11 @@ der Verwaltung mit Cloudflare Access.
   ]
 }
 ```
+
+`herkunft` (`urprodukt`, `verarbeitung`, `zukauf`) und `ust_satz` (Prozent, z. B. `4.9`)
+sind `null`, solange das Produkt in der Verwaltung nicht eingestuft ist. Sind sie gesetzt,
+übernimmt Bertha sie für den Artikel (Website führt); bei `null` bleibt die Einstufung in
+Bertha frei wählbar.
 
 Antwortet mit `ETag`. Schickt Bertha `If-None-Match` mit und hat sich nichts
 geändert, kommt `304` ohne Inhalt. Das spart Abrufe.
@@ -649,6 +656,35 @@ Umgesetzt im Bertha-Repository (`Tyrolius/eiermann`), Übersicht dort in
   auf der Vorschau anlegen, in einer Test-Organisation verbinden und Ende-zu-Ende testen.
   Danach Zugang „Bertha“ auf der echten Adresse – das Recht `bestellen` erst nach der
   Prüfung des Hinweistexts und der Bestellbedingungen. Die Bertha-Demo bekommt keinen Live-Schlüssel.
+
+## 8d. Herkunft und USt-Satz (Stand Oktober 2026)
+
+Jedes Produkt hat in der Verwaltung **„Steuer und SVS“**: Einstufung (Urprodukt,
+Be- und Verarbeitung, Zukauf) und USt-Satz (4,9 / 10 / 13 / 20 %, Regelbesteuerung).
+Beide werden wie der Preis mit jeder Bestellposition festgehalten; ältere Positionen
+ohne Wert nehmen die aktuelle Einstufung des Produkts. Die Auswertung zeigt Brutto,
+Netto und USt je Einstufung und Satz, der Excel-Export hat je Zeile Einstufung, Satz,
+Netto und USt. `/katalog` gibt beides an Bertha weiter (3.3).
+
+- **Live-Datenbank:** einmal in der D1-Console (`migration-2026-10-steuer.sql` plus die
+  drei neu angelegten Ansichten, **nur einmal** ausführen – `ALTER TABLE` lässt sich nicht
+  wiederholen; vorher in der Console `/bookmark` oder eine Sicherung):
+
+```sql
+ALTER TABLE produkte ADD COLUMN herkunft TEXT CHECK (herkunft IS NULL OR herkunft IN ('urprodukt', 'verarbeitung', 'zukauf')); ALTER TABLE produkte ADD COLUMN ust_satz REAL CHECK (ust_satz IS NULL OR (ust_satz >= 0 AND ust_satz < 100)); ALTER TABLE bestell_positionen ADD COLUMN herkunft TEXT; ALTER TABLE bestell_positionen ADD COLUMN ust_satz REAL; DROP VIEW IF EXISTS v_produkte; DROP VIEW IF EXISTS v_bestellsummen; DROP VIEW IF EXISTS v_positionen; CREATE VIEW IF NOT EXISTS v_produkte AS SELECT p.id, p.name, p.art, p.kategorie, p.startpreis_cent, p.beschreibung, p.pflichtangaben, p.allergene, p.richtgewicht_von_g, p.richtgewicht_bis_g, p.bild, p.aktiv, p.reihenfolge, p.verkaufsart, p.dauerpreis_cent, p.verfuegbar, p.im_portal, p.geaendert_am, p.herkunft, p.ust_satz, b.id AS bereich, b.name AS bereich_name, b.reihenfolge AS bereich_reihenfolge FROM produkte p LEFT JOIN bereiche b ON b.id = COALESCE(p.bereich_id, (SELECT b2.id FROM bereiche b2 WHERE b2.kennung = p.kategorie)); CREATE VIEW IF NOT EXISTS v_positionen AS SELECT p.id, p.bestellung_id, p.charge_artikel_id, ca.charge_id, pr.id AS produkt_id, pr.name AS produkt_name, pr.art, p.menge, p.einzelpreis_cent, p.gewicht_g, CASE WHEN pr.art <> 'gewicht' THEN p.einzelpreis_cent * p.menge WHEN p.gewicht_g IS NOT NULL THEN CAST(ROUND(p.einzelpreis_cent * p.gewicht_g / 1000.0) AS INTEGER) ELSE CAST(ROUND(p.einzelpreis_cent * p.menge * (pr.richtgewicht_von_g + pr.richtgewicht_bis_g) / 2000.0) AS INTEGER) END AS betrag_cent, CASE WHEN pr.art = 'gewicht' AND p.gewicht_g IS NULL THEN 1 ELSE 0 END AS geschaetzt, COALESCE(p.herkunft, pr.herkunft) AS herkunft, COALESCE(p.ust_satz, pr.ust_satz) AS ust_satz FROM bestell_positionen p JOIN charge_artikel ca ON ca.id = p.charge_artikel_id JOIN produkte pr ON pr.id = ca.produkt_id; CREATE VIEW IF NOT EXISTS v_bestellsummen AS SELECT b.id AS bestellung_id, b.nummer, b.charge_id, COALESCE(SUM(v.betrag_cent), 0) AS waren_cent, COALESCE(SUM(v.betrag_cent), 0) + b.liefergebuehr_cent AS gesamt_cent, COALESCE(MAX(v.geschaetzt), 0) AS geschaetzt FROM bestellungen b LEFT JOIN v_positionen v ON v.bestellung_id = b.id GROUP BY b.id;
+```
+
+  Dasselbe danach in der Test-Datenbank `kruckenhaus-test`.
+
+## 8e. Kunden aus Bertha übernehmen (einmalig, Stand Oktober 2026)
+
+Ohne Schnittstelle, bewusst als Datei, damit sichtbar ist, was übergeben wird:
+Bertha → Einstellungen → Hofladen → „Kundenliste für den Hofladen exportieren“ erzeugt eine
+CSV (Name, Telefon, E-Mail, Straße, PLZ, Ort, Notiz „Eierkunde (Bertha)“; nur aktive Kund:innen,
+keine Preise oder Salden). Verwaltung → „Verbindung zu Bertha“ → „Kunden übernehmen“ liest sie
+mit Vorschau ein (`POST /api/verwaltung/kunden-import`). Wiedererkannt wird wie überall an der
+E-Mail, sonst am gleichen Namen; bekannte Kunden werden nur ergänzt, nie überschrieben,
+„Stammkunde“ wahlweise für alle gesetzt. Jede CSV mit diesen Spaltennamen geht.
 
 ## 9. Tests
 

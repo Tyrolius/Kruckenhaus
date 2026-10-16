@@ -31,6 +31,8 @@ let ladeFehler = '';
 let beschaeftigt = false;    // verhindert doppeltes Absenden
 const zustand = {
   chargeId: null,
+  aendernOffen: null,      // Bestellung, deren „Menge ändern" aufgeklappt ist
+  kundenImport: null,      // Vorschau „Kunden übernehmen" (Bertha-Seite)
   filter: 'alle',
   suche: '',
   uebergabeArt: 'abholung',
@@ -87,6 +89,14 @@ function terminText(t) {
 
 const QUELLEN = { web: 'Website', whatsapp: 'WhatsApp', telefon: 'Telefon', persoenlich: 'persönlich' };
 const ZAHLARTEN = { bar: 'bar', ueberweisung: 'Überweisung' };
+// Einstufung je Produkt für Steuer und SVS (gleiche Begriffe wie in Bertha)
+const HERKUNFT = { urprodukt: 'Urprodukt', verarbeitung: 'Be- und Verarbeitung', zukauf: 'Zukauf (Handelsware)' };
+const ustSaetze = () => daten.ustSaetze || [4.9, 10, 13, 20];
+const satzText = (satz) => `${String(satz).replace('.', ',')} %`;
+// „Urprodukt · 10 % USt" bzw. „nicht eingestuft"
+const einstufungText = (herkunft, satz) => (herkunft || satz != null
+  ? [herkunft ? HERKUNFT[herkunft] : 'Herkunft offen', satz != null ? `${satzText(satz)} USt` : 'USt-Satz offen'].join(' · ')
+  : 'nicht eingestuft');
 // Bestellungen aus dem Bertha-Kundenportal kommen als 'web' an
 const quelleText = (b) => (b.ueberBertha ? 'Bertha-Portal' : QUELLEN[b.quelle] || b.quelle);
 const ZEITRAEUME = {
@@ -1092,7 +1102,6 @@ function ansichtAbgabe() {
     return;
   }
 
-  const dazu = ch.artikel.filter((a) => !b.positionen.some((p) => p.artikelId === a.id) && freieMenge(ch, a.id) > 0);
   const positionen = b.positionen.map((p) => {
     const a = artikelVon(ch, p.artikelId);
     const gewicht = a.art === 'gewicht';
@@ -1124,20 +1133,7 @@ function ansichtAbgabe() {
     <section class="vw-karte">
       ${hatGewicht ? '<p class="vw-klein">Gewichte vom Etikett eintippen (kg).</p>' : ''}
       ${positionen}
-      <details class="vw-aendern"><summary>Menge ändern oder Artikel dazu</summary>
-        ${b.positionen.map((p) => {
-          const a = artikelVon(ch, p.artikelId);
-          return `<div class="vw-pos-kopf vw-pos-aendern"><span>${esc(a.name)}</span>
-            <div class="vw-zaehler">
-              <button type="button" data-aktion="pos-menge" data-id="${b.id}" data-artikel="${a.id}" data-wert="${p.menge - 1}" aria-label="${esc(a.name)} eins weniger">−</button>
-              <output>${p.menge}</output>
-              <button type="button" data-aktion="pos-menge" data-id="${b.id}" data-artikel="${a.id}" data-wert="${p.menge + 1}" aria-label="${esc(a.name)} eins mehr">+</button>
-            </div></div>`;
-        }).join('')}
-        ${dazu.length ? `<select class="vw-dazu" data-dazu="${b.id}" aria-label="Artikel dazu">
-          <option value="">+ Artikel dazu …</option>
-          ${dazu.map((a) => `<option value="${a.id}">${esc(a.name)} (${freiText(ch, a.id)})</option>`).join('')}</select>` : ''}
-      </details>
+      ${mengeAendernBlock(b)}
       <div class="vw-summe"><span>Summe</span><strong data-betrag="${b.id}">${betrag}</strong></div>
       ${haupt}
       ${neben ? `<p class="vw-mitte">${neben}</p>` : ''}
@@ -1189,6 +1185,31 @@ async function uebergabeAbschliessen(b, zahlung) {
   } else if (info) {
     zahlungsinfoOeffnen(aktuell);
   }
+}
+
+// „Menge ändern oder Artikel dazu" – bei der Übergabe und in den Details
+// einer vorgemerkten Bestellung (z. B. Kunde will eine zweite Gans). Bleibt
+// nach jedem Tippen offen (zustand.aendernOffen), weil neu gezeichnet wird.
+function mengeAendernBlock(b) {
+  const ch = chargeVon(b);
+  const dazu = ch.artikel.filter((a) => !b.positionen.some((p) => p.artikelId === a.id) && freieMenge(ch, a.id) > 0);
+  return `<details class="vw-aendern" data-aendern="${b.id}" ${zustand.aendernOffen === b.id ? 'open' : ''}>
+    <summary>Menge ändern oder Artikel dazu</summary>
+    ${b.positionen.map((p) => {
+      const a = artikelVon(ch, p.artikelId);
+      return `<div class="vw-pos-kopf vw-pos-aendern"><span>${esc(a.name)}<br><span class="vw-klein">${freiText(ch, a.id)}</span></span>
+        <div class="vw-zaehler">
+          <button type="button" data-aktion="pos-menge" data-id="${b.id}" data-artikel="${a.id}" data-wert="${p.menge - 1}" aria-label="${esc(a.name)} eins weniger">−</button>
+          <output>${p.menge}</output>
+          <button type="button" data-aktion="pos-menge" data-id="${b.id}" data-artikel="${a.id}" data-wert="${p.menge + 1}" aria-label="${esc(a.name)} eins mehr">+</button>
+        </div></div>`;
+    }).join('')}
+    ${dazu.length ? `<select class="vw-dazu" data-dazu="${b.id}" aria-label="Artikel dazu">
+      <option value="">+ Artikel dazu …</option>
+      ${dazu.map((a) => `<option value="${a.id}">${esc(a.name)} (${freiText(ch, a.id)})</option>`).join('')}</select>` : ''}
+    ${b.positionen.some((p) => artikelVon(ch, p.artikelId).art === 'gewicht')
+      ? '<p class="vw-klein">Bei Ware nach Gewicht wird ein schon eingetragenes Gewicht beim Ändern der Stückzahl gelöscht – bitte neu wiegen.</p>' : ''}
+  </details>`;
 }
 
 // Menge eines Artikels ändern bzw. Artikel dazu (bei der Übergabe)
@@ -1782,7 +1803,8 @@ function auswertungBeispiel() {
       const a = artikelVon(ch, p.artikelId);
       const produkt = produktVon(a.produktId) || {};
       return { produkt: a.name, bereich: bereichName(produkt.bereichId), bereichRang: bereichRang(produkt.bereichId), art: a.art, menge: p.menge,
-        gewichtG: p.gewichtG || null, cent: positionBetrag(ch, p).cent };
+        gewichtG: p.gewichtG || null, cent: positionBetrag(ch, p).cent,
+        herkunft: produkt.herkunft || null, ustSatz: produkt.ustSatz ?? null };
     });
     return { id: b.id, nummer: b.nummer, chargeId: b.chargeId, kunde: kundeVon(b).name, quelle: b.quelle,
       hofverkauf: istHofverkauf(b), zahlart: b.zahlart, bezahlt: b.bezahlt, bezahltAm: b.bezahlt ? new Date().toISOString().slice(0, 10) : null,
@@ -1841,6 +1863,20 @@ function ansichtAuswertung() {
     .map((name) => [name, produkte.filter((p) => p.bereich === name).reduce((x, p) => x + p.cent, 0)])
     .filter(([, cent]) => cent);
 
+  // Je Einstufung und USt-Satz: Preise sind Bruttopreise (inkl. USt)
+  const jeSteuer = new Map();
+  aw.bestellungen.forEach((b) => b.positionen.forEach((p) => {
+    const schluessel = `${p.herkunft || ''}|${p.ustSatz ?? ''}`;
+    const e = jeSteuer.get(schluessel) || { herkunft: p.herkunft, ustSatz: p.ustSatz, cent: 0 };
+    e.cent += p.cent;
+    jeSteuer.set(schluessel, e);
+  }));
+  const steuer = [...jeSteuer.values()].map((e) => ({ ...e, ...ustAnteil(e.cent, e.ustSatz) }))
+    .sort((x, y) => (x.herkunft || 'zz').localeCompare(y.herkunft || 'zz') || (x.ustSatz ?? 99) - (y.ustSatz ?? 99));
+  const warenCent = steuer.reduce((x, e) => x + e.cent, 0);
+  const lieferCent = summe(aw.bestellungen) - warenCent;
+  const offenEingestuft = steuer.some((e) => !e.herkunft || e.ustSatz == null);
+
   const runden = aw.runden.map((r) => {
     const liste = aw.bestellungen.filter((b) => b.chargeId === r.id);
     const offenCent = summe(liste.filter((b) => !b.bezahlt));
@@ -1871,6 +1907,16 @@ function ansichtAuswertung() {
       ${bereiche.length ? bereiche.map(([name, cent]) => `<div class="vw-zeile-kopf vw-auswertung-zeile"><span>${esc(name)}</span><strong>${euro(cent)}</strong></div>`).join('')
         : '<p class="vw-klein">In diesem Jahr wurde noch nichts übergeben.</p>'}
     </section>
+    ${steuer.length ? `<section class="vw-karte"><h2>Nach Einstufung und USt-Satz</h2>
+      <table class="vw-tabelle vw-auswertung-tabelle"><thead><tr><th>Einstufung</th><th class="vw-zahl">Brutto</th><th class="vw-zahl">Netto</th><th class="vw-zahl">USt</th></tr></thead>
+      <tbody>${steuer.map((e) => `<tr${!e.herkunft || e.ustSatz == null ? ' class="vw-warnung"' : ''}><td>${esc(einstufungText(e.herkunft, e.ustSatz))}</td>
+        <td class="vw-zahl">${euro(e.cent)}</td><td class="vw-zahl">${e.ustSatz != null ? euro(e.nettoCent) : ''}</td>
+        <td class="vw-zahl">${e.ustSatz != null ? euro(e.ustCent) : ''}</td></tr>`).join('')}
+        ${lieferCent ? `<tr><td>Liefergebühren</td><td class="vw-zahl">${euro(lieferCent)}</td><td></td><td></td></tr>` : ''}</tbody></table>
+      <p class="vw-klein">Preise sind Bruttopreise. Es zählt der Satz zum Zeitpunkt der Bestellung.${offenEingestuft
+        ? ' Rot = Produkt noch nicht (ganz) eingestuft – im Sortiment Einstufung und USt-Satz eintragen.' : ''}${lieferCent
+        ? ' Liefergebühren folgen als Nebenleistung dem Satz der gelieferten Ware.' : ''}</p>
+    </section>` : ''}
     ${produkte.length ? `<section class="vw-karte"><h2>Nach Produkt</h2>
       <table class="vw-tabelle vw-auswertung-tabelle"><thead><tr><th>Produkt</th><th class="vw-zahl">Menge</th><th class="vw-zahl">kg</th><th class="vw-zahl">Umsatz</th></tr></thead>
       <tbody>${produkte.map((p) => `<tr><td>${esc(p.produkt)}</td><td class="vw-zahl">${p.menge}</td>
@@ -1880,18 +1926,28 @@ function ansichtAuswertung() {
       <p class="vw-klein">Abgeschlossene Runden verschwinden aus Übersicht, Bestellungen und Übergabe, bleiben hier aber erhalten.</p></section>
     <button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit" data-aktion="auswertung-export" ${aw.bestellungen.length ? '' : 'disabled'}>Für die Buchhaltung herunterladen (Excel)</button>
     <p class="vw-klein">Eine Zeile je verkauftem Artikel mit Datum, Bestellnummer, Kunde, Bereich, Menge, Gewicht, Betrag und Zahlung – zum Weitergeben an die Buchhaltung.
-      Die Einordnung für Steuer und Pauschalierung bitte mit der Buchhaltung klären.</p>`;
+      Mit Einstufung, USt-Satz, Netto und USt je Zeile.</p>`;
+}
+
+// Bruttobetrag → Netto und USt (auf Cent gerundet; Netto = Brutto − USt)
+function ustAnteil(bruttoCent, satz) {
+  if (satz == null) return { nettoCent: bruttoCent, ustCent: 0 };
+  const ustCent = Math.round((bruttoCent * satz) / (100 + satz));
+  return { nettoCent: bruttoCent - ustCent, ustCent };
 }
 
 function auswertungExport() {
   const aw = zustand.auswertung;
   const runde = (id) => (aw.runden.find((r) => r.id === id) || {}).titel || '';
   const zeilen = [['Übergabe am', 'Bestellnr.', 'Bestellrunde', 'Kunde', 'Art', 'Bereich', 'Produkt', 'Menge',
-    'Gewicht kg', 'Betrag €', 'Zahlart', 'Bezahlt am']];
+    'Gewicht kg', 'Betrag €', 'Einstufung', 'USt %', 'Netto €', 'USt €', 'Zahlart', 'Bezahlt am']];
   aw.bestellungen.forEach((b) => b.positionen.forEach((p) => {
+    const anteil = ustAnteil(p.cent, p.ustSatz);
     zeilen.push([b.uebergebenAm, b.nummer, runde(b.chargeId), b.kunde,
       b.hofverkauf ? 'Verkauf am Hof' : `Vorbestellung (${quelleText(b)})`,
       p.bereich, p.produkt, p.menge, p.gewichtG ? p.gewichtG / 1000 : '', p.cent / 100,
+      p.herkunft ? HERKUNFT[p.herkunft] : '', p.ustSatz ?? '',
+      p.ustSatz != null ? anteil.nettoCent / 100 : '', p.ustSatz != null ? anteil.ustCent / 100 : '',
       b.bezahlt ? ZAHLARTEN[b.bezahlt] : `offen (${ZAHLARTEN[b.zahlart]})`, b.bezahltAm || '']);
   }));
   csvHerunterladen(zeilen, `hofladen-auswertung-${aw.jahr}.csv`);
@@ -1944,10 +2000,13 @@ function ansichtSortiment() {
           <span class="vw-klein">${p.verkaufsart === 'dauer'
             ? `immer erhältlich · ${p.dauerpreisCent != null ? euro(p.dauerpreisCent) : 'noch ohne Preis'}`
             : `${p.art === 'gewicht' ? 'nach Gewicht' : 'Fixpreis'}${p.startpreisCent != null
-              ? ` · Vorschlag ${euro(p.startpreisCent)}${p.art === 'gewicht' ? '/kg' : ''}` : ''}`}${p.allergene ? ` · Allergene: ${esc(p.allergene)}` : ''}</span></div></div>
+              ? ` · Vorschlag ${euro(p.startpreisCent)}${p.art === 'gewicht' ? '/kg' : ''}` : ''}`}${p.allergene ? ` · Allergene: ${esc(p.allergene)}` : ''}<br>
+          <span class="${p.herkunft && p.ustSatz != null ? '' : 'vw-warnung'}">${einstufungText(p.herkunft, p.ustSatz)}</span></span></div></div>
         <div class="vw-knopfreihe vw-knopfreihe--klein">
           ${p.verkaufsart === 'dauer' && p.aktiv !== false ? `<button type="button" class="vw-knopf vw-knopf--klein${p.verfuegbar === false ? ' vw-knopf--voll' : ''}" data-aktion="produkt-verfuegbar" data-id="${p.id}">${p.verfuegbar === false ? 'Wieder verfügbar' : 'Ausverkauft'}</button>` : ''}
           <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="produkt-bearbeiten" data-id="${p.id}">Bearbeiten</button>
+          <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="produkt-kopieren" data-id="${p.id}"
+            aria-label="${esc(p.name)} als neues Produkt kopieren">Kopieren</button>
           <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="produkt-aktiv" data-id="${p.id}">${p.aktiv === false ? 'Wieder anbieten' : 'Ausblenden'}</button>
         </div>
       </div>`).join('')}</section>`).join('')}`;
@@ -1960,13 +2019,19 @@ const produktFormWerte = (p) => ({
   verfuegbar: p.verfuegbar !== false, imPortal: p.imPortal !== false,
 });
 
-function produktFormStarten(id) {
+// vorlageId: „Kopieren" – neues Produkt mit allen Angaben der Vorlage
+// (z. B. weitere Nudelsorte), nur Name mit „(Kopie)", wieder angeboten.
+function produktFormStarten(id, vorlageId = null) {
   const p = id ? produktVon(id) : null;
+  const vorlage = !p && vorlageId ? produktVon(vorlageId) : null;
   zustand.produktForm = p
     ? produktFormWerte(p)
+    : vorlage
+    ? { ...produktFormWerte(vorlage), id: null, name: `${vorlage.name} (Kopie)`, verwendet: false,
+      aktiv: true, verfuegbar: true, kopieVon: vorlage.name }
     : { id: null, name: '', art: 'stueck', bereichId: (daten.bereiche[0] || {}).id || '', preis: '', von: '', bis: '', beschreibung: '',
       pflichtangaben: '', allergene: '', bild: '', aktiv: true, verwendet: false,
-      verkaufsart: 'runde', dauerpreis: '', verfuegbar: true, imPortal: true };
+      verkaufsart: 'runde', dauerpreis: '', verfuegbar: true, imPortal: true, herkunft: null, ustSatz: null };
   if (fotoliste === null) fotolisteLaden();
 }
 
@@ -2082,7 +2147,8 @@ function ansichtProdukt() {
   const arten = f.art === 'paket' ? ARTEN : { gewicht: ARTEN.gewicht, stueck: ARTEN.stueck };
   const artGesperrt = f.id && f.verwendet;
   inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>${f.id ? 'Produkt bearbeiten' : 'Neues Produkt'}</h1></div>
+    <div class="vw-kopf"><h1>${f.id ? 'Produkt bearbeiten' : 'Neues Produkt'}</h1>
+      ${!f.id && f.kopieVon ? `<p class="vw-klein">Kopie von „${esc(f.kopieVon)}" – alle Angaben sind übernommen. Bitte den Namen anpassen und Foto, Pflichtangaben und Allergene prüfen.</p>` : ''}</div>
     <form class="vw-karte" id="vw-produkt-formular" novalidate>
       <label class="vw-feld"><span>Name (so sehen ihn die Kunden)</span>
         <input name="name" value="${esc(f.name)}" placeholder="z. B. Freilandeier 10 Stück" required /></label>
@@ -2118,6 +2184,15 @@ function ansichtProdukt() {
         <label class="vw-haken"><input type="checkbox" name="imPortal" ${f.imPortal ? 'checked' : ''} />
           Auch im Bertha-Portal anbieten (für Eierkunden)</label>
       </div>
+      <fieldset class="vw-feldgruppe"><legend>Steuer und SVS</legend>
+        <label class="vw-feld"><span>Einstufung</span><select name="herkunft">
+          <option value="">noch nicht eingestuft</option>
+          ${Object.entries(HERKUNFT).map(([wert, text]) => `<option value="${wert}" ${f.herkunft === wert ? 'selected' : ''}>${text}</option>`).join('')}</select></label>
+        <label class="vw-feld"><span>USt-Satz</span><select name="ustSatz">
+          <option value="">noch nicht festgelegt</option>
+          ${ustSaetze().map((satz) => `<option value="${satz}" ${f.ustSatz === satz ? 'selected' : ''}>${satzText(satz)}</option>`).join('')}</select></label>
+        <p class="vw-klein">Gilt für neue Bestellungen; bestehende behalten ihren Satz. Wird auch an Bertha weitergegeben.</p>
+      </fieldset>
       <label class="vw-feld"><span>Beschreibung (optional)</span><textarea name="beschreibung" rows="2">${esc(f.beschreibung)}</textarea></label>
       <label class="vw-feld"><span>Zutaten, Füllmenge, Herkunft (bei Lebensmitteln Pflicht)</span><textarea name="pflichtangaben" rows="2">${esc(f.pflichtangaben)}</textarea></label>
       <label class="vw-feld"><span>Allergene (z. B. „Ei, Weizen (Gluten)" – leer, wenn keine)</span><input name="allergene" value="${esc(f.allergene)}" /></label>
@@ -2136,7 +2211,7 @@ function produktEingabe(f, aenderung = {}) {
     verfuegbar: f.verfuegbar !== false, imPortal: f.imPortal !== false,
     richtVonG: f.art === 'gewicht' ? grammAusText(f.von) : null, richtBisG: f.art === 'gewicht' ? grammAusText(f.bis) : null,
     beschreibung: f.beschreibung, pflichtangaben: f.pflichtangaben, allergene: f.allergene, bild: f.bild || '',
-    aktiv: f.aktiv !== false,
+    aktiv: f.aktiv !== false, herkunft: f.herkunft || null, ustSatz: f.ustSatz ?? null,
     ...aenderung,
   };
 }
@@ -2150,6 +2225,8 @@ async function produktSpeichern(form) {
   f.verkaufsart = verkaufsart ? verkaufsart.value : f.verkaufsart;
   f.verfuegbar = feld(form, 'verfuegbar').checked;
   f.imPortal = feld(form, 'imPortal').checked;
+  f.herkunft = feld(form, 'herkunft').value || null;
+  f.ustSatz = feld(form, 'ustSatz').value === '' ? null : Number(feld(form, 'ustSatz').value);
   const bild = form.querySelector('input[name="bild"]:checked');
   if (bild) f.bild = bild.value;
   const eingabe = produktEingabe(f);
@@ -2318,6 +2395,114 @@ function herText(sqlZeit) {
   return `am ${zeitpunktKurz(sqlZeit)}`;
 }
 
+// Kunden übernehmen – z. B. einmalig die Kundenliste aus Bertha (dort:
+// Einstellungen → Hofladen → „Kundenliste exportieren"). Jede CSV mit den
+// Spalten Name, Telefon, E-Mail, Straße, PLZ, Ort (Notiz optional) geht.
+// Erst Vorschau, dann übernehmen; bekannte Kunden werden nur ergänzt.
+const IMPORT_SPALTEN = {
+  name: ['name'], telefon: ['telefon', 'tel', 'phone'], email: ['e-mail', 'email', 'mail'],
+  strasse: ['straße', 'strasse', 'adresse'], plz: ['plz'], ort: ['ort'], notiz: ['notiz', 'anmerkung'],
+};
+
+function csvLesen(text) {
+  const inhalt = text.replace(/^\ufeff/, '');
+  const trenner = (inhalt.split(/\r?\n/)[0].match(/;/g) || []).length >= (inhalt.split(/\r?\n/)[0].match(/,/g) || []).length ? ';' : ',';
+  const zeilen = [];
+  let zeile = [];
+  let feld = '';
+  let inAnf = false;
+  for (let i = 0; i < inhalt.length; i++) {
+    const c = inhalt[i];
+    if (inAnf) {
+      if (c === '"' && inhalt[i + 1] === '"') { feld += '"'; i++; } else if (c === '"') inAnf = false; else feld += c;
+    } else if (c === '"') inAnf = true;
+    else if (c === trenner) { zeile.push(feld); feld = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && inhalt[i + 1] === '\n') i++;
+      zeile.push(feld); feld = '';
+      if (zeile.some((x) => x.trim())) zeilen.push(zeile);
+      zeile = [];
+    } else feld += c;
+  }
+  zeile.push(feld);
+  if (zeile.some((x) => x.trim())) zeilen.push(zeile);
+  // Excel-Schutz aus dem Export ('+43 …) wieder entfernen
+  return zeilen.map((z) => z.map((x) => x.trim().replace(/^'(?=[=+\-@])/, '')));
+}
+
+function kundenAusCsv(text) {
+  const [kopf, ...rest] = csvLesen(text);
+  if (!kopf) return { fehler: 'Die Datei ist leer.' };
+  const spalte = {};
+  kopf.forEach((titel, i) => {
+    const t = titel.toLowerCase();
+    Object.entries(IMPORT_SPALTEN).forEach(([feld, namen]) => { if (spalte[feld] == null && namen.includes(t)) spalte[feld] = i; });
+  });
+  if (spalte.name == null) return { fehler: 'Keine Spalte „Name" gefunden – bitte die CSV aus Bertha verwenden.' };
+  const kunden = rest.map((z) => Object.fromEntries(Object.entries(spalte).map(([feld, i]) => [feld, z[i] || ''])))
+    .filter((k) => k.name);
+  const bekannt = (k) => daten.kunden.some((x) => (k.email && x.email && x.email.toLowerCase() === k.email.toLowerCase())
+    || x.name.trim().toLowerCase() === k.name.trim().toLowerCase());
+  return { kunden, bekannt: kunden.filter(bekannt).length };
+}
+
+function kundenImportKarte() {
+  const imp = zustand.kundenImport;
+  if (!imp) {
+    return `<section class="vw-karte" aria-label="Kunden übernehmen"><h2>Kunden übernehmen</h2>
+      <p class="vw-klein">Einmalig die Kundenliste aus Bertha holen: in der Bertha-App unter Einstellungen → Hofladen
+        „Kundenliste exportieren", die Datei hier auswählen. Ihr seht zuerst eine Vorschau. Schon bekannte Kunden
+        (gleiche E-Mail oder gleicher Name) werden nur ergänzt, nie überschrieben.</p>
+      <label class="vw-knopf"><input type="file" accept=".csv,text/csv" data-kunden-import hidden /> CSV-Datei wählen …</label>
+    </section>`;
+  }
+  if (imp.fehler) {
+    return `<section class="vw-karte"><h2>Kunden übernehmen</h2><p class="vw-warnung">${esc(imp.fehler)}</p>
+      <button type="button" class="vw-knopf" data-aktion="kunden-import-verwerfen">Andere Datei wählen</button></section>`;
+  }
+  const n = imp.kunden.length;
+  return `<section class="vw-karte" aria-label="Kunden übernehmen"><h2>Kunden übernehmen – Vorschau</h2>
+    <p><strong>${n} Kunden</strong> in der Datei: ${n - imp.bekannt} neu, ${imp.bekannt} schon bekannt (werden nur ergänzt).</p>
+    <table class="vw-tabelle"><tbody>${imp.kunden.slice(0, 8).map((k) => `<tr><td>${esc(k.name)}<br>
+      <span class="vw-klein">${esc([k.telefon, k.email, [k.strasse, `${k.plz || ''} ${k.ort || ''}`.trim()].filter(Boolean).join(', ')].filter(Boolean).join(' · '))}</span></td></tr>`).join('')}
+      ${n > 8 ? `<tr><td class="vw-klein">… und ${n - 8} weitere</td></tr>` : ''}</tbody></table>
+    <label class="vw-haken"><input type="checkbox" id="vw-import-stamm" /> Alle als Stammkunden markieren</label>
+    <p class="vw-klein">Stammkunden bekommen den Vorlauf bei Bestellrunden (Stammkunden-Link).</p>
+    <div class="vw-knopfreihe">
+      <button type="button" class="vw-knopf vw-knopf--voll" data-aktion="kunden-import">${n} Kunden übernehmen</button>
+      <button type="button" class="vw-knopf" data-aktion="kunden-import-verwerfen">Abbrechen</button>
+    </div></section>`;
+}
+
+function kundenImportDatei(input) {
+  const datei = input.files && input.files[0];
+  if (!datei) return;
+  const leser = new FileReader();
+  leser.onload = () => { zustand.kundenImport = kundenAusCsv(String(leser.result || '')); zeigen(); };
+  leser.onerror = () => meldung('Die Datei konnte nicht gelesen werden.');
+  leser.readAsText(datei, 'utf-8');
+}
+
+async function kundenImportieren() {
+  const imp = zustand.kundenImport;
+  if (!imp || !imp.kunden) return;
+  const stamm = Boolean((document.getElementById('vw-import-stamm') || {}).checked);
+  const erg = await speichern('kunden-import', { kunden: imp.kunden, stammkunde: stamm }, () => {
+    let neu = 0;
+    imp.kunden.forEach((k) => {
+      if (daten.kunden.some((x) => x.name.toLowerCase() === k.name.toLowerCase())) return;
+      neu++;
+      daten.kunden.push({ id: `k${Date.now()}${neu}`, name: k.name, telefon: k.telefon || '', email: k.email || '',
+        strasse: k.strasse || '', plz: k.plz || '', ort: k.ort || '', stammkunde: stamm, notiz: k.notiz || '' });
+    });
+    return { neu, ergaenzt: imp.kunden.length - neu, uebersprungen: 0 };
+  }, { neuZeichnen: false });
+  if (!erg) return;
+  zustand.kundenImport = null;
+  zeigen();
+  meldung(`Kunden übernommen – neu: ${erg.neu}, ergänzt: ${erg.ergaenzt}${erg.uebersprungen ? `, übersprungen: ${erg.uebersprungen}` : ''}.`);
+}
+
 function ansichtBertha() {
   const s = daten.schnittstelle;
   if (!s) {
@@ -2376,6 +2561,7 @@ function ansichtBertha() {
         <button type="submit" class="vw-knopf vw-knopf--voll">Schlüssel anlegen</button>
       </form>
     </section>
+    ${kundenImportKarte()}
     <section class="vw-karte" aria-label="Not-Aus"><h2>Schnittstelle ${s.pausiert ? 'pausiert' : 'aktiv'}</h2>
       <p class="vw-klein">Pausieren stoppt sofort alle Abrufe von Bertha. Die Website und eure Bestellungen laufen normal weiter.</p>
       <button type="button" class="vw-knopf ${s.pausiert ? 'vw-knopf--voll' : 'vw-knopf--warnung'}" data-aktion="schnittstelle-pausieren"
@@ -2519,6 +2705,7 @@ function detailOeffnen(id) {
     <div class="vw-abschnitt">
       <table class="vw-tabelle"><tbody>${positionen}</tbody>
         <tfoot><tr><td>Summe</td><td class="vw-zahl">${betragText(summe)}</td></tr></tfoot></table>
+      ${b.status === 'vorgemerkt' && !b.uebergeben ? mengeAendernBlock(b) : ''}
       <div class="vw-knopfreihe" role="group" aria-label="Zahlung gewünscht">
         <span class="vw-klein">Zahlung gewünscht:</span>
         ${Object.entries(ZAHLARTEN).map(([wert, text]) => `<button type="button" class="vw-chip" data-aktion="zahlart-setzen" data-id="${b.id}" data-wert="${wert}" aria-pressed="${b.zahlart === wert}">${text}</button>`).join('')}
@@ -3001,7 +3188,9 @@ function initKlicks() {
         break;
       case 'produkt-neu':
       case 'produkt-bearbeiten':
-        produktFormStarten(el.dataset.aktion === 'produkt-neu' ? null : el.dataset.id);
+      case 'produkt-kopieren':
+        if (el.dataset.aktion === 'produkt-kopieren') produktFormStarten(null, el.dataset.id);
+        else produktFormStarten(el.dataset.aktion === 'produkt-neu' ? null : el.dataset.id);
         if (aktuelleAnsicht() === 'produkt') zeigen();
         else location.hash = '#produkt';
         break;
@@ -3013,6 +3202,13 @@ function initKlicks() {
         break;
       case 'schluessel-fertig':
         neuerSchluessel = null;
+        zeigen();
+        break;
+      case 'kunden-import':
+        kundenImportieren();
+        break;
+      case 'kunden-import-verwerfen':
+        zustand.kundenImport = null;
         zeigen();
         break;
       case 'zugang-sperren':
@@ -3057,7 +3253,14 @@ function initEingaben() {
     }
   });
 
+  // „Menge ändern" bleibt offen, auch wenn nach dem Speichern neu gezeichnet wird
+  // (toggle steigt nicht auf – daher in der Capture-Phase)
+  document.addEventListener('toggle', (e) => {
+    const id = e.target.dataset && e.target.dataset.aendern;
+    if (id) zustand.aendernOffen = e.target.open ? id : null;
+  }, true);
   document.addEventListener('change', (e) => {
+    if (e.target.dataset.kundenImport !== undefined) kundenImportDatei(e.target);
     if (e.target.dataset.fotoHochladen !== undefined) produktFotoHochladen(e.target);
     if (e.target.dataset.gewicht) gewichtSpeichern(e.target);
     if (e.target.name === 'termin') adresseUmschalten();

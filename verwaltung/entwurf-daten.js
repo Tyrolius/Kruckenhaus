@@ -42,7 +42,7 @@ const ENTWURF_DATEN = {
   // für Dauerartikel (ohne verkaufsart = 'runde'); die ständige Runde
   // „Dauersortiment" bildet verwaltung.js daraus.
   produkte: [
-    { id: 'p1', name: 'Masthuhn ganz', art: 'gewicht', bereichId: 'b1', richtVonG: 1800, richtBisG: 2400, startpreisCent: 1200 },
+    { id: 'p1', name: 'Masthuhn ganz', art: 'gewicht', bereichId: 'b1', richtVonG: 1800, richtBisG: 2400, startpreisCent: 1200, herkunft: 'urprodukt', ustSatz: 10 },
     { id: 'p8', name: 'Masthuhn halbiert', art: 'gewicht', bereichId: 'b1', richtVonG: 900, richtBisG: 1200, startpreisCent: 1200 },
     { id: 'p7', name: 'Pute ganz, zerlegt', art: 'gewicht', bereichId: 'b1', richtVonG: 6000, richtBisG: 9000, startpreisCent: 1750 },
     { id: 'p5', name: 'Rindfleischpaket 5 kg', art: 'paket', bereichId: 'b1', startpreisCent: 7500 },
@@ -50,7 +50,7 @@ const ENTWURF_DATEN = {
     { id: 'p4', name: 'Gans', art: 'gewicht', bereichId: 'b1', richtVonG: 3000, richtBisG: 4500, startpreisCent: 1900 },
     { id: 'p9', name: 'Eiernudeln Spaghetti 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400 },
     { id: 'p11', name: 'Eiernudeln Hörnchen 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400 },
-    { id: 'p10', name: 'Eiernudeln Spirelli 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400,
+    { id: 'p10', name: 'Eiernudeln Spirelli 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400, herkunft: 'verarbeitung', ustSatz: 10,
       verkaufsart: 'dauer', dauerpreisCent: 400, verfuegbar: false, imPortal: true },
     { id: 'p12', name: 'Eiernudeln Rotunde 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400 },
     { id: 'p13', name: 'Eiernudeln Pappardelle 500 g', art: 'stueck', bereichId: 'b2', startpreisCent: 400 },

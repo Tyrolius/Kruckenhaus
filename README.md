@@ -20,6 +20,7 @@ Offizielle Website der Ferienwohnung **Hof Kruckenhaus** in Breitenbach am Inn, 
 | Startseite | ✅ Wegweiser nach dem großen Bild: links Ferienwohnung, rechts Hofladen (führt bis zum Start der Online-Vorbestellung zum Hofladen-Abschnitt der Bauernhof-Seite: anrufen oder WhatsApp) |
 | Hofladen-Vorbestellung | 🛠 programmiert und getestet; Produktfotos direkt in der Verwaltung hochladen (vorher einmal `schema-hofladen.sql` in der D1-Konsole ausführen); offen: Bestellbedingungen prüfen lassen, Verwaltungs-Anmeldung einrichten, Produktfotos aufnehmen – Details in `docs/HOFLADEN-VORBESTELLUNG.md` |
 | Schnittstelle zu Bertha | 🛠 Website (W1–W4) und Bertha-Seite (B1/B2) programmiert und getestet; offen: Zugang „Bertha Test“ auf der Vorschau anlegen und Ende-zu-Ende testen, danach echter Zugang (Recht „bestellen“ erst nach Prüfung der Bestellbedingungen) – Details in `docs/SCHNITTSTELLE-BERTHA.md` |
+| Steuer und SVS im Hofladen | 🛠 Einstufung (Urprodukt/Be- und Verarbeitung/Zukauf) und USt-Satz je Produkt, Auswertung Brutto/Netto/USt, Excel-Export, Weitergabe an Bertha; offen: einmal die Zeile aus `docs/SCHNITTSTELLE-BERTHA.md` Abschnitt 8d in der D1-Konsole ausführen, dann alle Produkte einstufen |
 | Arbeitsweise | Änderungen entstehen auf einem Arbeitszweig (`claude/…`) und gehen erst live, wenn sie in `master` übernommen werden |
 
 ---
