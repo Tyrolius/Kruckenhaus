@@ -58,7 +58,9 @@ export function terminText(t) {
   if (!t) return 'Termin wird noch vereinbart';
   const art = t.art === 'abholung' ? 'Abholung am Hof' : 'Lieferung';
   const zeit = t.von && t.bis ? `, ${t.von}–${t.bis} Uhr` : '';
-  return `${art}: ${datumText(t.datum)}${zeit}`;
+  // Hinweis des Hofs zum Termin, z. B. „genauer Tag folgt“
+  const hinweis = t.hinweis ? ` (${t.hinweis})` : '';
+  return `${art}: ${datumText(t.datum)}${zeit}${hinweis}`;
 }
 
 const euroFormat = new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' });

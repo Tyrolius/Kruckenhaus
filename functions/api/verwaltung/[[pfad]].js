@@ -932,7 +932,7 @@ async function bereicheOrdnen(db, e) {
    ------------------------------------------------------------ */
 async function kundenMail(db, ctx, bestellungId, art) {
   const b = await db.prepare(
-    `SELECT b.nummer, b.kunde_id, k.name, k.email, c.titel, t.art, t.datum, t.von, t.bis
+    `SELECT b.nummer, b.kunde_id, k.name, k.email, c.titel, t.art, t.datum, t.von, t.bis, t.hinweis
      FROM bestellungen b JOIN kunden k ON k.id = b.kunde_id JOIN chargen c ON c.id = b.charge_id
      LEFT JOIN termine t ON t.id = b.termin_id WHERE b.id = ?`
   ).bind(bestellungId).first();
@@ -941,7 +941,7 @@ async function kundenMail(db, ctx, bestellungId, art) {
     `SELECT produkt_name, art, menge, einzelpreis_cent, betrag_cent, geschaetzt
      FROM v_positionen WHERE bestellung_id = ? ORDER BY id`
   ).bind(bestellungId).all();
-  const termin = b.datum ? { art: b.art, datum: b.datum, von: b.von, bis: b.bis } : null;
+  const termin = b.datum ? { art: b.art, datum: b.datum, von: b.von, bis: b.bis, hinweis: b.hinweis } : null;
   const eckdaten = kasten(`<strong>Bestellnummer ${escapeHtml(b.nummer)}</strong><br>${escapeHtml(b.titel)}`
     + (art === 'nachgerueckt' ? `<br>${escapeHtml(termin ? terminText(termin) : 'Den Termin stimmen wir noch mit euch ab.')}` : ''));
 

@@ -83,9 +83,11 @@ function uhrzeit(hhmm) {
   return hhmm.endsWith(':00') ? String(Number(hhmm.slice(0, 2))) : hhmm;
 }
 
+// Uhrzeit nur, wenn von und bis gesetzt sind; Hinweis (z. B. „genauer Tag folgt“) dahinter
 function terminText(t) {
   const art = t.art === 'abholung' ? 'Abholung' : 'Lieferung';
-  return `${art} ${datumKurz(t.datum)}, ${uhrzeit(t.von)}–${uhrzeit(t.bis)} Uhr`;
+  const zeit = t.von && t.bis ? `, ${uhrzeit(t.von)}–${uhrzeit(t.bis)} Uhr` : '';
+  return `${art} ${datumKurz(t.datum)}${zeit}${t.hinweis ? ` (${t.hinweis})` : ''}`;
 }
 
 const QUELLEN = { web: 'Website', whatsapp: 'WhatsApp', telefon: 'Telefon', persoenlich: 'persönlich' };
@@ -1722,6 +1724,7 @@ function chargeFormLesen() {
     datum: zeile.querySelector('[name="t-datum"]').value,
     von: zeile.querySelector('[name="t-von"]').value,
     bis: zeile.querySelector('[name="t-bis"]').value,
+    hinweis: zeile.querySelector('[name="t-hinweis"]').value.trim(),
   }));
   form.querySelectorAll('[data-produkt]').forEach((zeile) => {
     const a = f.artikel.find((x) => x.produkt.id === zeile.dataset.produkt);
@@ -1769,7 +1772,11 @@ function ansichtCharge(neu) {
           <input name="t-von" type="time" value="${esc(t.von)}" aria-label="von" />
           <input name="t-bis" type="time" value="${esc(t.bis)}" aria-label="bis" />
           <button type="button" class="vw-knopf vw-knopf--warnung vw-knopf--klein" data-aktion="termin-entfernen" aria-label="Termin entfernen">×</button>
+          <input name="t-hinweis" class="vw-termin-hinweis" value="${esc(t.hinweis || '')}" maxlength="200"
+            placeholder="Hinweis (optional), z. B. genauer Tag folgt" aria-label="Hinweis für Kunden" />
         </div>`).join('') || '<p class="vw-klein">Noch keine Termine.</p>'}
+        <p class="vw-klein">Genauer Tag oder Uhrzeit noch offen? Voraussichtlichen Tag eintragen, Uhrzeit leer lassen und einen
+          Hinweis dazuschreiben. Später ändern: Bestellungen wandern mit, die Kunden bitte selbst kurz informieren.</p>
         <div class="vw-knopfreihe">
           <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="termin-dazu" data-wert="abholung">+ Abholtermin</button>
           <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="termin-dazu" data-wert="lieferung">+ Liefertermin</button>
@@ -1815,7 +1822,7 @@ async function chargeSpeichern() {
 
   const eingabe = {
     titel: f.titel.trim(), bestellschluss: f.bestellschluss, status: f.status, imPortal: f.imPortal,
-    termine: f.termine.map((t) => ({ id: t.id, art: t.art, datum: t.datum, von: t.von, bis: t.bis })),
+    termine: f.termine.map((t) => ({ id: t.id, art: t.art, datum: t.datum, von: t.von, bis: t.bis, hinweis: t.hinweis || '' })),
     artikel,
   };
   const erg = await speichern(f.id ? `charge/${f.id}` : 'charge', eingabe, () => {
@@ -3254,7 +3261,7 @@ function initKlicks() {
       }
       case 'termin-dazu':
         chargeFormLesen();
-        zustand.chargeForm.termine.push({ id: null, art: el.dataset.wert, datum: '', von: el.dataset.wert === 'abholung' ? '09:00' : '14:00', bis: el.dataset.wert === 'abholung' ? '12:00' : '18:00' });
+        zustand.chargeForm.termine.push({ id: null, art: el.dataset.wert, datum: '', von: el.dataset.wert === 'abholung' ? '09:00' : '14:00', bis: el.dataset.wert === 'abholung' ? '12:00' : '18:00', hinweis: '' });
         ANSICHTEN[aktuelleAnsicht()]();
         break;
       case 'termin-entfernen': {

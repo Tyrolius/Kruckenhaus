@@ -214,7 +214,7 @@ const ganzeZahl = (wert) => (Number.isInteger(Number(wert)) && Number(wert) > 0 
 // Antwort auf eine angelegte Bestellung (auch für Wiederholungen)
 async function bestellAntwort(db, bestellungId) {
   const b = await db.prepare(
-    `SELECT b.nummer, b.status, s.gesamt_cent, s.geschaetzt, t.art, t.datum, t.von, t.bis
+    `SELECT b.nummer, b.status, s.gesamt_cent, s.geschaetzt, t.art, t.datum, t.von, t.bis, t.hinweis
      FROM bestellungen b JOIN v_bestellsummen s ON s.bestellung_id = b.id
      LEFT JOIN termine t ON t.id = b.termin_id WHERE b.id = ?`
   ).bind(bestellungId).first();
@@ -225,7 +225,7 @@ async function bestellAntwort(db, bestellungId) {
     status: b.status,
     summe_ca_cent: b.gesamt_cent,
     geschaetzt: Boolean(b.geschaetzt),
-    termin: terminText(b.datum ? { art: b.art, datum: b.datum, von: b.von, bis: b.bis } : null),
+    termin: terminText(b.datum ? { art: b.art, datum: b.datum, von: b.von, bis: b.bis, hinweis: b.hinweis } : null),
     hinweis: warteliste
       ? 'Leider ausverkauft – ihr steht auf der Warteliste. Sobald etwas frei wird, melden wir uns.'
       : b.geschaetzt
@@ -318,7 +318,7 @@ async function bestellen(context) {
   if (runde.status !== 'offen' || runde.bestellschluss < heuteInTirol()) return fehler('bestellschluss');
   if (!runde.im_portal) return fehler('nicht_im_portal');
 
-  const termin = await db.prepare('SELECT id, art, datum, von, bis FROM termine WHERE id = ? AND charge_id = ?')
+  const termin = await db.prepare('SELECT id, art, datum, von, bis, hinweis FROM termine WHERE id = ? AND charge_id = ?')
     .bind(ganzeZahl(e.termin_id), runde.id).first();
   if (!termin) return fehler('nicht_gefunden', 'Diesen Abhol- oder Liefertermin gibt es nicht (mehr).');
   let lieferadresse = null;

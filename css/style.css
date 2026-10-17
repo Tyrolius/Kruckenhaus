@@ -3964,6 +3964,8 @@ body.season-winter .winter-image { display: block; }
   border-bottom: 1px solid var(--color-beige);
 }
 
+.vw-termin-zeile .vw-termin-hinweis { grid-column: 1 / -1; }   /* eigene Zeile unter Datum und Uhrzeit */
+
 .vw-termin-zeile select,
 .vw-termin-zeile input,
 .vw-artikel-form input {
