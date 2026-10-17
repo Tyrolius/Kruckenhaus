@@ -4141,7 +4141,7 @@ body.season-winter .winter-image { display: block; }
     color: var(--color-primary);
     padding: 0 0.5rem 1rem;
   }
-  .vw-nav-marke img { flex: none; width: 64px; height: 64px; }
+  .vw-nav-marke img { flex: none; width: auto; height: 60px; }
   .vw-nav a {
     flex-direction: row;
     gap: 0.6rem;
