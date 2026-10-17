@@ -658,8 +658,15 @@ function ansichtBestellungen() {
   };
   // „Neu" nur anbieten, wenn es etwas Neues gibt
   const filter = FILTER.filter(([wert]) => wert !== 'neu' || anzahl('neu') || zustand.filter === 'neu');
+  // Bestellrunden direkt hier anlegen und bearbeiten, nicht nur über die Übersicht
+  const ch = aktiveCharge();
+  const bearbeiten = ch && !istDauer(ch) && !zustand.alleRunden;
   inhalt().innerHTML = `
     <div class="vw-kopf"><h1>Bestellungen</h1>${chargeWahl({ alle: true })}
+      <div class="vw-knopfreihe vw-knopfreihe--klein">
+        ${bearbeiten ? '<a class="vw-knopf vw-knopf--klein" href="#charge">Bestellrunde bearbeiten</a>' : ''}
+        <a class="vw-knopf vw-knopf--klein" href="#charge-neu">+ Neue Bestellrunde</a>
+      </div>
       <div class="vw-such-zeile">
         <input type="search" class="vw-suche" id="vw-suche" placeholder="Suchen …"
           aria-label="Bestellungen durchsuchen" value="${esc(zustand.suche)}" />
@@ -3104,7 +3111,7 @@ function zeigen() {
   }
   const menuepunkt = {
     hofverkauf: 'neu', abgabe: 'uebergabe', produkt: 'sortiment', bereiche: 'sortiment', wiegen: 'uebersicht', zahlungen: 'uebersicht',
-    charge: 'uebersicht', 'charge-neu': 'uebersicht',
+    charge: 'bestellungen', 'charge-neu': 'bestellungen',
   }[name] || name;
   // Neuer Schlüssel nur so lange sichtbar, bis die Ansicht verlassen wird
   if (name !== 'bertha') neuerSchluessel = null;
