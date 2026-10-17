@@ -81,6 +81,19 @@ assert.ok(!ok(await api('GET', 'angebot')).produkte.some((p) => p.name === 'Alpa
 roh.prepare(`UPDATE produkte SET aktiv = 1 WHERE name = 'Alpakaseife'`).run();
 console.log('✓ Angebot: nur offene Bestellrunden, freie Menge, Pflichtangaben der Nudeln, Liefergebiet, Sortiment');
 
+// Weitere Fotos zur Beschreibung: am Artikel der Runde und im Sortiment, sonst leer;
+// ohne Tabelle erscheint das Angebot trotzdem
+roh.prepare(`INSERT INTO produkt_bilder (produkt_id, bild, reihenfolge) VALUES (?, 'images/hofladen/b.jpg', 20), (?, 'images/hofladen/a.jpg', 10)`).run(nudeln, nudeln);
+r = ok(await api('GET', 'angebot'));
+assert.deepEqual(r.chargen[0].artikel.find((a) => a.id === aNudeln).fotos, ['images/hofladen/a.jpg', 'images/hofladen/b.jpg']);
+assert.deepEqual(r.produkte.find((p) => p.id === nudeln).fotos, ['images/hofladen/a.jpg', 'images/hofladen/b.jpg']);
+assert.deepEqual(r.produkte.find((p) => p.id === huhn).fotos, []);
+roh.exec('ALTER TABLE produkt_bilder RENAME TO produkt_bilder_weg');
+assert.deepEqual(ok(await api('GET', 'angebot')).produkte.find((p) => p.id === nudeln).fotos, []);
+roh.exec('ALTER TABLE produkt_bilder_weg RENAME TO produkt_bilder');
+roh.prepare('DELETE FROM produkt_bilder').run();
+console.log('✓ Weitere Fotos im Angebot, ohne Tabelle trotzdem erreichbar');
+
 // Bestellung – Pflichtfelder und Regeln
 const basis = {
   chargeId: cId, terminId: tAbh, name: 'Maria Web', email: 'Maria@Example.at', telefon: '+43 660 1234567',
@@ -123,7 +136,7 @@ const schluessel1 = r.link.split('#')[1];
 assert.equal(mails.length, 2);
 const [anKunde, anHof] = mails;
 assert.deepEqual([anKunde.to, anHof.to], ['maria@example.at', 'hof@example.at']);
-assert.match(anKunde.html, /fix vorgemerkt/);
+assert.match(anKunde.html, /fix bestellt/);
 assert.match(anKunde.html, new RegExp(schluessel1));
 assert.match(anKunde.html, /ca\. €\s5[0-9],/);   // 2 Hühner à ca. 2,1 kg × 12 € + 4 € Nudeln
 assert.equal(anHof.reply_to, 'maria@example.at');
@@ -159,8 +172,9 @@ r = ok(await api('POST', 'voranmeldung', {
 assert.equal(roh.prepare(`SELECT quelle FROM voranmeldungen`).get().quelle, 'web');
 assert.match(mails[0].html, /unverbindlich/);
 assert.match(mails[0].html, /3× Masthuhn ganz \(Frühjahr/);
+assert.deepEqual(mails.map((m) => m.subject), ['Eure Vormerkung – Bergbauernhof Kruckenhaus', 'Neue Vormerkung von Otto Voran']);
 const schluesselOtto = r.link.split('#')[1];
-console.log('✓ Voranmeldung mit Prüfung des Zeitraums, Mail „unverbindlich"');
+console.log('✓ Vormerkung mit Prüfung des Zeitraums, Mail „unverbindlich"');
 
 // Meine Bestellungen
 r = ok(await api('GET', 'meine', null, { 'X-Link-Schluessel': schluessel1 }));

@@ -8,7 +8,8 @@
  *                                    Liefergebiet, Bereiche, Sortiment (alle
  *                                    eingeblendeten Produkte, auch für Voranmeldungen),
  *                                    dazu das Dauersortiment („Immer erhältlich",
- *                                    verfügbar/ausverkauft statt Menge)
+ *                                    verfügbar/ausverkauft statt Menge); je Artikel und
+ *                                    Produkt „fotos": weitere Fotos zur Beschreibung
  *   GET  /api/hofladen/foto/<id>     Produktfoto (in der Verwaltung hochgeladen)
  *   POST /api/hofladen/bestellung    verbindliche Vorbestellung
  *   POST /api/hofladen/voranmeldung  unverbindliche Voranmeldung
@@ -44,6 +45,7 @@
 import {
   json, escapeHtml, istGueltigeEmail, EingabeFehler, euro, positionBetrag, zeitraumText, ZEITRAEUME,
   bestellungAnlegen, voranmeldungAnlegen, kundenLinkErstellen, kundeAusLink, mailSenden, bankAusEnv,
+  weitereBilderLaden,
 } from '../../_lib/hofladen.js';
 import {
   BETRIEB, mailHtml, absatz, klein, knopf, kasten, gruss, terminText,
@@ -88,6 +90,10 @@ async function angebotLaden(db) {
                 WHERE c.art = 'dauer' AND c.status = 'offen' AND p.verkaufsart = 'dauer' AND p.aktiv = 1
                 ORDER BY p.bereich_reihenfolge, p.reihenfolge, p.name`),
   ])).map((r) => r.results);
+  // Weitere Fotos zur Beschreibung (eigene Abfrage: fehlt die Tabelle noch,
+  // gibt es eben keine – das Angebot erscheint trotzdem)
+  const { jeProdukt } = await weitereBilderLaden(db);
+  const fotos = (produktId) => jeProdukt.get(produktId) || [];
 
   return {
     chargen: chargen.map((c) => ({
@@ -112,6 +118,7 @@ async function angebotLaden(db) {
         beschreibung: a.beschreibung || '',
         pflichtangaben: a.pflichtangaben || '',
         allergene: a.allergene || '',
+        fotos: fotos(a.produkt_id),
       })),
     })),
     dauer: dauer.length ? {
@@ -127,6 +134,7 @@ async function angebotLaden(db) {
         beschreibung: a.beschreibung || '',
         pflichtangaben: a.pflichtangaben || '',
         allergene: a.allergene || '',
+        fotos: fotos(a.produkt_id),
       })),
     } : null,
     liefergebiet,
@@ -142,6 +150,7 @@ async function angebotLaden(db) {
       richtVonG: p.richtgewicht_von_g,
       richtBisG: p.richtgewicht_bis_g,
       bild: p.bild || '',
+      fotos: fotos(p.id),
       dauer: p.verkaufsart === 'dauer',
     })),
     zeitraeume: ZEITRAEUME,
@@ -238,7 +247,7 @@ async function voranmeldungAufnehmen(db, env, request, e) {
   await Promise.all([
     mailSenden(env, {
       an: kontakt.email,
-      betreff: `Eure Voranmeldung – ${BETRIEB}`,
+      betreff: `Eure Vormerkung – ${BETRIEB}`,
       antwortAn: env.CONTACT_TO || 'info@kruckenhaus.at',
       html: mailHtml({
         titel: 'Ihr seid vorgemerkt',
@@ -247,7 +256,7 @@ async function voranmeldungAufnehmen(db, env, request, e) {
           absatz(`Hallo ${escapeHtml(kontakt.name)},`),
           absatz('danke – wir haben euch vorgemerkt:'),
           kasten(`<strong>${escapeHtml(was)}</strong>`),
-          absatz(`Die Voranmeldung ist <strong>unverbindlich</strong> und noch ohne Preis. Sobald die passende
+          absatz(`Die Vormerkung ist <strong>unverbindlich</strong> und noch ohne Preis. Sobald die passende
             Bestellrunde feststeht, melden wir uns mit Preis und Termin.`),
           knopf(link, 'Meine Bestellungen ansehen'),
           linkHinweis,
@@ -257,11 +266,11 @@ async function voranmeldungAufnehmen(db, env, request, e) {
     }),
     mailSenden(env, {
       an: env.CONTACT_TO || 'info@kruckenhaus.at',
-      betreff: `Neue Voranmeldung von ${kontakt.name}`,
+      betreff: `Neue Vormerkung von ${kontakt.name}`,
       antwortAn: kontakt.email,
       html: mailHtml({
         art: 'hof',
-        titel: 'Neue Voranmeldung',
+        titel: 'Neue Vormerkung',
         inhalt: [
           kasten(`<strong>${escapeHtml(kontakt.name)}</strong><br>${escapeHtml(kontakt.telefon)} · ${escapeHtml(kontakt.email)}`),
           absatz(escapeHtml(was)),

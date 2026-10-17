@@ -3927,6 +3927,26 @@ body.season-winter .winter-image { display: block; }
 .vw-va-zeile:not(:has(input)) { grid-template-columns: 1fr auto; }
 #vw-va-auswahl { margin-bottom: 0.9rem; }
 
+.vw-va-knoepfe {
+  display: flex;
+  flex-direction: column;   /* am Handy untereinander, damit der Text Platz hat */
+  gap: 0.4rem;
+}
+
+@media (min-width: 768px) {
+  .vw-va-knoepfe { flex-direction: row; }
+}
+
+.vw-va-bearbeiten {
+  margin: 0.6rem 0;
+  padding: 0.8rem;
+  border: 2px solid var(--color-primary);
+  border-radius: var(--border-radius);
+  background-color: var(--color-cream);
+}
+
+.vw-va-bearbeiten p { margin-bottom: 0.5rem; }
+
 .vw-knopf--klein { min-height: 36px; padding: 0.3rem 0.6rem; font-size: 0.8rem; }
 
 /* --- Kontakt im Detail-Dialog --- */
@@ -6186,3 +6206,121 @@ html, body { overflow-x: clip; }
 }
 
 .vw-zugang-formular h3 { font-size: 1.1rem; margin-bottom: 0.75rem; }
+
+/* ============================================================
+   64. WEITERE PRODUKTFOTOS (zur Beschreibung)
+   Hofladen: einheitlich quadratische Vorschaubilder im Aufklappbereich
+   „Angaben", Antippen vergrößert (<dialog>). Verwaltung: gewählte Fotos
+   mit „Entfernen", vorhandene zum Antippen.
+   ============================================================ */
+/* Feste Größe – überall gleich, egal wie breit die Spalte ist */
+.hl-fotos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.5rem 0 0.25rem;
+}
+
+.hl-foto {
+  display: block;
+  flex: none;
+  width: 3.75rem;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background-color: var(--color-cream);
+  overflow: hidden;
+  cursor: zoom-in;
+}
+
+.hl-foto img {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  transition: transform var(--transition-fast);
+}
+
+.hl-foto:hover img { transform: scale(1.05); }
+
+.hl-foto:focus-visible {
+  outline: 2px solid var(--color-terracotta);
+  outline-offset: 2px;
+}
+
+.hl-foto-dialog {
+  margin: auto;               /* allgemeiner Reset setzt margin: 0 – so mittig */
+  max-width: min(92vw, 900px);
+  max-height: 92vh;
+  padding: 0;
+  border: none;
+  border-radius: var(--border-radius-lg);
+  background-color: var(--color-white);
+  box-shadow: var(--shadow-lg);
+}
+
+.hl-foto-dialog::backdrop { background-color: var(--color-scrim-unten); }
+
+.hl-foto-dialog img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(92vh - 3rem);
+  margin: 0 auto;
+  object-fit: contain;
+}
+
+.hl-foto-text {
+  margin: 0;
+  padding: 0.5rem var(--spacing-sm);
+  font-size: 0.9rem;
+  color: var(--color-text-light);
+}
+
+.hl-foto-zu {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--color-weiss-90);
+  color: var(--color-dark);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: var(--shadow-sm);
+}
+
+.hl-foto-zu:focus-visible {
+  outline: 2px solid var(--color-terracotta);
+  outline-offset: 2px;
+}
+
+.vw-foto-gewaehlt {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.vw-foto-gewaehlt img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--border-radius);
+}
+
+/* Vorhandenes Foto antippen = hinzufügen (Knopf statt Auswahlfeld) */
+button.vw-foto-wahl {
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: left;
+}
+
+button.vw-foto-wahl:hover { border-color: var(--color-border); }
+
+button.vw-foto-wahl:focus-visible {
+  outline: 2px solid var(--color-terracotta);
+  outline-offset: 2px;
+}

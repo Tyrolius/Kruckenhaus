@@ -15,6 +15,7 @@
  *   4. Voranmeldung
  *   4a. Sortiment
  *   4b. Vertrag widerrufen (§ 13a FAGG)
+ *   4c. Fotos vergrößern
  *   5. Start
  * ============================================================ */
 
@@ -72,6 +73,24 @@ async function senden(pfad, daten) {
   return erg;
 }
 
+// Weitere Fotos eines Produkts (zur Beschreibung): einheitliche quadratische
+// Vorschaubilder, Antippen vergrößert (4c). Liegen im zugeklappten Bereich
+// „Angaben" – loading="lazy" lädt sie erst beim Aufklappen.
+function fotoReihe(fotos, name) {
+  if (!fotos || !fotos.length) return '';
+  return `<div class="hl-fotos">${fotos.map((f, i) => `<button type="button" class="hl-foto" data-foto-gross="${esc(f)}"
+      data-foto-text="${esc(name)}" aria-label="${esc(name)}: Foto ${i + 1} vergrößern">
+      <img src="${esc(f)}" alt="${esc(name)} – Foto ${i + 1}" loading="lazy" decoding="async" /></button>`).join('')}</div>`;
+}
+
+// Aufklappbereich mit weiteren Fotos und Angaben; leer, wenn es nichts gibt
+function angabenAufklappen(fotos, name, infos) {
+  const mitFotos = fotos && fotos.length;
+  if (!mitFotos && !infos) return '';
+  const titel = mitFotos && infos ? 'Fotos, Zutaten &amp; Angaben' : mitFotos ? 'Weitere Fotos' : 'Zutaten &amp; Angaben';
+  return `<details class="hl-angaben"><summary>${titel}</summary>${fotoReihe(fotos, name)}${infos}</details>`;
+}
+
 let hlAngebot = null;
 
 // Liste nach Bereichen gruppieren (Reihenfolge wie in der Verwaltung);
@@ -113,7 +132,7 @@ function produktZeile(a) {
       <strong>${esc(a.name)}</strong>
       <span class="hl-preis">${preis}</span>
       <span class="hl-frei">${verfuegbar}</span>
-      ${infos ? `<details class="hl-angaben"><summary>Zutaten &amp; Angaben</summary>${infos}</details>` : ''}
+      ${angabenAufklappen(a.fotos, a.name, infos)}
     </div>
     <div class="hl-zaehler">
       <button type="button" data-schritt="-1" aria-label="${esc(a.name)}: weniger" ${a.frei > 0 ? '' : 'disabled'}>−</button>
@@ -438,7 +457,7 @@ function sortimentKarte(p, daten) {
       <h4>${esc(p.name)}</h4>
       ${gewicht}
       ${p.beschreibung ? `<p>${esc(p.beschreibung)}</p>` : ''}
-      ${infos ? `<details class="hl-angaben"><summary>Zutaten &amp; Angaben</summary>${infos}</details>` : ''}
+      ${angabenAufklappen(p.fotos, p.name, infos)}
     </div>
     <div class="hl-sortiment-fuss">${stand}</div>
   </article>`;
@@ -547,7 +566,37 @@ async function initAngebot() {
   }
 }
 
+/* ------------------------------------------------------------
+   4c. FOTOS VERGRÖSSERN
+   Ein <dialog> für alle Fotos: Esc und Tippen daneben schließen.
+   ------------------------------------------------------------ */
+function initFotoGross() {
+  let dialog = null;
+  document.addEventListener('click', (e) => {
+    const knopf = e.target.closest('[data-foto-gross]');
+    if (!knopf) return;
+    if (!dialog) {
+      dialog = document.createElement('dialog');
+      dialog.className = 'hl-foto-dialog';
+      dialog.innerHTML = `<button type="button" class="hl-foto-zu" aria-label="Foto schließen">×</button>
+        <img alt="" decoding="async" /><p class="hl-foto-text"></p>`;
+      dialog.addEventListener('click', (ev) => {
+        if (ev.target === dialog || ev.target.closest('.hl-foto-zu')) dialog.close();
+      });
+      dialog.addEventListener('close', () => { dialog.querySelector('img').removeAttribute('src'); });
+      document.body.appendChild(dialog);
+    }
+    const bild = dialog.querySelector('img');
+    bild.src = knopf.dataset.fotoGross;
+    bild.alt = knopf.querySelector('img')?.alt || '';
+    dialog.querySelector('.hl-foto-text').textContent = knopf.dataset.fotoText || '';
+    if (typeof dialog.showModal === 'function') dialog.showModal();
+    else window.open(knopf.dataset.fotoGross, '_blank', 'noopener');
+  });
+}
+
 document.addEventListener('DOMContentLoaded', () => {
+  initFotoGross();
   initBestellung();
   initVoranmeldung();
   initSortiment();

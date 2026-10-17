@@ -32,7 +32,8 @@ let beschaeftigt = false;    // verhindert doppeltes Absenden
 const zustand = {
   chargeId: null,
   aendernOffen: null,      // Bestellung, deren „Menge ändern" aufgeklappt ist
-  kundenImport: null,      // Vorschau „Kunden übernehmen" (Bertha-Seite)
+  kundenImport: null,
+  vaBearbeiten: null,      // ID der Vormerkung, die gerade bearbeitet wird      // Vorschau „Kunden übernehmen" (Bertha-Seite)
   filter: 'alle',
   suche: '',
   uebergabeArt: 'abholung',
@@ -405,7 +406,7 @@ function bestaetigungText(b) {
     return `${p.menge}× ${a.name} (${a.art === 'gewicht' ? `${euro(preis)}/kg` : `je ${euro(preis)}`})`;
   }).join(', ');
   const termine = ch.termine.map((t) => terminText(t)).join(' oder ');
-  return `Hallo ${vorname(k)}, ihr hattet euch vorangemeldet – ihr seid dabei: ${preise}. `
+  return `Hallo ${vorname(k)}, ihr hattet euch vormerken lassen – ihr seid dabei: ${preise}. `
     + `Passt euch ${termine}? Und zahlt ihr bar oder per Überweisung? Liebe Grüße, Kathrin & Florian`;
 }
 
@@ -557,7 +558,7 @@ function ansichtUebersicht() {
   const aufgaben = [
     aufgabe(neue, 'Neue Bestellungen über die Website', 'neu'),
     aufgabe(ohneTermin, 'Termin mit dem Kunden klären', 'termin-offen'),
-    aufgabe(passendeVa, 'Voranmeldungen übernehmen', '#voranmeldungen'),
+    aufgabe(passendeVa, 'Vormerkungen übernehmen', '#voranmeldungen'),
     aufgabe(warteliste, 'Auf der Warteliste', 'warteliste'),
     aufgabe(nichtUebergeben, 'Noch abzuholen bzw. zu liefern', '#uebergabe'),
     aufgabe(geldFehlt, 'Übergeben, Geld noch nicht da', '#zahlungen'),
@@ -704,7 +705,7 @@ function ansichtNeu() {
   inhalt().innerHTML = `
     <div class="vw-kopf"><h1>Erfassen</h1>${erfassenUmschalter('neu')}${chargeWahl()}
       <p class="vw-klein">Bestellung per Telefon, WhatsApp oder persönlich – für einen späteren Termin.
-        Ohne Preis und Termin? <a href="#voranmeldungen">Voranmeldung</a>.</p></div>
+        Ohne Preis und Termin? <a href="#voranmeldungen">Vormerkung</a>.</p></div>
     <form class="vw-karte" id="vw-formular" novalidate>
       <fieldset class="vw-feldgruppe"><legend>Wie kam die Bestellung?</legend>
         <div class="vw-auswahl vw-auswahl--reihe">
@@ -1447,17 +1448,21 @@ function ansichtVoranmeldungen() {
 
   const vaZeile = (v, mitHaken) => {
     const k = daten.kunden.find((x) => x.id === v.kundeId);
+    if (zustand.vaBearbeiten === v.id) return vaBearbeitenFormular(v, k);
     return `<label class="vw-va-zeile">
       ${mitHaken ? `<input type="checkbox" name="va" value="${v.id}" ${vorausgewaehlt(v, saison) ? 'checked' : ''} />` : ''}
       <span class="vw-va-text"><strong>${esc(k.name)}</strong> · ${v.menge}× ${esc(produktVon(v.produktId).name)}<br>
         <span class="vw-klein">${esc(zeitraumText(v))} · ${QUELLEN[v.quelle]} · gemeldet ${datumKurz(v.erstellt)}${v.notiz ? ` · „${esc(v.notiz)}"` : ''}</span></span>
-      <button type="button" class="vw-knopf vw-knopf--warnung vw-knopf--klein" data-aktion="va-absagen" data-id="${v.id}">Absagen</button>
+      <span class="vw-va-knoepfe">
+        <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="va-bearbeiten" data-id="${v.id}">Bearbeiten</button>
+        <button type="button" class="vw-knopf vw-knopf--warnung vw-knopf--klein" data-aktion="va-absagen" data-id="${v.id}">Absagen</button>
+      </span>
     </label>`;
   };
   const andere = offen.filter((v) => !passend.includes(v));
 
   inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Voranmeldungen</h1>
+    <div class="vw-kopf"><h1>Vormerkungen</h1>
       <p class="vw-klein">Unverbindlich, noch ohne Preis und Termin. Zählen erst von der Menge ab, wenn sie in eine Bestellrunde übernommen werden – wer sich zuerst gemeldet hat, kommt zuerst dran.</p>
       ${chargeWahl()}</div>
     <div class="vw-spalten">
@@ -1466,12 +1471,12 @@ function ansichtVoranmeldungen() {
         ${passend.length ? `<p class="vw-klein">Vorausgewählt: „nächste Bestellrunde" und ${esc(ZEITRAEUME[saison.zeitraum])} ${saison.jahr}.</p>
           <div id="vw-va-auswahl">${passend.map((v) => vaZeile(v, true)).join('')}</div>
           <button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit" data-aktion="va-uebernehmen">Ausgewählte als Bestellungen übernehmen</button>`
-        : '<p class="vw-klein">Keine offenen Voranmeldungen für die Produkte dieser Bestellrunde.</p>'}
-      </section>` : '<section class="vw-karte"><p class="vw-klein">Sobald eine Bestellrunde angelegt ist, lassen sich passende Voranmeldungen hier übernehmen.</p></section>'}
+        : '<p class="vw-klein">Keine offenen Vormerkungen für die Produkte dieser Bestellrunde.</p>'}
+      </section>` : '<section class="vw-karte"><p class="vw-klein">Sobald eine Bestellrunde angelegt ist, lassen sich passende Vormerkungen hier übernehmen.</p></section>'}
       <div>
-        <section class="vw-karte" aria-label="Planung"><h2>Planung: offen vorangemeldet</h2>
-          ${planung || '<p class="vw-klein">Keine offenen Voranmeldungen.</p>'}</section>
-        <section class="vw-karte" aria-label="Voranmeldung erfassen"><h2>Voranmeldung erfassen</h2>
+        <section class="vw-karte" aria-label="Planung"><h2>Planung: offen vorgemerkt</h2>
+          ${planung || '<p class="vw-klein">Keine offenen Vormerkungen.</p>'}</section>
+        <section class="vw-karte" aria-label="Vormerkung erfassen"><h2>Vormerkung erfassen</h2>
           <form id="vw-va-formular" novalidate>
             <label class="vw-feld"><span>Name</span>
               <input name="name" list="vw-kundenliste-va" autocomplete="off" required /></label>
@@ -1490,12 +1495,64 @@ function ansichtVoranmeldungen() {
                 <label><input type="radio" name="quelle" value="persoenlich" /> persönlich</label>
               </div></fieldset>
             <label class="vw-feld"><span>Notiz (optional)</span><input name="notiz" autocomplete="off" /></label>
-            <button type="submit" class="vw-knopf vw-knopf--voll vw-knopf--breit">Voranmeldung speichern</button>
+            <button type="submit" class="vw-knopf vw-knopf--voll vw-knopf--breit">Vormerkung speichern</button>
           </form>
         </section>
         ${andere.length ? `<section class="vw-karte" aria-label="Weitere"><h2>Für spätere Bestellrunden</h2>${andere.map((v) => vaZeile(v, false)).join('')}</section>` : ''}
       </div>
     </div>`;
+}
+
+// Eine offene Vormerkung ändern: Produkt, Menge, Zeitraum, Notiz.
+// Kunde und Quelle bleiben (anderer Kunde = absagen und neu erfassen).
+function vaBearbeitenFormular(v, k) {
+  const jahr = new Date().getFullYear();
+  const jahre = [...new Set([jahr, jahr + 1, v.jahr].filter(Boolean))].sort();
+  return `<form class="vw-va-bearbeiten" id="vw-va-bearbeiten" data-id="${esc(v.id)}" novalidate>
+      <p><strong>${esc(k ? k.name : '')}</strong> <span class="vw-klein">· ${QUELLEN[v.quelle]} · gemeldet ${datumKurz(v.erstellt)}</span></p>
+      <label class="vw-feld"><span>Produkt</span>
+        <select name="produkt">${daten.produkte.filter((p) => p.aktiv !== false || p.id === v.produktId).map((p) =>
+          `<option value="${p.id}" ${p.id === v.produktId ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></label>
+      <div class="vw-zwei-felder">
+        <label class="vw-feld"><span>Menge</span><input name="menge" type="number" inputmode="numeric" min="1" value="${v.menge}" /></label>
+        <label class="vw-feld"><span>Für wann?</span>
+          <select name="va-zeitraum">${Object.entries(ZEITRAEUME).map(([wert, text]) =>
+            `<option value="${wert}" ${v.zeitraum === wert ? 'selected' : ''}>${text}</option>`).join('')}</select></label>
+      </div>
+      <label class="vw-feld" data-va-jahr ${v.zeitraum === 'naechste' ? 'hidden' : ''}><span>Jahr</span>
+        <select name="jahr">${jahre.map((j) => `<option ${j === (v.jahr || jahr) ? 'selected' : ''}>${j}</option>`).join('')}</select></label>
+      <label class="vw-feld"><span>Notiz (optional)</span><input name="notiz" value="${esc(v.notiz || '')}" autocomplete="off" /></label>
+      <div class="vw-knopfreihe">
+        <button type="submit" class="vw-knopf vw-knopf--voll">Änderung speichern</button>
+        <button type="button" class="vw-knopf" data-aktion="va-bearbeiten-abbrechen">Abbrechen</button>
+      </div>
+    </form>`;
+}
+
+async function vormerkungAendern(form) {
+  const id = form.dataset.id;
+  const v = daten.voranmeldungen.find((x) => x.id === id);
+  if (!v) return;
+  const menge = Number(feld(form, 'menge').value);
+  if (!Number.isInteger(menge) || menge < 1 || menge > 999) return meldung('Bitte eine gültige Menge eintragen.');
+  const zeitraum = feld(form, 'va-zeitraum').value;
+  const eingabe = {
+    produktId: feld(form, 'produkt').value,
+    menge,
+    zeitraum,
+    jahr: zeitraum === 'naechste' ? null : Number(feld(form, 'jahr').value),
+    notiz: feld(form, 'notiz').value.trim(),
+  };
+  // Formular erst nach erfolgreichem Speichern schließen – bei einem Fehler
+  // bleibt das Eingetippte stehen
+  const erg = await speichern(`voranmeldung/${id}`, eingabe, () => {
+    Object.assign(v, eingabe);
+    return {};
+  }, { neuZeichnen: false });
+  if (!erg) return;
+  zustand.vaBearbeiten = null;
+  ansichtVoranmeldungen();
+  meldung('Vormerkung geändert.');
 }
 
 async function voranmeldungSpeichern(form) {
@@ -1553,7 +1610,7 @@ function voranmeldungenUebernehmenBeispiel(ch, ids) {
       quelle: liste[0].quelle, erstellt: new Date().toISOString().slice(0, 10),
       status: reicht ? 'vorgemerkt' : 'warteliste', terminId: null, zahlart: 'bar', bezahlt: null,
       uebergeben: false, anmerkung: liste.map((v) => v.notiz).filter(Boolean).join(' '),
-      interneNotiz: 'aus Voranmeldung – Termin und Zahlart bestätigen', positionen,
+      interneNotiz: 'aus Vormerkung – Termin und Zahlart bestätigen', positionen,
     };
     daten.bestellungen.push(b);
     liste.forEach((v) => { v.status = 'uebernommen'; });
@@ -1565,7 +1622,7 @@ function voranmeldungenUebernehmenBeispiel(ch, ids) {
 
 async function voranmeldungenUebernehmen(ids) {
   const ch = aktiveCharge();
-  if (!ids.length) return meldung('Bitte mindestens eine Voranmeldung auswählen.');
+  if (!ids.length) return meldung('Bitte mindestens eine Vormerkung auswählen.');
   const erg = await speichern('voranmeldungen/uebernehmen', { chargeId: ch.id, ids },
     () => voranmeldungenUebernehmenBeispiel(ch, ids), { neuZeichnen: false });
   if (!erg) return;
@@ -1785,7 +1842,7 @@ async function chargeSpeichern() {
   location.hash = '#uebersicht';
   zeigen();
   const passend = aktiveCharge() ? passendeVoranmeldungen(aktiveCharge()).length : 0;
-  meldung(`Bestellrunde gespeichert.${passend ? ` ${passend} Voranmeldungen passen dazu.` : ''}`);
+  meldung(`Bestellrunde gespeichert.${passend ? ` ${passend} Vormerkungen passen dazu.` : ''}`);
 }
 
 // 5.8a Auswertung für die Buchhaltung
@@ -2017,6 +2074,7 @@ const produktFormWerte = (p) => ({
   ...p, preis: textAusCent(p.startpreisCent), von: kgText(p.richtVonG), bis: kgText(p.richtBisG),
   verkaufsart: p.verkaufsart || 'runde', dauerpreis: textAusCent(p.dauerpreisCent),
   verfuegbar: p.verfuegbar !== false, imPortal: p.imPortal !== false,
+  weitereBilder: [...(p.weitereBilder || [])],
 });
 
 // vorlageId: „Kopieren" – neues Produkt mit allen Angaben der Vorlage
@@ -2030,7 +2088,7 @@ function produktFormStarten(id, vorlageId = null) {
     ? { ...produktFormWerte(vorlage), id: null, name: `${vorlage.name} (Kopie)`, verwendet: false,
       aktiv: true, verfuegbar: true, kopieVon: vorlage.name }
     : { id: null, name: '', art: 'stueck', bereichId: (daten.bereiche[0] || {}).id || '', preis: '', von: '', bis: '', beschreibung: '',
-      pflichtangaben: '', allergene: '', bild: '', aktiv: true, verwendet: false,
+      pflichtangaben: '', allergene: '', bild: '', weitereBilder: [], aktiv: true, verwendet: false,
       verkaufsart: 'runde', dauerpreis: '', verfuegbar: true, imPortal: true, herkunft: null, ustSatz: null };
   if (fotoliste === null) fotolisteLaden();
 }
@@ -2051,9 +2109,17 @@ async function fotolisteLaden() {
       fotoliste = Array.isArray(liste) ? liste.filter((f) => typeof f === 'string') : [];
     }
   } catch (_) { /* ohne Liste bleibt nur „Kein Foto" bzw. das bisherige Foto */ }
-  // Nur den Foto-Bereich neu zeichnen – schon Getipptes bleibt stehen
-  const bereich = document.getElementById('vw-foto-auswahl');
-  if (bereich && zustand.produktForm) bereich.innerHTML = fotoAuswahl(zustand.produktForm);
+  // Nur die Foto-Bereiche neu zeichnen – schon Getipptes bleibt stehen
+  fotoBereicheZeichnen();
+}
+
+function fotoBereicheZeichnen() {
+  const f = zustand.produktForm;
+  if (!f) return;
+  const haupt = document.getElementById('vw-foto-auswahl');
+  if (haupt) haupt.innerHTML = fotoAuswahl(f);
+  const weitere = document.getElementById('vw-weitere-fotos');
+  if (weitere) weitere.innerHTML = weitereFotosAuswahl(f);
 }
 
 // „images/hofladen/honig-glas.jpg" → „honig glas"
@@ -2070,25 +2136,81 @@ function fotoWahl(pfad, gewaehlt) {
 function fotoAuswahl(f) {
   const eigene = daten.eigeneFotos || [];
   const website = fotoliste || [];
-  // Das gewählte Foto immer anbieten, auch wenn es in keiner Liste (mehr) steht
-  const bekannt = !f.bild || eigene.includes(f.bild) || website.includes(f.bild);
-  const oben = [...(bekannt || !f.bild.startsWith('api/') && !f.bild.startsWith('data:') ? [] : [f.bild]), ...eigene,
-    ...website.filter((x) => x.startsWith('images/hofladen/'))];
-  const weitere = [...(bekannt || !f.bild.startsWith('images/') ? [] : [f.bild]),
-    ...website.filter((x) => !x.startsWith('images/hofladen/'))];
-  // Zugeklappt, damit der Speichern-Knopf am Handy nah bleibt – außer das
-  // gewählte Foto liegt dort
-  const weitereOffen = weitere.includes(f.bild);
+  const hofladen = website.filter((x) => x.startsWith('images/hofladen/'));
+  // Das gewählte Foto steht immer oben neben „Kein Foto" – auch ein Website-Foto
+  // oder eines, das in keiner Liste (mehr) steht –, damit es beim Bearbeiten
+  // gleich zu sehen ist und nicht zwischen allen Website-Fotos untergeht
+  const aktuell = f.bild && !eigene.includes(f.bild) && !hofladen.includes(f.bild) ? [f.bild] : [];
+  const oben = [...aktuell, ...eigene, ...hofladen];
+  // Zugeklappt, damit der Speichern-Knopf am Handy nah bleibt
+  const weitere = website.filter((x) => !x.startsWith('images/hofladen/') && x !== f.bild);
   return `<fieldset class="vw-feldgruppe"><legend>Foto auf der Hofladen-Seite</legend>
       <label class="vw-knopf vw-knopf--voll vw-foto-knopf">
         <input type="file" accept="image/*" data-foto-hochladen />
         Foto aufnehmen oder wählen</label>
       <p class="vw-klein" id="vw-foto-status" aria-live="polite">${oben.length ? 'Oder ein vorhandenes Foto antippen:' : ''}</p>
       <div class="vw-foto-raster">${fotoWahl('', f.bild)}${oben.map((x) => fotoWahl(x, f.bild)).join('')}</div>
-      ${weitere.length ? `<details class="vw-foto-weitere" ${weitereOffen ? 'open' : ''}>
+      ${weitere.length ? `<details class="vw-foto-weitere">
         <summary>Foto von der Website nehmen (${weitere.length})</summary>
         <div class="vw-foto-raster">${weitere.map((x) => fotoWahl(x, f.bild)).join('')}</div></details>` : ''}
     </fieldset>`;
+}
+
+// Weitere Fotos zur Beschreibung (höchstens WEITERE_FOTOS_MAX): gewählte mit
+// „Entfernen", darunter hochladen oder ein vorhandenes Foto antippen. Die
+// Kunden sehen alle im gleichen quadratischen Format – Hochformat oder
+// Querformat ist egal, nur das Wichtige sollte in der Mitte sein.
+const WEITERE_FOTOS_MAX = 4;
+
+function weitereFotosAuswahl(f) {
+  const titel = `<legend>Weitere Fotos zur Beschreibung <span class="vw-klein">(höchstens ${WEITERE_FOTOS_MAX})</span></legend>`;
+  if (daten.weitereBilderMoeglich === false) {
+    return `<fieldset class="vw-feldgruppe">${titel}
+      <p class="vw-klein">Noch nicht eingerichtet: dafür einmal schema-hofladen.sql in der D1-Konsole ausführen.</p></fieldset>`;
+  }
+  const gewaehlt = f.weitereBilder || [];
+  const voll = gewaehlt.length >= WEITERE_FOTOS_MAX;
+  const angebot = [...new Set([...(daten.eigeneFotos || []), ...(fotoliste || [])])]
+    .filter((x) => !gewaehlt.includes(x));
+  return `<fieldset class="vw-feldgruppe">${titel}
+      <p class="vw-klein">Die Kunden sehen sie beim Aufklappen der Angaben, alle gleich groß und quadratisch zugeschnitten
+        – das Wichtige sollte in der Bildmitte sein. Antippen vergrößert sie.</p>
+      ${gewaehlt.length ? `<div class="vw-foto-raster">${gewaehlt.map((x, i) => `<div class="vw-foto-gewaehlt">
+          <img src="${esc(fotoSrc(x))}" alt="Weiteres Foto ${i + 1}" loading="lazy" decoding="async" />
+          <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="weiteres-foto-weg" data-wert="${i}"
+            aria-label="Weiteres Foto ${i + 1} entfernen">Entfernen</button></div>`).join('')}</div>`
+        : '<p class="vw-klein">Noch keine weiteren Fotos.</p>'}
+      ${voll ? `<p class="vw-klein">Vier Fotos sind das Höchste – zum Tauschen erst eines entfernen.</p>` : `
+      <label class="vw-knopf vw-knopf--voll vw-foto-knopf">
+        <input type="file" accept="image/*" data-weiteres-foto-hochladen />
+        Weiteres Foto aufnehmen oder wählen</label>
+      <p class="vw-klein" id="vw-weitere-status" aria-live="polite"></p>
+      ${angebot.length ? `<details class="vw-foto-weitere">
+        <summary>Vorhandenes Foto hinzufügen (${angebot.length})</summary>
+        <div class="vw-foto-raster">${angebot.map((x) => `<button type="button" class="vw-foto-wahl" data-aktion="weiteres-foto-dazu"
+          data-wert="${esc(x)}"><img src="${esc(fotoSrc(x))}" alt="" loading="lazy" decoding="async" />
+          ${x.startsWith('images/') ? `<span class="vw-foto-name">${esc(fotoName(x))}</span>` : ''}</button>`).join('')}</div>
+      </details>` : ''}`}
+    </fieldset>`;
+}
+
+function weiteresFotoDazu(pfad) {
+  const f = zustand.produktForm;
+  if (!f || !pfad) return;
+  f.weitereBilder = f.weitereBilder || [];
+  if (f.weitereBilder.includes(pfad)) return;
+  if (f.weitereBilder.length >= WEITERE_FOTOS_MAX) { meldung(`Höchstens ${WEITERE_FOTOS_MAX} weitere Fotos.`); return; }
+  f.weitereBilder.push(pfad);
+  fotoBereicheZeichnen();
+  meldung('Foto hinzugefügt – jetzt noch „Speichern" tippen.');
+}
+
+function weiteresFotoWeg(index) {
+  const f = zustand.produktForm;
+  if (!f || !f.weitereBilder) return;
+  f.weitereBilder.splice(index, 1);
+  fotoBereicheZeichnen();
+  meldung('Foto entfernt – jetzt noch „Speichern" tippen.');
 }
 
 // Foto im Browser verkleinern (lange Seite max. 1200 px, JPEG). Browser
@@ -2114,11 +2236,12 @@ function fotoVerkleinern(datei, max = 1200, qualitaet = 0.82) {
   });
 }
 
-async function produktFotoHochladen(eingabeFeld) {
+// weiteres = true: als weiteres Foto zur Beschreibung statt als Hauptfoto
+async function produktFotoHochladen(eingabeFeld, weiteres = false) {
   const datei = eingabeFeld.files && eingabeFeld.files[0];
   const f = zustand.produktForm;
   if (!datei || !f) return;
-  const status = document.getElementById('vw-foto-status');
+  const status = document.getElementById(weiteres ? 'vw-weitere-status' : 'vw-foto-status');
   if (status) status.textContent = 'Foto wird vorbereitet …';
   let daten64;
   try {
@@ -2134,10 +2257,16 @@ async function produktFotoHochladen(eingabeFeld) {
     return { bild: daten64 };
   }, { neuZeichnen: false });
   if (!erg) { if (status) status.textContent = ''; return; }
-  // Neues Foto gleich auswählen; nur den Foto-Bereich neu zeichnen
+  if (!erg.bild.startsWith('data:') && !(daten.eigeneFotos || []).includes(erg.bild)) {
+    daten.eigeneFotos = [erg.bild, ...(daten.eigeneFotos || [])];
+  }
+  if (weiteres) {
+    weiteresFotoDazu(erg.bild);
+    return;
+  }
+  // Neues Foto gleich auswählen; nur die Foto-Bereiche neu zeichnen
   f.bild = erg.bild;
-  const bereich = document.getElementById('vw-foto-auswahl');
-  if (bereich) bereich.innerHTML = fotoAuswahl(f);
+  fotoBereicheZeichnen();
   meldung('Foto hochgeladen und ausgewählt – jetzt noch „Speichern" tippen.');
 }
 
@@ -2194,6 +2323,7 @@ function ansichtProdukt() {
         <p class="vw-klein">Gilt für neue Bestellungen; bestehende behalten ihren Satz. Wird auch an Bertha weitergegeben.</p>
       </fieldset>
       <label class="vw-feld"><span>Beschreibung (optional)</span><textarea name="beschreibung" rows="2">${esc(f.beschreibung)}</textarea></label>
+      <div id="vw-weitere-fotos">${weitereFotosAuswahl(f)}</div>
       <label class="vw-feld"><span>Zutaten, Füllmenge, Herkunft (bei Lebensmitteln Pflicht)</span><textarea name="pflichtangaben" rows="2">${esc(f.pflichtangaben)}</textarea></label>
       <label class="vw-feld"><span>Allergene (z. B. „Ei, Weizen (Gluten)" – leer, wenn keine)</span><input name="allergene" value="${esc(f.allergene)}" /></label>
       <div id="vw-foto-auswahl">${fotoAuswahl(f)}</div>
@@ -2211,6 +2341,7 @@ function produktEingabe(f, aenderung = {}) {
     verfuegbar: f.verfuegbar !== false, imPortal: f.imPortal !== false,
     richtVonG: f.art === 'gewicht' ? grammAusText(f.von) : null, richtBisG: f.art === 'gewicht' ? grammAusText(f.bis) : null,
     beschreibung: f.beschreibung, pflichtangaben: f.pflichtangaben, allergene: f.allergene, bild: f.bild || '',
+    weitereBilder: [...(f.weitereBilder || [])],
     aktiv: f.aktiv !== false, herkunft: f.herkunft || null, ustSatz: f.ustSatz ?? null,
     ...aenderung,
   };
@@ -2615,10 +2746,10 @@ function ansichtLeer() {
     ${widerrufeKarte()}
     <section class="vw-karte">
       <h2>Noch keine laufende Bestellrunde</h2>
-      <p>Legt die erste Bestellrunde an – Produkte, Preise und Termine. Voranmeldungen könnt ihr jederzeit erfassen.</p>
+      <p>Legt die erste Bestellrunde an – Produkte, Preise und Termine. Vormerkungen könnt ihr jederzeit erfassen.</p>
       <div class="vw-knopfreihe">
         <a class="vw-knopf vw-knopf--voll" href="#charge-neu">+ Neue Bestellrunde</a>
-        <a class="vw-knopf" href="#voranmeldungen">Voranmeldungen</a>
+        <a class="vw-knopf" href="#voranmeldungen">Vormerkungen</a>
       </div>
     </section>
     ${nutzerZeile()}`;
@@ -3094,13 +3225,23 @@ function initKlicks() {
         voranmeldungenUebernehmen(ids);
         break;
       }
+      case 'va-bearbeiten':
+        e.preventDefault();
+        zustand.vaBearbeiten = el.dataset.id;
+        ansichtVoranmeldungen();
+        document.getElementById('vw-va-bearbeiten')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        break;
+      case 'va-bearbeiten-abbrechen':
+        zustand.vaBearbeiten = null;
+        ansichtVoranmeldungen();
+        break;
       case 'va-absagen': {
         e.preventDefault();
         const id = el.dataset.id;
         speichern(`voranmeldung/${id}/absagen`, {}, () => {
           daten.voranmeldungen = daten.voranmeldungen.filter((v) => v.id !== id);
           return {};
-        }, { erfolg: 'Voranmeldung abgesagt.' });
+        }, { erfolg: 'Vormerkung abgesagt.' });
         break;
       }
       case 'widerruf-erledigt': {
@@ -3197,6 +3338,12 @@ function initKlicks() {
       case 'produkt-aktiv':
         produktAktivUmschalten(produktVon(el.dataset.id));
         break;
+      case 'weiteres-foto-dazu':
+        weiteresFotoDazu(el.dataset.wert);
+        break;
+      case 'weiteres-foto-weg':
+        weiteresFotoWeg(Number(el.dataset.wert));
+        break;
       case 'schluessel-kopieren':
         schluesselKopieren();
         break;
@@ -3262,6 +3409,7 @@ function initEingaben() {
   document.addEventListener('change', (e) => {
     if (e.target.dataset.kundenImport !== undefined) kundenImportDatei(e.target);
     if (e.target.dataset.fotoHochladen !== undefined) produktFotoHochladen(e.target);
+    if (e.target.dataset.weiteresFotoHochladen !== undefined) produktFotoHochladen(e.target, true);
     if (e.target.dataset.gewicht) gewichtSpeichern(e.target);
     if (e.target.name === 'termin') adresseUmschalten();
     if (e.target.dataset.wahl === 'charge') {
@@ -3293,6 +3441,10 @@ function initEingaben() {
       const jahr = document.getElementById('vw-va-jahr');
       if (jahr) jahr.hidden = e.target.value === 'naechste';
     }
+    if (e.target.name === 'va-zeitraum') {
+      const jahr = e.target.form && e.target.form.querySelector('[data-va-jahr]');
+      if (jahr) jahr.hidden = e.target.value === 'naechste';
+    }
   });
 
   document.addEventListener('submit', (e) => {
@@ -3305,6 +3457,11 @@ function initEingaben() {
     if (id === 'vw-produkt-formular') {
       e.preventDefault();
       produktSpeichern(e.target);
+      return;
+    }
+    if (id === 'vw-va-bearbeiten') {
+      e.preventDefault();
+      vormerkungAendern(e.target);
       return;
     }
     if (id === 'vw-zugang-formular') {

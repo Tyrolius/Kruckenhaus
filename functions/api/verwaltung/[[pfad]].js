@@ -20,7 +20,9 @@
  *   POST /api/verwaltung/produkt/<id>             Produkt bearbeiten / aus- und einblenden
  *        (Feld bild: Pfad eines Fotos aus images/fotos.json, ein hochgeladenes
  *        Foto 'api/hofladen/foto/<id>' oder leer; verkaufsart 'runde' oder
- *        'dauer' mit dauerpreisCent, verfuegbar, imPortal)
+ *        'dauer' mit dauerpreisCent, verfuegbar, imPortal; weitereBilder: bis zu
+ *        4 weitere Fotos zur Beschreibung, gleiche Pfade wie bild – fehlt das
+ *        Feld, bleiben die bisherigen unverändert)
  *   POST /api/verwaltung/produkt/<id>/verfuegbar  Dauerartikel verfügbar/ausverkauft ({ verfuegbar })
  *   POST /api/verwaltung/foto                     Produktfoto hochladen ({ daten: „data:image/jpeg;base64,…" })
  *   POST /api/verwaltung/bereich                  Bereich anlegen ({ name })
@@ -33,6 +35,8 @@
  *        Die ständige Runde „Dauersortiment" (art 'dauer') lässt sich weder
  *        bearbeiten noch abschließen – ihre Artikel kommen aus dem Sortiment.
  *   POST /api/verwaltung/voranmeldung             Voranmeldung erfassen
+ *   POST /api/verwaltung/voranmeldung/<id>             offene Vormerkung ändern
+ *        ({ produktId, menge, zeitraum, jahr, notiz } – Kunde und Quelle bleiben)
  *   POST /api/verwaltung/voranmeldung/<id>/absagen
  *   POST /api/verwaltung/voranmeldungen/uebernehmen
  *   POST /api/verwaltung/widerruf/<id>/erledigt   Widerruf als erledigt markieren
@@ -56,8 +60,8 @@
 import {
   json, EingabeFehler, ZEITRAEUME, istGueltigeEmail,
   bestellungAnlegen, bestellungNachruecken, preisVorschlaege, dauersortimentAbgleichen,
-  voranmeldungAnlegen, voranmeldungenUebernehmen, bankAusEnv, SQL_ALS_GESEHEN,
-  kundenLinkErstellen, mailSenden, escapeHtml, HERKUNFT, UST_SAETZE,
+  voranmeldungAnlegen, voranmeldungPruefen, voranmeldungenUebernehmen, bankAusEnv, SQL_ALS_GESEHEN,
+  kundenLinkErstellen, mailSenden, escapeHtml, HERKUNFT, UST_SAETZE, weitereBilderLaden,
 } from '../../_lib/hofladen.js';
 import {
   BETRIEB, mailHtml, absatz, klein, knopf, kasten, gruss, positionenHtml, terminText,
@@ -175,6 +179,7 @@ async function standLaden(db, bank = null) {
     ])).map((r) => r.results);
 
   const ueberBertha = await bestellungenUeberBertha(db, aktiv);
+  const weitere = await weitereBilderLaden(db);
   const jePos = new Map();
   for (const p of positionen) {
     if (!jePos.has(p.bestellung_id)) jePos.set(p.bestellung_id, []);
@@ -213,12 +218,13 @@ async function standLaden(db, bank = null) {
     })),
     bereiche: bereiche.map((b) => ({ id: id(b.id), name: b.name, produkte: b.produkte })),
     eigeneFotos: await eigeneFotos(db),
+    weitereBilderMoeglich: weitere.moeglich,
     schnittstelle: await schnittstelleStand(db),
     produkte: produkte.map((p) => ({
       id: id(p.id), name: p.name, art: p.art, bereichId: id(p.bereich), aktiv: Boolean(p.aktiv),
       richtVonG: p.richtgewicht_von_g, richtBisG: p.richtgewicht_bis_g, startpreisCent: p.startpreis_cent,
       beschreibung: p.beschreibung || '', pflichtangaben: p.pflichtangaben || '', allergene: p.allergene || '',
-      bild: p.bild || '', verwendet: Boolean(p.verwendet),
+      bild: p.bild || '', weitereBilder: weitere.jeProdukt.get(p.id) || [], verwendet: Boolean(p.verwendet),
       verkaufsart: p.verkaufsart, dauerpreisCent: p.dauerpreis_cent, verfuegbar: Boolean(p.verfuegbar),
       imPortal: Boolean(p.im_portal), herkunft: p.herkunft || null, ustSatz: p.ust_satz ?? null,
     })),
@@ -529,6 +535,39 @@ function ustSatzPruefen(wert) {
   return satz;
 }
 
+// Weitere Fotos zur Beschreibung: undefined = Feld fehlt (Liste bleibt),
+// sonst bis zu WEITERE_BILDER_MAX gültige Pfade ohne Doppelte
+const WEITERE_BILDER_MAX = 4;
+
+function weitereBilderPruefen(wert) {
+  if (wert === undefined || wert === null) return undefined;
+  if (!Array.isArray(wert)) throw new EingabeFehler('Ungültige Auswahl: weitere Fotos.');
+  const liste = [...new Set(wert.map(fotoOderNull).filter(Boolean))];
+  if (liste.length > WEITERE_BILDER_MAX) {
+    throw new EingabeFehler(`Höchstens ${WEITERE_BILDER_MAX} weitere Fotos je Produkt.`);
+  }
+  return liste;
+}
+
+// Liste der weiteren Fotos ganz ersetzen. Fehlt die Tabelle noch
+// (schema-hofladen.sql nicht ausgeführt), geht eine leere Liste still durch,
+// sonst kommt ein Hinweis – das Produkt selbst ist dann schon gespeichert.
+async function weitereBilderSpeichern(db, produktId, liste) {
+  if (liste === undefined) return;
+  try {
+    await db.batch([
+      db.prepare('DELETE FROM produkt_bilder WHERE produkt_id = ?').bind(produktId),
+      ...liste.map((bild, i) => db.prepare('INSERT INTO produkt_bilder (produkt_id, bild, reihenfolge) VALUES (?, ?, ?)')
+        .bind(produktId, bild, (i + 1) * 10)),
+    ]);
+  } catch (fehler) {
+    if (!/no such table/i.test(String(fehler && fehler.message))) throw fehler;
+    if (liste.length) {
+      throw new EingabeFehler('Das Produkt ist gespeichert, die weiteren Fotos noch nicht: dafür einmal schema-hofladen.sql in der D1-Konsole ausführen.');
+    }
+  }
+}
+
 function produktPruefen(e) {
   const name = text(e.name, 120);
   if (!name) throw new EingabeFehler('Bitte einen Namen eintragen.');
@@ -542,6 +581,7 @@ function produktPruefen(e) {
     pflichtangaben: textOderNull(e.pflichtangaben, 1000),
     allergene: textOderNull(e.allergene, 300),
     bild: fotoOderNull(e.bild),
+    weitereBilder: weitereBilderPruefen(e.weitereBilder),
     aktiv: e.aktiv === false ? 0 : 1,
     verkaufsart: auswahl(e.verkaufsart || 'runde', VERKAUFSARTEN, 'Verkaufsart'),
     dauerpreisCent: ganzzahl(e.dauerpreisCent, 'Preis', { max: 10000000, leer: true }),
@@ -658,6 +698,7 @@ async function produktAnlegen(db, e) {
     p.bild, p.richtVonG, p.richtBisG, p.aktiv, p.verkaufsart, p.dauerpreisCent, p.verfuegbar, p.imPortal,
     p.herkunft, p.ustSatz, p.bereichId).first();
   if (p.verkaufsart === 'dauer') await dauersortimentAbgleichen(db);
+  await weitereBilderSpeichern(db, zeile.id, p.weitereBilder);
   return { produktId: id(zeile.id) };
 }
 
@@ -684,6 +725,7 @@ async function produktBearbeiten(db, produktId, e) {
     p.bild, p.richtVonG, p.richtBisG, p.aktiv, p.verkaufsart, p.dauerpreisCent, p.verfuegbar, p.imPortal,
     p.herkunft, p.ustSatz, pid).run();
   if (p.verkaufsart === 'dauer' || alt.verkaufsart === 'dauer') await dauersortimentAbgleichen(db);
+  await weitereBilderSpeichern(db, pid, p.weitereBilder);
   return { produktId: id(pid) };
 }
 
@@ -706,6 +748,21 @@ async function produktVerfuegbar(db, produktId, e) {
    ------------------------------------------------------------ */
 const FOTO_MAX_BYTES = 1500000;
 
+// Aufräumen: hochgeladen, aber nach einem Tag weder Hauptfoto noch weiteres
+// Foto eines Produkts. Fehlt produkt_bilder noch, gibt es auch keine weiteren
+// Fotos – dann zählt nur das Hauptfoto.
+async function verwaisteFotosLoeschen(db) {
+  const alt = `DELETE FROM produkt_fotos WHERE erstellt_am < datetime('now', '-1 day')
+                 AND NOT EXISTS (SELECT 1 FROM produkte WHERE bild = 'api/hofladen/foto/' || produkt_fotos.id)`;
+  try {
+    await db.prepare(`${alt}
+                 AND NOT EXISTS (SELECT 1 FROM produkt_bilder WHERE bild = 'api/hofladen/foto/' || produkt_fotos.id)`).run();
+  } catch (fehler) {
+    if (!/no such table: produkt_bilder/i.test(String(fehler && fehler.message))) throw fehler;
+    await db.prepare(alt).run();
+  }
+}
+
 async function fotoHochladen(db, e) {
   const treffer = /^data:image\/jpeg;base64,([A-Za-z0-9+/]+={0,2})$/.exec(String(e.daten || ''));
   if (!treffer) throw new EingabeFehler('Das Foto konnte nicht gelesen werden – bitte ein anderes wählen.');
@@ -720,11 +777,7 @@ async function fotoHochladen(db, e) {
   if (groesse < 500) throw new EingabeFehler('Das Foto ist leer.');
   if (groesse > FOTO_MAX_BYTES) throw new EingabeFehler('Das Foto ist zu groß.');
   try {
-    // Aufräumen: hochgeladen, aber nach einem Tag noch keinem Produkt zugeordnet
-    await db.prepare(
-      `DELETE FROM produkt_fotos WHERE erstellt_am < datetime('now', '-1 day')
-         AND NOT EXISTS (SELECT 1 FROM produkte WHERE bild = 'api/hofladen/foto/' || produkt_fotos.id)`
-    ).run();
+    await verwaisteFotosLoeschen(db);
     const zeile = await db.prepare('INSERT INTO produkt_fotos (daten, groesse) VALUES (?, ?) RETURNING id')
       .bind(base64, groesse).first();
     return { bild: `api/hofladen/foto/${zeile.id}` };
@@ -901,7 +954,7 @@ async function kundenMail(db, ctx, bestellungId, art) {
     titel = 'Ihr seid nachgerückt';
     teile = [
       absatz(`Hallo ${escapeHtml(b.name)},`),
-      absatz('gute Nachricht: Es ist etwas frei geworden – eure Bestellung von der Warteliste ist jetzt <strong>fix vorgemerkt</strong>.'),
+      absatz('gute Nachricht: Es ist etwas frei geworden – eure Bestellung von der Warteliste ist jetzt <strong>fix bestellt</strong>.'),
       eckdaten,
       positionenHtml(zeilen),
       knopf(link, 'Meine Bestellungen ansehen'),
@@ -1220,6 +1273,19 @@ async function voranmeldungErfassen(db, e) {
   return { voranmeldungId: id(neueId) };
 }
 
+// Nur offene Vormerkungen; übernommene sind schon Bestellungen (dort ändern)
+async function voranmeldungAendern(db, voranmeldungId, e) {
+  const vid = nummer(voranmeldungId, 'Vormerkung');
+  const produktId = nummer(e.produktId, 'Produkt');
+  const { menge, jahr } = await voranmeldungPruefen(db, { produktId, menge: e.menge, zeitraum: e.zeitraum, jahr: e.jahr });
+  const r = await db.prepare(
+    `UPDATE voranmeldungen SET produkt_id = ?, menge = ?, zeitraum = ?, jahr = ?, notiz = ?, geaendert_am = datetime('now')
+     WHERE id = ? AND status = 'offen'`
+  ).bind(produktId, menge, e.zeitraum, jahr, textOderNull(e.notiz, 500), vid).run();
+  if (!r.meta.changes) throw new EingabeFehler('Vormerkung nicht gefunden oder schon übernommen bzw. abgesagt.');
+  return {};
+}
+
 /* ------------------------------------------------------------
    8. VERTEILER
    ------------------------------------------------------------ */
@@ -1257,6 +1323,7 @@ export async function onRequest({ request, env, params, data }) {
       ergebnis = {};
     }
     else if (bereich === 'voranmeldung' && pfad.length === 1) ergebnis = await voranmeldungErfassen(db, eingabe);
+    else if (bereich === 'voranmeldung' && pfad.length === 2) ergebnis = await voranmeldungAendern(db, teilId, eingabe);
     else if (bereich === 'hofverkauf' && pfad.length === 1) ergebnis = await hofverkauf(db, eingabe);
     else if (bereich === 'gesehen' && pfad.length === 1) ergebnis = await alsGesehen(db, eingabe);
     else if (bereich === 'tour' && pfad.length === 1) ergebnis = await tourSpeichern(db, eingabe);
@@ -1272,8 +1339,8 @@ export async function onRequest({ request, env, params, data }) {
     else if (bereich === 'voranmeldung' && unteraktion === 'absagen' && pfad.length === 3) {
       const r = await db.prepare(
         `UPDATE voranmeldungen SET status = 'abgesagt', geaendert_am = datetime('now') WHERE id = ? AND status = 'offen'`
-      ).bind(nummer(teilId, 'Voranmeldung')).run();
-      if (!r.meta.changes) throw new EingabeFehler('Voranmeldung nicht gefunden oder nicht mehr offen.');
+      ).bind(nummer(teilId, 'Vormerkung')).run();
+      if (!r.meta.changes) throw new EingabeFehler('Vormerkung nicht gefunden oder nicht mehr offen.');
       ergebnis = {};
     } else if (bereich === 'widerruf' && unteraktion === 'erledigt' && pfad.length === 3) {
       const r = await db.prepare(

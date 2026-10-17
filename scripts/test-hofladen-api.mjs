@@ -162,10 +162,23 @@ s = ok(await api('GET', 'stand'));
 assert.equal(s.bestellungen.find((b) => b.id === bVoran).lieferadresse, 'Weg 2, 6233 Kramsach');
 assert.equal(s.kunden.find((k) => k.name === 'Vera Voran').telefon, '+43 660 9');
 r = ok(await api('POST', 'voranmeldung', { kunde: { name: 'Otto Später' }, produktId: huhn, menge: 1, zeitraum: 'fruehjahr', jahr: new Date().getFullYear() + 1 }));
+// Vormerkung bearbeiten: Produkt, Menge, Zeitraum, Notiz; Kunde und Quelle bleiben
+const vOtto = r.voranmeldungId;
+ok(await api('POST', `voranmeldung/${vOtto}`, { produktId: nudeln, menge: 3, zeitraum: 'naechste', jahr: 2030, notiz: '  bitte anrufen ' }));
+let va = roh.prepare('SELECT produkt_id, menge, zeitraum, jahr, notiz, quelle, kunde_id FROM voranmeldungen WHERE id = ?').get(Number(vOtto));
+assert.deepEqual([va.produkt_id, va.menge, va.zeitraum, va.jahr, va.notiz, va.quelle], [Number(nudeln), 3, 'naechste', null, 'bitte anrufen', 'telefon']);
+ok(await api('POST', `voranmeldung/${vOtto}`, { produktId: huhn, menge: 2, zeitraum: 'martini', jahr: new Date().getFullYear(), notiz: '' }));
+va = roh.prepare('SELECT produkt_id, menge, zeitraum, jahr, notiz FROM voranmeldungen WHERE id = ?').get(Number(vOtto));
+assert.deepEqual([va.produkt_id, va.menge, va.zeitraum, va.jahr, va.notiz], [Number(huhn), 2, 'martini', new Date().getFullYear(), null]);
+assert.match((await api('POST', `voranmeldung/${vOtto}`, { produktId: huhn, menge: 0, zeitraum: 'naechste' })).error, /Menge/);
+assert.match((await api('POST', `voranmeldung/${vOtto}`, { produktId: huhn, menge: 1, zeitraum: 'irgendwann' })).error, /Zeitraum/);
+assert.match((await api('POST', `voranmeldung/${vOtto}`, { produktId: huhn, menge: 1, zeitraum: 'herbst', jahr: 1999 })).error, /Jahr/);
+assert.match((await api('POST', `voranmeldung/${vOtto}`, { produktId: 999999, menge: 1, zeitraum: 'naechste' })).error, /Produkt/);
 ok(await api('POST', `voranmeldung/${r.voranmeldungId}/absagen`, {}));
+assert.match((await api('POST', `voranmeldung/${vOtto}`, { produktId: huhn, menge: 1, zeitraum: 'naechste' })).error, /schon übernommen bzw\. abgesagt/);
 r = await api('POST', `voranmeldung/${r.voranmeldungId}/absagen`, {});
 assert.equal(r.status, 400, 'zweimal absagen geht nicht');
-console.log('✓ Voranmeldung erfassen, übernehmen, Termin, Zahlart und Kontakt bestätigen, absagen');
+console.log('✓ Vormerkung erfassen, übernehmen, Termin, Zahlart und Kontakt bestätigen, bearbeiten, absagen');
 
 // Bestellrunde bearbeiten: Preis ändern (alte Bestellungen behalten Preis), Termin ergänzen,
 // benutzten Artikel nicht entfernen
@@ -381,6 +394,39 @@ ok(await api('POST', 'foto', { daten: alsDaten(jpeg) }));
 const fotoIds = roh.prepare('SELECT id FROM produkt_fotos').all().map((x) => `api/hofladen/foto/${x.id}`);
 assert.ok(fotoIds.includes(fotoPfad) && !fotoIds.includes(verwaist), 'nur das verwaiste Foto gelöscht');
 console.log('✓ Foto hochladen: nur JPEG, Größenlimit, zuordnen, verwaiste nach einem Tag aufgeräumt');
+
+// Weitere Fotos zur Beschreibung: bis zu 4, gleiche Pfadregeln, Feld fehlt = bleibt,
+// leere Liste = alle entfernt, hochgeladene weitere Fotos werden nicht aufgeräumt
+const weitere = ['images/bauernhof/bienen-kinder-waben.jpg', fotoPfad, 'images/hofladen/eier-korb.jpg'];
+ok(await api('POST', `produkt/${eier}`, { ...eiDaten, bild: fotoPfad, weitereBilder: [...weitere, weitere[0], ''] }));
+s = ok(await api('GET', 'stand'));
+assert.equal(s.weitereBilderMoeglich, true);
+assert.deepEqual(s.produkte.find((p) => p.id === eier).weitereBilder, weitere, 'Reihenfolge bleibt, Doppelte und Leere fallen weg');
+assert.deepEqual(s.produkte.find((p) => p.id !== eier).weitereBilder, []);
+ok(await api('POST', `produkt/${eier}`, { ...eiDaten, bild: fotoPfad }));
+assert.equal(roh.prepare('SELECT COUNT(*) AS n FROM produkt_bilder WHERE produkt_id = ?').get(Number(eier)).n, 3, 'ohne Feld bleibt die Liste');
+assert.match((await api('POST', `produkt/${eier}`, { ...eiDaten, weitereBilder: ['images/a.jpg', 'images/b.jpg', 'images/c.jpg', 'images/d.jpg', 'images/e.jpg'] })).error, /Höchstens 4/);
+assert.match((await api('POST', `produkt/${eier}`, { ...eiDaten, weitereBilder: ['https://fremd.example/x.jpg'] })).error, /Ungültiges Foto/);
+assert.match((await api('POST', `produkt/${eier}`, { ...eiDaten, weitereBilder: 'images/a.jpg' })).error, /weitere Fotos/);
+const nurWeiteres = ok(await api('POST', 'foto', { daten: alsDaten(jpeg) })).bild;
+ok(await api('POST', `produkt/${eier}`, { ...eiDaten, bild: fotoPfad, weitereBilder: [nurWeiteres] }));
+roh.exec(`UPDATE produkt_fotos SET erstellt_am = datetime('now', '-2 days')`);
+ok(await api('POST', 'foto', { daten: alsDaten(jpeg) }));
+assert.ok(roh.prepare('SELECT 1 FROM produkt_fotos WHERE id = ?').get(Number(nurWeiteres.split('/').pop())), 'weiteres Foto bleibt beim Aufräumen');
+r = ok(await api('POST', 'produkt', { name: 'Honig 1 kg', art: 'stueck', bereichId: bSaison, weitereBilder: [weitere[0]] }));
+assert.deepEqual(roh.prepare('SELECT bild FROM produkt_bilder WHERE produkt_id = ?').all(Number(r.produktId)).map((x) => x.bild), [weitere[0]]);
+ok(await api('POST', `produkt/${eier}`, { ...eiDaten, bild: fotoPfad, weitereBilder: [] }));
+assert.deepEqual(ok(await api('GET', 'stand')).produkte.find((p) => p.id === eier).weitereBilder, []);
+// Ohne Tabelle (schema-hofladen.sql noch nicht ausgeführt): Verwaltung läuft weiter
+roh.exec('ALTER TABLE produkt_bilder RENAME TO produkt_bilder_weg');
+s = ok(await api('GET', 'stand'));
+assert.equal(s.weitereBilderMoeglich, false);
+ok(await api('POST', `produkt/${eier}`, { ...eiDaten, bild: fotoPfad, weitereBilder: [] }));
+r = await api('POST', `produkt/${eier}`, { ...eiDaten, bild: fotoPfad, weitereBilder: [weitere[0]] });
+assert.match(r.error, /schema-hofladen\.sql/);
+ok(await api('POST', 'foto', { daten: alsDaten(jpeg) }));
+roh.exec('ALTER TABLE produkt_bilder_weg RENAME TO produkt_bilder');
+console.log('✓ Weitere Fotos: bis zu 4, Pfade geprüft, Liste ersetzen/behalten, Aufräumen, ohne Tabelle');
 
 // Bereiche: anlegen, umbenennen, Produkt umhängen, ordnen, leere löschen
 r = ok(await api('POST', 'bereich', { name: 'Eier & Marmelade' }));

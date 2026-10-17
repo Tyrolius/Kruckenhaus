@@ -644,7 +644,13 @@ die Verwaltung mit erfundenen Daten; dabei wird nichts gespeichert.
   sich bei anderen Produkten wiederverwenden, unter „Foto von der Website
   nehmen" auch alle Fotos der Website. Hochgeladene, aber nie gespeicherte
   Fotos werden nach einem Tag gelöscht. In der Sortiment-Liste zeigt ein
-  kleines Bild bzw. „kein Foto", wo noch eines fehlt. Eingeblendete Produkte erscheinen
+  kleines Bild bzw. „kein Foto", wo noch eines fehlt.
+  **Weitere Fotos** (höchstens 4, unter der Beschreibung): genauso hochladen
+  oder ein vorhandenes Foto antippen; „Entfernen" nimmt eines wieder weg, dann
+  **Speichern**. Die Kunden sehen sie beim Aufklappen der Angaben als gleich
+  große, quadratisch zugeschnittene Vorschaubilder; Antippen vergrößert.
+  Das Hauptfoto bleibt das eine Foto oben auf der Karte (und in Bertha).
+  Einmalig nötig: `migration-2026-10-fotos.sql` (Tabelle `produkt_bilder`). Eingeblendete Produkte erscheinen
   auf der Hofladen-Seite im Abschnitt „Unser Sortiment"; nicht mehr
   erhältliche Produkte ausblenden statt löschen.
 - *Bestellrunde*: was gerade bestellbar ist, mit Preis, Menge und Terminen.

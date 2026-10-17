@@ -46,7 +46,7 @@ functions/api/availability.js GET /api/availability → Airbnb-iCal parsen
 schema.sql                 D1-Schema (Tabelle „anfragen")
 schema-hofladen.sql        D1-Schema der Hofladen-Vorbestellung (im Aufbau)
 hofladen-produkte.sql      Produktkatalog der Hofladen-Vorbestellung (Erstbefüllung)
-migration-2026-10-*.sql    einmalige Migrationen bestehender Datenbanken (ALTER TABLE; zuletzt -steuer)
+migration-2026-10-*.sql    einmalige Migrationen bestehender Datenbanken (ALTER TABLE; zuletzt -fotos)
 docs/SCHNITTSTELLE-BERTHA.md  Plan der Schnittstelle zu Bertha (Phasen W1–W4, B1–B2)
 functions/_lib/hofladen.js gemeinsame Helfer der Hofladen-Functions (keine Route)
 functions/_lib/zugang.js   Prüfung der Cloudflare-Access-Anmeldung
@@ -253,6 +253,10 @@ Es gibt keine automatisierten Tests und keinen Linter.
   Verwaltung direkt hoch (`POST /api/verwaltung/foto`, Tabelle `produkt_fotos`,
   ausgeliefert über `/api/hofladen/foto/<id>`); zusätzlich wählbar sind die Fotos
   aus `images/fotos.json` (schreibt `.github/scripts/optimize-images.js`).
+  Ein Hauptfoto (`produkte.bild`, auch für Bertha) plus bis zu 4 weitere Fotos zur
+  Beschreibung (Tabelle `produkt_bilder`, `migration-2026-10-fotos.sql`); fehlt die
+  Tabelle, laufen Verwaltung und Hofladen ohne sie weiter. Das Aufräumen verwaister
+  Uploads muss beide Stellen prüfen.
 
 Wenn eine Anfrage einen dieser Punkte berührt, das gleich miterledigen bzw.
 kurz darauf hinweisen.

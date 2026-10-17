@@ -33,7 +33,7 @@ function mbTermin(t) {
 }
 
 const MB_STATUS = {
-  vorgemerkt: ['Fix vorgemerkt', 'gut'],
+  vorgemerkt: ['Fix bestellt', 'gut'],
   warteliste: ['Warteliste', 'info'],
   storniert: ['Storniert', 'grau'],
 };
