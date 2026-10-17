@@ -162,10 +162,23 @@ s = ok(await api('GET', 'stand'));
 assert.equal(s.bestellungen.find((b) => b.id === bVoran).lieferadresse, 'Weg 2, 6233 Kramsach');
 assert.equal(s.kunden.find((k) => k.name === 'Vera Voran').telefon, '+43 660 9');
 r = ok(await api('POST', 'voranmeldung', { kunde: { name: 'Otto Später' }, produktId: huhn, menge: 1, zeitraum: 'fruehjahr', jahr: new Date().getFullYear() + 1 }));
+// Vormerkung bearbeiten: Produkt, Menge, Zeitraum, Notiz; Kunde und Quelle bleiben
+const vOtto = r.voranmeldungId;
+ok(await api('POST', `voranmeldung/${vOtto}`, { produktId: nudeln, menge: 3, zeitraum: 'naechste', jahr: 2030, notiz: '  bitte anrufen ' }));
+let va = roh.prepare('SELECT produkt_id, menge, zeitraum, jahr, notiz, quelle, kunde_id FROM voranmeldungen WHERE id = ?').get(Number(vOtto));
+assert.deepEqual([va.produkt_id, va.menge, va.zeitraum, va.jahr, va.notiz, va.quelle], [Number(nudeln), 3, 'naechste', null, 'bitte anrufen', 'telefon']);
+ok(await api('POST', `voranmeldung/${vOtto}`, { produktId: huhn, menge: 2, zeitraum: 'martini', jahr: new Date().getFullYear(), notiz: '' }));
+va = roh.prepare('SELECT produkt_id, menge, zeitraum, jahr, notiz FROM voranmeldungen WHERE id = ?').get(Number(vOtto));
+assert.deepEqual([va.produkt_id, va.menge, va.zeitraum, va.jahr, va.notiz], [Number(huhn), 2, 'martini', new Date().getFullYear(), null]);
+assert.match((await api('POST', `voranmeldung/${vOtto}`, { produktId: huhn, menge: 0, zeitraum: 'naechste' })).error, /Menge/);
+assert.match((await api('POST', `voranmeldung/${vOtto}`, { produktId: huhn, menge: 1, zeitraum: 'irgendwann' })).error, /Zeitraum/);
+assert.match((await api('POST', `voranmeldung/${vOtto}`, { produktId: huhn, menge: 1, zeitraum: 'herbst', jahr: 1999 })).error, /Jahr/);
+assert.match((await api('POST', `voranmeldung/${vOtto}`, { produktId: 999999, menge: 1, zeitraum: 'naechste' })).error, /Produkt/);
 ok(await api('POST', `voranmeldung/${r.voranmeldungId}/absagen`, {}));
+assert.match((await api('POST', `voranmeldung/${vOtto}`, { produktId: huhn, menge: 1, zeitraum: 'naechste' })).error, /schon übernommen bzw\. abgesagt/);
 r = await api('POST', `voranmeldung/${r.voranmeldungId}/absagen`, {});
 assert.equal(r.status, 400, 'zweimal absagen geht nicht');
-console.log('✓ Voranmeldung erfassen, übernehmen, Termin, Zahlart und Kontakt bestätigen, absagen');
+console.log('✓ Vormerkung erfassen, übernehmen, Termin, Zahlart und Kontakt bestätigen, bearbeiten, absagen');
 
 // Bestellrunde bearbeiten: Preis ändern (alte Bestellungen behalten Preis), Termin ergänzen,
 // benutzten Artikel nicht entfernen

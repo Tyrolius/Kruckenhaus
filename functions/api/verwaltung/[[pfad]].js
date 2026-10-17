@@ -35,6 +35,8 @@
  *        Die ständige Runde „Dauersortiment" (art 'dauer') lässt sich weder
  *        bearbeiten noch abschließen – ihre Artikel kommen aus dem Sortiment.
  *   POST /api/verwaltung/voranmeldung             Voranmeldung erfassen
+ *   POST /api/verwaltung/voranmeldung/<id>             offene Vormerkung ändern
+ *        ({ produktId, menge, zeitraum, jahr, notiz } – Kunde und Quelle bleiben)
  *   POST /api/verwaltung/voranmeldung/<id>/absagen
  *   POST /api/verwaltung/voranmeldungen/uebernehmen
  *   POST /api/verwaltung/widerruf/<id>/erledigt   Widerruf als erledigt markieren
@@ -58,7 +60,7 @@
 import {
   json, EingabeFehler, ZEITRAEUME, istGueltigeEmail,
   bestellungAnlegen, bestellungNachruecken, preisVorschlaege, dauersortimentAbgleichen,
-  voranmeldungAnlegen, voranmeldungenUebernehmen, bankAusEnv, SQL_ALS_GESEHEN,
+  voranmeldungAnlegen, voranmeldungPruefen, voranmeldungenUebernehmen, bankAusEnv, SQL_ALS_GESEHEN,
   kundenLinkErstellen, mailSenden, escapeHtml, HERKUNFT, UST_SAETZE, weitereBilderLaden,
 } from '../../_lib/hofladen.js';
 import {
@@ -1271,6 +1273,19 @@ async function voranmeldungErfassen(db, e) {
   return { voranmeldungId: id(neueId) };
 }
 
+// Nur offene Vormerkungen; übernommene sind schon Bestellungen (dort ändern)
+async function voranmeldungAendern(db, voranmeldungId, e) {
+  const vid = nummer(voranmeldungId, 'Vormerkung');
+  const produktId = nummer(e.produktId, 'Produkt');
+  const { menge, jahr } = await voranmeldungPruefen(db, { produktId, menge: e.menge, zeitraum: e.zeitraum, jahr: e.jahr });
+  const r = await db.prepare(
+    `UPDATE voranmeldungen SET produkt_id = ?, menge = ?, zeitraum = ?, jahr = ?, notiz = ?, geaendert_am = datetime('now')
+     WHERE id = ? AND status = 'offen'`
+  ).bind(produktId, menge, e.zeitraum, jahr, textOderNull(e.notiz, 500), vid).run();
+  if (!r.meta.changes) throw new EingabeFehler('Vormerkung nicht gefunden oder schon übernommen bzw. abgesagt.');
+  return {};
+}
+
 /* ------------------------------------------------------------
    8. VERTEILER
    ------------------------------------------------------------ */
@@ -1308,6 +1323,7 @@ export async function onRequest({ request, env, params, data }) {
       ergebnis = {};
     }
     else if (bereich === 'voranmeldung' && pfad.length === 1) ergebnis = await voranmeldungErfassen(db, eingabe);
+    else if (bereich === 'voranmeldung' && pfad.length === 2) ergebnis = await voranmeldungAendern(db, teilId, eingabe);
     else if (bereich === 'hofverkauf' && pfad.length === 1) ergebnis = await hofverkauf(db, eingabe);
     else if (bereich === 'gesehen' && pfad.length === 1) ergebnis = await alsGesehen(db, eingabe);
     else if (bereich === 'tour' && pfad.length === 1) ergebnis = await tourSpeichern(db, eingabe);
@@ -1323,8 +1339,8 @@ export async function onRequest({ request, env, params, data }) {
     else if (bereich === 'voranmeldung' && unteraktion === 'absagen' && pfad.length === 3) {
       const r = await db.prepare(
         `UPDATE voranmeldungen SET status = 'abgesagt', geaendert_am = datetime('now') WHERE id = ? AND status = 'offen'`
-      ).bind(nummer(teilId, 'Voranmeldung')).run();
-      if (!r.meta.changes) throw new EingabeFehler('Voranmeldung nicht gefunden oder nicht mehr offen.');
+      ).bind(nummer(teilId, 'Vormerkung')).run();
+      if (!r.meta.changes) throw new EingabeFehler('Vormerkung nicht gefunden oder nicht mehr offen.');
       ergebnis = {};
     } else if (bereich === 'widerruf' && unteraktion === 'erledigt' && pfad.length === 3) {
       const r = await db.prepare(

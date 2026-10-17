@@ -32,7 +32,8 @@ let beschaeftigt = false;    // verhindert doppeltes Absenden
 const zustand = {
   chargeId: null,
   aendernOffen: null,      // Bestellung, deren „Menge ändern" aufgeklappt ist
-  kundenImport: null,      // Vorschau „Kunden übernehmen" (Bertha-Seite)
+  kundenImport: null,
+  vaBearbeiten: null,      // ID der Vormerkung, die gerade bearbeitet wird      // Vorschau „Kunden übernehmen" (Bertha-Seite)
   filter: 'alle',
   suche: '',
   uebergabeArt: 'abholung',
@@ -405,7 +406,7 @@ function bestaetigungText(b) {
     return `${p.menge}× ${a.name} (${a.art === 'gewicht' ? `${euro(preis)}/kg` : `je ${euro(preis)}`})`;
   }).join(', ');
   const termine = ch.termine.map((t) => terminText(t)).join(' oder ');
-  return `Hallo ${vorname(k)}, ihr hattet euch vorangemeldet – ihr seid dabei: ${preise}. `
+  return `Hallo ${vorname(k)}, ihr hattet euch vormerken lassen – ihr seid dabei: ${preise}. `
     + `Passt euch ${termine}? Und zahlt ihr bar oder per Überweisung? Liebe Grüße, Kathrin & Florian`;
 }
 
@@ -557,7 +558,7 @@ function ansichtUebersicht() {
   const aufgaben = [
     aufgabe(neue, 'Neue Bestellungen über die Website', 'neu'),
     aufgabe(ohneTermin, 'Termin mit dem Kunden klären', 'termin-offen'),
-    aufgabe(passendeVa, 'Voranmeldungen übernehmen', '#voranmeldungen'),
+    aufgabe(passendeVa, 'Vormerkungen übernehmen', '#voranmeldungen'),
     aufgabe(warteliste, 'Auf der Warteliste', 'warteliste'),
     aufgabe(nichtUebergeben, 'Noch abzuholen bzw. zu liefern', '#uebergabe'),
     aufgabe(geldFehlt, 'Übergeben, Geld noch nicht da', '#zahlungen'),
@@ -704,7 +705,7 @@ function ansichtNeu() {
   inhalt().innerHTML = `
     <div class="vw-kopf"><h1>Erfassen</h1>${erfassenUmschalter('neu')}${chargeWahl()}
       <p class="vw-klein">Bestellung per Telefon, WhatsApp oder persönlich – für einen späteren Termin.
-        Ohne Preis und Termin? <a href="#voranmeldungen">Voranmeldung</a>.</p></div>
+        Ohne Preis und Termin? <a href="#voranmeldungen">Vormerkung</a>.</p></div>
     <form class="vw-karte" id="vw-formular" novalidate>
       <fieldset class="vw-feldgruppe"><legend>Wie kam die Bestellung?</legend>
         <div class="vw-auswahl vw-auswahl--reihe">
@@ -1447,17 +1448,21 @@ function ansichtVoranmeldungen() {
 
   const vaZeile = (v, mitHaken) => {
     const k = daten.kunden.find((x) => x.id === v.kundeId);
+    if (zustand.vaBearbeiten === v.id) return vaBearbeitenFormular(v, k);
     return `<label class="vw-va-zeile">
       ${mitHaken ? `<input type="checkbox" name="va" value="${v.id}" ${vorausgewaehlt(v, saison) ? 'checked' : ''} />` : ''}
       <span class="vw-va-text"><strong>${esc(k.name)}</strong> · ${v.menge}× ${esc(produktVon(v.produktId).name)}<br>
         <span class="vw-klein">${esc(zeitraumText(v))} · ${QUELLEN[v.quelle]} · gemeldet ${datumKurz(v.erstellt)}${v.notiz ? ` · „${esc(v.notiz)}"` : ''}</span></span>
-      <button type="button" class="vw-knopf vw-knopf--warnung vw-knopf--klein" data-aktion="va-absagen" data-id="${v.id}">Absagen</button>
+      <span class="vw-va-knoepfe">
+        <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="va-bearbeiten" data-id="${v.id}">Bearbeiten</button>
+        <button type="button" class="vw-knopf vw-knopf--warnung vw-knopf--klein" data-aktion="va-absagen" data-id="${v.id}">Absagen</button>
+      </span>
     </label>`;
   };
   const andere = offen.filter((v) => !passend.includes(v));
 
   inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Voranmeldungen</h1>
+    <div class="vw-kopf"><h1>Vormerkungen</h1>
       <p class="vw-klein">Unverbindlich, noch ohne Preis und Termin. Zählen erst von der Menge ab, wenn sie in eine Bestellrunde übernommen werden – wer sich zuerst gemeldet hat, kommt zuerst dran.</p>
       ${chargeWahl()}</div>
     <div class="vw-spalten">
@@ -1466,12 +1471,12 @@ function ansichtVoranmeldungen() {
         ${passend.length ? `<p class="vw-klein">Vorausgewählt: „nächste Bestellrunde" und ${esc(ZEITRAEUME[saison.zeitraum])} ${saison.jahr}.</p>
           <div id="vw-va-auswahl">${passend.map((v) => vaZeile(v, true)).join('')}</div>
           <button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit" data-aktion="va-uebernehmen">Ausgewählte als Bestellungen übernehmen</button>`
-        : '<p class="vw-klein">Keine offenen Voranmeldungen für die Produkte dieser Bestellrunde.</p>'}
-      </section>` : '<section class="vw-karte"><p class="vw-klein">Sobald eine Bestellrunde angelegt ist, lassen sich passende Voranmeldungen hier übernehmen.</p></section>'}
+        : '<p class="vw-klein">Keine offenen Vormerkungen für die Produkte dieser Bestellrunde.</p>'}
+      </section>` : '<section class="vw-karte"><p class="vw-klein">Sobald eine Bestellrunde angelegt ist, lassen sich passende Vormerkungen hier übernehmen.</p></section>'}
       <div>
-        <section class="vw-karte" aria-label="Planung"><h2>Planung: offen vorangemeldet</h2>
-          ${planung || '<p class="vw-klein">Keine offenen Voranmeldungen.</p>'}</section>
-        <section class="vw-karte" aria-label="Voranmeldung erfassen"><h2>Voranmeldung erfassen</h2>
+        <section class="vw-karte" aria-label="Planung"><h2>Planung: offen vorgemerkt</h2>
+          ${planung || '<p class="vw-klein">Keine offenen Vormerkungen.</p>'}</section>
+        <section class="vw-karte" aria-label="Vormerkung erfassen"><h2>Vormerkung erfassen</h2>
           <form id="vw-va-formular" novalidate>
             <label class="vw-feld"><span>Name</span>
               <input name="name" list="vw-kundenliste-va" autocomplete="off" required /></label>
@@ -1490,12 +1495,64 @@ function ansichtVoranmeldungen() {
                 <label><input type="radio" name="quelle" value="persoenlich" /> persönlich</label>
               </div></fieldset>
             <label class="vw-feld"><span>Notiz (optional)</span><input name="notiz" autocomplete="off" /></label>
-            <button type="submit" class="vw-knopf vw-knopf--voll vw-knopf--breit">Voranmeldung speichern</button>
+            <button type="submit" class="vw-knopf vw-knopf--voll vw-knopf--breit">Vormerkung speichern</button>
           </form>
         </section>
         ${andere.length ? `<section class="vw-karte" aria-label="Weitere"><h2>Für spätere Bestellrunden</h2>${andere.map((v) => vaZeile(v, false)).join('')}</section>` : ''}
       </div>
     </div>`;
+}
+
+// Eine offene Vormerkung ändern: Produkt, Menge, Zeitraum, Notiz.
+// Kunde und Quelle bleiben (anderer Kunde = absagen und neu erfassen).
+function vaBearbeitenFormular(v, k) {
+  const jahr = new Date().getFullYear();
+  const jahre = [...new Set([jahr, jahr + 1, v.jahr].filter(Boolean))].sort();
+  return `<form class="vw-va-bearbeiten" id="vw-va-bearbeiten" data-id="${esc(v.id)}" novalidate>
+      <p><strong>${esc(k ? k.name : '')}</strong> <span class="vw-klein">· ${QUELLEN[v.quelle]} · gemeldet ${datumKurz(v.erstellt)}</span></p>
+      <label class="vw-feld"><span>Produkt</span>
+        <select name="produkt">${daten.produkte.filter((p) => p.aktiv !== false || p.id === v.produktId).map((p) =>
+          `<option value="${p.id}" ${p.id === v.produktId ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></label>
+      <div class="vw-zwei-felder">
+        <label class="vw-feld"><span>Menge</span><input name="menge" type="number" inputmode="numeric" min="1" value="${v.menge}" /></label>
+        <label class="vw-feld"><span>Für wann?</span>
+          <select name="va-zeitraum">${Object.entries(ZEITRAEUME).map(([wert, text]) =>
+            `<option value="${wert}" ${v.zeitraum === wert ? 'selected' : ''}>${text}</option>`).join('')}</select></label>
+      </div>
+      <label class="vw-feld" data-va-jahr ${v.zeitraum === 'naechste' ? 'hidden' : ''}><span>Jahr</span>
+        <select name="jahr">${jahre.map((j) => `<option ${j === (v.jahr || jahr) ? 'selected' : ''}>${j}</option>`).join('')}</select></label>
+      <label class="vw-feld"><span>Notiz (optional)</span><input name="notiz" value="${esc(v.notiz || '')}" autocomplete="off" /></label>
+      <div class="vw-knopfreihe">
+        <button type="submit" class="vw-knopf vw-knopf--voll">Änderung speichern</button>
+        <button type="button" class="vw-knopf" data-aktion="va-bearbeiten-abbrechen">Abbrechen</button>
+      </div>
+    </form>`;
+}
+
+async function vormerkungAendern(form) {
+  const id = form.dataset.id;
+  const v = daten.voranmeldungen.find((x) => x.id === id);
+  if (!v) return;
+  const menge = Number(feld(form, 'menge').value);
+  if (!Number.isInteger(menge) || menge < 1 || menge > 999) return meldung('Bitte eine gültige Menge eintragen.');
+  const zeitraum = feld(form, 'va-zeitraum').value;
+  const eingabe = {
+    produktId: feld(form, 'produkt').value,
+    menge,
+    zeitraum,
+    jahr: zeitraum === 'naechste' ? null : Number(feld(form, 'jahr').value),
+    notiz: feld(form, 'notiz').value.trim(),
+  };
+  // Formular erst nach erfolgreichem Speichern schließen – bei einem Fehler
+  // bleibt das Eingetippte stehen
+  const erg = await speichern(`voranmeldung/${id}`, eingabe, () => {
+    Object.assign(v, eingabe);
+    return {};
+  }, { neuZeichnen: false });
+  if (!erg) return;
+  zustand.vaBearbeiten = null;
+  ansichtVoranmeldungen();
+  meldung('Vormerkung geändert.');
 }
 
 async function voranmeldungSpeichern(form) {
@@ -1553,7 +1610,7 @@ function voranmeldungenUebernehmenBeispiel(ch, ids) {
       quelle: liste[0].quelle, erstellt: new Date().toISOString().slice(0, 10),
       status: reicht ? 'vorgemerkt' : 'warteliste', terminId: null, zahlart: 'bar', bezahlt: null,
       uebergeben: false, anmerkung: liste.map((v) => v.notiz).filter(Boolean).join(' '),
-      interneNotiz: 'aus Voranmeldung – Termin und Zahlart bestätigen', positionen,
+      interneNotiz: 'aus Vormerkung – Termin und Zahlart bestätigen', positionen,
     };
     daten.bestellungen.push(b);
     liste.forEach((v) => { v.status = 'uebernommen'; });
@@ -1565,7 +1622,7 @@ function voranmeldungenUebernehmenBeispiel(ch, ids) {
 
 async function voranmeldungenUebernehmen(ids) {
   const ch = aktiveCharge();
-  if (!ids.length) return meldung('Bitte mindestens eine Voranmeldung auswählen.');
+  if (!ids.length) return meldung('Bitte mindestens eine Vormerkung auswählen.');
   const erg = await speichern('voranmeldungen/uebernehmen', { chargeId: ch.id, ids },
     () => voranmeldungenUebernehmenBeispiel(ch, ids), { neuZeichnen: false });
   if (!erg) return;
@@ -1785,7 +1842,7 @@ async function chargeSpeichern() {
   location.hash = '#uebersicht';
   zeigen();
   const passend = aktiveCharge() ? passendeVoranmeldungen(aktiveCharge()).length : 0;
-  meldung(`Bestellrunde gespeichert.${passend ? ` ${passend} Voranmeldungen passen dazu.` : ''}`);
+  meldung(`Bestellrunde gespeichert.${passend ? ` ${passend} Vormerkungen passen dazu.` : ''}`);
 }
 
 // 5.8a Auswertung für die Buchhaltung
@@ -2689,10 +2746,10 @@ function ansichtLeer() {
     ${widerrufeKarte()}
     <section class="vw-karte">
       <h2>Noch keine laufende Bestellrunde</h2>
-      <p>Legt die erste Bestellrunde an – Produkte, Preise und Termine. Voranmeldungen könnt ihr jederzeit erfassen.</p>
+      <p>Legt die erste Bestellrunde an – Produkte, Preise und Termine. Vormerkungen könnt ihr jederzeit erfassen.</p>
       <div class="vw-knopfreihe">
         <a class="vw-knopf vw-knopf--voll" href="#charge-neu">+ Neue Bestellrunde</a>
-        <a class="vw-knopf" href="#voranmeldungen">Voranmeldungen</a>
+        <a class="vw-knopf" href="#voranmeldungen">Vormerkungen</a>
       </div>
     </section>
     ${nutzerZeile()}`;
@@ -3168,13 +3225,23 @@ function initKlicks() {
         voranmeldungenUebernehmen(ids);
         break;
       }
+      case 'va-bearbeiten':
+        e.preventDefault();
+        zustand.vaBearbeiten = el.dataset.id;
+        ansichtVoranmeldungen();
+        document.getElementById('vw-va-bearbeiten')?.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        break;
+      case 'va-bearbeiten-abbrechen':
+        zustand.vaBearbeiten = null;
+        ansichtVoranmeldungen();
+        break;
       case 'va-absagen': {
         e.preventDefault();
         const id = el.dataset.id;
         speichern(`voranmeldung/${id}/absagen`, {}, () => {
           daten.voranmeldungen = daten.voranmeldungen.filter((v) => v.id !== id);
           return {};
-        }, { erfolg: 'Voranmeldung abgesagt.' });
+        }, { erfolg: 'Vormerkung abgesagt.' });
         break;
       }
       case 'widerruf-erledigt': {
@@ -3374,6 +3441,10 @@ function initEingaben() {
       const jahr = document.getElementById('vw-va-jahr');
       if (jahr) jahr.hidden = e.target.value === 'naechste';
     }
+    if (e.target.name === 'va-zeitraum') {
+      const jahr = e.target.form && e.target.form.querySelector('[data-va-jahr]');
+      if (jahr) jahr.hidden = e.target.value === 'naechste';
+    }
   });
 
   document.addEventListener('submit', (e) => {
@@ -3386,6 +3457,11 @@ function initEingaben() {
     if (id === 'vw-produkt-formular') {
       e.preventDefault();
       produktSpeichern(e.target);
+      return;
+    }
+    if (id === 'vw-va-bearbeiten') {
+      e.preventDefault();
+      vormerkungAendern(e.target);
       return;
     }
     if (id === 'vw-zugang-formular') {

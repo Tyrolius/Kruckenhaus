@@ -329,7 +329,8 @@ export function zeitraumText(zeitraum, jahr) {
  * @param {object} v  kundeId, produktId, menge, zeitraum, jahr, quelle, notiz
  * @returns {Promise<number>} id der Voranmeldung
  */
-export async function voranmeldungAnlegen(db, v) {
+// Menge, Zeitraum, Jahr und Produkt prüfen – beim Anlegen und beim Bearbeiten
+export async function voranmeldungPruefen(db, v) {
   if (!ZEITRAEUME[v.zeitraum]) throw new EingabeFehler('Ungültiger Zeitraum.');
   const menge = Number(v.menge);
   if (!Number.isInteger(menge) || menge < 1 || menge > 999) throw new EingabeFehler('Ungültige Menge.');
@@ -344,7 +345,11 @@ export async function voranmeldungAnlegen(db, v) {
   const produkt = await db.prepare('SELECT id FROM produkte WHERE id = ? AND aktiv = 1')
     .bind(v.produktId).first();
   if (!produkt) throw new EingabeFehler('Produkt nicht verfügbar.');
+  return { menge, jahr };
+}
 
+export async function voranmeldungAnlegen(db, v) {
+  const { menge, jahr } = await voranmeldungPruefen(db, v);
   const zeile = await db.prepare(
     `INSERT INTO voranmeldungen (kunde_id, produkt_id, menge, zeitraum, jahr, quelle, notiz)
      VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id`
@@ -364,7 +369,7 @@ export async function voranmeldungAnlegen(db, v) {
  */
 export async function voranmeldungenUebernehmen(db, chargeId, voranmeldungIds) {
   const ids = [...new Set(voranmeldungIds.map(Number))].filter(Number.isInteger);
-  if (!ids.length) throw new EingabeFehler('Keine Voranmeldungen gewählt.');
+  if (!ids.length) throw new EingabeFehler('Keine Vormerkungen gewählt.');
 
   const { results } = await db.prepare(
     `SELECT v.id, v.kunde_id, v.menge, v.quelle, ca.id AS charge_artikel_id
@@ -389,7 +394,7 @@ export async function voranmeldungenUebernehmen(db, chargeId, voranmeldungIds) {
       chargeId,
       kundeId,
       quelle: k.quelle,
-      interneNotiz: 'aus Voranmeldung – Termin und Zahlart bestätigen',
+      interneNotiz: 'aus Vormerkung – Termin und Zahlart bestätigen',
       positionen: [...k.mengen].map(([chargeArtikelId, menge]) => ({ chargeArtikelId, menge })),
     }, {
       hoechstmengeIgnorieren: true,
