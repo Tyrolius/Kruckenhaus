@@ -6326,3 +6326,38 @@ button.vw-foto-wahl:focus-visible {
   outline: 2px solid var(--color-terracotta);
   outline-offset: 2px;
 }
+
+/* ============================================================
+   65. GRUNDRISS FERIENWOHNUNG (ferienwohnung.html)
+   Gezeichneter Plan als Inline-SVG, Beschriftung wie im Plan
+   (Deutsch, darunter Englisch).
+   ============================================================ */
+.grundriss {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 0.5rem;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+.grundriss-svg { display: block; width: 100%; height: auto; }
+.grundriss-svg .gr-boden { fill: var(--color-white); }
+.grundriss-svg .gr-wand { fill: none; stroke: var(--color-dark); stroke-width: 5; }
+.grundriss-svg .gr-moebel { fill: var(--color-white); stroke: var(--color-text-light); stroke-width: 1; }
+.grundriss-svg .gr-linie { fill: none; stroke: var(--color-text-light); stroke-width: 1; }
+.grundriss-svg .gr-fenster rect { fill: var(--color-white); stroke: var(--color-dark); stroke-width: 1; }
+.grundriss-svg .gr-tuerblatt { fill: none; stroke: var(--color-dark); stroke-width: 2.5; }
+.grundriss-svg .gr-tuerbogen { fill: none; stroke: var(--color-text-light); stroke-width: 1; }
+.grundriss-svg .gr-text {
+  font-family: var(--font-body);
+  font-size: 15px;
+  text-anchor: middle;
+  fill: var(--color-dark);
+}
+.grundriss-svg .gr-text-klein {
+  font-family: var(--font-body);
+  font-size: 12.5px;
+  text-anchor: middle;
+  fill: var(--color-text-light);
+}
