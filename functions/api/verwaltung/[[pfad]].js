@@ -954,7 +954,7 @@ async function kundenMail(db, ctx, bestellungId, art) {
     titel = 'Ihr seid nachgerückt';
     teile = [
       absatz(`Hallo ${escapeHtml(b.name)},`),
-      absatz('gute Nachricht: Es ist etwas frei geworden – eure Bestellung von der Warteliste ist jetzt <strong>fix vorgemerkt</strong>.'),
+      absatz('gute Nachricht: Es ist etwas frei geworden – eure Bestellung von der Warteliste ist jetzt <strong>fix bestellt</strong>.'),
       eckdaten,
       positionenHtml(zeilen),
       knopf(link, 'Meine Bestellungen ansehen'),

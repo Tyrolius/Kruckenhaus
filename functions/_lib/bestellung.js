@@ -111,7 +111,7 @@ export async function bestellMailsSenden(env, d) {
       absatz(`Hallo ${escapeHtml(d.kontakt.name)},`),
       absatz(aufWarteliste
         ? 'danke für eure Vorbestellung! Leider ist die gewünschte Menge gerade nicht mehr frei – ihr steht auf der <strong>Warteliste</strong>. Sobald etwas frei wird, melden wir uns.'
-        : 'danke für eure Vorbestellung – sie ist bei uns <strong>fix vorgemerkt</strong>.'),
+        : 'danke für eure Vorbestellung – sie ist <strong>fix bestellt</strong>.'),
       kasten(`<strong>Bestellnummer ${escapeHtml(d.bestellung.nummer)}</strong><br>
         ${escapeHtml(d.charge.titel)}<br>
         ${escapeHtml(d.terminText)}<br>

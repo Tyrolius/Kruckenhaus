@@ -136,7 +136,7 @@ const schluessel1 = r.link.split('#')[1];
 assert.equal(mails.length, 2);
 const [anKunde, anHof] = mails;
 assert.deepEqual([anKunde.to, anHof.to], ['maria@example.at', 'hof@example.at']);
-assert.match(anKunde.html, /fix vorgemerkt/);
+assert.match(anKunde.html, /fix bestellt/);
 assert.match(anKunde.html, new RegExp(schluessel1));
 assert.match(anKunde.html, /ca\. €\s5[0-9],/);   // 2 Hühner à ca. 2,1 kg × 12 € + 4 € Nudeln
 assert.equal(anHof.reply_to, 'maria@example.at');
