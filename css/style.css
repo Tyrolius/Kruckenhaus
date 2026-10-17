@@ -223,6 +223,7 @@
   --color-green:      #79C0BC;  /* Alpbachtal Teal – See-Bereiche, frische Akzente */
   --color-cream:      #F5F0EB;  /* Section Alt – leicht dunkleres Cloud Dancer */
   --color-terracotta: #964F33;  /* Terracotta – aktive Links, Icons, Heritage */
+  --color-gold:       #CDA73E;  /* Logo-Gold – nur Akzent: Linien, Zierrat; als Schrift nur auf dunklem Grund */
   --color-text:       #464646;  /* Alpine Slate – Haupttext */
   --color-text-light: #6B6158;  /* Sekundärer Text – dunkler für Kontrast ≥ 4,5:1 auf Creme */
   --color-white:      #FFFFFF;
@@ -1787,7 +1788,7 @@ p {
   font-family: var(--font-accent);
   font-size: 0.7em;
   display: block;
-  color: var(--color-green);  /* Teal statt Waldgrün – auf dem dunklen Footer sonst kaum lesbar */
+  color: var(--color-gold);  /* Gold wie im Logo – auf dem dunklen Footer gut lesbar */
 }
 
 .footer-tagline {
@@ -1798,7 +1799,7 @@ p {
 
 .footer-nav h4,
 .footer-contact h4 {
-  color: var(--color-beige);
+  color: var(--color-gold);
   font-size: 0.95rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
@@ -4651,7 +4652,7 @@ body.season-winter .winter-image { display: block; }
   gap: var(--spacing-md);
 }
 .hofchronik-liste li {
-  border-top: 2px solid var(--color-primary);
+  border-top: 2px solid var(--color-gold);
   padding-top: 1.1rem;
 }
 .hofchronik-jahr {
