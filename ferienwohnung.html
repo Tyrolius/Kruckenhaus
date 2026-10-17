@@ -443,7 +443,180 @@
           <div class="divider"></div>
         </div>
 
-        <!-- TODO: Grundriss der Ferienwohnung als Bild einfügen: images/grundriss.jpg (1200x800) -->
+        <!-- Grundriss: eigene Zeichnung (SVG) nach dem Plan der Wohnung -->
+        <figure class="grundriss slide-up">
+          <svg class="grundriss-svg" viewBox="40 30 645 725" role="img" aria-labelledby="grundriss-titel grundriss-beschr">
+          <title id="grundriss-titel">Grundriss der Ferienwohnung</title>
+          <desc id="grundriss-beschr">Vom Eingang links gelangt man in den Hausgang (23 m²). Im Plan oberhalb liegen die Küche (21 m²) mit Esstisch, ein Schlafzimmer (17 m²) mit Doppelbett und Kleiderschrank sowie das Bad (6 m²) mit Badewanne, Dusche und Waschbecken; daneben ein eigenes WC. Unterhalb des Hausgangs liegen das Wohnzimmer (21 m²) mit rundem Tisch und Schreibtisch und ein zweites Schlafzimmer (17 m²) mit Doppelbett.</desc>
+          <defs>
+          <!-- Stuhl, Lehne oben -->
+          <g id="gr-stuhl">
+          <rect class="gr-moebel" x="-16" y="-12" width="32" height="28" rx="3"/>
+          <rect class="gr-moebel" x="-20" y="-18" width="40" height="8" rx="4"/>
+          <rect class="gr-moebel" x="-20" y="-9" width="4" height="20" rx="2"/>
+          <rect class="gr-moebel" x="16" y="-9" width="4" height="20" rx="2"/>
+          </g>
+          <!-- Doppelbett, Kopfende links -->
+          <g id="gr-bett">
+          <rect class="gr-moebel" x="0" y="0" width="116" height="94" rx="3"/>
+          <rect class="gr-moebel" x="6" y="9" width="20" height="34" rx="5"/>
+          <rect class="gr-moebel" x="6" y="53" width="20" height="33" rx="5"/>
+          <path class="gr-linie" d="M36 0 V51 M43 0 V58 M50 0 V64"/>
+          <path class="gr-moebel" d="M36 51 L60 69 L50 94 Z"/>
+          </g>
+          <!-- Nachtkästchen, Griff rechts -->
+          <g id="gr-kaestchen">
+          <rect class="gr-moebel" x="0" y="0" width="27" height="36" rx="3"/>
+          <rect class="gr-moebel" x="27" y="14" width="3" height="8" rx="1"/>
+          </g>
+          </defs>
+
+          <!-- Raumflächen -->
+          <rect class="gr-boden" x="57" y="47" width="612" height="691"/>
+
+          <!-- Küche -->
+          <rect class="gr-moebel" x="117" y="74" width="45" height="88"/>
+          <circle class="gr-linie" cx="139.5" cy="99" r="9"/>
+          <circle class="gr-linie" cx="139.5" cy="99" r="6"/>
+          <circle class="gr-linie" cx="139.5" cy="136" r="9"/>
+          <circle class="gr-linie" cx="139.5" cy="136" r="6"/>
+          <use href="#gr-stuhl" transform="translate(106 99) rotate(-90) scale(0.55)"/>
+          <use href="#gr-stuhl" transform="translate(106 136) rotate(-90) scale(0.55)"/>
+          <use href="#gr-stuhl" transform="translate(173 99) rotate(90) scale(0.55)"/>
+          <use href="#gr-stuhl" transform="translate(173 136) rotate(90) scale(0.55)"/>
+          <rect class="gr-moebel" x="62" y="181" width="59" height="139"/>
+          <rect class="gr-moebel" x="85" y="295" width="15" height="15"/>
+          <path class="gr-moebel" d="M249 79 L262 66 L297 66 L297 101 L283 115 L249 100 Z"/>
+          <path class="gr-linie" d="M255 81 L265 71 L291 71 L291 99 L281 109 L255 97 Z"/>
+          <circle class="gr-linie" cx="275" cy="88" r="2.5"/>
+          <rect class="gr-moebel" x="271" y="146" width="45" height="60" rx="3"/>
+          <rect class="gr-linie" x="281" y="152" width="32" height="47" rx="3"/>
+          <circle class="gr-linie" cx="291" cy="164" r="6"/>
+          <circle class="gr-linie" cx="304" cy="164" r="6"/>
+          <circle class="gr-linie" cx="291" cy="187" r="6"/>
+          <circle class="gr-linie" cx="304" cy="187" r="6"/>
+          <circle class="gr-linie" cx="276" cy="157" r="2"/>
+          <circle class="gr-linie" cx="276" cy="169" r="2"/>
+          <circle class="gr-linie" cx="276" cy="181" r="2"/>
+          <circle class="gr-linie" cx="276" cy="193" r="2"/>
+          <rect class="gr-moebel" x="289" y="225" width="27" height="43"/>
+          <path class="gr-linie" d="M302.5 238 V256 M294.5 242.5 L310.5 251.5 M294.5 251.5 L310.5 242.5"/>
+
+          <!-- Schlafzimmer oben -->
+          <use href="#gr-kaestchen" x="322" y="84"/>
+          <use href="#gr-bett" x="322" y="124"/>
+          <use href="#gr-kaestchen" x="322" y="225"/>
+          <rect class="gr-moebel" x="482" y="88" width="41" height="174"/>
+          <path class="gr-linie" d="M482 88 L523 262 M523 88 L482 262"/>
+
+          <!-- Bad -->
+          <path class="gr-linie" d="M532 58 V100 M532 60 H543 M532 98 H543"/>
+          <rect class="gr-moebel" x="528" y="108" width="33" height="54"/>
+          <ellipse class="gr-linie" cx="547" cy="139" rx="10" ry="22"/>
+          <circle class="gr-linie" cx="547" cy="139" r="1.8"/>
+          <path class="gr-linie" d="M532 135 H540"/>
+          <g transform="rotate(33 612 95)">
+          <rect class="gr-moebel" x="558" y="76" width="108" height="38" rx="19"/>
+          <rect class="gr-linie" x="563" y="81" width="98" height="28" rx="14"/>
+          <rect class="gr-moebel" x="566" y="85" width="12" height="20" rx="4"/>
+          <circle class="gr-linie" cx="652" cy="95" r="2.2"/>
+          </g>
+          <path class="gr-moebel" d="M608 190 L635 163 L663 163 L663 217 L608 217 Z"/>
+          <path class="gr-linie" d="M613 205 L619 201 L619 209 Z"/>
+          <rect class="gr-linie" x="645" y="200" width="4" height="4"/>
+
+          <!-- WC -->
+          <rect class="gr-moebel" x="627" y="226" width="21" height="7" rx="2"/>
+          <ellipse class="gr-moebel" cx="637.5" cy="246" rx="11" ry="13"/>
+          <ellipse class="gr-linie" cx="637.5" cy="247" rx="7" ry="9"/>
+          <path class="gr-moebel" d="M626 293 A14 13 0 1 1 654 293 Z"/>
+          <path class="gr-linie" d="M640 286 V290"/>
+
+          <!-- Wohnzimmer -->
+          <rect class="gr-moebel" x="63" y="467" width="120" height="33"/>
+          <rect class="gr-moebel" x="63" y="500" width="30" height="97"/>
+          <rect class="gr-moebel" x="63" y="603" width="34" height="90"/>
+          <rect class="gr-moebel" x="63" y="693" width="147" height="34"/>
+          <circle class="gr-moebel" cx="139" cy="653" r="42"/>
+          <use href="#gr-stuhl" transform="translate(150 589) rotate(10)"/>
+          <use href="#gr-stuhl" transform="translate(198 616) rotate(58)"/>
+          <rect class="gr-moebel" x="275" y="467" width="42" height="171"/>
+          <path class="gr-linie" d="M275 562 H317"/>
+          <rect class="gr-moebel" x="288" y="570" width="17" height="11"/>
+          <rect class="gr-moebel" x="241" y="689" width="76" height="43"/>
+          <use href="#gr-stuhl" transform="translate(281 669)"/>
+
+          <!-- Schlafzimmer unten -->
+          <rect class="gr-moebel" x="443" y="469" width="60" height="31"/>
+          <use href="#gr-kaestchen" transform="translate(523 562) rotate(180)"/>
+          <use href="#gr-kaestchen" transform="translate(523 705) rotate(180)"/>
+          <use href="#gr-bett" transform="translate(519 663) rotate(180)"/>
+          <rect class="gr-moebel" x="321" y="543" width="39" height="55"/>
+          <rect class="gr-moebel" x="360" y="565" width="3" height="10" rx="1"/>
+          <rect class="gr-moebel" x="321" y="629" width="39" height="53"/>
+          <rect class="gr-moebel" x="360" y="650" width="3" height="10" rx="1"/>
+
+          <!-- Wände -->
+          <path class="gr-wand" d="M57 49.5 H669 M59.5 47 V358 M59.5 420 V738 M57 735.5 H529
+                   M666.5 47 V298 M606 295.5 H669 M608.5 220 V237 M608.5 280 V341
+                   M608.5 340 L588.6 370 M562 410 L526.5 463.5
+                   M523 222 H544 M592 222 H669
+                   M526.5 47 V325 M526.5 461 V738
+                   M57 322.5 H221 M268 322.5 H337 M387 322.5 H529
+                   M57 463.5 H218 M268 463.5 H342 M392 463.5 H529
+                   M319 47 V325 M319 461 V738"/>
+          <!-- Kästchen an der Wand zwischen Wohn- und Schlafzimmer -->
+          <rect class="gr-moebel" x="315" y="633" width="18" height="14"/>
+
+          <!-- Fenster -->
+          <g class="gr-fenster">
+          <rect x="90" y="47" width="75" height="5"/><rect x="209" y="47" width="76" height="5"/>
+          <rect x="339" y="47" width="75" height="5"/><rect x="439" y="47" width="61" height="5"/>
+          <rect x="558" y="47" width="77" height="5"/>
+          <rect x="57" y="93" width="5" height="76"/><rect x="57" y="196" width="5" height="76"/>
+          <rect x="57" y="499" width="5" height="77"/><rect x="57" y="617" width="5" height="76"/>
+          <rect x="94" y="733" width="76" height="5"/><rect x="205" y="733" width="76" height="5"/>
+          <rect x="386" y="733" width="76" height="5"/>
+          </g>
+
+          <!-- Türen: Blatt und Schwenkbogen -->
+          <g class="gr-tuer">
+          <path class="gr-tuerblatt" d="M57 420 H125"/>
+          <path class="gr-tuerbogen" d="M125 420 A65 65 0 0 0 60 358"/>
+          <path class="gr-tuerblatt" d="M268 320 V275"/>
+          <path class="gr-tuerbogen" d="M268 275 A47 47 0 0 0 221 322"/>
+          <path class="gr-tuerblatt" d="M339 320 V275"/>
+          <path class="gr-tuerbogen" d="M339 275 A47 47 0 0 1 387 322"/>
+          <path class="gr-tuerblatt" d="M546 220 V176"/>
+          <path class="gr-tuerbogen" d="M546 176 A47 47 0 0 1 592 222"/>
+          <path class="gr-tuerblatt" d="M606 239 H566"/>
+          <path class="gr-tuerbogen" d="M566 239 A42 42 0 0 0 608 281"/>
+          <path class="gr-tuerblatt" d="M588.6 370 L545 345"/>
+          <path class="gr-tuerbogen" d="M545 345 A50 50 0 0 0 562 410"/>
+          <path class="gr-tuerblatt" d="M266 466 V511"/>
+          <path class="gr-tuerbogen" d="M266 511 A47 47 0 0 1 219 466"/>
+          <path class="gr-tuerblatt" d="M344 466 V511"/>
+          <path class="gr-tuerbogen" d="M344 511 A47 47 0 0 0 392 466"/>
+          </g>
+
+          <!-- Beschriftung wie im Plan -->
+          <g class="gr-text">
+          <text x="205" y="253">Küche 21 m²</text>
+          <text x="432" y="290">Schlafzimmer 17 m²</text>
+          <text x="610" y="148">Bad 6 m²</text>
+          <text x="310" y="388">Hausgang 23 m²</text>
+          <text x="192" y="535">Wohnzimmer 21 m²</text>
+          <text x="422" y="535">Schlafzimmer 17 m²</text>
+          </g>
+          <g class="gr-text-klein">
+          <text x="205" y="271">Kitchen</text>
+          <text x="432" y="307">Bedroom</text>
+          <text x="310" y="406">Corridor</text>
+          <text x="192" y="553">Livingroom</text>
+          <text x="422" y="553">Bedroom</text>
+          </g>
+          </svg>
+        </figure>
 
         <!-- Raum-Details -->
         <div class="room-details" style="margin-top: 2rem;">
