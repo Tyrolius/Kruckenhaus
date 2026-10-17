@@ -186,13 +186,19 @@ s = ok(await api('GET', 'stand'));
 const c = s.chargen[0];
 const neu = {
   titel: c.titel, bestellschluss: c.bestellschluss, status: 'geschlossen',
-  termine: [...c.termine, { art: 'abholung', datum: '2026-10-11', von: '09:00', bis: '11:00' }],
+  termine: [...c.termine, { art: 'abholung', datum: '2026-10-11', von: '', bis: '', hinweis: '  genauer Tag folgt ' }],
   artikel: c.artikel.map((a) => ({ id: a.id, produktId: a.produktId, preisCent: a.art === 'gewicht' ? 1300 : a.preisCent, kontingent: a.kontingent, maxProBestellung: a.maxProBestellung })),
 };
 ok(await api('POST', `charge/${chargeId}`, neu));
 s = ok(await api('GET', 'stand'));
 assert.equal(s.chargen[0].status, 'geschlossen');
 assert.equal(s.chargen[0].termine.length, 3);
+// Termin ohne Uhrzeit, mit Hinweis für Kunden; bleibt beim nächsten Speichern erhalten
+const tOffen = s.chargen[0].termine.find((t) => t.datum === '2026-10-11');
+assert.deepEqual([tOffen.von, tOffen.bis, tOffen.hinweis], ['', '', 'genauer Tag folgt']);
+ok(await api('POST', `charge/${chargeId}`, { ...neu, termine: s.chargen[0].termine }));
+assert.equal(ok(await api('GET', 'stand')).chargen[0].termine.find((t) => t.id === tOffen.id).hinweis, 'genauer Tag folgt');
+assert.match((await api('POST', `charge/${chargeId}`, { ...neu, termine: [...s.chargen[0].termine, { art: 'abholung', datum: '' }] })).error, /Datum/);
 assert.equal(s.chargen[0].artikel.find((a) => a.id === aHuhn).preisCent, 1300);
 assert.ok(s.bestellungen.flatMap((b) => b.positionen).filter((p) => p.artikelId === aHuhn).every((p) => p.einzelpreisCent === 1200));
 r = await api('POST', `charge/${chargeId}`, { ...neu, artikel: neu.artikel.filter((a) => a.id !== aHuhn) });

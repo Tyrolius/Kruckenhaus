@@ -127,7 +127,8 @@ r = ok(await api('POST', 'bestellung', { ...basis, 'bot-field': 'ich bin ein bot
 assert.equal(roh.prepare('SELECT COUNT(*) n FROM bestellungen').get().n, 0);
 console.log('✓ Spam-Falle speichert nichts');
 
-// Gültige Bestellung
+// Gültige Bestellung (Termin mit Hinweis des Hofs – steht in der Mail und in „Meine Bestellungen“)
+roh.prepare(`UPDATE termine SET hinweis = 'genauer Tag folgt' WHERE charge_id = ?`).run(cId);
 r = ok(await api('POST', 'bestellung', basis));
 assert.match(r.nummer, /^\d{4}-001$/);
 assert.equal(r.status, 'vorgemerkt');
@@ -137,6 +138,9 @@ assert.equal(mails.length, 2);
 const [anKunde, anHof] = mails;
 assert.deepEqual([anKunde.to, anHof.to], ['maria@example.at', 'hof@example.at']);
 assert.match(anKunde.html, /fix bestellt/);
+assert.match(anKunde.html, /\(genauer Tag folgt\)/);
+assert.equal(ok(await api('GET', 'meine', null, { 'X-Link-Schluessel': schluessel1 })).bestellungen[0].termin.hinweis, 'genauer Tag folgt');
+roh.prepare(`UPDATE termine SET hinweis = NULL WHERE charge_id = ?`).run(cId);
 assert.match(anKunde.html, new RegExp(schluessel1));
 assert.match(anKunde.html, /ca\. €\s5[0-9],/);   // 2 Hühner à ca. 2,1 kg × 12 € + 4 € Nudeln
 assert.equal(anHof.reply_to, 'maria@example.at');

@@ -29,7 +29,8 @@ function mbTermin(t) {
   if (!t) return 'Termin wird noch mit euch vereinbart';
   const datum = new Date(`${t.datum}T12:00:00`).toLocaleDateString('de-AT', { weekday: 'long', day: 'numeric', month: 'long' });
   const zeit = t.von && t.bis ? `, ${t.von}–${t.bis} Uhr` : '';
-  return `${t.art === 'abholung' ? 'Abholung am Hof' : 'Lieferung'} – ${datum}${zeit}`;
+  const hinweis = t.hinweis ? ` (${t.hinweis})` : '';
+  return `${t.art === 'abholung' ? 'Abholung am Hof' : 'Lieferung'} – ${datum}${zeit}${hinweis}`;
 }
 
 const MB_STATUS = {

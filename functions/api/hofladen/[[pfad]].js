@@ -171,7 +171,7 @@ async function bestellungAufnehmen(db, env, request, e) {
   const dauer = charge.art === 'dauer';
 
   // Dauersortiment: ohne Termin, Abholung am Hof nach Absprache
-  const termin = dauer ? null : await db.prepare('SELECT id, art, datum, von, bis FROM termine WHERE id = ? AND charge_id = ?')
+  const termin = dauer ? null : await db.prepare('SELECT id, art, datum, von, bis, hinweis FROM termine WHERE id = ? AND charge_id = ?')
     .bind(Number(e.terminId) || -1, charge.id).first();
   if (!dauer && !termin) throw new EingabeFehler('Bitte einen Abhol- oder Liefertermin wählen.');
 
@@ -291,7 +291,7 @@ async function meineLaden(db, schluessel) {
   const [kunden, bestellungen, positionen, voranmeldungen, widerrufe] = (await db.batch([
     db.prepare('SELECT name FROM kunden WHERE id = ?').bind(kundeId),
     db.prepare(`SELECT b.id, b.nummer, b.status, b.zahlart, b.bezahlt_art, b.uebergeben_am, b.lieferadresse,
-                       b.erstellt_am, c.titel, c.art AS charge_art, t.art, t.datum, t.von, t.bis, s.gesamt_cent, s.geschaetzt
+                       b.erstellt_am, c.titel, c.art AS charge_art, t.art, t.datum, t.von, t.bis, t.hinweis, s.gesamt_cent, s.geschaetzt
                 FROM bestellungen b
                 JOIN chargen c ON c.id = b.charge_id
                 LEFT JOIN termine t ON t.id = b.termin_id
@@ -317,7 +317,7 @@ async function meineLaden(db, schluessel) {
       nummer: b.nummer,
       status: b.status,
       charge: b.titel,
-      termin: b.datum ? { art: b.art, datum: b.datum, von: b.von || '', bis: b.bis || '' } : null,
+      termin: b.datum ? { art: b.art, datum: b.datum, von: b.von || '', bis: b.bis || '', hinweis: b.hinweis || '' } : null,
       nachAbsprache: b.charge_art === 'dauer' && !b.datum,
       lieferadresse: b.lieferadresse || '',
       zahlart: b.zahlart,
