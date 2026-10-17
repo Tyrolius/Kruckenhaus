@@ -172,8 +172,9 @@ r = ok(await api('POST', 'voranmeldung', {
 assert.equal(roh.prepare(`SELECT quelle FROM voranmeldungen`).get().quelle, 'web');
 assert.match(mails[0].html, /unverbindlich/);
 assert.match(mails[0].html, /3× Masthuhn ganz \(Frühjahr/);
+assert.deepEqual(mails.map((m) => m.subject), ['Eure Vormerkung – Bergbauernhof Kruckenhaus', 'Neue Vormerkung von Otto Voran']);
 const schluesselOtto = r.link.split('#')[1];
-console.log('✓ Voranmeldung mit Prüfung des Zeitraums, Mail „unverbindlich"');
+console.log('✓ Vormerkung mit Prüfung des Zeitraums, Mail „unverbindlich"');
 
 // Meine Bestellungen
 r = ok(await api('GET', 'meine', null, { 'X-Link-Schluessel': schluessel1 }));

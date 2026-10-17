@@ -247,7 +247,7 @@ async function voranmeldungAufnehmen(db, env, request, e) {
   await Promise.all([
     mailSenden(env, {
       an: kontakt.email,
-      betreff: `Eure Voranmeldung – ${BETRIEB}`,
+      betreff: `Eure Vormerkung – ${BETRIEB}`,
       antwortAn: env.CONTACT_TO || 'info@kruckenhaus.at',
       html: mailHtml({
         titel: 'Ihr seid vorgemerkt',
@@ -256,7 +256,7 @@ async function voranmeldungAufnehmen(db, env, request, e) {
           absatz(`Hallo ${escapeHtml(kontakt.name)},`),
           absatz('danke – wir haben euch vorgemerkt:'),
           kasten(`<strong>${escapeHtml(was)}</strong>`),
-          absatz(`Die Voranmeldung ist <strong>unverbindlich</strong> und noch ohne Preis. Sobald die passende
+          absatz(`Die Vormerkung ist <strong>unverbindlich</strong> und noch ohne Preis. Sobald die passende
             Bestellrunde feststeht, melden wir uns mit Preis und Termin.`),
           knopf(link, 'Meine Bestellungen ansehen'),
           linkHinweis,
@@ -266,11 +266,11 @@ async function voranmeldungAufnehmen(db, env, request, e) {
     }),
     mailSenden(env, {
       an: env.CONTACT_TO || 'info@kruckenhaus.at',
-      betreff: `Neue Voranmeldung von ${kontakt.name}`,
+      betreff: `Neue Vormerkung von ${kontakt.name}`,
       antwortAn: kontakt.email,
       html: mailHtml({
         art: 'hof',
-        titel: 'Neue Voranmeldung',
+        titel: 'Neue Vormerkung',
         inhalt: [
           kasten(`<strong>${escapeHtml(kontakt.name)}</strong><br>${escapeHtml(kontakt.telefon)} · ${escapeHtml(kontakt.email)}`),
           absatz(escapeHtml(was)),
