@@ -86,7 +86,7 @@ Gastgeber: Kathrin und Florian Häusler.
 - [Ferienwohnung](https://www.kruckenhaus.at/ferienwohnung.html): Ausstattung, Galerie, Verfügbarkeitskalender
 - [Preise](https://www.kruckenhaus.at/preise.html): Saisonpreise, Zusatzkosten, Storno, Zahlungsarten
 - [Bauernhof](https://www.kruckenhaus.at/bauernhof.html): Alpakas, Hofladen, Landwirtschaft
-- [Berglsteiner See](https://www.kruckenhaus.at/berglsteiner-see.html): Der See und die Wanderroute
+- [Berglsteiner See & Reintalersee](https://www.kruckenhaus.at/berglsteiner-see.html): Die beiden Seen, Wanderroute und Badesee
 - [Workation](https://www.kruckenhaus.at/workation.html): Arbeiten mit Starlink-Internet
 - [Umgebung](https://www.kruckenhaus.at/lage.html#umgebung): Ausflugsziele in der Region (Teil der Seite Lage & Umgebung)
 - [Lage & Anfahrt](https://www.kruckenhaus.at/lage.html): Anreise mit Auto und Bahn
