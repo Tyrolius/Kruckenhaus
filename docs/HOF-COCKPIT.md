@@ -24,7 +24,7 @@ Grundlage: `docs/HOFLADEN-VORBESTELLUNG.md` (Verwaltung) und
 | Wo lebt das Cockpit? | **Startseite der Website-Verwaltung**, am PC und am Handy, geschützt wie bisher (Cloudflare Access und `zugang.js`) |
 | Ausgangsrechnungen (Gasthäuser) | werden weiter in **LBG AbHof** geschrieben. Das Cockpit erinnert daran und liefert die Mengen aus Bertha |
 | Buchhaltung | **LBG Business**. Das Cockpit bucht nichts |
-| Wo werden „verrechnet“ und „bezahlt“ bei Gasthäusern gepflegt? | in der **Bertha-App** (Monatsrechnung, Status `open → invoiced → paid`). Das Cockpit liest den Stand nur mit |
+| Wo werden „verrechnet“ und „bezahlt“ bei Gasthäusern gepflegt? | in der **Bertha-App** (Monatsrechnung, Status `open → invoiced → paid`). Das Cockpit liest den Stand mit; einzige Ausnahme ist „bar erhalten“ (5a) |
 | Eingangsrechnungen | kommen per Mail **und** per Post. Neue Adresse `rechnungen@kruckenhaus.at` als **Weiterleitung bei world4you** nach Gmail mit dem Label „Rechnungen“. Post wird fotografiert und an dieselbe Adresse geschickt |
 | Zahltag | **Montag**. Alles, was bis zum nächsten Montag fällig ist, steht im Cockpit und im Montagsbrief |
 | Bank | **George** (Erste Bank / Sparkasse). Der Kontoauszug-Export dient dem Bankabgleich (Abschnitt 5) |
@@ -243,7 +243,8 @@ Bertha als Produkt für viele Betriebe passt (wie „Hofladen verbinden“).
 | `invoiced` und älter als 21 Tage (einstellbar) | **„Gasthof X: Rechnung 2026-118 offen seit 24 Tagen“** – Mahnung in LBG schreiben |
 | alles eines Monats `invoiced` oder `paid` | erledigt, verschwindet |
 
-Den Status ändert man in der **Bertha-App**. Das Cockpit schreibt nicht zurück.
+Den Status „verrechnet“ setzt man in der **Bertha-App**. Zurück in Bertha schreibt das Cockpit nur
+eine Zahlung, die bar erhalten wurde (5a.3).
 
 **Bei LBG nachfragen** (Frage 2): Kann LBG AbHof Lieferscheine bzw. Positionen
 als CSV einlesen? Wenn ja, bekommt die Aufgabe einen Knopf „CSV für LBG“ im
@@ -292,14 +293,10 @@ passenden Format, und das Abtippen entfällt.
   gesetzt.
 - **Bertha-Posten:** Das Cockpit zeigt „in Bertha als bezahlt / Zahlung erhalten
   buchen“ mit Betrag und Datum. Gebucht wird in der App.
-- **Ausbaustufe:** Läuft der Abgleich ein paar Monate zuverlässig, bekommt Bertha
-  eine Function „Zahlung buchen“.
-  - Sie löst dieselbe Buchung aus wie der Knopf „Zahlung erhalten“: einen
-    `TransactionLog` mit `FieldValue.increment`.
-  - Die Bank-Buchungsnummer dient als Idempotenzschlüssel, damit nichts doppelt
-    gebucht wird.
-  - Weil das in die Saldo-Buchhaltung eingreift, kommt diese Function bewusst
-    zuletzt.
+- **Ausbaustufe:** Die Function „Zahlung buchen“ entsteht schon für Barzahlungen
+  (5a.3, Phase C4b). Läuft der Abgleich ein paar Monate zuverlässig, bucht auch
+  er Bertha-Posten darüber, mit `paymentMethod: "TRANSFER"` und der
+  Bank-Buchungsnummer als Idempotenzschlüssel.
 
 ### 5.4 Format
 
@@ -308,6 +305,113 @@ Format (Spalten, Trennzeichen, Datums- und Betragsschreibweise) wird anhand
 **eines echten Exports mit geschwärzten Namen** festgelegt (Frage 3). Der Leser
 kommt als eigenes Skript `js/bankabgleich.js` dazu, ohne Bibliothek, mit Test
 `scripts/test-cockpit-bank.mjs`.
+
+---
+
+## 5a. Barzahlungen schnell erfassen
+
+### 5a.1 Was es heute schon gibt
+
+| Wo | Was | Was fehlt |
+|---|---|---|
+| Verwaltung | „Bar erhalten“ bei Übergabe und Zahlungen, Verkauf am Hof mit „bar kassiert“ | nur Hofladen-Bestellungen. Ein Gasthaus, das bar zahlt, lässt sich dort nicht erfassen |
+| Bertha, Lieferrunde | Zahlung bei der Lieferung (`ON_DELIVERY`) | – |
+| Bertha, Kunde → „Zahlung erfassen“ | Betrag gegen den Saldo, `source: "manual_payment"` | **keine Zahlart:** Ob bar oder Überweisung, steht nirgends. Deshalb lässt sich kein Bargeldstand und keine Liste der Bareingänge bilden |
+
+Bargeld kommt also an drei Stellen an, und niemand sieht die Summe.
+
+### 5a.2 „Bar erhalten“ im Cockpit
+
+Ein **großer Knopf** ganz oben im Cockpit, auch direkt erreichbar über
+`/verwaltung/#bar` (als Lesezeichen auf dem Startbildschirm des Handys).
+
+```
+Bar erhalten
+────────────────────────────────────────
+Wer?  [ Gast…                       ]
+      ▸ Gasthof X – Rechnung 2026-118   184,50 €   (Bertha)
+      ▸ Maria M. – Saldo                 23,40 €   (Bertha)
+      ▸ 2026-047 Rindfleischpaket        86,40 €   (Hofladen)
+      ▸ Etwas anderes …
+Betrag      [ 184,50 ] €
+Gegeben     [ 200    ] €   → zurück 15,50 €
+            [  Bar erhalten  ]
+```
+
+1. **Wer?** Die Vorschläge kommen aus allen offenen Posten. Oben stehen die
+   heutigen Übergaben, dann nach Name gesucht. Erfasst werden:
+   - Hofladen-Bestellungen „bar, offen“
+   - Gasthaus-Rechnungen `invoiced` aus Bertha
+   - Bertha-Kunden mit Saldo
+2. **Betrag:** mit dem offenen Betrag vorbelegt. Teilzahlungen sind möglich.
+   „Gegeben“ ist freiwillig und rechnet nur das Wechselgeld aus, gespeichert wird
+   es nicht.
+3. **„Bar erhalten“:** Es folgen 10 Sekunden „Rückgängig“, erst danach wird
+   gebucht. So entsteht bei einem Vertippen keine Gegenbuchung.
+4. **„Etwas anderes …“:** Bargeld ohne offenen Posten (z. B. Endreinigung oder
+   Aufenthaltsabgabe direkt vom Gast, ein Verkauf ohne Bestellung). Dazu gehören
+   Betrag, wofür und ein Bereich (Ferienwohnung, Hofladen, Eier, Sonstiges).
+
+### 5a.3 Wohin gebucht wird
+
+- **Hofladen-Bestellung:** wie heute `bezahlt = 'bar'`, mit Datum.
+- **Etwas anderes:** neue Tabelle `bareingaenge` (Betrag, wofür, Bereich, Datum,
+  erfasst von).
+- **Bertha-Posten:** Für Bargeld kommt die Function **„Zahlung buchen“** aus 5.3
+  früher als geplant. Bar kassiert wird sofort an der Tür, ein Umweg über die App
+  wäre genau das, was die Funktion verhindern soll.
+  - Callable bzw. HTTP-Function in Bertha mit eigenem Recht `zahlung_buchen`
+    am Schlüssel. Nur OWNER und ADMIN können es vergeben.
+  - Sie schreibt **dieselbe Buchung** wie „Zahlung erfassen“: einen
+    `TransactionLog` mit `type: "PAID"` und
+    `outstandingBalance: FieldValue.increment(-betrag)` in einem Batch.
+    Zusätzlich kommen `source: "cockpit"` und `paymentMethod: "CASH"` dazu.
+  - **Dokument-ID = Idempotenzschlüssel** aus dem Cockpit (eine UUID je Vorgang),
+    nie eine zufällige ID (Bertha-Invariante). Ein Wiederholen nach einem
+    Netzabbruch bucht nicht doppelt.
+  - Bei einer Gasthaus-Rechnung wird zusätzlich `invoices.status = "paid"` mit
+    `paidAt` gesetzt, sobald der Betrag die Rechnung deckt.
+  - **Schranken:**
+    - Betrag größer 0 und höchstens offener Betrag plus 50 €, sonst Rückfrage.
+    - Höchstens 30 Buchungen pro Stunde je Schlüssel.
+    - Jede Buchung erzeugt ein `change_event` (`PAYMENT_RECEIVED`) und erscheint
+      damit wie gewohnt im Bericht der App.
+  - **Korrektur nur als Gegenbuchung**, nie Löschen oder Überschreiben
+    (Bertha-Invariante). In der App über das Logbuch wie bei jeder Zahlung.
+
+### 5a.4 Bargeldstand und Kassabuch-Liste
+
+- Das Cockpit zeigt **„Bargeld seit der letzten Einzahlung: 342,50 €“**,
+  zusammengesetzt aus:
+  - Hofladen bar
+  - `bareingaenge`
+  - Bertha-Barzahlungen, sowohl aus dem Cockpit als auch aus der Lieferrunde.
+    Die Summe je Tag liefert `betriebsuebersicht` als neues Feld `bar_je_tag`.
+- Knopf **„Zur Bank gebracht“** (Betrag, Datum): Der Stand beginnt neu, und der
+  Bankabgleich (Abschnitt 5) erkennt die Bareinzahlung am Konto und bestätigt sie.
+  Eine Abweichung zeigt er als Hinweis an.
+- **Monatsliste der Bareingänge** als Excel für **LBG Business**: Datum, wofür,
+  Bereich, Betrag, Quelle. Vorbild ist der Export der Auswertung.
+
+### 5a.5 Was das Cockpit nicht ist
+
+**Keine Registrierkasse.** Das Cockpit erfasst nur, *dass* Geld gekommen ist.
+Es erstellt keine signierten Belege und keinen Datenerfassungsprotokoll-Eintrag.
+
+- Ob für die Barumsätze des Betriebs eine Registrierkassen- bzw.
+  Belegerteilungspflicht besteht, hängt an Umsatzgrenzen und Ausnahmen. Das klärt
+  die Steuerberatung (Frage 4).
+- Wenn es eine Registrierkasse gibt, bleibt sie für die Belege zuständig. Das
+  Cockpit verbindet dann nur noch die Bareingänge mit den offenen Posten.
+
+### 5a.6 Kleine Ergänzung in der Bertha-App
+
+Im Dialog **„Zahlung erfassen“** (`CustomerDetailActivity.showRecordPaymentDialog`)
+kommt die Auswahl **bar / Überweisung** dazu, gespeichert als `paymentMethod` am
+`TransactionLog`. Fehlt das Feld (alte Buchungen), gilt die Zahlart „unbekannt“.
+Erst damit stimmt der Bargeldstand auch für Zahlungen, die in der App erfasst
+werden. Auch „Zahlung erhalten“ bei den Überweisern
+(`BankTransferOpenItemsActivity`) setzt `paymentMethod: "TRANSFER"`.
 
 ---
 
@@ -374,6 +478,8 @@ Verbindung     Bertha ● 06:00
   keine Adressen und keine Privatkunden. Das bleibt innerhalb desselben
   Verantwortlichen. Vor dem Live-Gang prüfen, ob `datenschutz.html#bertha` einen
   Satz dazu braucht (Rechtstext nur auf ausdrücklichen Auftrag ändern).
+- **Website → Bertha:** nur „Zahlung buchen“ (5a.3), mit eigenem Recht am Schlüssel,
+  Idempotenzschlüssel, Betragsschranke und Audit-Eintrag. Sonst schreibt das Cockpit nichts in Bertha.
 - **Kontoauszug:** wird nur im Browser gelesen und nie gespeichert. In D1 stehen
   nur Prüfsummen (IBAN → Kunde, Buchung).
 - **Eingangsrechnungen:** IBAN und BIC von Lieferanten stehen in D1 (Geschäftsdaten,
@@ -393,10 +499,12 @@ auf `master`. **W** = Website, **B** = Bertha.
 | **C1** | W | `schema-cockpit.sql`, Aufgaben und Vorlagen (Abschnitt 2), Vorlagen aus Abschnitt 10 als Erstbefüllung, Cockpit-Startseite mit Website-Aufgaben, Ferienwohnungs-Anfragen, Anreisen und Gästemeldung | sofort nützlich, ohne Bertha |
 | **C2** | W | Eingangsrechnungen mit QR-Code, Lieferanten-Vorschlag, IBAN-Warnung, Zahltag-Ansicht | Rechnungen werden pünktlich bezahlt |
 | **C3** | B | Function `betriebsuebersicht`, Schlüssel in den Betriebseinstellungen, Tests im Emulator | Bertha liefert Abrechnung und Kennzahlen |
+| **C2b** | W | „Bar erhalten“ für Hofladen-Posten und „Etwas anderes“ (`bareingaenge`), Wechselgeld, Bargeldstand, „Zur Bank gebracht“, Monatsliste für LBG (5a) | Bargeld an einer Stelle |
 | **C4** | W | Bertha-Aufgaben (4.3) und -Kennzahlen im Cockpit, Zwischenspeicher, Ampel | Gasthaus-Rechnungen werden nicht mehr vergessen |
+| **C4b** | B + W | Bertha: Function „Zahlung buchen“ (5a.3), Zahlart im Dialog „Zahlung erfassen“ (5a.6), `bar_je_tag` in der Übersicht · Website: Bertha-Posten in „Bar erhalten“ | Gasthaus und Eierkunden bar an der Tür erfassen |
 | **C5** | W | Bankabgleich George (Abschnitt 5) für Website-Posten und als Vorschlag für Bertha-Posten | „Wer hat noch nicht bezahlt?“ auf einen Blick |
 | **C6** | W | Montagsbrief mit Cron-Worker | Überblick, ohne etwas zu öffnen |
-| später | W/B | Eingangsrechnungen automatisch aus Gmail (3.2) · „Zahlung buchen“ in Bertha (5.3) · CSV für LBG AbHof (4.3) | weniger Handarbeit |
+| später | W/B | Eingangsrechnungen automatisch aus Gmail (3.2) · Bankabgleich bucht Bertha-Überweisungen über „Zahlung buchen“ (5.3) · CSV für LBG AbHof (4.3) | weniger Handarbeit |
 
 **Tests:** `scripts/test-cockpit-db.mjs` (Schema, Fälligkeitsregeln, keine Doppelten
 beim gleichzeitigen Abhaken), `…-bank.mjs` (George-Format, Zuordnung,
@@ -484,7 +592,7 @@ Nacheichung, weil die Übergabe gewogener Ware davon abhängt.
 | 1 | Hat **LBG Business** einen Belegeingang (Beleg hochladen und beim Buchen anhängen)? Sonst Google-Drive-Ordner je Jahr | C2 |
 | 2 | Kann **LBG AbHof** Lieferscheine bzw. Positionen als CSV einlesen? (software@lbg.at) | später |
 | 3 | Beispiel-Export aus **George** (Kopfzeile und 2–3 Zeilen, Namen geschwärzt) | C5 |
-| 4 | Gibt es eine **Registrierkasse**? | C1 (Vorlage) |
+| 4 | Gibt es eine **Registrierkasse**? Besteht für die Barumsätze eine Registrierkassen- bzw. Belegerteilungspflicht? (Steuerberatung) | C1 (Vorlage), C2b |
 | 5 | **Eigene Quelle bzw. Brunnen** oder Gemeindewasser? | C1 (Vorlage) |
 | 6 | Wie viele **Legehennen**? Teilnahme am **TGD**? **Pflanzenschutz-Ausweis** vorhanden? | C1 (Vorlagen) |
 | 7 | Führt **Airbnb** die Aufenthaltsabgabe ab, oder macht ihr alles selbst? | C1 (Vorlage) |
