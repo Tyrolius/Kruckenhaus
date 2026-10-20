@@ -415,6 +415,100 @@ werden. Auch „Zahlung erhalten“ bei den Überweisern
 
 ---
 
+## 5b. Bar ausgegeben, ohne Rechnung (Eigenbeleg)
+
+Beispiel: Leihgebühr für die Kreissäge beim Nachbarn, bar bezahlt, ohne Rechnung.
+Für solche Ausgaben gibt es den **Eigenbeleg**. Er muss enthalten (Quellen siehe
+unten, mit der Steuerberatung bestätigen):
+
+- Empfänger (wer das Geld bekommen hat)
+- Art der Ausgabe bzw. Leistung
+- Datum
+- Betrag
+- **Grund, warum es keinen Originalbeleg gibt**
+- Unterschrift
+
+Wichtig: **Aus einem Eigenbeleg gibt es keinen Vorsteuerabzug.** Dafür braucht
+es eine Rechnung nach § 11 UStG. Ist der Empfänger ein Unternehmen (Verleih,
+Maschinenring, Werkstatt), lieber gleich eine Rechnung verlangen.
+
+### 5b.1 Ablauf am Handy (unter einer Minute)
+
+Zweiter Knopf neben „Bar erhalten“: **„Bar ausgegeben“**.
+
+```
+Bar ausgegeben
+────────────────────────────────────────
+Betrag        [ 30,00 ] €
+An wen?       [ Josef Huber, Oberberg 12      ]   ← Vorschlag aus früheren
+Wofür?        [ Leihgebühr Kreissäge, 1 Tag   ]
+Bereich       ( Landwirtschaft ▾ )
+Datum         [ 18.10.2026 ]
+Warum kein Beleg?  (•) Privatperson, stellt keine Rechnung aus
+                   ( ) Beleg verloren
+                   ( ) Anderer Grund: [        ]
+Foto (freiwillig)  [ 📷 ]   z. B. ein handgeschriebener Zettel
+Unterschrift  ( ) Empfänger unterschreibt hier am Handy
+              (•) ich unterschreibe selbst
+              [ ✍  Unterschriftsfeld             ]
+        [ Eigenbeleg speichern ]
+```
+
+- **Am besten unterschreibt der Empfänger** gleich am Handy („Betrag erhalten“).
+  Dann ist der Beleg eine Quittung des Empfängers und viel belastbarer als eine
+  reine Eigenerklärung. Geht das nicht (z. B. nachträglich), unterschreibt
+  Florian oder Kathrin selbst.
+- Empfänger, Zweck und Grund werden für das nächste Mal vorgeschlagen. Bei
+  „Leihgebühr Kreissäge“ ist der Rest fast ausgefüllt.
+
+### 5b.2 Was dabei herauskommt
+
+- **Fortlaufende Nummer** `EB-2026-001`, nie neu vergeben, auch nicht nach
+  einem Storno.
+- **Beleg als Seite zum Drucken bzw. „Als PDF speichern“** (Druckansicht der
+  Verwaltung, ohne Bibliothek). Sie enthält alle Pflichtangaben, die
+  Unterschrift und das Foto.
+- **Automatisch per Mail an `rechnungen@kruckenhaus.at`.** Damit landet der
+  Eigenbeleg im selben Gmail-Label und im selben Belegordner wie jede andere
+  Rechnung und geht mit ihnen in **LBG Business**.
+  - Es gibt keinen zweiten Ablageweg.
+  - Die Mail wird mit `mailHtml()` gebaut. Unterschrift und Foto kommen als
+    Anhang mit, nicht als eingebettetes Bild (Mail-Regel).
+- **Bargeldstand** (5a.4) sinkt um den Betrag. Die **Monatsliste** wird damit
+  zum vollständigen Kassabuch: Bareingänge **und** Barausgaben, mit
+  Anfangsstand, Endstand und Einzahlungen auf die Bank.
+- **Barausgabe mit echter Rechnung** (z. B. Tankstelle, Lagerhaus bar bezahlt)
+  geht über denselben Knopf: Foto der Rechnung statt Unterschrift, „Warum kein
+  Beleg?“ entfällt. Das Foto geht ebenso an `rechnungen@`.
+
+### 5b.3 Daten
+
+```sql
+barausgaben  id, nummer (UNIQUE, 'EB-2026-001'), datum, betrag_cent,
+             empfaenger, zweck, bereich, grund, art ('eigenbeleg','rechnung'),
+             unterschrift_von ('empfaenger','selbst'), unterschrift_png NULL,
+             foto_id NULL, gemailt_am NULL, storniert_am NULL, storno_grund NULL,
+             erfasst_von, erstellt_am
+```
+
+- Die Unterschrift wird als kleines PNG (wenige KB) gespeichert, das Foto wie die
+  Produktfotos (verkleinert, `produkt_fotos`-Muster).
+- Das **Original zum Aufbewahren** (7 Jahre) ist die Mail bzw. die PDF-Datei im
+  Belegordner. D1 hält den Datensatz für Bargeldstand und Kassabuch.
+- **Ändern geht nicht, nur stornieren** (mit Grund) und neu erfassen. So bleibt
+  das Kassabuch nachvollziehbar.
+- Name und Ort des Empfängers sind personenbezogene Daten. Sie werden nur für den
+  Beleg verwendet und nicht an Bertha oder in Protokolle gegeben.
+- Fehlt `RESEND_API_KEY`, wird der Beleg trotzdem gespeichert. Das Cockpit zeigt
+  dann „noch nicht gemailt“ mit dem Knopf „erneut senden“.
+
+Quellen zum Eigenbeleg (nicht amtlich, mit der Steuerberatung bestätigen):
+[everbill: Eigenbeleg-Vorlage](https://www.everbill.com/?p=4707),
+[SumUp: Eigenbeleg](https://www.sumup.com/de-de/rechnungen/lexikon/eigenbeleg/),
+[freefinance: Vorsteuer](https://freefinance.at/steuern/vorsteuer.html).
+
+---
+
 ## 6. Die Cockpit-Seite
 
 Mobil zuerst, gleiche Gestaltung wie die Verwaltung:
@@ -499,7 +593,7 @@ auf `master`. **W** = Website, **B** = Bertha.
 | **C1** | W | `schema-cockpit.sql`, Aufgaben und Vorlagen (Abschnitt 2), Vorlagen aus Abschnitt 10 als Erstbefüllung, Cockpit-Startseite mit Website-Aufgaben, Ferienwohnungs-Anfragen, Anreisen und Gästemeldung | sofort nützlich, ohne Bertha |
 | **C2** | W | Eingangsrechnungen mit QR-Code, Lieferanten-Vorschlag, IBAN-Warnung, Zahltag-Ansicht | Rechnungen werden pünktlich bezahlt |
 | **C3** | B | Function `betriebsuebersicht`, Schlüssel in den Betriebseinstellungen, Tests im Emulator | Bertha liefert Abrechnung und Kennzahlen |
-| **C2b** | W | „Bar erhalten“ für Hofladen-Posten und „Etwas anderes“ (`bareingaenge`), Wechselgeld, Bargeldstand, „Zur Bank gebracht“, Monatsliste für LBG (5a) | Bargeld an einer Stelle |
+| **C2b** | W | „Bar ausgegeben“ mit Eigenbeleg, Unterschrift am Handy, Nummernkreis, Druckansicht und Mail an `rechnungen@` (5b) · „Bar erhalten“ für Hofladen-Posten und „Etwas anderes“ (5a) · Bargeldstand, „Zur Bank gebracht“, Kassabuch-Monatsliste für LBG | Bargeld an einer Stelle, auch ohne Rechnung belegt |
 | **C4** | W | Bertha-Aufgaben (4.3) und -Kennzahlen im Cockpit, Zwischenspeicher, Ampel | Gasthaus-Rechnungen werden nicht mehr vergessen |
 | **C4b** | B + W | Bertha: Function „Zahlung buchen“ (5a.3), Zahlart im Dialog „Zahlung erfassen“ (5a.6), `bar_je_tag` in der Übersicht · Website: Bertha-Posten in „Bar erhalten“ | Gasthaus und Eierkunden bar an der Tür erfassen |
 | **C5** | W | Bankabgleich George (Abschnitt 5) für Website-Posten und als Vorschlag für Bertha-Posten | „Wer hat noch nicht bezahlt?“ auf einen Blick |
@@ -598,6 +692,7 @@ Nacheichung, weil die Übergabe gewogener Ware davon abhängt.
 | 7 | Führt **Airbnb** die Aufenthaltsabgabe ab, oder macht ihr alles selbst? | C1 (Vorlage) |
 | 8 | Wann wurde die **Waage** zuletzt geeicht, wann die **Feuerlöscher** zuletzt geprüft? (Startdatum für „alle n Jahre“) | C1 |
 | 9 | Montagsbrief an beide oder nur an Florian? | C6 |
+| 10 | Steuerberatung: Passt der Eigenbeleg aus 5b (Pflichtangaben, Unterschrift des Empfängers) so? Soll das Kassabuch in einer bestimmten Form an LBG Business gehen? | C2b |
 
 ---
 
