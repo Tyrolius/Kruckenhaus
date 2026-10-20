@@ -6367,3 +6367,14 @@ button.vw-foto-wahl:focus-visible {
   text-anchor: middle;
   fill: var(--color-text-light);
 }
+
+/* ============================================================
+   66. VERWALTUNG – ÜBERSICHT ÜBER ALLE BESTELLRUNDEN
+   Eine Karte je laufender Bestellrunde statt Auswahlfeld.
+   ============================================================ */
+.vw-uebersicht-hinweis { margin: -0.25rem 0 0.75rem; }
+.vw-runden-kopf { display: flex; flex-direction: column; gap: 0.1rem; margin-bottom: 0.4rem; }
+.vw-runden-kopf h2 { margin: 0; }
+.vw-runden-stand { margin: 0 0 0.4rem; font-size: 0.95rem; }
+.vw-runden-karte .vw-mehr { margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--color-beige); }
+.vw-aufgaben button .vw-klein { font-weight: 400; }

@@ -536,82 +536,134 @@ function widerrufeKarte() {
 }
 
 // 5.1 Übersicht
-// Oben nur, was zu tun ist; darunter, was noch frei ist; alles Seltene
-// (Bestellrunde bearbeiten, Sortiment, Export …) eingeklappt unter „Mehr".
-function ansichtUebersicht() {
-  const ch = aktiveCharge();
+// Alle laufenden Bestellrunden auf einen Blick, ohne Runde auswählen zu müssen:
+// oben, was zu tun ist (über alle Runden zusammen), darunter je Runde eine Karte
+// mit Stand, „Noch frei" und den Handgriffen dieser Runde. Allgemeines
+// (neue Runde, Sortiment, Bertha, Auswertung) eingeklappt unter „Mehr".
+function rundenStand(ch) {
   const alle = bestellungenDerCharge(ch);
   const aktiv = alle.filter(istAktiv);
-  const warteliste = alle.filter((b) => b.status === 'warteliste').length;
-  const offen = aktiv.filter((b) => !b.bezahlt);
-  const offenCent = offen.reduce((s, b) => s + bestellBetrag(b).cent, 0);
-  const nichtUebergeben = aktiv.filter((b) => !b.uebergeben && !ohneTerminOffen(b)).length;
-  const geldFehlt = aktiv.filter((b) => b.uebergeben && !b.bezahlt).length;
-  const neue = alle.filter((b) => b.neu).length;
-  const ohneTermin = aktiv.filter(ohneTerminOffen).length;
-  const passendeVa = passendeVoranmeldungen(ch).length;
+  return {
+    ch,
+    aktiv,
+    warteliste: alle.filter((b) => b.status === 'warteliste').length,
+    offenCent: aktiv.filter((b) => !b.bezahlt).reduce((s, b) => s + bestellBetrag(b).cent, 0),
+    nichtUebergeben: aktiv.filter((b) => !b.uebergeben && !ohneTerminOffen(b)).length,
+    geldFehlt: aktiv.filter((b) => b.uebergeben && !b.bezahlt).length,
+    neue: alle.filter((b) => b.neu).length,
+    ohneTermin: aktiv.filter(ohneTerminOffen).length,
+    vormerkungen: passendeVoranmeldungen(ch).length,
+  };
+}
+
+function rundenKarte(st, mehrereRunden) {
+  const { ch, aktiv } = st;
+  const dauer = istDauer(ch);
+  const zeile = (inhaltHtml) => `<li>${inhaltHtml}</li>`;
+  const oeffnen = (ziel, text) => `<button type="button" data-aktion="runde-oeffnen" data-runde="${ch.id}" data-ziel="${ziel}">${text}</button>`;
+  const aktion = (name, text) => `<button type="button" data-aktion="${name}" data-runde="${ch.id}">${text}</button>`;
   const hatGewichtsware = ch.artikel.some((a) => a.art === 'gewicht');
 
-  // Zu tun: nur Einträge mit Anzahl > 0, jeder mit Zahl rechts
-  const aufgabe = (anzahl, text, ziel) => (anzahl
-    ? `<li>${ziel.startsWith('#') ? `<a href="${ziel}">` : `<button type="button" data-aktion="filter" data-wert="${ziel}">`}
-        <span>${text}</span><span class="vw-anzahl">${anzahl}</span>${ziel.startsWith('#') ? '</a>' : '</button>'}</li>`
-    : '');
-  const aufgaben = [
-    aufgabe(neue, 'Neue Bestellungen über die Website', 'neu'),
-    aufgabe(ohneTermin, 'Termin mit dem Kunden klären', 'termin-offen'),
-    aufgabe(passendeVa, 'Vormerkungen übernehmen', '#voranmeldungen'),
-    aufgabe(warteliste, 'Auf der Warteliste', 'warteliste'),
-    aufgabe(nichtUebergeben, 'Noch abzuholen bzw. zu liefern', '#uebergabe'),
-    aufgabe(geldFehlt, 'Übergeben, Geld noch nicht da', '#zahlungen'),
-  ].join('');
+  let freiHtml;
+  if (dauer) {
+    const artikel = ch.artikel.filter((a) => (produktVon(a.produktId) || {}).verkaufsart === 'dauer');
+    const aus = artikel.filter((a) => freieMenge(ch, a.id) <= 0);
+    freiHtml = `<p class="vw-klein">${artikel.length - aus.length} von ${artikel.length} Dauerartikeln verfügbar${aus.length
+      ? ` · ausverkauft: ${aus.map((a) => esc(a.name)).join(', ')}` : ''}. „Ausverkauft" und Preise ändert ihr im
+      <a href="#sortiment">Sortiment</a>.</p>`;
+  } else {
+    freiHtml = ch.artikel.map((a) => {
+      const frei = freieMenge(ch, a.id);
+      const anteil = a.kontingent ? Math.min(100, Math.round(((a.kontingent - frei) / a.kontingent) * 100)) : 100;
+      return `<div class="vw-frei-zeile">
+        <span class="vw-frei-name">${esc(a.name)}</span>
+        <span class="vw-balken${frei <= 0 ? ' vw-balken--voll' : ''}" aria-hidden="true"><span style="width:${anteil}%"></span></span>
+        <strong class="vw-frei-zahl">${frei > 0 ? `${frei} frei` : 'aus'}</strong>
+      </div>`;
+    }).join('');
+  }
 
-  const freiHtml = istDauer(ch) ? ch.artikel.filter((a) => (produktVon(a.produktId) || {}).verkaufsart === 'dauer').map((a) => {
-    const da = freieMenge(ch, a.id) > 0;
-    return `<div class="vw-frei-zeile">
-      <span class="vw-frei-name">${esc(a.name)}</span><span></span>
-      <strong class="vw-frei-zahl">${da ? 'verfügbar' : 'aus'}</strong>
-    </div>`;
-  }).join('') : ch.artikel.map((a) => {
-    const frei = freieMenge(ch, a.id);
-    const anteil = a.kontingent ? Math.min(100, Math.round(((a.kontingent - frei) / a.kontingent) * 100)) : 100;
-    return `<div class="vw-frei-zeile">
-      <span class="vw-frei-name">${esc(a.name)}</span>
-      <span class="vw-balken${frei <= 0 ? ' vw-balken--voll' : ''}" aria-hidden="true"><span style="width:${anteil}%"></span></span>
-      <strong class="vw-frei-zahl">${frei > 0 ? `${frei} frei` : 'aus'}</strong>
-    </div>`;
-  }).join('');
+  const stand = [
+    `${aktiv.length} ${aktiv.length === 1 ? 'Bestellung' : 'Bestellungen'}`,
+    st.offenCent ? `<span class="vw-warnung">${euro(st.offenCent)} offen</span>` : (aktiv.length ? 'alles bezahlt' : ''),
+    st.nichtUebergeben ? `${st.nichtUebergeben} noch zu übergeben` : '',
+  ].filter(Boolean).join(' · ');
+  const fertig = !dauer && aktiv.length && aktiv.every((b) => b.uebergeben && b.bezahlt) && !st.warteliste;
+
+  return `<section class="vw-karte vw-runden-karte" aria-label="${esc(ch.titel)}">
+    <div class="vw-runden-kopf"><h2>${esc(ch.titel)}</h2>
+      <span class="vw-klein">${dauer ? 'Immer erhältlich, ohne Bestellschluss'
+        : [CHARGE_KURZ[ch.status], `Bestellschluss ${datumKurz(ch.bestellschluss)}`].filter(Boolean).join(' · ')}</span></div>
+    <p class="vw-runden-stand">${stand}</p>
+    ${freiHtml}
+    <div class="vw-knopfreihe">
+      <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="runde-oeffnen" data-runde="${ch.id}" data-ziel="#bestellungen">Bestellungen</button>
+      ${st.nichtUebergeben ? `<button type="button" class="vw-knopf vw-knopf--klein" data-aktion="runde-oeffnen" data-runde="${ch.id}" data-ziel="#uebergabe">Übergabe</button>` : ''}
+      ${st.offenCent ? `<button type="button" class="vw-knopf vw-knopf--klein" data-aktion="runde-oeffnen" data-runde="${ch.id}" data-ziel="#zahlungen">Zahlungen</button>` : ''}
+    </div>
+    ${fertig ? `<p class="vw-klein">Alles übergeben und bezahlt. Abgeschlossene Runden verschwinden aus dem Alltag, bleiben aber in der Auswertung.</p>
+      <button type="button" class="vw-knopf vw-knopf--breit" data-aktion="runde-status" data-id="${ch.id}" data-wert="archiviert">Bestellrunde abschließen</button>` : ''}
+    <details class="vw-mehr"><summary>Mehr${mehrereRunden ? ' zu dieser Runde' : ''}: Bearbeiten, Drucken, Export …</summary>
+      <ul class="vw-aufgaben">
+        ${dauer ? '' : zeile(oeffnen('#charge', 'Bestellrunde bearbeiten (Preise, Mengen, Termine)'))}
+        ${zeile(aktion('ankuendigung', 'Ankündigung für WhatsApp'))}
+        ${zeile(aktion('listen-drucken', 'Abhol- und Lieferlisten drucken (alle Tage)'))}
+        ${zeile(oeffnen('#zahlungen', 'Alle Zahlungen'))}
+        ${zeile(hatGewichtsware ? oeffnen('#wiegen', 'Vorab wiegen und Packzettel drucken') : aktion('drucken', 'Packzettel drucken'))}
+        ${zeile(aktion('export', 'Liste für Excel herunterladen'))}
+      </ul>
+      ${dauer ? '' : `<p class="vw-klein">Termine: ${ch.termine.length ? ch.termine.map(terminText).join(' · ') : 'noch keine'}</p>`}
+    </details>
+  </section>`;
+}
+
+function ansichtUebersicht() {
+  // Bestellrunden mit Termin zuerst, das Dauersortiment zuletzt
+  const runden = daten.chargen.filter((c) => !istDauer(c)).concat(daten.chargen.filter(istDauer));
+  const staende = runden.map(rundenStand);
+  const mehrereRunden = runden.length > 1;
+  const summe = (feld) => staende.reduce((s, st) => s + st[feld], 0);
+  const aktivGesamt = staende.reduce((s, st) => s + st.aktiv.length, 0);
+  const offenGesamt = summe('offenCent');
+
+  // Zu tun: nur Einträge mit Anzahl > 0, jeder mit Zahl rechts.
+  // Was sich in „Bestellungen" filtern lässt, über alle Runden zusammen;
+  // Übergabe, Zahlungen und Vormerkungen gehören zu einer Runde, daher je Runde.
+  const ueberAlle = (anzahl, text, filter) => (anzahl
+    ? `<li><button type="button" data-aktion="filter-alle" data-wert="${filter}"><span>${text}</span><span class="vw-anzahl">${anzahl}</span></button></li>`
+    : '');
+  const jeRunde = (feld, text, ziel) => staende.filter((st) => st[feld]).map((st) => `<li><button type="button"
+      data-aktion="runde-oeffnen" data-runde="${st.ch.id}" data-ziel="${ziel}"><span>${text}${mehrereRunden
+      ? ` <span class="vw-klein">· ${esc(st.ch.titel)}</span>` : ''}</span><span class="vw-anzahl">${st[feld]}</span></button></li>`).join('');
+  const aufgaben = [
+    ueberAlle(summe('neue'), 'Neue Bestellungen über die Website', 'neu'),
+    ueberAlle(summe('ohneTermin'), 'Termin mit dem Kunden klären', 'termin-offen'),
+    jeRunde('vormerkungen', 'Vormerkungen übernehmen', '#voranmeldungen'),
+    ueberAlle(summe('warteliste'), 'Auf der Warteliste', 'warteliste'),
+    jeRunde('nichtUebergeben', 'Noch abzuholen bzw. zu liefern', '#uebergabe'),
+    jeRunde('geldFehlt', 'Übergeben, Geld noch nicht da', '#zahlungen'),
+  ].join('');
 
   const mehr = (inhaltHtml) => `<li>${inhaltHtml}</li>`;
   inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Übersicht</h1>${chargeWahl()}</div>
+    <div class="vw-kopf"><h1>Übersicht</h1></div>
+    <p class="vw-klein vw-uebersicht-hinweis">${mehrereRunden ? `${runden.length} laufende Bestellrunden zusammen` : esc(runden[0].titel)}</p>
     ${widerrufeKarte()}
     <section class="vw-karte" aria-label="Zu tun"><h2>Zu tun</h2>
       ${aufgaben ? `<ul class="vw-aufgaben">${aufgaben}</ul>` : '<p class="vw-erledigt-hinweis">Alles erledigt ✓</p>'}
-      ${!istDauer(ch) && aktiv.length && aktiv.every((b) => b.uebergeben && b.bezahlt) && !warteliste
-        ? `<p class="vw-klein">Alles übergeben und bezahlt. Abgeschlossene Runden verschwinden aus dem Alltag, bleiben aber in der Auswertung.</p>
-          <button type="button" class="vw-knopf vw-knopf--breit" data-aktion="runde-status" data-id="${ch.id}" data-wert="archiviert">Bestellrunde abschließen</button>` : ''}
     </section>
     <div class="vw-kennzahlen vw-kennzahlen--zwei">
-      <div class="vw-kennzahl"><strong>${aktiv.length}</strong><span>Bestellungen</span></div>
-      <div class="vw-kennzahl${offenCent ? ' vw-kennzahl--achtung' : ''}"><strong>${euro(offenCent)}</strong><span>noch nicht bezahlt</span></div>
+      <div class="vw-kennzahl"><strong>${aktivGesamt}</strong><span>Bestellungen${mehrereRunden ? ' in allen Runden' : ''}</span></div>
+      <div class="vw-kennzahl${offenGesamt ? ' vw-kennzahl--achtung' : ''}"><strong>${euro(offenGesamt)}</strong><span>noch nicht bezahlt</span></div>
     </div>
-    <section class="vw-karte" aria-label="Noch frei"><h2>${istDauer(ch) ? 'Dauerartikel' : 'Noch frei'}</h2>${freiHtml}
-      ${istDauer(ch) ? '<p class="vw-klein">„Ausverkauft" und Preise ändert ihr im <a href="#sortiment">Sortiment</a>.</p>' : ''}</section>
-    <details class="vw-karte vw-mehr"><summary>Mehr: Bestellrunde, Sortiment, Export …</summary>
+    ${staende.map((st) => rundenKarte(st, mehrereRunden)).join('')}
+    <details class="vw-karte vw-mehr"><summary>Mehr: Neue Bestellrunde, Sortiment, Auswertung …</summary>
       <ul class="vw-aufgaben">
-        ${istDauer(ch) ? '' : mehr('<a href="#charge">Bestellrunde bearbeiten (Preise, Mengen, Termine)</a>')}
         ${mehr('<a href="#charge-neu">Neue Bestellrunde anlegen</a>')}
         ${mehr('<a href="#sortiment">Sortiment – Produkte anlegen und ändern</a>')}
         ${mehr('<a href="#bertha">Verbindung zu Bertha (Eierkunden-Portal)</a>')}
-        ${mehr('<button type="button" data-aktion="ankuendigung">Ankündigung für WhatsApp</button>')}
         ${mehr('<a href="#auswertung">Auswertung für die Buchhaltung (Jahr, Excel)</a>')}
-        ${mehr('<button type="button" data-aktion="listen-drucken">Abhol- und Lieferlisten drucken (alle Tage)</button>')}
-        ${mehr('<a href="#zahlungen">Alle Zahlungen</a>')}
-        ${mehr(hatGewichtsware ? '<a href="#wiegen">Vorab wiegen und Packzettel drucken</a>' : '<button type="button" data-aktion="drucken">Packzettel drucken</button>')}
-        ${mehr('<button type="button" data-aktion="export">Liste für Excel herunterladen</button>')}
       </ul>
-      <p class="vw-klein">Termine: ${ch.termine.length ? ch.termine.map(terminText).join(' · ') : 'noch keine'}</p>
     </details>
     ${nutzerZeile()}`;
 }
@@ -3139,7 +3191,28 @@ function initKlicks() {
     const b = el.dataset.id ? bestellungVon(el.dataset.id) : null;
     const name = b ? kundeVon(b).name : '';
 
+    // Knöpfe auf einer Rundenkarte der Übersicht gelten für diese Runde
+    if (el.dataset.runde && daten.chargen.some((c) => c.id === el.dataset.runde)) {
+      if (zustand.chargeId !== el.dataset.runde) {
+        zustand.chargeForm = null;
+        zustand.hof = { mengen: {}, stueck: {}, name: '' };
+      }
+      zustand.chargeId = el.dataset.runde;
+      zustand.alleRunden = false;
+    }
+
     switch (el.dataset.aktion) {
+      case 'runde-oeffnen':
+        zustand.filter = 'alle';
+        if (location.hash === el.dataset.ziel) zeigen();
+        else location.hash = el.dataset.ziel;
+        break;
+      case 'filter-alle':
+        zustand.alleRunden = daten.chargen.length > 1;
+        zustand.filter = el.dataset.wert;
+        if (aktuelleAnsicht() === 'bestellungen') zeigen();
+        else location.hash = '#bestellungen';
+        break;
       case 'charge':
         zustand.chargeId = el.dataset.id;
         zustand.chargeForm = null;
