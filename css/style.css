@@ -6543,7 +6543,7 @@ button.vw-foto-wahl:focus-visible {
   .hofgeschichte-eintrag::before { top: 0; }
 }
 .hofchronik-link { display: inline-block; margin-top: var(--spacing-md); }
-.hofgeschichte-eintrag > p.hofgeschichte-sechste {
+.hofgeschichte-sechste {
   margin-top: 1rem;
   padding: 0.9rem 1rem;
   border-left: 2px solid var(--color-gold);
@@ -6607,3 +6607,11 @@ button.vw-foto-wahl:focus-visible {
   }
   .hofgeschichte-mitte img { object-position: center 60%; }
 }
+.hofgeschichte-sechste img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+  margin-bottom: 0.75rem;
+}
+.hofgeschichte-sechste p { margin: 0; }
