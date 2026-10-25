@@ -6566,3 +6566,18 @@ button.vw-foto-wahl:focus-visible {
 .pv-airbnb { display: flex; gap: 0.5rem; align-items: flex-start; margin: 0 0 1rem; font-size: 0.95rem; }
 .pv-airbnb input { margin-top: 0.25rem; }
 .ag-knoepfe .btn[disabled] { opacity: 0.45; cursor: not-allowed; }
+.pv-saison-zr { border-top: 1px solid var(--color-cream); padding-top: 0.75rem; margin-top: 0.75rem; }
+.pv-saison-zr h3 { font-family: var(--font-body); font-size: 1rem; font-weight: 700; margin: 0 0 0.5rem; }
+.pv-zr-zeile { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+.pv-zr-zeile input {
+  width: 6.5rem; font: inherit; padding: 0.5rem 0.6rem;
+  border: 1px solid var(--color-border); border-radius: 6px;
+}
+.pv-zr-zeile input.pv-falsch { border-color: var(--color-terracotta); background: color-mix(in srgb, var(--color-terracotta) 8%, var(--color-white)); }
+.pv-zr-zeile span { color: var(--color-text-light); font-size: 0.9rem; }
+.pv-zr-knopf {
+  font: inherit; font-size: 0.9rem; background: none; cursor: pointer;
+  border: 1px solid var(--color-border); border-radius: 6px; padding: 0.35rem 0.7rem; color: var(--color-text);
+}
+.pv-zr-knopf:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.pv-zr-neu { margin-bottom: 0.75rem; }

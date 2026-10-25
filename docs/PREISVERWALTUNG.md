@@ -18,7 +18,8 @@ Schnittstellen noch nicht umgesetzt.
 | Frage | Vorschlag |
 |---|---|
 | Was ist änderbar? | Alles, was heute in `PREISE` steht: Nachtpreis und Mindestnächte je Saison, Endreinigung, Haustier, später Check-out, Ortstaxe, Langzeitrabatt, Anzahlung, Restzahlung, Storno |
-| Saison-Zeiträume (z. B. „Juni“) | **offen** – im Entwurf nur angezeigt, nicht änderbar. Ändern sich selten und wirken auf viele Texte |
+| Saison-Zeiträume (z. B. „Juni“) | **änderbar** (Entscheidung 25.10.2026): Tag/Monat-Bereiche je Saison plus Text für die Preisseite. Das Jahr muss lückenlos und ohne Überschneidung abgedeckt sein; Ostern bleibt automatisch |
+| Bedienung | **am PC** – keine eigene Handy-Ansicht nötig |
 | Preisänderung für das nächste Jahr | Preisliste mit **„gültig ab“**. Die Website zeigt ab diesem Tag die neuen Preise; der Angebotsrechner rechnet schon vorher mit dem Preis, der **am Anreisetag** gilt |
 | Rückgängig machen | Jede Preisliste bleibt gespeichert. „Wiederherstellen“ legt eine Kopie einer früheren Liste als neue an |
 | Was, wenn die Datenbank nicht erreichbar ist? | Die Website fällt auf die Werte in `js/preise-config.js` zurück. Die Datei bleibt deshalb bestehen |
@@ -101,7 +102,7 @@ gleichem Datum die neueste).
 
 | Phase | Inhalt | Stand |
 |---|---|---|
-| **P0 – Entwurf** | klickbare Oberfläche `verwaltung/preise.html` im Beispielmodus, Prüfungen, Änderungsliste, Vorschau | **erledigt** |
+| **P0 – Entwurf** | klickbare Oberfläche `verwaltung/preise.html` im Beispielmodus, Prüfungen, Änderungsliste, Vorschau, änderbare Saison-Zeiträume mit Abdeckungsprüfung | **erledigt** |
 | **P1 – Speichern** | Tabelle `preislisten`, `GET/POST /api/verwaltung/preise`, Verlauf und Wiederherstellen im Formular | offen |
 | **P2 – Website liest mit** | `GET /api/preise`, `preise-config.js` lädt nach, `data-preis` an den „ab“-Stellen, Angebotsrechner nach Anreisetag | offen |
 | **P3 – feste Stellen** | `_middleware.js` mit HTMLRewriter für Meta, JSON-LD, `llms.txt`; Tests; Fallback bei Fehlern | offen |

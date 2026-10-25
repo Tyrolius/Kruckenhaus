@@ -91,6 +91,115 @@
       }
       raster.append(box);
     });
+    zeitraeumeBauen(ziel);
+  }
+
+  // ----------------------------------------------------------
+  // 2b. SAISON-ZEITRÄUME (Tag/Monat, gelten jedes Jahr)
+  // ----------------------------------------------------------
+  /** 'MM-DD' → '1.3.' */
+  function mdText(md) {
+    if (!md) return '';
+    const [m, t] = md.split('-').map(Number);
+    return t + '.' + m + '.';
+  }
+  /** '1.3.' / '01.03' → 'MM-DD' oder null */
+  function mdLesen(text) {
+    const m = /^\s*(\d{1,2})\.\s*(\d{1,2})\.?\s*$/.exec(text || '');
+    if (!m) return null;
+    const tag = Number(m[1]), monat = Number(m[2]);
+    const tageImMonat = [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][monat - 1];
+    if (!tageImMonat || tag < 1 || tag > tageImMonat) return null;
+    return String(monat).padStart(2, '0') + '-' + String(tag).padStart(2, '0');
+  }
+  const zrText = (liste) => liste.map(([v, b]) => mdText(v) + '–' + mdText(b)).join(', ');
+
+  function zeitraeumeBauen(ziel) {
+    const block = document.createElement('div');
+    const h = document.createElement('h2');
+    h.className = 'ag-abstand';
+    h.textContent = 'Saison-Zeiträume';
+    const hilfe = document.createElement('p');
+    hilfe.className = 'ag-klein';
+    hilfe.textContent = 'Tag und Monat, z. B. 1.3. bis 31.5. – gilt jedes Jahr. Das ganze Jahr muss genau einmal abgedeckt sein. Ostern wird automatisch erkannt und zum Sommerpreis gerechnet.';
+    block.append(h, hilfe);
+
+    werte.saisons.forEach((s, i) => {
+      const box = document.createElement('div');
+      box.className = 'pv-saison-zr';
+      const t = document.createElement('h3');
+      t.textContent = s.label;
+      box.append(t);
+      s.zeitraeume.forEach((zr, j) => {
+        const zeile = document.createElement('div');
+        zeile.className = 'pv-zr-zeile';
+        ['von', 'bis'].forEach((art, k) => {
+          const inp = document.createElement('input');
+          Object.assign(inp, { type: 'text', inputMode: 'decimal', placeholder: art === 'von' ? 'von' : 'bis' });
+          inp.setAttribute('aria-label', s.label + ' Zeitraum ' + (j + 1) + ' ' + art);
+          inp.value = mdText(zr[k]) || (zr[k] === null ? '' : '');
+          inp.dataset.zr = i + ',' + j + ',' + k;
+          if (zr[k] === null) inp.classList.add('pv-falsch');
+          zeile.append(inp);
+          if (k === 0) { const strich = document.createElement('span'); strich.textContent = 'bis'; zeile.append(strich); }
+        });
+        if (s.zeitraeume.length > 1) {
+          const weg = document.createElement('button');
+          Object.assign(weg, { type: 'button', className: 'pv-zr-knopf', textContent: '×', title: 'Zeitraum entfernen' });
+          weg.dataset.zrWeg = i + ',' + j;
+          zeile.append(weg);
+        }
+        box.append(zeile);
+      });
+      const neu = document.createElement('button');
+      Object.assign(neu, { type: 'button', className: 'pv-zr-knopf pv-zr-neu', textContent: '+ Zeitraum' });
+      neu.dataset.zrNeu = i;
+      box.append(neu);
+
+      const feld = document.createElement('div');
+      feld.className = 'ag-feld';
+      const lab = document.createElement('label');
+      lab.htmlFor = 'pv-zrtext' + i;
+      lab.textContent = 'Text auf der Preisseite';
+      const txt = document.createElement('input');
+      Object.assign(txt, { id: 'pv-zrtext' + i, type: 'text', value: s.zeitraum });
+      txt.dataset.zrtext = i;
+      feld.append(lab, txt);
+      box.append(feld);
+      block.append(box);
+    });
+
+    const vor = [...ziel.querySelectorAll('h2')].find((x) => x.textContent === 'Zusatzkosten');
+    ziel.insertBefore(block, vor || null);
+  }
+
+  /** Prüft, ob jeder Tag des Jahres genau einer Saison gehört (Schaltjahr als Vorlage) */
+  function abdeckungPruefen(fehler) {
+    let ungueltig = false;
+    werte.saisons.forEach((s) => s.zeitraeume.forEach(([v, b]) => {
+      if (!v || !b) { ungueltig = true; return; }
+      if (v > b) fehler.push(s.label + ': „' + mdText(v) + ' bis ' + mdText(b) + '“ – das Ende liegt vor dem Anfang. Über den Jahreswechsel bitte in zwei Zeiträume teilen.');
+    }));
+    if (ungueltig) { fehler.push('Saison-Zeiträume: Bitte jedes Datum als Tag.Monat. eintragen, z. B. 1.3.'); return; }
+    const luecken = [], doppelt = [];
+    for (let d = new Date(2028, 0, 1, 12); d.getFullYear() === 2028; d.setDate(d.getDate() + 1)) {
+      const md = String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+      const treffer = werte.saisons.filter((s) => s.zeitraeume.some(([v, b]) => md >= v && md <= b));
+      if (!treffer.length) luecken.push(md);
+      else if (treffer.length > 1) doppelt.push({ md, namen: treffer.map((s) => s.label).join(' und ') });
+    }
+    const bereiche = (liste) => {
+      const out = [];
+      liste.forEach((md) => {
+        const letzte = out[out.length - 1];
+        const vorher = letzte && new Date(2028, Number(letzte.bis.slice(0, 2)) - 1, Number(letzte.bis.slice(3)) + 1, 12);
+        const naechster = vorher && String(vorher.getMonth() + 1).padStart(2, '0') + '-' + String(vorher.getDate()).padStart(2, '0');
+        if (letzte && naechster === md) letzte.bis = md; else out.push({ von: md, bis: md });
+      });
+      return out.map((b) => b.von === b.bis ? mdText(b.von) : mdText(b.von) + '–' + mdText(b.bis)).join(', ');
+    };
+    if (luecken.length) fehler.push('Keiner Saison zugeordnet: ' + bereiche(luecken));
+    if (doppelt.length) fehler.push('Doppelt zugeordnet (' + doppelt[0].namen + '): ' + bereiche(doppelt.map((x) => x.md)));
   }
 
   // ----------------------------------------------------------
@@ -122,6 +231,13 @@
     if (!(werte.storno.teilrueckerstattungBis < werte.storno.kostenlosBis)) {
       fehler.push('Storno: „halbe Anzahlung zurück“ muss weniger Tage haben als „Anzahlung zurück“.');
     }
+    abdeckungPruefen(fehler);
+    werte.saisons.forEach((s, i) => {
+      const alt = ORIGINAL.saisons[i];
+      if (zrText(s.zeitraeume) !== zrText(alt.zeitraeume) && s.zeitraum === alt.zeitraum) {
+        warnungen.push(s.label + ': Zeiträume geändert, der Text auf der Preisseite („' + s.zeitraum + '“) aber nicht.');
+      }
+    });
     const gueltig = $('pv-gueltig').value;
     const heute = new Date().toISOString().slice(0, 10);
     if (!gueltig) fehler.push('Bitte „Gültig ab“ eintragen.');
@@ -140,9 +256,19 @@
   }
 
   function aenderungen() {
-    return FELDER
+    const liste = FELDER
       .map((f) => ({ f, alt: lies(ORIGINAL, f.pfad), neu: lies(werte, f.pfad) }))
       .filter((a) => a.alt !== a.neu && !Number.isNaN(a.neu));
+    werte.saisons.forEach((s, i) => {
+      const alt = ORIGINAL.saisons[i];
+      if (zrText(s.zeitraeume) !== zrText(alt.zeitraeume)) {
+        liste.push({ f: { gruppe: 'Saisons', label: s.label + ' – Zeiträume' }, alt: zrText(alt.zeitraeume), neu: zrText(s.zeitraeume), text: true });
+      }
+      if (s.zeitraum !== alt.zeitraum) {
+        liste.push({ f: { gruppe: 'Saisons', label: s.label + ' – Text' }, alt: alt.zeitraum, neu: s.zeitraum, text: true });
+      }
+    });
+    return liste;
   }
 
   /** Beispielrechnung wie auf der Preisseite: Nächte (abzgl. Langzeitrabatt) + Endreinigung + Abgabe */
@@ -170,7 +296,8 @@
     ae.forEach(({ f, alt, neu }) => {
       const li = document.createElement('li');
       const was = document.createElement('span'); was.textContent = (f.gruppe === 'Saisons' ? '' : f.gruppe + ' · ') + f.label;
-      const wert = document.createElement('strong'); wert.textContent = zahlText(alt) + ' → ' + zahlText(neu);
+      const wert = document.createElement('strong');
+      wert.textContent = (typeof alt === 'string' ? alt : zahlText(alt)) + ' → ' + (typeof neu === 'string' ? neu : zahlText(neu));
       li.append(was, wert); liste.append(li);
     });
 
@@ -217,8 +344,27 @@
     formularBauen();
 
     form.addEventListener('input', (e) => {
-      const i = e.target.dataset.index;
-      if (i != null) setze(werte, FELDER[i].pfad, e.target.value === '' ? NaN : Number(e.target.value));
+      const d = e.target.dataset;
+      if (d.index != null) setze(werte, FELDER[d.index].pfad, e.target.value === '' ? NaN : Number(e.target.value));
+      if (d.zr) {
+        const [i, j, k] = d.zr.split(',').map(Number);
+        const md = mdLesen(e.target.value);
+        werte.saisons[i].zeitraeume[j][k] = md;
+        e.target.classList.toggle('pv-falsch', !md);
+      }
+      if (d.zrtext != null) werte.saisons[Number(d.zrtext)].zeitraum = e.target.value;
+      anzeigen();
+    });
+    form.addEventListener('click', (e) => {
+      const knopf = e.target.closest('button');
+      if (!knopf) return;
+      if (knopf.dataset.zrWeg) {
+        const [i, j] = knopf.dataset.zrWeg.split(',').map(Number);
+        werte.saisons[i].zeitraeume.splice(j, 1);
+      } else if (knopf.dataset.zrNeu != null) {
+        werte.saisons[Number(knopf.dataset.zrNeu)].zeitraeume.push([null, null]);
+      } else return;
+      formularBauen();
       anzeigen();
     });
     form.addEventListener('submit', (e) => e.preventDefault());
