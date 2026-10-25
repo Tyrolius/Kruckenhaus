@@ -11,6 +11,8 @@
  *   Ostersonntag, Abreise spätestens Ostermontag) zählen zum
  *   Sommerpreis (so steht es auf der Preisseite).
  * - Langzeitrabatt nur auf Nächte in Saisons mit langzeitRabatt.
+ * - Mindestbetrag (mindestBetrag) der Anreise-Saison: Nächte + Endreinigung
+ *   werden bei kurzen Aufenthalten auf diesen Betrag angehoben.
  * - Belegung wird über /api/availability (Airbnb-Kalender) geprüft.
  * - Nichts wird gespeichert (kein localStorage, siehe CLAUDE.md).
  * ============================================================ */
@@ -107,6 +109,10 @@
     extras.push({ text: 'Endreinigung', betrag: P.zusatz.endreinigung });
     if (e.haustier) extras.push({ text: 'Haustier', betrag: P.zusatz.haustier });
     if (e.checkout) extras.push({ text: 'Späterer Check-out bis 14 Uhr', betrag: P.zusatz.spaeterCheckout });
+    // Mindestbetrag der Anreise-Saison (Nächte nach Rabatt + Endreinigung, ohne Ortstaxe)
+    const mindestBetrag = gruppen[0].saison.mindestBetrag || 0;
+    const aufschlag = Math.max(0, Math.round(mindestBetrag - (uebernachtung - rabatt) - P.zusatz.endreinigung));
+    if (aufschlag) extras.push({ text: 'Aufschlag auf den Mindestbetrag von ' + eur(mindestBetrag) + ' (inkl. Endreinigung)', betrag: aufschlag, mindest: true });
     const nachlass = Math.max(0, e.nachlass || 0);
 
     const gesamt = runde(uebernachtung - rabatt + extras.reduce((s, x) => s + x.betrag, 0) + ortstaxe - nachlass);
@@ -116,6 +122,7 @@
 
     // Hinweise für Florian und Kathrin (nicht im Text an den Gast)
     const mindest = gruppen[0].saison.mindest;
+    if (aufschlag) hinweise.push({ art: 'info', text: 'Mindestbetrag ' + eur(mindestBetrag) + ' in der Saison „' + gruppen[0].saison.label + '“: ' + eur(aufschlag) + ' Aufschlag.' });
     if (naechte < mindest) hinweise.push({ art: 'warnung', text: 'Mindestaufenthalt in der Saison „' + gruppen[0].saison.label + '“: ' + mindest + ' Nächte – angefragt sind ' + naechte + '.' });
     const personen = e.erwachsene + e.kinder;
     if (personen > P.belegung.max) hinweise.push({ art: 'warnung', text: personen + ' Personen – die Wohnung ist für höchstens ' + P.belegung.max + ' Personen.' });
