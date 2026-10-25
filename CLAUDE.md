@@ -59,6 +59,8 @@ functions/_lib/bestellung.js  Bestellungen von außen (hofladen.html und Bertha)
 functions/api/extern/      Schnittstelle für Bertha: _middleware.js (Schlüssel), v1/[[pfad]].js
 functions/api/verwaltung/  Schnittstelle der Verwaltung (_middleware.js = Zugang)
 verwaltung/                Hofladen-Verwaltung (inkl. Produktkatalog); ?entwurf = Beispielmodus
+verwaltung/angebot.html + angebot.js   Angebot für Anfragen zur Ferienwohnung: rechnet nach
+                           js/preise-config.js (Saison je Nacht, Ostern, Langzeitrabatt, Ortstaxe) und baut den Antworttext
 hofladen.html + js/hofladen.js   Bestellseite mit Sortiment für Kunden (noch noindex und nicht verlinkt,
                            bis die Bestellbedingungen geprüft sind; Wegweiser zeigt bis dahin auf bauernhof.html#hofladen)
 meine-bestellungen.html + js/meine-bestellungen.js   Ansicht zum persönlichen Link

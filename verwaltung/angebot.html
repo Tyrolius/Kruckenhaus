@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="Angebot für eine Anfrage zur Ferienwohnung erstellen (nur intern)." />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#2F5848" />
+  <title>Angebot erstellen – Ferienwohnung</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="../css/style.css?v=2026-10-25" />
+</head>
+<body class="ag-body">
+
+  <header class="ag-kopf">
+    <a href="./" class="ag-zurueck">← Verwaltung</a>
+    <h1>Angebot für die Ferienwohnung</h1>
+    <p>Daten aus der Anfrage eintragen. Preise, Ortstaxe, Rabatt, Anzahlung und Storno kommen aus
+       <code>js/preise-config.js</code> – dieselben Werte wie auf der Preisseite.</p>
+  </header>
+
+  <main class="ag-raster">
+
+    <!-- 1. EINGABE -->
+    <form class="ag-karte ag-eingabe" id="ag-form" autocomplete="off" novalidate>
+      <h2>Anfrage</h2>
+
+      <div class="ag-feld">
+        <label for="ag-anrede">Anrede im Text</label>
+        <input id="ag-anrede" type="text" placeholder="z. B. Frau Huber, Familie Huber, Anna" />
+      </div>
+
+      <fieldset class="ag-feld">
+        <legend>Ansprache</legend>
+        <div class="ag-wahl">
+          <label><input type="radio" name="ag-form-ansprache" value="sie" checked /> Sie</label>
+          <label><input type="radio" name="ag-form-ansprache" value="ihr" /> ihr</label>
+          <label><input type="radio" name="ag-form-ansprache" value="du" /> du</label>
+        </div>
+      </fieldset>
+
+      <div class="ag-zwei">
+        <div class="ag-feld">
+          <label for="ag-anreise">Anreise</label>
+          <input id="ag-anreise" type="date" required />
+        </div>
+        <div class="ag-feld">
+          <label for="ag-abreise">Abreise</label>
+          <input id="ag-abreise" type="date" required />
+        </div>
+      </div>
+
+      <div class="ag-zwei">
+        <div class="ag-feld">
+          <label for="ag-erwachsene">Personen ab 15 Jahren</label>
+          <input id="ag-erwachsene" type="number" min="1" max="8" value="2" inputmode="numeric" />
+        </div>
+        <div class="ag-feld">
+          <label for="ag-kinder">Kinder unter 15</label>
+          <input id="ag-kinder" type="number" min="0" max="8" value="0" inputmode="numeric" />
+        </div>
+      </div>
+
+      <div class="ag-feld ag-haken">
+        <label><input id="ag-haustier" type="checkbox" /> Haustier</label>
+        <label><input id="ag-checkout" type="checkbox" /> Späterer Check-out bis 14 Uhr</label>
+      </div>
+
+      <div class="ag-zwei">
+        <div class="ag-feld">
+          <label for="ag-nachlass">Nachlass in € (optional)</label>
+          <input id="ag-nachlass" type="number" min="0" step="1" value="0" inputmode="decimal" />
+        </div>
+        <div class="ag-feld">
+          <label for="ag-gueltig">Angebot gültig bis</label>
+          <input id="ag-gueltig" type="date" />
+        </div>
+      </div>
+
+      <div class="ag-feld">
+        <label for="ag-persoenlich">Persönliche Zeile (optional)</label>
+        <textarea id="ag-persoenlich" rows="3" placeholder="z. B. Antwort auf eine Frage aus der Anfrage"></textarea>
+      </div>
+
+      <h2 class="ag-abstand">Kontakt des Gastes</h2>
+      <div class="ag-feld">
+        <label for="ag-email">E-Mail</label>
+        <input id="ag-email" type="email" inputmode="email" />
+      </div>
+      <div class="ag-feld">
+        <label for="ag-telefon">Telefon (für WhatsApp)</label>
+        <input id="ag-telefon" type="tel" inputmode="tel" placeholder="z. B. 0664 1234567 oder +49 …" />
+      </div>
+    </form>
+
+    <!-- 2. ERGEBNIS -->
+    <section class="ag-karte ag-ergebnis" aria-live="polite">
+      <h2>Berechnung</h2>
+      <div id="ag-hinweise" class="ag-hinweise"></div>
+      <table class="ag-tabelle" id="ag-tabelle">
+        <tbody></tbody>
+      </table>
+
+      <h2 class="ag-abstand">Text an den Gast</h2>
+      <div class="ag-feld">
+        <label for="ag-betreff">Betreff</label>
+        <input id="ag-betreff" type="text" />
+      </div>
+      <div class="ag-feld">
+        <label for="ag-text">Nachricht <span class="ag-klein">(hier noch anpassbar – eine Änderung oben überschreibt den Text wieder)</span></label>
+        <textarea id="ag-text" rows="22"></textarea>
+      </div>
+      <div class="ag-knoepfe">
+        <button type="button" class="btn btn-primary" id="ag-kopieren">Text kopieren</button>
+        <a class="btn btn-green" id="ag-mail" href="#">In E-Mail öffnen</a>
+        <a class="btn btn-outline ag-whatsapp" id="ag-whatsapp" href="#" target="_blank" rel="noopener noreferrer">Per WhatsApp</a>
+      </div>
+      <p class="ag-klein" id="ag-status" role="status"></p>
+    </section>
+
+  </main>
+
+  <script src="../js/preise-config.js"></script>
+  <script src="angebot.js"></script>
+</body>
+</html>

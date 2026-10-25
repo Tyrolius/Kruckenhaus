@@ -6,6 +6,7 @@
  * Alle Preise und Buchungskonditionen zentral hier anpassen.
  * Diese Datei wird von preise.html und workation.html geladen und
  * füllt dort alle Elemente mit einem data-preis-Attribut.
+ * Außerdem rechnet verwaltung/angebot.html (Angebote für Anfragen) damit.
  *
  * ANLEITUNG:
  *   1. Werte unten ändern (Zahlen ohne Euro-Zeichen).
