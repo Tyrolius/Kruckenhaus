@@ -6558,7 +6558,7 @@ button.vw-foto-wahl:focus-visible {
   max-width: 16rem;
 }
 .hofgeschichte-portrait img,
-.hofgeschichte-urkunde img {
+.hofgeschichte-dokument img {
   display: block;
   width: 100%;
   height: auto;
@@ -6571,32 +6571,29 @@ button.vw-foto-wahl:focus-visible {
   opacity: 0.85;
   margin-top: 0.5rem;
 }
-.hofgeschichte-urkunde {
-  margin: var(--spacing-lg) 0 0;
+.hofgeschichte-dokumente {
+  margin-top: var(--spacing-lg);
   display: grid;
-  gap: 1rem;
+  gap: var(--spacing-md);
 }
-.hofgeschichte-urkunde figcaption {
+.hofgeschichte-dokument { margin: 0; }
+.hofgeschichte-dokument figcaption {
   font-size: 1rem;
   line-height: 1.65;
   opacity: 1;
-  margin: 0;
+  margin-top: 1rem;
 }
-.hofgeschichte-urkunde figcaption strong {
+.hofgeschichte-dokument figcaption strong {
   display: block;
   font-family: var(--font-heading);
   font-size: 1.5rem;
   font-weight: 600;
   color: var(--color-white);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.4rem;
 }
 @media (min-width: 1024px) {
   .hofgeschichte-portrait { max-width: none; }
-  .hofgeschichte-urkunde {
-    grid-template-columns: 3fr 2fr;
-    align-items: center;
-    gap: var(--spacing-md);
-  }
+  .hofgeschichte-dokumente { grid-template-columns: 1fr 1fr; gap: 2.5rem; }
 }
 /* Hochformat-Fotos am Desktop etwas einkürzen, damit die Spalten ruhiger wirken */
 @media (min-width: 1024px) {
