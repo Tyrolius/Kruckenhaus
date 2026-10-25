@@ -6378,3 +6378,168 @@ button.vw-foto-wahl:focus-visible {
 .vw-runden-stand { margin: 0 0 0.4rem; font-size: 0.95rem; }
 .vw-runden-karte .vw-mehr { margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px solid var(--color-beige); }
 .vw-aufgaben button .vw-klein { font-weight: 400; }
+
+/* ============================================================
+   67. HOFGESCHICHTE – FÜNF GENERATIONEN (bauernhof.html#geschichte)
+   Dunkles Band in Deep Forest. Mobil: senkrechte Linie links,
+   ab 1024 px: waagrechte Linie mit fünf Generationen nebeneinander.
+   ============================================================ */
+.hofgeschichte {
+  background: var(--color-primary);
+  color: var(--color-weiss-90);
+  padding-block: var(--spacing-lg);
+  scroll-margin-top: 5rem;
+}
+.hofgeschichte-kopf {
+  max-width: 40rem;
+  margin-bottom: var(--spacing-md);
+}
+.hofgeschichte-label {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin-bottom: 0.75rem;
+}
+.hofgeschichte-kopf h2 {
+  color: var(--color-white);
+  font-size: clamp(1.8rem, 3.2vw, 2.75rem);
+  font-weight: 600;
+  margin: 0 0 1rem;
+}
+.hofgeschichte-kopf p {
+  font-size: 1.05rem;
+  line-height: 1.7;
+  margin: 0;
+}
+
+/* Zeitachse – mobil senkrecht */
+.hofgeschichte-liste {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  position: relative;
+  display: grid;
+  gap: var(--spacing-md);
+}
+.hofgeschichte-liste::before {
+  content: "";
+  position: absolute;
+  top: 0.5rem;
+  bottom: 0.5rem;
+  left: 0.45rem;
+  width: 2px;
+  background: var(--color-gold);
+}
+.hofgeschichte-eintrag {
+  position: relative;
+  padding-left: 2.25rem;
+}
+.hofgeschichte-eintrag::before {
+  /* Punkt auf der Linie */
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.15rem;
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: var(--color-primary);
+  border: 2px solid var(--color-gold);
+  box-sizing: border-box;
+}
+.hofgeschichte-heute::before {
+  background: var(--color-gold);
+  box-shadow: 0 0 0 4px var(--color-primary), 0 0 0 6px var(--color-gold);
+}
+.hofgeschichte-generation {
+  display: block;
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-gold);
+  margin-bottom: 0.4rem;
+}
+.hofgeschichte-jahr {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: clamp(2.2rem, 4vw, 3rem);
+  font-weight: 600;
+  line-height: 1;
+  color: var(--color-white);
+  margin-bottom: 0.6rem;
+}
+.hofgeschichte-eintrag h3 {
+  font-family: var(--font-body);
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-white);
+  margin: 0 0 0.35rem;
+}
+.hofgeschichte-namen {
+  font-family: var(--font-accent);
+  font-style: italic;
+  font-size: 1.2rem;
+  line-height: 1.3;
+  margin: 0;
+}
+.hofgeschichte-daten {
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  opacity: 0.8;
+  margin: 0.15rem 0 0;
+}
+.hofgeschichte-eintrag > p:not(.hofgeschichte-namen):not(.hofgeschichte-daten) {
+  font-size: 1rem;
+  line-height: 1.65;
+  margin: 0.75rem 0 0;
+}
+.hofgeschichte-meilensteine {
+  list-style: none;
+  margin: 1rem 0 0;
+  padding: 0;
+  font-size: 0.95rem;
+}
+.hofgeschichte-meilensteine li {
+  display: flex;
+  gap: 0.75rem;
+  padding-block: 0.45rem;
+  border-top: 1px solid color-mix(in srgb, var(--color-white) 20%, transparent);
+}
+.hofgeschichte-meilensteine span {
+  flex: none;
+  min-width: 2.75rem;
+  font-weight: 700;
+  color: var(--color-gold);
+}
+
+@media (min-width: 768px) {
+  .hofgeschichte { padding-block: var(--spacing-xl); }
+}
+
+/* Zeitachse – ab 1024 px waagrecht */
+@media (min-width: 1024px) {
+  .hofgeschichte-liste {
+    grid-template-columns: repeat(5, 1fr);
+    gap: 2rem;
+  }
+  .hofgeschichte-liste::before {
+    top: 0.45rem;
+    bottom: auto;
+    left: 0;
+    right: 0;
+    width: auto;
+    height: 2px;
+  }
+  .hofgeschichte-eintrag {
+    padding-left: 0;
+    padding-top: 2rem;
+  }
+  .hofgeschichte-eintrag::before { top: 0; }
+}
+.hofchronik-link { display: inline-block; margin-top: var(--spacing-md); }
