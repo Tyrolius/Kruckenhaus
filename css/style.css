@@ -6462,3 +6462,10 @@ button.vw-foto-wahl:focus-visible {
 .hofchronik-link { display: inline-block; margin-top: var(--spacing-md); }
 .hofchronik-text { max-width: 44rem; font-size: 1.1rem; line-height: 1.7; margin: 0; }
 .hofchronik-text + .hofchronik-link { margin-top: 1rem; }
+
+/* Berglsteiner See: drei Jahreszeiten, solange das Frühlingsfoto fehlt */
+.saison-grid--drei .saison-item:last-child { grid-column: 1 / -1; aspect-ratio: 16/9; }
+@media (min-width: 768px) {
+  .saison-grid--drei { grid-template-columns: repeat(3, 1fr); }
+  .saison-grid--drei .saison-item:last-child { grid-column: auto; aspect-ratio: 4/3; }
+}
