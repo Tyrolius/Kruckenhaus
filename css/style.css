@@ -6494,7 +6494,7 @@ button.vw-foto-wahl:focus-visible {
   opacity: 0.8;
   margin: 0.15rem 0 0;
 }
-.hofgeschichte-eintrag > p:not(.hofgeschichte-namen):not(.hofgeschichte-daten) {
+.hofgeschichte-eintrag > p:not(.hofgeschichte-namen):not(.hofgeschichte-daten):not(.hofgeschichte-sechste) {
   font-size: 1rem;
   line-height: 1.65;
   margin: 0.75rem 0 0;
@@ -6543,3 +6543,11 @@ button.vw-foto-wahl:focus-visible {
   .hofgeschichte-eintrag::before { top: 0; }
 }
 .hofchronik-link { display: inline-block; margin-top: var(--spacing-md); }
+.hofgeschichte-eintrag > p.hofgeschichte-sechste {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border-left: 2px solid var(--color-gold);
+  background: color-mix(in srgb, var(--color-white) 8%, transparent);
+  font-size: 0.95rem;
+}
+.hofgeschichte-sechste strong { color: var(--color-white); }
