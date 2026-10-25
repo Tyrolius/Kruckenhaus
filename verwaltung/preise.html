@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="Preise der Ferienwohnung ändern (nur intern)." />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#2F5848" />
+  <title>Preise ändern – Ferienwohnung</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="../css/style.css?v=2026-10-25b" />
+</head>
+<body class="ag-body">
+
+  <!-- Entwurf (Phase P0, docs/PREISVERWALTUNG.md): liest die Werte aus
+       js/preise-config.js, speichert noch nichts. -->
+  <div class="vw-entwurf-hinweis" role="note">
+    Entwurf – Änderungen werden noch nicht gespeichert und wirken nicht auf die Website.
+  </div>
+
+  <header class="ag-kopf">
+    <a href="./" class="ag-zurueck">← Verwaltung</a>
+    <h1>Preise der Ferienwohnung</h1>
+    <p>Werte ändern, Änderungen prüfen, speichern. Gilt für Website, Angebotsrechner und die Texte für Google.</p>
+  </header>
+
+  <main class="ag-raster">
+
+    <form class="ag-karte pv-formular" id="pv-form" autocomplete="off" novalidate>
+      <div class="ag-zwei">
+        <div class="ag-feld">
+          <label for="pv-gueltig">Gültig ab</label>
+          <input id="pv-gueltig" type="date" required />
+        </div>
+        <div class="ag-feld">
+          <label for="pv-notiz">Notiz (optional)</label>
+          <input id="pv-notiz" type="text" placeholder="z. B. Preise 2027" />
+        </div>
+      </div>
+      <div id="pv-felder"></div>
+    </form>
+
+    <section class="ag-karte pv-seite" aria-live="polite">
+      <h2>Prüfung</h2>
+      <div id="pv-hinweise" class="ag-hinweise"></div>
+
+      <h2 class="ag-abstand">Änderungen</h2>
+      <ul class="pv-aenderungen" id="pv-aenderungen"></ul>
+
+      <h2 class="ag-abstand">So sieht es danach aus</h2>
+      <table class="ag-tabelle" id="pv-vorschau"><tbody></tbody></table>
+      <p class="ag-klein">Wird automatisch angepasst: Preisseite, „ab …“ auf Startseite und Ferienwohnung,
+        Workation, Vorschautexte für WhatsApp und Google, Angaben für Suchmaschinen, llms.txt und der Angebotsrechner.</p>
+
+      <h2 class="ag-abstand">Speichern</h2>
+      <label class="pv-airbnb"><input type="checkbox" id="pv-airbnb" /> Die Preise auf Airbnb sind angepasst
+        (Website darf nie teurer sein als Airbnb)</label>
+      <div class="ag-knoepfe">
+        <button type="button" class="btn btn-primary" id="pv-speichern" disabled>Preise speichern</button>
+        <button type="button" class="btn ag-whatsapp" id="pv-zuruecksetzen">Änderungen verwerfen</button>
+      </div>
+      <p class="ag-klein" id="pv-status" role="status"></p>
+
+      <h2 class="ag-abstand">Verlauf</h2>
+      <ul class="pv-verlauf" id="pv-verlauf"></ul>
+    </section>
+
+  </main>
+
+  <script src="../js/preise-config.js"></script>
+  <script src="preise.js"></script>
+</body>
+</html>

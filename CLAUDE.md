@@ -61,6 +61,7 @@ functions/api/verwaltung/  Schnittstelle der Verwaltung (_middleware.js = Zugang
 verwaltung/                Hofladen-Verwaltung (inkl. Produktkatalog); ?entwurf = Beispielmodus
 verwaltung/angebot.html + angebot.js   Angebot für Anfragen zur Ferienwohnung: rechnet nach
                            js/preise-config.js (Saison je Nacht, Ostern, Langzeitrabatt, Ortstaxe) und baut den Antworttext
+verwaltung/preise.html + preise.js     Preise ändern – derzeit nur Entwurf ohne Speichern (Plan: docs/PREISVERWALTUNG.md)
 hofladen.html + js/hofladen.js   Bestellseite mit Sortiment für Kunden (noch noindex und nicht verlinkt,
                            bis die Bestellbedingungen geprüft sind; Wegweiser zeigt bis dahin auf bauernhof.html#hofladen)
 meine-bestellungen.html + js/meine-bestellungen.js   Ansicht zum persönlichen Link
