@@ -6598,3 +6598,12 @@ button.vw-foto-wahl:focus-visible {
     gap: var(--spacing-md);
   }
 }
+/* Hochformat-Fotos am Desktop etwas einkürzen, damit die Spalten ruhiger wirken */
+@media (min-width: 1024px) {
+  .hofgeschichte-hochformat img {
+    aspect-ratio: 5 / 6;
+    object-fit: cover;
+    object-position: center 20%;
+  }
+  .hofgeschichte-mitte img { object-position: center 60%; }
+}
