@@ -123,8 +123,8 @@ const PREISE = {
       { abNaechte: 7,  prozent: 7  },
       { abNaechte: 14, prozent: 12 },
     ],
-    // Direktbucher-Vorteil: Bestpreis (nie teurer als auf Portalen)
-    // und ein Begrüßungskorb aus dem Hofladen. Reiner Text, siehe preise.html.
+    // Direktbucher-Vorteil: Bestpreis (nie teurer als auf Portalen) und
+    // persönlicher Kontakt. Einen Begrüßungskorb gibt es nicht. Reiner Text, siehe preise.html.
   },
 
   // ----------------------------------------------------------

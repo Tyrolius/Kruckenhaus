@@ -162,7 +162,7 @@
     if (r.nachlass) z.push('• Nachlass: −' + eur(r.nachlass));
     z.push('Gesamt: ' + eur(r.gesamt) + ' (inkl. 10 % USt.)');
     z.push('');
-    z.push('Inklusive sind Bettwäsche, Handtücher, WLAN über Starlink und die Alpbachtal Card. Zur Ankunft gibt es einen Begrüßungskorb aus unserem Hofladen.');
+    z.push('Inklusive sind Bettwäsche, Handtücher, WLAN über Starlink und die Alpbachtal Card. Frische Freilandeier von unseren Hennen gibt es direkt bei uns am Hof.');
     z.push('Check-in ist von 17 bis 20 Uhr, Check-out bis ' + (e.checkout ? '14' : '10') + ' Uhr.');
     z.push('');
     const restWeg = r.kurzfristig
