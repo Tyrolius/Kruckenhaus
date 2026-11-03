@@ -4218,6 +4218,12 @@ body.season-winter .winter-image { display: block; }
   }
   .vw-packzettel-logo { display: block; width: 4.2cm; height: auto; }
   .vw-packzettel-absender { font-size: 8.5pt; margin: 0; text-align: right; max-width: 9cm; }
+  /* Lieferschein: „Ware erhalten" mit Datum, Name und Unterschrift */
+  .vw-unterschrift { margin-top: 1.4rem; font-size: 10pt; }
+  .vw-unterschrift-felder { display: flex; gap: 1.2rem; margin-top: 1.6rem; }
+  .vw-unterschrift-felder > div { flex: 1 1 0; display: flex; flex-direction: column; gap: 0.15rem; }
+  .vw-unterschrift-felder > div:first-child { flex: 0 0 3.5cm; }
+  .vw-unterschrift-linie { display: block; border-bottom: 1px solid var(--color-dark); height: 0.9cm; }
   .vw-packzettel-bank {
     display: flex;
     align-items: center;

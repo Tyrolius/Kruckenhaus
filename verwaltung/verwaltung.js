@@ -3242,7 +3242,8 @@ function druckenWennBereit(druck) {
 // Gewicht (bei mehreren Stücken auch jedes Stück einzeln) und Summe.
 // zahlung = false (Lieferschein): ohne Zahlart, Bankdaten und QR-Code –
 // die Zahlungsaufforderung gehört auf die Rechnung.
-function packzettelHtml(b, { titel = '', zahlung = true } = {}) {
+// unterschrift = true (Lieferschein): Feld „Ware erhalten" für den Kunden
+function packzettelHtml(b, { titel = '', zahlung = true, unterschrift = false } = {}) {
   const ch = chargeVon(b);
   const k = kundeVon(b);
   const t = terminVon(b);
@@ -3266,6 +3267,14 @@ function packzettelHtml(b, { titel = '', zahlung = true } = {}) {
     <tfoot><tr><td colspan="2">Summe${zahlung ? ` · ${b.bezahlt ? `bezahlt (${ZAHLARTEN[b.bezahlt]})` : ZAHLARTEN[b.zahlart]}` : ''}</td>
       <td class="vw-zahl">${betragText(bestellBetrag(b))}</td></tr></tfoot></table>
     ${zahlung && !b.bezahlt && b.zahlart === 'ueberweisung' ? ueberweisungsBlock(b) : ''}
+    ${unterschrift ? `<div class="vw-unterschrift">
+      <strong>Ware erhalten</strong>
+      <div class="vw-unterschrift-felder">
+        <div><span class="vw-unterschrift-linie"></span><span class="vw-druck-klein">Datum</span></div>
+        <div><span class="vw-unterschrift-linie"></span><span class="vw-druck-klein">Name in Blockschrift</span></div>
+        <div><span class="vw-unterschrift-linie"></span><span class="vw-druck-klein">Unterschrift</span></div>
+      </div>
+    </div>` : ''}
   </section>`;
 }
 
@@ -3285,7 +3294,7 @@ function packzettelDrucken() {
 function lieferscheinDrucken(b) {
   const druck = document.getElementById('vw-druck');
   if (!druck || !b) return;
-  druck.innerHTML = packzettelHtml(b, { titel: 'Lieferschein', zahlung: false })
+  druck.innerHTML = packzettelHtml(b, { titel: 'Lieferschein', zahlung: false, unterschrift: true })
     + `<p class="vw-druck-klein">Gedruckt ${new Date().toLocaleString('de-AT', { dateStyle: 'short', timeStyle: 'short' })}</p>`;
   druckenWennBereit(druck);
 }
