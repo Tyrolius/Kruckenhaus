@@ -3221,6 +3221,8 @@ function listenDrucken(nurAuswahl) {
 // Absender und Logo auf Packzettel und Lieferschein
 const ABSENDER = 'Bergbauernhof Kruckenhaus · Florian & Kathrin Häusler · Oberberg 70 · 6252 Breitenbach am Inn';
 const LOGO = '../images/logo/kruckenhaus-logo-kopf-dunkel.png';
+// UID-Nummer wie im Impressum (impressum.html) – bei Änderung beide anpassen
+const UID = 'ATU71717868';
 
 // Drucken erst, wenn alle Bilder (Logo) geladen sind – sonst fehlt das Logo
 // beim ersten Druck. Spätestens nach 3 Sekunden wird trotzdem gedruckt.
@@ -3251,7 +3253,7 @@ function packzettelHtml(b, { titel = '', zahlung = true, unterschrift = false } 
   return `<section class="vw-packzettel">
     <div class="vw-packzettel-kopf">
       <img class="vw-packzettel-logo" src="${LOGO}" alt="Kruckenhaus 1895" width="323" height="112" />
-      <p class="vw-packzettel-absender">${ABSENDER.split(' · ').slice(0, 2).map(esc).join('<br>')}<br>${esc(ABSENDER.split(' · ').slice(2).join(' · '))}</p>
+      <p class="vw-packzettel-absender">${ABSENDER.split(' · ').slice(0, 2).map(esc).join('<br>')}<br>${esc(ABSENDER.split(' · ').slice(2).join(' · '))}<br>UID: ${esc(UID)}</p>
     </div>
     <h2>${titel ? `${esc(titel)} ` : ''}${esc(b.nummer)} – ${esc(k.name)}</h2>
     <p>${t ? terminText(t) : istHofverkauf(b) ? 'Verkauf am Hof' : 'Termin offen'}${lieferung && k.strasse ? ` · ${esc(adresseVon(k))}` : ''}${k.telefon ? ` · ${esc(k.telefon)}` : ''}</p>
