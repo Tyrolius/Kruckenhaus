@@ -7,6 +7,7 @@
  *   – Höchstmenge 2 gilt für die Website, nicht für die Verwaltung
  *   – Wünsche aus Vormerkungen landen in der Bestellung
  *   – Warteliste: Menge senken, dann nachrücken
+ *   – eigener Preis je Bestellung (Gasthaus-Preis)
  *   – Einzelgewichte je Stück zwischenspeichern, übergeben, Lieferschein
  *   – Stückzahl ändern / Gesamtgewicht wiegen setzt Einzelgewichte zurück
  *   – Verkauf am Hof mit Einzelgewichten
@@ -82,6 +83,38 @@ assert.match(r.error, /Nicht genug frei/);
 ok(await api('POST', `bestellung/${sonne.id}`, { aktion: 'termin', terminId: tLief }));
 console.log('✓ Warteliste: Menge gesenkt, nachgerückt; vorgemerkt nicht über die Menge');
 
+// Gasthaus-Preis: eigener Preis nur für diese Bestellung (Rundenpreis bleibt)
+{
+  const postId = bestellungVon('Gasthaus Zur Post').id;
+  const posId = bestellungVon('Gasthaus Zur Post').positionen[0].id;
+  ok(await api('POST', `bestellung/${postId}`, { aktion: 'preis', positionId: posId, preisCent: 1700 }));
+  s = ok(await api('GET', 'stand'));
+  assert.equal(bestellungVon('Gasthaus Zur Post').positionen[0].einzelpreisCent, 1700);
+  assert.equal(bestellungVon('Maria Privat').positionen[0].einzelpreisCent, 1900, 'andere Bestellungen unverändert');
+  assert.equal(s.chargen[0].artikel[0].preisCent, 1900, 'Rundenpreis unverändert');
+  // Menge ändern behält den eigenen Preis
+  ok(await api('POST', `bestellung/${postId}`, { aktion: 'position', artikelId: artikel, menge: 14 }));
+  ok(await api('POST', `bestellung/${postId}`, { aktion: 'position', artikelId: artikel, menge: 15 }));
+  assert.equal(roh.prepare('SELECT einzelpreis_cent FROM bestell_positionen WHERE id = ?').get(Number(posId)).einzelpreis_cent, 1700);
+  // fremde Position oder ungültiger Preis → abgelehnt
+  const mariaPos = bestellungVon('Maria Privat').positionen[0].id;
+  assert.equal((await api('POST', `bestellung/${postId}`, { aktion: 'preis', positionId: mariaPos, preisCent: 100 })).status, 400);
+  assert.equal((await api('POST', `bestellung/${postId}`, { aktion: 'preis', positionId: posId, preisCent: -5 })).status, 400);
+  // auch auf der Warteliste möglich
+  ok(await api('POST', `bestellung/${bestellungVon('Gasthof Sonne').id}`, { aktion: 'preis', positionId: bestellungVon('Gasthof Sonne').positionen[0].id, preisCent: 1750 }));
+}
+// Gasthaus-Preis gleich beim Erfassen
+{
+  const st = ok(await api('GET', 'stand'));
+  const t = st.chargen[0].termine.find((x) => x.art === 'abholung').id;
+  const neu = ok(await api('POST', 'bestellung', { chargeId, kunde: { name: 'Gasthaus Erfasst' }, terminId: t,
+    positionen: [{ artikelId: artikel, menge: 1, preisCent: 1650 }] }));
+  const z = roh.prepare('SELECT einzelpreis_cent FROM bestell_positionen WHERE bestellung_id = ?').get(neu.bestellung.id);
+  assert.equal(z.einzelpreis_cent, 1650);
+  ok(await api('POST', `bestellung/${neu.bestellung.id}`, { aktion: 'stornieren', mail: false }));
+}
+console.log('✓ Gasthaus-Preis je Bestellung: beim Erfassen und nachträglich, bleibt beim Mengenändern, nur eigene Position');
+
 // Einzelgewichte bei der Übergabe: zwischenspeichern, dann übergeben
 const post = bestellungVon('Gasthaus Zur Post');
 const pos = post.positionen[0];
@@ -107,10 +140,13 @@ const zeile = roh.prepare('SELECT gewicht_g, stueckgewichte FROM bestell_positio
 assert.equal(zeile.gewicht_g, summe, 'Summe der Einzelgewichte gilt, nicht das mitgeschickte Gewicht');
 assert.equal(zeile.stueckgewichte, alle.join(','));
 const betrag = roh.prepare('SELECT gesamt_cent, geschaetzt FROM v_bestellsummen WHERE bestellung_id = ?').get(Number(post.id));
-assert.deepEqual([betrag.gesamt_cent, betrag.geschaetzt], [Math.round(1900 * summe / 1000), 0]);
+assert.deepEqual([betrag.gesamt_cent, betrag.geschaetzt], [Math.round(1700 * summe / 1000), 0], 'mit Gasthaus-Preis 17 €/kg');
 r = await api('POST', `bestellung/${post.id}`, { aktion: 'stueck', positionId: pos.id, gewichte: alle });
 assert.equal(r.status, 400, 'nach der Übergabe nicht mehr');
-console.log(`✓ 15 Einzelgewichte: zwischengespeichert, übergeben, ${(summe / 1000).toFixed(1)} kg = ${(betrag.gesamt_cent / 100).toFixed(2)} €`);
+ok(await api('POST', `bestellung/${post.id}`, { aktion: 'bezahlt', art: 'ueberweisung' }));
+r = await api('POST', `bestellung/${post.id}`, { aktion: 'preis', positionId: pos.id, preisCent: 1000 });
+assert.equal(r.status, 400, 'nach dem Bezahlen kein neuer Preis');
+console.log(`✓ 15 Einzelgewichte: zwischengespeichert, übergeben, ${(summe / 1000).toFixed(1)} kg × 17 €/kg = ${(betrag.gesamt_cent / 100).toFixed(2)} €`);
 
 // Übergabe mit Einzelgewichten, aber eines fehlt → abgelehnt
 const sonnePos = bestellungVon('Gasthof Sonne').positionen[0];

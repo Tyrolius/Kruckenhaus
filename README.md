@@ -626,6 +626,12 @@ Startbildschirm hinzufügen – dann wirkt sie wie eine App.
    der QR-Code. Steht ein Gasthaus auf der Warteliste, weil nicht mehr genug
    frei ist: in den Details die Menge auf das Freie senken, dann
    *Nachrücken lassen*.
+   **Gasthaus-Preis (Mengenrabatt):** Bei *Erfassen* steht neben jedem Artikel
+   der Preis, vorbelegt mit dem Rundenpreis – einfach überschreiben (z. B.
+   17 statt 19 €/kg). Nachträglich geht es in den Details und bei der
+   Übergabe im Feld „Preis". Gilt nur für diese Bestellung (rot markiert als
+   „Sonderpreis"), solange sie noch nicht bezahlt ist; Lieferschein,
+   QR-Code und Auswertung rechnen damit.
 4. Überweisungen in der *Übersicht → „übergeben, Geld noch nicht da"* abhaken.
 5. Neue Produkte (z. B. Eier) unter *Sortiment* anlegen. Die Gliederung (Fleisch, Eiernudeln, Honig …)
    ändert ihr unter *Sortiment → Bereiche bearbeiten*: anlegen, umbenennen,

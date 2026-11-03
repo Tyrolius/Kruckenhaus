@@ -3855,6 +3855,23 @@ body.season-winter .winter-image { display: block; }
   font-size: 1.1rem;
 }
 
+/* Eigener Preis einer Bestellung (z. B. Gasthaus) unter „Menge ändern" */
+.vw-pos-preis { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem 0.6rem; margin: 0.4rem 0 0.8rem; }
+.vw-pos-preis--sonder input { border-color: var(--color-terracotta); font-weight: 700; }
+.vw-pos-preis--sonder .vw-klein { color: var(--color-terracotta); }
+.vw-pos-preis--erfassen { margin: 0.35rem 0 0; flex-wrap: nowrap; gap: 0.5rem; }
+.vw-pos-preis--erfassen span { white-space: nowrap; }
+.vw-pos-preis--erfassen input { width: 5.2rem; }
+.vw-pos-preis input {
+  width: 6rem;
+  padding: 0.45rem 0.6rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background-color: var(--color-white);
+  font: inherit;
+  text-align: right;
+}
+
 /* Menge im Formular „Erfassen": auch direkt eintippbar (z. B. 15 Gänse) */
 .vw-zaehler .vw-menge-feld {
   width: 3.4rem;

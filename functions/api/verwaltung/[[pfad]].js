@@ -6,11 +6,13 @@
  *
  *   GET  /api/verwaltung/stand                    alles, was die Oberfläche braucht
  *   GET  /api/verwaltung/auswertung?jahr=2026     Jahresauswertung (auch abgeschlossene Runden)
- *   POST /api/verwaltung/bestellung               Bestellung erfassen
+ *   POST /api/verwaltung/bestellung               Bestellung erfassen (je Position optional
+ *        preisCent = eigener Preis dieser Bestellung, z. B. Gasthaus-Preis)
  *   POST /api/verwaltung/bestellung/<id>          Bestellung ändern ({ aktion, … }):
  *        uebergeben, bezahlt, zahlart, termin, kontakt, notiz, stornieren,
  *        nachruecken, gewicht, stueck (Einzelgewichte zwischenspeichern),
  *        position (Menge ändern/Artikel dazu – auch auf der Warteliste),
+ *        preis (eigener Preis dieser Bestellung, z. B. Gasthaus-Preis),
  *        abschliessen (Gewichte + übergeben + ggf. bar kassiert in einem)
  *        stornieren und nachruecken (von der Warteliste) schicken dem Kunden
  *        eine Mail, wenn er eine E-Mail-Adresse hat ({ mail: false } = keine)
@@ -330,6 +332,10 @@ async function bestellungErfassen(db, e) {
     }
   }
   const kundeId = await kundeSichern(db, e.kundeId, e.kunde);
+  // Eigener Preis je Artikel (z. B. Gasthaus-Preis), sonst gilt der Rundenpreis
+  const eigenePreise = (e.positionen || [])
+    .filter((p) => p.preisCent !== undefined && p.preisCent !== null && p.preisCent !== '')
+    .map((p) => ({ artikelId: nummer(p.artikelId, 'Artikelnummer'), preisCent: ganzzahl(p.preisCent, 'Preis', { max: 10000000 }) }));
   return bestellungAnlegen(db, {
     chargeId,
     kundeId,
@@ -346,7 +352,13 @@ async function bestellungErfassen(db, e) {
     hoechstmengeIgnorieren: true,
     ausverkauftZulassen: true,
     // Selbst erfasst – gilt nicht als „neu"
-    zusatz: (nr) => [db.prepare(SQL_ALS_GESEHEN).bind(nr)],
+    zusatz: (nr) => [
+      db.prepare(SQL_ALS_GESEHEN).bind(nr),
+      ...eigenePreise.map((p) => db.prepare(
+        `UPDATE bestell_positionen SET einzelpreis_cent = ?
+         WHERE bestellung_id = (SELECT id FROM bestellungen WHERE nummer = ?) AND charge_artikel_id = ?`
+      ).bind(p.preisCent, nr, p.artikelId)),
+    ],
   });
 }
 
@@ -1150,6 +1162,20 @@ async function bestellungAendern(db, bestellungId, e, ctx = {}) {
     }
     case 'stueck':
       return stueckSpeichern(db, bid, e);
+    case 'preis': {
+      // Eigener Preis für diese eine Bestellung (z. B. Gasthaus bei großer
+      // Menge). Bei Gewichtsware pro kg. Nur solange noch nicht bezahlt –
+      // ein kassierter Betrag ändert sich nachträglich nicht.
+      const preisCent = ganzzahl(e.preisCent, 'Preis', { max: 10000000 });
+      r = await db.prepare(
+        `UPDATE bestell_positionen SET einzelpreis_cent = ?
+         WHERE id = ? AND bestellung_id = ? AND EXISTS (SELECT 1 FROM bestellungen b WHERE b.id = ?
+           AND b.status IN ('vorgemerkt', 'warteliste') AND b.bezahlt_am IS NULL)`
+      ).bind(preisCent, nummer(e.positionId, 'Position'), bid, bid).run();
+      if (!r.meta.changes) throw new EingabeFehler('Preis lässt sich nicht mehr ändern (schon bezahlt oder storniert).');
+      await db.prepare(`UPDATE bestellungen SET geaendert_am = datetime('now') WHERE id = ?`).bind(bid).run();
+      return {};
+    }
     case 'position':
       return positionSetzen(db, bid, e);
     case 'abschliessen':

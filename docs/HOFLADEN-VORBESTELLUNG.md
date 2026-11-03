@@ -336,6 +336,10 @@ Voranmeldungen*; *Sortiment* in der PC-Seitenleiste bzw. über die Übersicht.
   Wartelisten-Bestellungen lassen sich in der Menge senken und dann
   nachrücken (z. B. 7 statt 12). Wünsche aus Vormerkungen („eher große")
   wandern beim Übernehmen in die Anmerkung der Bestellung.
+  **Eigener Preis je Bestellung** (Gasthaus-Preis bei großer Menge): beim
+  Erfassen, in den Details und bei der Übergabe als sichtbares Feld; ändert
+  `bestell_positionen.einzelpreis_cent` dieser Bestellung (nicht den
+  Rundenpreis), nur solange nicht bezahlt.
 - **Mehrere Abholtage** je Bestellrunde, in der Übergabe nach Tag wählbar;
   **Abhol- und Lieferlisten zum Ausdrucken** (je Termin eine Seite, Kästchen
   für Gewichte) für Orte ohne Internet.

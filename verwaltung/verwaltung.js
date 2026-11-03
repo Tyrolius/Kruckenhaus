@@ -787,7 +787,10 @@ function ansichtNeu() {
         ${ch.artikel.map((a) => `
           <div class="vw-zaehler-zeile">
             <div><strong>${esc(a.name)}</strong><br>
-              <span class="vw-klein">${a.art === 'gewicht' ? `${euro(a.preisCent)}/kg · ca. ${kgFormat.format(a.richtVonG / 1000)}–${kgFormat.format(a.richtBisG / 1000)} kg/Stück` : euro(a.preisCent)} · ${freiText(ch, a.id)}</span></div>
+              <span class="vw-klein">${a.art === 'gewicht' ? `ca. ${kgFormat.format(a.richtVonG / 1000)}–${kgFormat.format(a.richtBisG / 1000)} kg/Stück · ` : ''}${freiText(ch, a.id)}</span>
+              <label class="vw-pos-preis vw-pos-preis--erfassen"><span class="vw-klein">Preis${a.art === 'gewicht' ? ' €/kg' : ' €'}</span>
+                <input type="text" inputmode="decimal" autocomplete="off" value="${textAusCent(a.preisCent)}" data-erfassen-preis="${a.id}"
+                  aria-label="Preis ${esc(a.name)} für diese Bestellung (z. B. Gasthaus-Preis)" /></label></div>
             <div class="vw-zaehler">
               <button type="button" data-aktion="minus" data-id="${a.id}" aria-label="${esc(a.name)} weniger">−</button>
               <input type="number" class="vw-menge-feld" id="menge-${a.id}" data-artikel="${a.id}" value="0" min="0" max="999"
@@ -836,13 +839,20 @@ function formularMengen() {
   return mengen;
 }
 
+// Preis im Formular „Erfassen" (vorbelegt mit dem Rundenpreis); undefined = Rundenpreis
+function erfassenPreis(artikelId) {
+  const el = document.querySelector(`#vw-formular [data-erfassen-preis="${artikelId}"]`);
+  const cent = el ? centAusText(el.value) : null;
+  return cent == null ? undefined : cent;
+}
+
 function formularSummeAktualisieren() {
   const ch = aktiveCharge();
   const mengen = formularMengen();
   const erg = Object.entries(mengen)
     .filter(([, m]) => m > 0)
     .reduce((s, [artikelId, menge]) => {
-      const p = positionBetrag(ch, { artikelId, menge });
+      const p = positionBetrag(ch, { artikelId, menge, einzelpreisCent: erfassenPreis(artikelId) });
       return { cent: s.cent + p.cent, geschaetzt: s.geschaetzt || p.geschaetzt };
     }, { cent: 0, geschaetzt: false });
   const feld = document.getElementById('vw-summe');
@@ -878,7 +888,12 @@ async function bestellungSpeichern(form) {
   const mengen = formularMengen();
   const positionen = Object.entries(mengen)
     .filter(([, m]) => m > 0)
-    .map(([artikelId, menge]) => ({ artikelId, menge }));
+    .map(([artikelId, menge]) => {
+      const preisCent = erfassenPreis(artikelId);
+      // Nur mitschicken, wenn er vom Rundenpreis abweicht (Gasthaus-Preis)
+      return preisCent !== undefined && preisCent !== artikelVon(ch, artikelId).preisCent
+        ? { artikelId, menge, preisCent } : { artikelId, menge };
+    });
   const termin = form.querySelector('input[name="termin"]:checked');
   const kontakt = {
     name,
@@ -919,7 +934,9 @@ async function bestellungSpeichern(form) {
       id: `b${Date.now()}`, nummer: naechsteNummer(), chargeId: ch.id, kundeId: k.id,
       quelle: eingabe.quelle, erstellt: new Date().toISOString().slice(0, 10),
       status: reicht ? 'vorgemerkt' : 'warteliste', terminId: eingabe.terminId, zahlart: eingabe.zahlart,
-      bezahlt: null, uebergeben: false, anmerkung: eingabe.anmerkung, positionen,
+      bezahlt: null, uebergeben: false, anmerkung: eingabe.anmerkung,
+      positionen: positionen.map((p, i) => ({ id: `b${Date.now()}-p${i}`, artikelId: p.artikelId, menge: p.menge,
+        einzelpreisCent: p.preisCent ?? artikelVon(ch, p.artikelId).preisCent })),
     };
     daten.bestellungen.push(b);
     return { bestellung: b };
@@ -1185,7 +1202,8 @@ function ansichtAbgabe() {
     const gewicht = a.art === 'gewicht';
     return `<div class="vw-pos">
       <div class="vw-pos-kopf"><strong>${p.menge}× ${esc(a.name)}</strong>
-        <span class="vw-klein">${gewicht ? `${euro(preisVon(ch, p))}/kg` : `je ${euro(preisVon(ch, p))}`}</span></div>
+        ${preisFeld(b, p) ? '' : `<span class="vw-klein">${gewicht ? `${euro(preisVon(ch, p))}/kg` : `je ${euro(preisVon(ch, p))}`}</span>`}</div>
+      ${preisFeld(b, p)}
       ${gewicht ? `<div class="vw-stueck">${stueckTexte(p).map((txt, i) => `<input type="text" inputmode="decimal" autocomplete="off"
           placeholder="Stück ${i + 1}" value="${esc(txt)}" data-stueck="${p.id}" data-bestellung="${b.id}" data-nr="${i}"
           aria-label="${esc(a.name)} Stück ${i + 1}, Gewicht in kg" />`).join('')}</div>
@@ -1313,6 +1331,35 @@ function mengeAendernBlock(b) {
     ${b.positionen.some((p) => artikelVon(ch, p.artikelId).art === 'gewicht')
       ? '<p class="vw-klein">Bei Ware nach Gewicht wird ein schon eingetragenes Gewicht beim Ändern der Stückzahl gelöscht – bitte neu wiegen.</p>' : ''}
   </details>`;
+}
+
+// Preisfeld einer Position – immer sichtbar (Details, Übergabe), solange
+// nicht bezahlt. Leer bzw. Rundenpreis = normaler Preis.
+function preisFeld(b, p) {
+  const ch = chargeVon(b);
+  const a = artikelVon(ch, p.artikelId);
+  if (b.bezahlt || !['vorgemerkt', 'warteliste'].includes(b.status)) return '';
+  const preis = preisVon(ch, p);
+  const sonder = preis !== a.preisCent;
+  return `<label class="vw-pos-preis${sonder ? ' vw-pos-preis--sonder' : ''}">
+    <span>${b.positionen.length > 1 ? `${esc(a.name)}: ` : ''}Preis${a.art === 'gewicht' ? ' €/kg' : ' €'}</span>
+    <input type="text" inputmode="decimal" autocomplete="off" value="${textAusCent(preis)}"
+      data-preis-pos="${p.id}" data-bestellung="${b.id}" aria-label="Preis ${esc(a.name)} für diese Bestellung" />
+    <span class="vw-klein">${sonder ? `Sonderpreis (sonst ${euro(a.preisCent)})` : 'ändern = nur für diese Bestellung'}</span></label>`;
+}
+
+// Eigener Preis für diese Bestellung (z. B. Gasthaus bei großer Menge)
+function positionPreisSetzen(input) {
+  const b = bestellungVon(input.dataset.bestellung);
+  const p = b && b.positionen.find((x) => x.id === input.dataset.preisPos);
+  if (!p) return;
+  const preisCent = centAusText(input.value);
+  if (preisCent == null) { input.value = textAusCent(preisVon(chargeVon(b), p)); return meldung('Bitte einen gültigen Preis eintragen.'); }
+  if (preisCent === preisVon(chargeVon(b), p)) return;
+  speichern(`bestellung/${b.id}`, { aktion: 'preis', positionId: p.id, preisCent }, () => {
+    p.einzelpreisCent = preisCent;
+    return {};
+  }, { erfolg: `${kundeVon(b).name}: Preis ${euro(preisCent)} gespeichert.` });
 }
 
 // Menge eines Artikels ändern bzw. Artikel dazu (bei der Übergabe)
@@ -2946,6 +2993,7 @@ function detailOeffnen(id) {
     <div class="vw-abschnitt">
       <table class="vw-tabelle"><tbody>${positionen}</tbody>
         <tfoot><tr><td>Summe</td><td class="vw-zahl">${betragText(summe)}</td></tr></tfoot></table>
+      ${b.positionen.map((p) => preisFeld(b, p)).join('')}
       ${(b.status === 'vorgemerkt' && !b.uebergeben) || b.status === 'warteliste' ? mengeAendernBlock(b) : ''}
       <div class="vw-knopfreihe" role="group" aria-label="Zahlung gewünscht">
         <span class="vw-klein">Zahlung gewünscht:</span>
@@ -3557,7 +3605,7 @@ function initEingaben() {
       zustand.hof.name = e.target.value;
     } else if (e.target.name === 'name' && e.target.form && e.target.form.id === 'vw-formular') {
       kundeVorschlagen(e.target.value);
-    } else if (e.target.dataset.artikel && e.target.form && e.target.form.id === 'vw-formular') {
+    } else if ((e.target.dataset.artikel || e.target.dataset.erfassenPreis) && e.target.form && e.target.form.id === 'vw-formular') {
       formularSummeAktualisieren();
     }
   });
@@ -3574,6 +3622,7 @@ function initEingaben() {
     if (e.target.dataset.weiteresFotoHochladen !== undefined) produktFotoHochladen(e.target, true);
     if (e.target.dataset.gewicht) gewichtSpeichern(e.target);
     if (e.target.dataset.stueck) stueckZwischenspeichern(e.target);
+    if (e.target.dataset.preisPos) positionPreisSetzen(e.target);
     if (e.target.name === 'termin') adresseUmschalten();
     if (e.target.dataset.wahl === 'charge') {
       zustand.alleRunden = e.target.value === '*';
