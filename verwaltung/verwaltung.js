@@ -3218,8 +3218,25 @@ function listenDrucken(nurAuswahl) {
   window.print();
 }
 
-// Absender auf Packzettel und Lieferschein
+// Absender und Logo auf Packzettel und Lieferschein
 const ABSENDER = 'Bergbauernhof Kruckenhaus · Florian & Kathrin Häusler · Oberberg 70 · 6252 Breitenbach am Inn';
+const LOGO = '../images/logo/kruckenhaus-logo-kopf-dunkel.png';
+
+// Drucken erst, wenn alle Bilder (Logo) geladen sind – sonst fehlt das Logo
+// beim ersten Druck. Spätestens nach 3 Sekunden wird trotzdem gedruckt.
+function druckenWennBereit(druck) {
+  const offen = [...druck.querySelectorAll('img')].filter((img) => !img.complete);
+  if (!offen.length) { window.print(); return; }
+  let gedruckt = false;
+  const los = () => { if (!gedruckt) { gedruckt = true; window.print(); } };
+  let rest = offen.length;
+  offen.forEach((img) => {
+    const fertig = () => { rest -= 1; if (!rest) los(); };
+    img.addEventListener('load', fertig, { once: true });
+    img.addEventListener('error', fertig, { once: true });
+  });
+  setTimeout(los, 3000);
+}
 
 // Ein Packzettel bzw. Lieferschein: Kunde, Termin, jede Position mit
 // Gewicht (bei mehreren Stücken auch jedes Stück einzeln) und Summe.
@@ -3231,7 +3248,10 @@ function packzettelHtml(b, { titel = '', zahlung = true } = {}) {
   const t = terminVon(b);
   const lieferung = t && t.art === 'lieferung';
   return `<section class="vw-packzettel">
-    <p class="vw-packzettel-absender">${esc(ABSENDER)}</p>
+    <div class="vw-packzettel-kopf">
+      <img class="vw-packzettel-logo" src="${LOGO}" alt="Kruckenhaus 1895" width="323" height="112" />
+      <p class="vw-packzettel-absender">${ABSENDER.split(' · ').slice(0, 2).map(esc).join('<br>')}<br>${esc(ABSENDER.split(' · ').slice(2).join(' · '))}</p>
+    </div>
     <h2>${titel ? `${esc(titel)} ` : ''}${esc(b.nummer)} – ${esc(k.name)}</h2>
     <p>${t ? terminText(t) : istHofverkauf(b) ? 'Verkauf am Hof' : 'Termin offen'}${lieferung && k.strasse ? ` · ${esc(adresseVon(k))}` : ''}${k.telefon ? ` · ${esc(k.telefon)}` : ''}</p>
     <table class="vw-tabelle"><tbody>${b.positionen.map((p) => {
@@ -3257,7 +3277,7 @@ function packzettelDrucken() {
     .filter((b) => istAktiv(b) && !istHofverkauf(b))
     .sort((x, y) => kundeVon(x).name.localeCompare(kundeVon(y).name, 'de'))
     .map((b) => packzettelHtml(b)).join('');
-  window.print();
+  druckenWennBereit(druck);
 }
 
 // Lieferschein für eine einzelne Bestellung (z. B. ein Gasthaus mit 15 Gänsen).
@@ -3267,7 +3287,7 @@ function lieferscheinDrucken(b) {
   if (!druck || !b) return;
   druck.innerHTML = packzettelHtml(b, { titel: 'Lieferschein', zahlung: false })
     + `<p class="vw-druck-klein">Gedruckt ${new Date().toLocaleString('de-AT', { dateStyle: 'short', timeStyle: 'short' })}</p>`;
-  window.print();
+  druckenWennBereit(druck);
 }
 
 /* ------------------------------------------------------------

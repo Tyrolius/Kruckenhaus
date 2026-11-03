@@ -4207,7 +4207,17 @@ body.season-winter .winter-image { display: block; }
     font-size: 11pt;
   }
   .vw-packzettel h2 { font-size: 14pt; margin-bottom: 0.3rem; }
-  .vw-packzettel-absender { font-size: 8.5pt; margin-bottom: 0.3rem; }
+  .vw-packzettel-kopf {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.4rem;
+    border-bottom: 1px solid var(--color-beige);
+  }
+  .vw-packzettel-logo { display: block; width: 4.2cm; height: auto; }
+  .vw-packzettel-absender { font-size: 8.5pt; margin: 0; text-align: right; max-width: 9cm; }
   .vw-packzettel-bank {
     display: flex;
     align-items: center;
