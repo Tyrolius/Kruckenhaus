@@ -280,7 +280,7 @@ CREATE TABLE IF NOT EXISTS bestell_positionen (
   -- noch nicht gewogen (z. B. '3510,3620,' bei 3 Gänsen). Für den Lieferschein
   -- und damit getippte Gewichte bei der Übergabe ein Neuladen überstehen.
   -- gewicht_g bleibt die Summe (gilt für die Abrechnung).
-  -- Vorhandene Datenbank: vorher einmal migration-2026-11-stueckgewichte.sql.
+  -- Vorhandene Datenbank: vorher einmal migration-2026-11-gasthaus.sql.
   stueckgewichte    TEXT
 );
 
@@ -434,6 +434,24 @@ CREATE TABLE IF NOT EXISTS kunden_links (
 );
 
 CREATE INDEX IF NOT EXISTS idx_kunden_links_kunde ON kunden_links (kunde_id);
+
+
+-- ------------------------------------------------------------
+-- Gemerkte Preise je Kunde und Produkt (z. B. Gasthaus-Preis bei großer
+-- Menge): wird in der Verwaltung ein eigener Preis für eine Bestellung
+-- gesetzt, steht er hier und wird bei der nächsten Bestellung dieses Kunden
+-- (Erfassen, übernommene Vormerkung) vorgeschlagen bzw. eingesetzt. Wieder
+-- auf den Rundenpreis gesetzt = Eintrag gelöscht. Bei Gewichtsware pro kg.
+-- Vorhandene Datenbank: migration-2026-11-gasthaus.sql (oder diese Datei
+-- erneut ausführen).
+-- ------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS kunden_preise (
+  kunde_id     INTEGER NOT NULL REFERENCES kunden (id) ON DELETE CASCADE,
+  produkt_id   INTEGER NOT NULL REFERENCES produkte (id),
+  preis_cent   INTEGER NOT NULL CHECK (preis_cent >= 0),
+  geaendert_am TEXT    NOT NULL DEFAULT (datetime('now')),
+  PRIMARY KEY (kunde_id, produkt_id)
+);
 
 
 -- ------------------------------------------------------------

@@ -790,7 +790,8 @@ function ansichtNeu() {
               <span class="vw-klein">${a.art === 'gewicht' ? `ca. ${kgFormat.format(a.richtVonG / 1000)}–${kgFormat.format(a.richtBisG / 1000)} kg/Stück · ` : ''}${freiText(ch, a.id)}</span>
               <label class="vw-pos-preis vw-pos-preis--erfassen"><span class="vw-klein">Preis${a.art === 'gewicht' ? ' €/kg' : ' €'}</span>
                 <input type="text" inputmode="decimal" autocomplete="off" value="${textAusCent(a.preisCent)}" data-erfassen-preis="${a.id}"
-                  aria-label="Preis ${esc(a.name)} für diese Bestellung (z. B. Gasthaus-Preis)" /></label></div>
+                  aria-label="Preis ${esc(a.name)} für diese Bestellung (z. B. Gasthaus-Preis)" /></label>
+              <span class="vw-klein vw-preis-hinweis" id="preis-hinweis-${a.id}"></span></div>
             <div class="vw-zaehler">
               <button type="button" data-aktion="minus" data-id="${a.id}" aria-label="${esc(a.name)} weniger">−</button>
               <input type="number" class="vw-menge-feld" id="menge-${a.id}" data-artikel="${a.id}" value="0" min="0" max="999"
@@ -869,9 +870,24 @@ function adresseUmschalten() {
 // form.name wäre der Name des Formulars selbst – daher über elements gehen.
 const feld = (form, name) => form.elements.namedItem(name);
 
+// Preise im Formular „Erfassen": gemerkter Preis des Kunden, sonst Rundenpreis
+function erfassenPreiseVorbelegen(k) {
+  const ch = aktiveCharge();
+  document.querySelectorAll('#vw-formular [data-erfassen-preis]').forEach((el) => {
+    const a = artikelVon(ch, el.dataset.erfassenPreis);
+    const gemerkt = k ? kundenPreis(k.id, a.produktId) : undefined;
+    el.value = textAusCent(gemerkt ?? a.preisCent);
+    el.closest('.vw-pos-preis').classList.toggle('vw-pos-preis--sonder', gemerkt !== undefined && gemerkt !== a.preisCent);
+    const hinweis = document.getElementById(`preis-hinweis-${a.id}`);
+    if (hinweis) hinweis.textContent = gemerkt !== undefined && gemerkt !== a.preisCent ? `Preis vom letzten Mal (sonst ${euro(a.preisCent)})` : '';
+  });
+  formularSummeAktualisieren();
+}
+
 function kundeVorschlagen(name) {
   const k = daten.kunden.find((x) => x.name.toLowerCase() === name.trim().toLowerCase());
   const form = document.getElementById('vw-formular');
+  if (form) erfassenPreiseVorbelegen(k);
   if (!k || !form) return;
   feld(form, 'telefon').value = k.telefon;
   feld(form, 'email').value = k.email || '';
@@ -938,6 +954,11 @@ async function bestellungSpeichern(form) {
       positionen: positionen.map((p, i) => ({ id: `b${Date.now()}-p${i}`, artikelId: p.artikelId, menge: p.menge,
         einzelpreisCent: p.preisCent ?? artikelVon(ch, p.artikelId).preisCent })),
     };
+    positionen.forEach((p) => {
+      const produktId = artikelVon(ch, p.artikelId).produktId;
+      daten.kundenPreise = (daten.kundenPreise || []).filter((x) => !(x.kundeId === k.id && x.produktId === produktId));
+      if (p.preisCent !== undefined) daten.kundenPreise.push({ kundeId: k.id, produktId, preisCent: p.preisCent });
+    });
     daten.bestellungen.push(b);
     return { bestellung: b };
   }, { neuZeichnen: false });
@@ -1333,19 +1354,32 @@ function mengeAendernBlock(b) {
   </details>`;
 }
 
+// Gemerkter Preis eines Kunden für ein Produkt (Gasthaus-Preis) oder undefined
+function kundenPreis(kundeId, produktId) {
+  const k = (daten.kundenPreise || []).find((x) => x.kundeId === kundeId && x.produktId === produktId);
+  return k ? k.preisCent : undefined;
+}
+
 // Preisfeld einer Position – immer sichtbar (Details, Übergabe), solange
-// nicht bezahlt. Leer bzw. Rundenpreis = normaler Preis.
+// nicht bezahlt. Ein eigener Preis wird für den Kunden gemerkt; gibt es einen
+// gemerkten, der hier noch nicht gilt (z. B. Website-Bestellung), steht ein
+// Knopf zum Übernehmen daneben.
 function preisFeld(b, p) {
   const ch = chargeVon(b);
   const a = artikelVon(ch, p.artikelId);
   if (b.bezahlt || !['vorgemerkt', 'warteliste'].includes(b.status)) return '';
   const preis = preisVon(ch, p);
   const sonder = preis !== a.preisCent;
+  const gemerkt = kundenPreis(b.kundeId, a.produktId);
+  const vorschlag = gemerkt !== undefined && gemerkt !== preis
+    ? `<button type="button" class="vw-knopf vw-knopf--klein" data-aktion="preis-gemerkt" data-id="${b.id}" data-pos="${p.id}" data-wert="${gemerkt}">
+        Preis vom letzten Mal: ${euro(gemerkt)}${a.art === 'gewicht' ? '/kg' : ''} übernehmen</button>` : '';
   return `<label class="vw-pos-preis${sonder ? ' vw-pos-preis--sonder' : ''}">
     <span>${b.positionen.length > 1 ? `${esc(a.name)}: ` : ''}Preis${a.art === 'gewicht' ? ' €/kg' : ' €'}</span>
     <input type="text" inputmode="decimal" autocomplete="off" value="${textAusCent(preis)}"
       data-preis-pos="${p.id}" data-bestellung="${b.id}" aria-label="Preis ${esc(a.name)} für diese Bestellung" />
-    <span class="vw-klein">${sonder ? `Sonderpreis (sonst ${euro(a.preisCent)})` : 'ändern = nur für diese Bestellung'}</span></label>`;
+    <span class="vw-klein">${sonder ? `Sonderpreis (sonst ${euro(a.preisCent)}) – wird für ${esc(kundeVon(b).name)} gemerkt` : 'ändern = nur für diese Bestellung, wird gemerkt'}</span></label>
+    ${vorschlag}`;
 }
 
 // Eigener Preis für diese Bestellung (z. B. Gasthaus bei großer Menge)
@@ -1356,10 +1390,19 @@ function positionPreisSetzen(input) {
   const preisCent = centAusText(input.value);
   if (preisCent == null) { input.value = textAusCent(preisVon(chargeVon(b), p)); return meldung('Bitte einen gültigen Preis eintragen.'); }
   if (preisCent === preisVon(chargeVon(b), p)) return;
+  preisSpeichern(b, p, preisCent);
+}
+
+function preisSpeichern(b, p, preisCent) {
+  const ch = chargeVon(b);
+  const a = artikelVon(ch, p.artikelId);
+  const sonder = preisCent !== a.preisCent;
   speichern(`bestellung/${b.id}`, { aktion: 'preis', positionId: p.id, preisCent }, () => {
     p.einzelpreisCent = preisCent;
+    daten.kundenPreise = (daten.kundenPreise || []).filter((x) => !(x.kundeId === b.kundeId && x.produktId === a.produktId));
+    if (sonder) daten.kundenPreise.push({ kundeId: b.kundeId, produktId: a.produktId, preisCent });
     return {};
-  }, { erfolg: `${kundeVon(b).name}: Preis ${euro(preisCent)} gespeichert.` });
+  }, { erfolg: `${kundeVon(b).name}: Preis ${euro(preisCent)} gespeichert${sonder ? ' und für nächstes Mal gemerkt' : ''}.` });
 }
 
 // Menge eines Artikels ändern bzw. Artikel dazu (bei der Übergabe)
@@ -3475,6 +3518,11 @@ function initKlicks() {
       case 'lieferschein':
         lieferscheinDrucken(b);
         break;
+      case 'preis-gemerkt': {
+        const p = b && b.positionen.find((x) => x.id === el.dataset.pos);
+        if (p) preisSpeichern(b, p, Number(el.dataset.wert));
+        break;
+      }
       case 'alle-gesehen':
         alsGesehenMarkieren(bestellungenDerCharge().filter((x) => x.neu).map((x) => x.id)).then(() => {
           zustand.filter = 'alle';

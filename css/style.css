@@ -3862,6 +3862,8 @@ body.season-winter .winter-image { display: block; }
 .vw-pos-preis--erfassen { margin: 0.35rem 0 0; flex-wrap: nowrap; gap: 0.5rem; }
 .vw-pos-preis--erfassen span { white-space: nowrap; }
 .vw-pos-preis--erfassen input { width: 5.2rem; }
+.vw-preis-hinweis { display: block; color: var(--color-terracotta); }
+.vw-preis-hinweis:empty { display: none; }
 .vw-pos-preis input {
   width: 6rem;
   padding: 0.45rem 0.6rem;

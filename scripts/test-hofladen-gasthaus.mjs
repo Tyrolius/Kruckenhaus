@@ -7,7 +7,7 @@
  *   – Höchstmenge 2 gilt für die Website, nicht für die Verwaltung
  *   – Wünsche aus Vormerkungen landen in der Bestellung
  *   – Warteliste: Menge senken, dann nachrücken
- *   – eigener Preis je Bestellung (Gasthaus-Preis)
+ *   – eigener Preis je Bestellung (Gasthaus-Preis), gemerkt für das nächste Mal
  *   – Einzelgewichte je Stück zwischenspeichern, übergeben, Lieferschein
  *   – Stückzahl ändern / Gesamtgewicht wiegen setzt Einzelgewichte zurück
  *   – Verkauf am Hof mit Einzelgewichten
@@ -26,7 +26,7 @@ function datenbank({ ohneStueckSpalte = false } = {}) {
   roh.exec(readFileSync(new URL('../schema-hofladen.sql', import.meta.url), 'utf8'));
   roh.exec(readFileSync(new URL('../hofladen-produkte.sql', import.meta.url), 'utf8'));
   // Stand vor migration-2026-11-stueckgewichte.sql nachbauen
-  if (ohneStueckSpalte) roh.exec('ALTER TABLE bestell_positionen DROP COLUMN stueckgewichte');
+  if (ohneStueckSpalte) roh.exec('ALTER TABLE bestell_positionen DROP COLUMN stueckgewichte; DROP TABLE kunden_preise');
   const env = { DB: db };
   const api = async (methode, pfad, eingabe) => {
     const request = new Request(`https://www.kruckenhaus.at/api/verwaltung/${pfad}`, {
@@ -115,6 +115,14 @@ console.log('✓ Warteliste: Menge gesenkt, nachgerückt; vorgemerkt nicht über
 }
 console.log('✓ Gasthaus-Preis je Bestellung: beim Erfassen und nachträglich, bleibt beim Mengenändern, nur eigene Position');
 
+// Gemerkt: Zur Post 17,00 (nachträglich gesetzt), Sonne 17,50; „Gasthaus Erfasst" 16,50 beim Erfassen
+const gemerkt = () => Object.fromEntries(roh.prepare(
+  'SELECT k.name, kp.preis_cent FROM kunden_preise kp JOIN kunden k ON k.id = kp.kunde_id').all().map((z) => [z.name, z.preis_cent]));
+assert.deepEqual(gemerkt(), { 'Gasthaus Zur Post': 1700, 'Gasthof Sonne': 1750, 'Gasthaus Erfasst': 1650 });
+s = ok(await api('GET', 'stand'));
+assert.equal(s.kundenPreise.find((k) => k.kundeId === kunde('Gasthaus Zur Post')).preisCent, 1700, 'Oberfläche kennt den gemerkten Preis');
+console.log('✓ Gasthaus-Preise gemerkt (nachträglich und beim Erfassen)');
+
 // Einzelgewichte bei der Übergabe: zwischenspeichern, dann übergeben
 const post = bestellungVon('Gasthaus Zur Post');
 const pos = post.positionen[0];
@@ -171,6 +179,34 @@ z = roh.prepare(`SELECT p.gewicht_g, p.stueckgewichte FROM bestell_positionen p 
 assert.deepEqual([z.gewicht_g, z.stueckgewichte], [4100, '4100']);
 console.log('✓ Verkauf am Hof: Einzelgewichte gespeichert');
 
+// Nächste Runde (Weihnachten, Rundenpreis 20 €): Vormerkung von Zur Post bekommt 17,00
+{
+  ok(await api('POST', 'voranmeldung', { kundeId: kunde('Gasthaus Zur Post'), kunde: {}, produktId: gans, menge: 10, zeitraum: 'weihnachten', jahr, quelle: 'telefon' }));
+  ok(await api('POST', 'voranmeldung', { kunde: { name: 'Neu Privat' }, produktId: gans, menge: 1, zeitraum: 'weihnachten', jahr, quelle: 'telefon' }));
+  const { chargeId: c2 } = ok(await api('POST', 'charge', {
+    titel: 'Gänse Weihnachten', bestellschluss: `${jahr}-12-15`, status: 'entwurf',
+    termine: [{ art: 'abholung', datum: `${jahr}-12-20` }],
+    artikel: [{ produktId: gans, preisCent: 2000, kontingent: 30 }],
+  }));
+  let st = ok(await api('GET', 'stand'));
+  const ids = st.voranmeldungen.filter((v) => v.zeitraum === 'weihnachten').map((v) => v.id);
+  ok(await api('POST', 'voranmeldungen/uebernehmen', { chargeId: c2, ids }));
+  st = ok(await api('GET', 'stand'));
+  const preisIn = (name) => st.bestellungen.find((b) => b.chargeId === c2 && b.kundeId === st.kunden.find((k) => k.name === name).id).positionen[0].einzelpreisCent;
+  assert.equal(preisIn('Gasthaus Zur Post'), 1700, 'gemerkter Gasthaus-Preis eingesetzt');
+  assert.equal(preisIn('Neu Privat'), 2000, 'alle anderen: Rundenpreis');
+  // Zurück auf den Rundenpreis → vergessen
+  const b2 = st.bestellungen.find((b) => b.chargeId === c2 && b.kundeId === kunde('Gasthaus Zur Post'));
+  ok(await api('POST', `bestellung/${b2.id}`, { aktion: 'preis', positionId: b2.positionen[0].id, preisCent: 2000 }));
+  assert.equal(gemerkt()['Gasthaus Zur Post'], undefined);
+  // Erfassen ohne eigenen Preis für einen Kunden mit gemerktem Preis → vergessen
+  const t2 = st.chargen.find((c) => c.id === c2).termine[0].id;
+  const a2 = st.chargen.find((c) => c.id === c2).artikel[0].id;
+  ok(await api('POST', 'bestellung', { chargeId: c2, kundeId: kunde('Gasthof Sonne'), kunde: {}, terminId: t2, positionen: [{ artikelId: a2, menge: 2 }] }));
+  assert.equal(gemerkt()['Gasthof Sonne'], undefined);
+}
+console.log('✓ Nächste Runde: gemerkter Preis beim Übernehmen eingesetzt, Rundenpreis = vergessen');
+
 // Ohne Spalte stueckgewichte (Migration noch nicht eingespielt)
 {
   const alt = datenbank({ ohneStueckSpalte: true });
@@ -191,7 +227,17 @@ console.log('✓ Verkauf am Hof: Einzelgewichte gespeichert');
   ok(await alt.api('POST', `bestellung/${best.bestellung.id}`, { aktion: 'position', artikelId: a, menge: 2 }));
   assert.equal(alt.roh.prepare('SELECT gewicht_g FROM bestell_positionen').get().gewicht_g, 6500);
   ok(await alt.api('POST', 'hofverkauf', { chargeId: cid, zahlung: 'bar', positionen: [{ artikelId: a, menge: 1, gewichtG: 1, stueck: [3900] }] }));
-  console.log('✓ Ohne Migration: Übergabe, Verkauf am Hof und Menge ändern laufen wie bisher');
+  // Gasthaus-Preis ohne Tabelle kunden_preise: gilt für die Bestellung, wird nur nicht gemerkt
+  const b2 = ok(await alt.api('POST', 'bestellung', { chargeId: cid, kunde: { name: 'Gasthaus Alt 2' }, terminId: st.chargen[0].termine[0].id, positionen: [{ artikelId: a, menge: 3, preisCent: 1700 }] }));
+  st = ok(await alt.api('GET', 'stand'));
+  assert.deepEqual(st.kundenPreise, []);
+  const p2 = st.bestellungen.find((b) => b.id === String(b2.bestellung.id)).positionen[0];
+  assert.equal(p2.einzelpreisCent, 1700);
+  ok(await alt.api('POST', `bestellung/${b2.bestellung.id}`, { aktion: 'preis', positionId: p2.id, preisCent: 1600 }));
+  ok(await alt.api('POST', 'voranmeldung', { kunde: { name: 'Alt VA' }, produktId: gans, menge: 1, zeitraum: 'naechste', quelle: 'telefon' }));
+  st = ok(await alt.api('GET', 'stand'));
+  ok(await alt.api('POST', 'voranmeldungen/uebernehmen', { chargeId: cid, ids: st.voranmeldungen.map((v) => v.id) }));
+  console.log('✓ Ohne Migration: Übergabe, Verkauf am Hof, Menge und Preis ändern, Übernehmen laufen wie bisher');
 }
 
 console.log('\nAlle Tests der Gänse-Runde bestanden.');

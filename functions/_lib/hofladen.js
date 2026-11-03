@@ -14,6 +14,7 @@
  *   3. Bestellnummern (naechsteBestellnummer)
  *      Preisvorschläge für neue Bestellrunden (preisVorschlaege)
  *   4. Bestellung anlegen / nachrücken – Kontingent sicher prüfen
+ *   4b. Gemerkte Preise je Kunde (Gasthaus-Preis)
  *   4a. Dauersortiment (ständige Runde für Dauerartikel)
  *   5. Voranmeldungen (anlegen, in eine Bestellrunde übernehmen)
  *   6. Persönliche Links „Meine Bestellungen" (kundenLinkErstellen, kundeAusLink)
@@ -210,6 +211,64 @@ export async function bestellungAnlegen(db, b, optionen = {}) {
   return ergebnisse[ergebnisse.length - 1].results[0];
 }
 
+/* ------------------------------------------------------------
+   4b. GEMERKTE PREISE JE KUNDE (z. B. Gasthaus-Preis)
+   Tabelle kunden_preise (migration-2026-11-gasthaus.sql). Fehlt sie noch,
+   läuft alles ohne gemerkte Preise weiter. Gemerkt wird nur „ist da".
+   ------------------------------------------------------------ */
+const kundenPreiseDa = new WeakMap();
+export async function hatKundenPreise(db) {
+  if (kundenPreiseDa.get(db)) return true;
+  try {
+    await db.prepare('SELECT 1 FROM kunden_preise LIMIT 1').all();
+  } catch (fehler) {
+    if (/no such table/i.test(String(fehler && fehler.message))) return false;
+    throw fehler;
+  }
+  kundenPreiseDa.set(db, true);
+  return true;
+}
+
+/**
+ * Preis einer Position als Preis des Kunden merken – oder vergessen, wenn er
+ * dem Rundenpreis entspricht. Liefert die Anweisung (für einen batch).
+ */
+export function kundenPreisAnweisung(db, positionId) {
+  return db.prepare(
+    `INSERT INTO kunden_preise (kunde_id, produkt_id, preis_cent)
+     SELECT b.kunde_id, ca.produkt_id, bp.einzelpreis_cent
+     FROM bestell_positionen bp JOIN bestellungen b ON b.id = bp.bestellung_id
+     JOIN charge_artikel ca ON ca.id = bp.charge_artikel_id
+     WHERE bp.id = ?1 AND bp.einzelpreis_cent <> ca.preis_cent
+     ON CONFLICT (kunde_id, produkt_id) DO UPDATE SET preis_cent = excluded.preis_cent, geaendert_am = datetime('now')`
+  ).bind(positionId);
+}
+export function kundenPreisVergessenAnweisung(db, positionId) {
+  return db.prepare(
+    `DELETE FROM kunden_preise WHERE (kunde_id, produkt_id) IN (
+       SELECT b.kunde_id, ca.produkt_id
+       FROM bestell_positionen bp JOIN bestellungen b ON b.id = bp.bestellung_id
+       JOIN charge_artikel ca ON ca.id = bp.charge_artikel_id
+       WHERE bp.id = ?1 AND bp.einzelpreis_cent = ca.preis_cent)`
+  ).bind(positionId);
+}
+
+// Gemerkte Preise des Kunden in eine gerade angelegte Bestellung einsetzen
+export function kundenPreiseEinsetzenAnweisung(db, nummer) {
+  return db.prepare(
+    `UPDATE bestell_positionen SET einzelpreis_cent = (
+       SELECT kp.preis_cent FROM kunden_preise kp
+       JOIN bestellungen b ON b.kunde_id = kp.kunde_id
+       JOIN charge_artikel ca ON ca.produkt_id = kp.produkt_id
+       WHERE b.id = bestell_positionen.bestellung_id AND ca.id = bestell_positionen.charge_artikel_id)
+     WHERE bestellung_id = (SELECT id FROM bestellungen WHERE nummer = ?1) AND EXISTS (
+       SELECT 1 FROM kunden_preise kp
+       JOIN bestellungen b ON b.kunde_id = kp.kunde_id
+       JOIN charge_artikel ca ON ca.produkt_id = kp.produkt_id
+       WHERE b.id = bestell_positionen.bestellung_id AND ca.id = bestell_positionen.charge_artikel_id)`
+  ).bind(nummer);
+}
+
 /**
  * Holt eine Bestellung von der Warteliste (oder stellt eine stornierte
  * wieder her). Reicht die freie Menge nicht, bleibt sie auf der Warteliste.
@@ -390,6 +449,7 @@ export async function voranmeldungenUebernehmen(db, chargeId, voranmeldungIds) {
     k.mengen.set(r.charge_artikel_id, (k.mengen.get(r.charge_artikel_id) || 0) + r.menge);
   }
 
+  const mitKundenPreisen = await hatKundenPreise(db);
   const bestellungen = [];
   for (const [kundeId, k] of jeKunde) {
     const erg = await bestellungAnlegen(db, {
@@ -406,7 +466,9 @@ export async function voranmeldungenUebernehmen(db, chargeId, voranmeldungIds) {
          SET status = 'uebernommen', geaendert_am = datetime('now'),
              bestellung_id = (SELECT id FROM bestellungen WHERE nummer = ?)
          WHERE status = 'offen' AND id IN (${k.ids.map(() => '?').join(', ')})`
-      ).bind(nummer, ...k.ids), db.prepare(SQL_ALS_GESEHEN).bind(nummer)],
+      ).bind(nummer, ...k.ids), db.prepare(SQL_ALS_GESEHEN).bind(nummer),
+      // Gasthaus-Preis vom letzten Mal gleich einsetzen
+      ...(mitKundenPreisen ? [kundenPreiseEinsetzenAnweisung(db, nummer)] : [])],
     });
     bestellungen.push({ kundeId, ...erg });
   }

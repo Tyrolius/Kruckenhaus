@@ -47,7 +47,7 @@ schema.sql                 D1-Schema (Tabelle „anfragen")
 schema-hofladen.sql        D1-Schema der Hofladen-Vorbestellung (im Aufbau)
 hofladen-produkte.sql      Produktkatalog der Hofladen-Vorbestellung (Erstbefüllung)
 migration-2026-*.sql       einmalige Migrationen bestehender Datenbanken (ALTER TABLE; zuletzt
-                           2026-11-stueckgewichte – Einzelgewichte je Stück, ohne sie läuft alles weiter)
+                           2026-11-gasthaus – Einzelgewichte, gemerkte Gasthaus-Preise; ohne sie läuft alles weiter)
 docs/SCHNITTSTELLE-BERTHA.md  Plan der Schnittstelle zu Bertha (Phasen W1–W4, B1–B2)
 docs/HOF-COCKPIT.md        Plan des Hof-Cockpits: Aufgaben, Fristen, Eingangsrechnungen,
                            Gasthaus-Abrechnung aus Bertha, Bankabgleich (Phasen C1–C6, noch offen)

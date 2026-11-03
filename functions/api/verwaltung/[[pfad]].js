@@ -65,6 +65,7 @@ import {
   bestellungAnlegen, bestellungNachruecken, preisVorschlaege, dauersortimentAbgleichen,
   voranmeldungAnlegen, voranmeldungPruefen, voranmeldungenUebernehmen, bankAusEnv, SQL_ALS_GESEHEN,
   kundenLinkErstellen, mailSenden, escapeHtml, HERKUNFT, UST_SAETZE, weitereBilderLaden,
+  hatKundenPreise, kundenPreisAnweisung, kundenPreisVergessenAnweisung,
 } from '../../_lib/hofladen.js';
 import {
   BETRIEB, mailHtml, absatz, klein, knopf, kasten, gruss, positionenHtml, terminText,
@@ -140,7 +141,7 @@ const SQL_FREI = `(SELECT CASE WHEN c.art = 'dauer' THEN 1000000 ELSE v.frei END
                    FROM v_bestand v JOIN chargen c ON c.id = v.charge_id WHERE v.charge_artikel_id = ?3)`;
 
 /* Einzelgewichte je Stück (Spalte bestell_positionen.stueckgewichte,
-   migration-2026-11-stueckgewichte.sql): Gramm durch Komma getrennt, leere
+   migration-2026-11-gasthaus.sql): Gramm durch Komma getrennt, leere
    Stelle = noch nicht gewogen. Fehlt die Spalte noch, läuft alles wie bisher
    – gespeichert wird dann nur die Summe gewicht_g. Gemerkt wird nur „ist da"
    (je Datenbank), damit die Spalte nach der Migration sofort wirkt. */
@@ -210,6 +211,8 @@ async function standLaden(db, bank = null) {
     ])).map((r) => r.results);
 
   const ueberBertha = await bestellungenUeberBertha(db, aktiv);
+  const kundenPreise = (await hatKundenPreise(db))
+    ? (await db.prepare('SELECT kunde_id, produkt_id, preis_cent FROM kunden_preise').all()).results : [];
   const weitere = await weitereBilderLaden(db);
   const jePos = new Map();
   for (const p of positionen) {
@@ -249,6 +252,8 @@ async function standLaden(db, bank = null) {
       positionen: jePos.get(b.id) || [],
     })),
     bereiche: bereiche.map((b) => ({ id: id(b.id), name: b.name, produkte: b.produkte })),
+    // Gemerkte Preise (Gasthaus-Preis) je Kunde und Produkt
+    kundenPreise: kundenPreise.map((k) => ({ kundeId: id(k.kunde_id), produktId: id(k.produkt_id), preisCent: k.preis_cent })),
     eigeneFotos: await eigeneFotos(db),
     weitereBilderMoeglich: weitere.moeglich,
     schnittstelle: await schnittstelleStand(db),
@@ -336,6 +341,7 @@ async function bestellungErfassen(db, e) {
   const eigenePreise = (e.positionen || [])
     .filter((p) => p.preisCent !== undefined && p.preisCent !== null && p.preisCent !== '')
     .map((p) => ({ artikelId: nummer(p.artikelId, 'Artikelnummer'), preisCent: ganzzahl(p.preisCent, 'Preis', { max: 10000000 }) }));
+  const merken = await hatKundenPreise(db);
   return bestellungAnlegen(db, {
     chargeId,
     kundeId,
@@ -358,6 +364,24 @@ async function bestellungErfassen(db, e) {
         `UPDATE bestell_positionen SET einzelpreis_cent = ?
          WHERE bestellung_id = (SELECT id FROM bestellungen WHERE nummer = ?) AND charge_artikel_id = ?`
       ).bind(p.preisCent, nr, p.artikelId)),
+      // Preis je Kunde merken: eigener Preis → gemerkt, Rundenpreis → vergessen
+      ...(merken ? [
+        db.prepare(
+          `INSERT INTO kunden_preise (kunde_id, produkt_id, preis_cent)
+           SELECT b.kunde_id, ca.produkt_id, bp.einzelpreis_cent
+           FROM bestell_positionen bp JOIN bestellungen b ON b.id = bp.bestellung_id
+           JOIN charge_artikel ca ON ca.id = bp.charge_artikel_id
+           WHERE b.nummer = ?1 AND bp.einzelpreis_cent <> ca.preis_cent
+           ON CONFLICT (kunde_id, produkt_id) DO UPDATE SET preis_cent = excluded.preis_cent, geaendert_am = datetime('now')`
+        ).bind(nr),
+        db.prepare(
+          `DELETE FROM kunden_preise WHERE (kunde_id, produkt_id) IN (
+             SELECT b.kunde_id, ca.produkt_id
+             FROM bestell_positionen bp JOIN bestellungen b ON b.id = bp.bestellung_id
+             JOIN charge_artikel ca ON ca.id = bp.charge_artikel_id
+             WHERE b.nummer = ?1 AND bp.einzelpreis_cent = ca.preis_cent)`
+        ).bind(nr),
+      ] : []),
     ],
   });
 }
@@ -1173,7 +1197,12 @@ async function bestellungAendern(db, bestellungId, e, ctx = {}) {
            AND b.status IN ('vorgemerkt', 'warteliste') AND b.bezahlt_am IS NULL)`
       ).bind(preisCent, nummer(e.positionId, 'Position'), bid, bid).run();
       if (!r.meta.changes) throw new EingabeFehler('Preis lässt sich nicht mehr ändern (schon bezahlt oder storniert).');
-      await db.prepare(`UPDATE bestellungen SET geaendert_am = datetime('now') WHERE id = ?`).bind(bid).run();
+      const pid = nummer(e.positionId, 'Position');
+      await db.batch([
+        db.prepare(`UPDATE bestellungen SET geaendert_am = datetime('now') WHERE id = ?`).bind(bid),
+        // für die nächste Bestellung des Kunden merken (Rundenpreis = vergessen)
+        ...((await hatKundenPreise(db)) ? [kundenPreisAnweisung(db, pid), kundenPreisVergessenAnweisung(db, pid)] : []),
+      ]);
       return {};
     }
     case 'position':

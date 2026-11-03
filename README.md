@@ -489,12 +489,12 @@ Eine Datenbank, die schon vor Oktober 2026 bestand, braucht vorher einmal
 `migration-2026-10-bereiche.sql` (Bereiche des Sortiments; in der
 Live-Datenbank bereits erledigt).
 
-**Einzelgewichte je Stück (November 2026):** Für Lieferscheine mit jedem
-Stück und damit getippte Gewichte ein Neuladen überstehen, einmal
-`migration-2026-11-stueckgewichte.sql` ausführen – in der D1-Console genügt die
-Zeile `ALTER TABLE bestell_positionen ADD COLUMN stueckgewichte TEXT;`
-(Live- **und** Test-Datenbank `kruckenhaus-test`). Ohne sie läuft alles wie
-bisher, nur ohne Einzelgewichte.
+**Gasthäuser und große Mengen (November 2026):** Für Einzelgewichte je Stück
+(Lieferschein, Schutz beim Neuladen) und gemerkte Gasthaus-Preise einmal
+`migration-2026-11-gasthaus.sql` ausführen – für die D1-Console steht die
+einzeilige Fassung oben in der Datei (Live- **und** Test-Datenbank
+`kruckenhaus-test`). Ohne sie läuft alles wie bisher, nur ohne Einzelgewichte
+und ohne gemerkte Preise.
 
 Die zweite Datei spielt Produktkatalog (Startpreise, Richtgewichte) und
 Liefergebiet ein; sie überspringt Einträge, die es schon gibt. Danach
@@ -631,7 +631,11 @@ Startbildschirm hinzufügen – dann wirkt sie wie eine App.
    17 statt 19 €/kg). Nachträglich geht es in den Details und bei der
    Übergabe im Feld „Preis". Gilt nur für diese Bestellung (rot markiert als
    „Sonderpreis"), solange sie noch nicht bezahlt ist; Lieferschein,
-   QR-Code und Auswertung rechnen damit.
+   QR-Code und Auswertung rechnen damit. **Der Preis wird je Kunde und
+   Produkt gemerkt:** Beim nächsten *Erfassen* steht er schon drin („Preis vom
+   letzten Mal"), übernommene Vormerkungen bekommen ihn automatisch, und bei
+   Bestellungen von der Website zeigen Details und Übergabe den Knopf „Preis
+   vom letzten Mal übernehmen". Wieder auf den Rundenpreis gesetzt = vergessen.
 4. Überweisungen in der *Übersicht → „übergeben, Geld noch nicht da"* abhaken.
 5. Neue Produkte (z. B. Eier) unter *Sortiment* anlegen. Die Gliederung (Fleisch, Eiernudeln, Honig …)
    ändert ihr unter *Sortiment → Bereiche bearbeiten*: anlegen, umbenennen,

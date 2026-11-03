@@ -331,7 +331,7 @@ Voranmeldungen*; *Sortiment* in der PC-Seitenleiste bzw. über die Übersicht.
   Gasthäuser mit 10–15 Stück. Menge bei *Erfassen* eintippbar; Höchstmenge
   gilt nur für Website/Bertha. Einzelgewichte je Stück werden beim Tippen
   gespeichert (`bestell_positionen.stueckgewichte`, Migration
-  `migration-2026-11-stueckgewichte.sql`; ohne Spalte nur die Summe) und stehen
+  `migration-2026-11-gasthaus.sql`; ohne Spalte nur die Summe) und stehen
   auf dem **Lieferschein je Bestellung** (Details bzw. nach der Übergabe).
   Wartelisten-Bestellungen lassen sich in der Menge senken und dann
   nachrücken (z. B. 7 statt 12). Wünsche aus Vormerkungen („eher große")
@@ -339,7 +339,11 @@ Voranmeldungen*; *Sortiment* in der PC-Seitenleiste bzw. über die Übersicht.
   **Eigener Preis je Bestellung** (Gasthaus-Preis bei großer Menge): beim
   Erfassen, in den Details und bei der Übergabe als sichtbares Feld; ändert
   `bestell_positionen.einzelpreis_cent` dieser Bestellung (nicht den
-  Rundenpreis), nur solange nicht bezahlt.
+  Rundenpreis), nur solange nicht bezahlt. Der Preis wird je Kunde und Produkt
+  gemerkt (Tabelle `kunden_preise`): beim Erfassen vorbelegt, beim Übernehmen
+  von Vormerkungen eingesetzt, bei Website-/Bertha-Bestellungen als Knopf
+  „Preis vom letzten Mal übernehmen" angeboten (bewusst nicht automatisch –
+  der Kunde hat dort den Rundenpreis gesehen). Rundenpreis = vergessen.
 - **Mehrere Abholtage** je Bestellrunde, in der Übergabe nach Tag wählbar;
   **Abhol- und Lieferlisten zum Ausdrucken** (je Termin eine Seite, Kästchen
   für Gewichte) für Orte ohne Internet.
