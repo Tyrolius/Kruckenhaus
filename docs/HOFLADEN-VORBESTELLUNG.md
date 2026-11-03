@@ -332,7 +332,8 @@ Voranmeldungen*; *Sortiment* in der PC-Seitenleiste bzw. über die Übersicht.
   gilt nur für Website/Bertha. Einzelgewichte je Stück werden beim Tippen
   gespeichert (`bestell_positionen.stueckgewichte`, Migration
   `migration-2026-11-gasthaus.sql`; ohne Spalte nur die Summe) und stehen
-  auf dem **Lieferschein je Bestellung** (Details bzw. nach der Übergabe).
+  auf dem **Lieferschein je Bestellung** (Details bzw. nach der Übergabe; ohne
+  Bankdaten und QR-Code – die gehören auf die Rechnung).
   Wartelisten-Bestellungen lassen sich in der Menge senken und dann
   nachrücken (z. B. 7 statt 12). Wünsche aus Vormerkungen („eher große")
   wandern beim Übernehmen in die Anmerkung der Bestellung.

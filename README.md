@@ -622,8 +622,8 @@ Startbildschirm hinzufügen – dann wirkt sie wie eine App.
    Stückzahl direkt eintippen (Höchstmenge der Runde gilt nur für die
    Website). Jedes Gewicht wird beim Weitertippen gespeichert – lädt das Handy
    die Seite neu, ist nichts verloren. Nach der Übergabe (oder in den Details)
-   *Lieferschein drucken*: jedes Stück mit Gewicht, Summe und bei Überweisung
-   der QR-Code. Steht ein Gasthaus auf der Warteliste, weil nicht mehr genug
+   *Lieferschein drucken*: jedes Stück mit Gewicht und Summe – ohne
+   Bankdaten und QR-Code, die gehören auf die Rechnung. Steht ein Gasthaus auf der Warteliste, weil nicht mehr genug
    frei ist: in den Details die Menge auf das Freie senken, dann
    *Nachrücken lassen*.
    **Gasthaus-Preis (Mengenrabatt):** Bei *Erfassen* steht neben jedem Artikel
@@ -631,7 +631,7 @@ Startbildschirm hinzufügen – dann wirkt sie wie eine App.
    17 statt 19 €/kg). Nachträglich geht es in den Details und bei der
    Übergabe im Feld „Preis". Gilt nur für diese Bestellung (rot markiert als
    „Sonderpreis"), solange sie noch nicht bezahlt ist; Lieferschein,
-   QR-Code und Auswertung rechnen damit. **Der Preis wird je Kunde und
+   Zahlungsinfo/QR-Code und Auswertung rechnen damit. **Der Preis wird je Kunde und
    Produkt gemerkt:** Beim nächsten *Erfassen* steht er schon drin („Preis vom
    letzten Mal"), übernommene Vormerkungen bekommen ihn automatisch, und bei
    Bestellungen von der Website zeigen Details und Übergabe den Knopf „Preis

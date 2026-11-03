@@ -3222,8 +3222,10 @@ function listenDrucken(nurAuswahl) {
 const ABSENDER = 'Bergbauernhof Kruckenhaus · Florian & Kathrin Häusler · Oberberg 70 · 6252 Breitenbach am Inn';
 
 // Ein Packzettel bzw. Lieferschein: Kunde, Termin, jede Position mit
-// Gewicht (bei mehreren Stücken auch jedes Stück einzeln), Summe, Zahlung
-function packzettelHtml(b, { titel = '' } = {}) {
+// Gewicht (bei mehreren Stücken auch jedes Stück einzeln) und Summe.
+// zahlung = false (Lieferschein): ohne Zahlart, Bankdaten und QR-Code –
+// die Zahlungsaufforderung gehört auf die Rechnung.
+function packzettelHtml(b, { titel = '', zahlung = true } = {}) {
   const ch = chargeVon(b);
   const k = kundeVon(b);
   const t = terminVon(b);
@@ -3241,9 +3243,9 @@ function packzettelHtml(b, { titel = '' } = {}) {
         <td class="vw-zahl">${p.gewichtG ? kg(p.gewichtG) : ''}</td>
         <td class="vw-zahl">${betragText(positionBetrag(ch, p))}</td></tr>`;
     }).join('')}</tbody>
-    <tfoot><tr><td colspan="2">Summe · ${b.bezahlt ? `bezahlt (${ZAHLARTEN[b.bezahlt]})` : ZAHLARTEN[b.zahlart]}</td>
+    <tfoot><tr><td colspan="2">Summe${zahlung ? ` · ${b.bezahlt ? `bezahlt (${ZAHLARTEN[b.bezahlt]})` : ZAHLARTEN[b.zahlart]}` : ''}</td>
       <td class="vw-zahl">${betragText(bestellBetrag(b))}</td></tr></tfoot></table>
-    ${!b.bezahlt && b.zahlart === 'ueberweisung' ? ueberweisungsBlock(b) : ''}
+    ${zahlung && !b.bezahlt && b.zahlart === 'ueberweisung' ? ueberweisungsBlock(b) : ''}
   </section>`;
 }
 
@@ -3258,11 +3260,12 @@ function packzettelDrucken() {
   window.print();
 }
 
-// Lieferschein für eine einzelne Bestellung (z. B. ein Gasthaus mit 15 Gänsen)
+// Lieferschein für eine einzelne Bestellung (z. B. ein Gasthaus mit 15 Gänsen).
+// Ohne Zahlungsangaben – die stehen auf der Rechnung.
 function lieferscheinDrucken(b) {
   const druck = document.getElementById('vw-druck');
   if (!druck || !b) return;
-  druck.innerHTML = packzettelHtml(b, { titel: 'Lieferschein' })
+  druck.innerHTML = packzettelHtml(b, { titel: 'Lieferschein', zahlung: false })
     + `<p class="vw-druck-klein">Gedruckt ${new Date().toLocaleString('de-AT', { dateStyle: 'short', timeStyle: 'short' })}</p>`;
   window.print();
 }
