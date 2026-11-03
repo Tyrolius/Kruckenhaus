@@ -372,7 +372,7 @@ export async function voranmeldungenUebernehmen(db, chargeId, voranmeldungIds) {
   if (!ids.length) throw new EingabeFehler('Keine Vormerkungen gewählt.');
 
   const { results } = await db.prepare(
-    `SELECT v.id, v.kunde_id, v.menge, v.quelle, ca.id AS charge_artikel_id
+    `SELECT v.id, v.kunde_id, v.menge, v.quelle, v.notiz, ca.id AS charge_artikel_id
      FROM voranmeldungen v
      JOIN charge_artikel ca ON ca.produkt_id = v.produkt_id AND ca.charge_id = ?
      WHERE v.status = 'offen' AND v.id IN (${ids.map(() => '?').join(', ')})
@@ -382,9 +382,11 @@ export async function voranmeldungenUebernehmen(db, chargeId, voranmeldungIds) {
   // Nach Kunde gruppieren, Reihenfolge = früheste Anmeldung des Kunden
   const jeKunde = new Map();
   for (const r of results) {
-    if (!jeKunde.has(r.kunde_id)) jeKunde.set(r.kunde_id, { quelle: r.quelle, ids: [], mengen: new Map() });
+    if (!jeKunde.has(r.kunde_id)) jeKunde.set(r.kunde_id, { quelle: r.quelle, ids: [], mengen: new Map(), notizen: [] });
     const k = jeKunde.get(r.kunde_id);
     k.ids.push(r.id);
+    // Wünsche aus der Vormerkung („bitte eine große") wandern in die Bestellung
+    if (r.notiz && !k.notizen.includes(r.notiz)) k.notizen.push(r.notiz);
     k.mengen.set(r.charge_artikel_id, (k.mengen.get(r.charge_artikel_id) || 0) + r.menge);
   }
 
@@ -395,6 +397,7 @@ export async function voranmeldungenUebernehmen(db, chargeId, voranmeldungIds) {
       kundeId,
       quelle: k.quelle,
       interneNotiz: 'aus Vormerkung – Termin und Zahlart bestätigen',
+      anmerkung: k.notizen.join(' · ').slice(0, 1000) || null,
       positionen: [...k.mengen].map(([chargeArtikelId, menge]) => ({ chargeArtikelId, menge })),
     }, {
       hoechstmengeIgnorieren: true,

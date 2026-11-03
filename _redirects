@@ -27,6 +27,7 @@
 /migration-2026-10-schnittstelle.sql / 301
 /migration-2026-10-steuer.sql / 301
 /migration-2026-10-fotos.sql / 301
+/migration-2026-11-stueckgewichte.sql / 301
 /.gitignore / 301
 
 # Umgebung ist seit 09/2026 Teil der Seite „Lage & Umgebung“

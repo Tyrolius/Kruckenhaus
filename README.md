@@ -489,6 +489,13 @@ Eine Datenbank, die schon vor Oktober 2026 bestand, braucht vorher einmal
 `migration-2026-10-bereiche.sql` (Bereiche des Sortiments; in der
 Live-Datenbank bereits erledigt).
 
+**Einzelgewichte je Stück (November 2026):** Für Lieferscheine mit jedem
+Stück und damit getippte Gewichte ein Neuladen überstehen, einmal
+`migration-2026-11-stueckgewichte.sql` ausführen – in der D1-Console genügt die
+Zeile `ALTER TABLE bestell_positionen ADD COLUMN stueckgewichte TEXT;`
+(Live- **und** Test-Datenbank `kruckenhaus-test`). Ohne sie läuft alles wie
+bisher, nur ohne Einzelgewichte.
+
 Die zweite Datei spielt Produktkatalog (Startpreise, Richtgewichte) und
 Liefergebiet ein; sie überspringt Einträge, die es schon gibt. Danach
 werden Produkte in der Verwaltung unter **Produkte** angelegt und
@@ -520,6 +527,7 @@ node scripts/test-hofladen-zugang.mjs
 node scripts/test-hofladen-oeffentlich.mjs
 node scripts/test-hofladen-qr.mjs
 node scripts/test-hofladen-dauer.mjs
+node scripts/test-hofladen-gasthaus.mjs
 node scripts/test-extern-api.mjs
 ```
 
@@ -610,6 +618,14 @@ Startbildschirm hinzufügen – dann wirkt sie wie eine App.
    Mehrere Abholtage: oben den Tag wählen. Ohne Internet (Schlachthaus):
    *Abholliste zum Mitnehmen drucken* – Gewichte in die Kästchen schreiben
    und später bei der Übergabe eintippen.
+   **Große Mengen (z. B. ein Gasthaus mit 15 Gänsen):** Bei *Erfassen* die
+   Stückzahl direkt eintippen (Höchstmenge der Runde gilt nur für die
+   Website). Jedes Gewicht wird beim Weitertippen gespeichert – lädt das Handy
+   die Seite neu, ist nichts verloren. Nach der Übergabe (oder in den Details)
+   *Lieferschein drucken*: jedes Stück mit Gewicht, Summe und bei Überweisung
+   der QR-Code. Steht ein Gasthaus auf der Warteliste, weil nicht mehr genug
+   frei ist: in den Details die Menge auf das Freie senken, dann
+   *Nachrücken lassen*.
 4. Überweisungen in der *Übersicht → „übergeben, Geld noch nicht da"* abhaken.
 5. Neue Produkte (z. B. Eier) unter *Sortiment* anlegen. Die Gliederung (Fleisch, Eiernudeln, Honig …)
    ändert ihr unter *Sortiment → Bereiche bearbeiten*: anlegen, umbenennen,

@@ -9,7 +9,8 @@
  *   POST /api/verwaltung/bestellung               Bestellung erfassen
  *   POST /api/verwaltung/bestellung/<id>          Bestellung ändern ({ aktion, … }):
  *        uebergeben, bezahlt, zahlart, termin, kontakt, notiz, stornieren,
- *        nachruecken, gewicht, position (Menge ändern/Artikel dazu),
+ *        nachruecken, gewicht, stueck (Einzelgewichte zwischenspeichern),
+ *        position (Menge ändern/Artikel dazu – auch auf der Warteliste),
  *        abschliessen (Gewichte + übergeben + ggf. bar kassiert in einem)
  *        stornieren und nachruecken (von der Warteliste) schicken dem Kunden
  *        eine Mail, wenn er eine E-Mail-Adresse hat ({ mail: false } = keine)
@@ -136,6 +137,33 @@ const id = (wert) => (wert == null ? null : String(wert));
 const SQL_FREI = `(SELECT CASE WHEN c.art = 'dauer' THEN 1000000 ELSE v.frei END
                    FROM v_bestand v JOIN chargen c ON c.id = v.charge_id WHERE v.charge_artikel_id = ?3)`;
 
+/* Einzelgewichte je Stück (Spalte bestell_positionen.stueckgewichte,
+   migration-2026-11-stueckgewichte.sql): Gramm durch Komma getrennt, leere
+   Stelle = noch nicht gewogen. Fehlt die Spalte noch, läuft alles wie bisher
+   – gespeichert wird dann nur die Summe gewicht_g. Gemerkt wird nur „ist da"
+   (je Datenbank), damit die Spalte nach der Migration sofort wirkt. */
+const stueckSpalteDa = new WeakMap();
+async function hatStueckSpalte(db) {
+  if (stueckSpalteDa.get(db)) return true;
+  try {
+    await db.prepare('SELECT stueckgewichte FROM bestell_positionen LIMIT 1').all();
+  } catch (fehler) {
+    if (/no such column/i.test(String(fehler && fehler.message))) return false;
+    throw fehler;
+  }
+  stueckSpalteDa.set(db, true);
+  return true;
+}
+
+const stueckLesen = (text) => (text ? String(text).split(',').map((g) => (g ? Number(g) : null)) : []);
+const stueckText = (liste) => (liste.some(Boolean) ? liste.map((g) => g || '').join(',') : null);
+
+// Genau ein Wert je Stück: Gramm (1 g bis 200 kg) oder leer
+function stueckPruefen(werte, menge) {
+  if (!Array.isArray(werte) || werte.length !== menge) throw new EingabeFehler('Anzahl der Gewichte passt nicht zur Stückzahl.');
+  return werte.map((g) => ganzzahl(g, 'Gewicht', { min: 1, max: 200000, leer: true }));
+}
+
 /* ------------------------------------------------------------
    2. STAND LADEN (für die Oberfläche)
    Gleiche Form wie verwaltung/entwurf-daten.js.
@@ -143,6 +171,7 @@ const SQL_FREI = `(SELECT CASE WHEN c.art = 'dauer' THEN 1000000 ELSE v.frei END
 
 async function standLaden(db, bank = null) {
   const aktiv = `SELECT id FROM chargen WHERE status <> 'archiviert'`;
+  const stueckSpalte = (await hatStueckSpalte(db)) ? 'p.stueckgewichte' : 'NULL AS stueckgewichte';
   const [chargen, artikel, termine, bestellungen, positionen, kunden, produkte, voranmeldungen, liefergebiet, widerrufe, bereiche] =
     (await db.batch([
       db.prepare(`SELECT id, titel, status, bestellschluss, art, im_portal FROM chargen
@@ -158,7 +187,7 @@ async function standLaden(db, bank = null) {
                          uebergeben_am, bezahlt_art, anmerkung, interne_notiz, erstellt_am,
                          EXISTS (SELECT 1 FROM bestellung_gesehen g WHERE g.bestellung_id = bestellungen.id) AS gesehen
                   FROM bestellungen WHERE charge_id IN (${aktiv}) ORDER BY id`),
-      db.prepare(`SELECT p.id, p.bestellung_id, p.charge_artikel_id, p.menge, p.einzelpreis_cent, p.gewicht_g
+      db.prepare(`SELECT p.id, p.bestellung_id, p.charge_artikel_id, p.menge, p.einzelpreis_cent, p.gewicht_g, ${stueckSpalte}
                   FROM bestell_positionen p JOIN bestellungen b ON b.id = p.bestellung_id
                   WHERE b.charge_id IN (${aktiv}) ORDER BY p.id`),
       db.prepare(`SELECT k.id, k.name, k.telefon, k.email, k.strasse, k.plz, k.ort, k.stammkunde, k.notiz,
@@ -186,6 +215,7 @@ async function standLaden(db, bank = null) {
     jePos.get(p.bestellung_id).push({
       id: id(p.id), artikelId: id(p.charge_artikel_id), menge: p.menge,
       einzelpreisCent: p.einzelpreis_cent, gewichtG: p.gewicht_g ?? undefined,
+      ...(p.stueckgewichte ? { stueckG: stueckLesen(p.stueckgewichte) } : {}),
     });
   }
 
@@ -320,13 +350,39 @@ async function bestellungErfassen(db, e) {
   });
 }
 
-// Gewicht einer Position nur bei Gewichtsware setzen (sonst ändert sich nichts)
-function gewichtSetzen(db, bid, positionId, gewichtG) {
+// Gewicht einer Position nur bei Gewichtsware setzen (sonst ändert sich nichts).
+// spalte = Spalte stueckgewichte vorhanden: dann die Einzelgewichte mit
+// setzen (null = keine, z. B. beim Wiegen der ganzen Bestellung auf einmal)
+function gewichtSetzen(db, bid, positionId, gewichtG, { spalte = false, stueck = null } = {}) {
   return db.prepare(
-    `UPDATE bestell_positionen SET gewicht_g = ?
+    `UPDATE bestell_positionen SET gewicht_g = ?${spalte ? ', stueckgewichte = ?' : ''}
      WHERE id = ? AND bestellung_id = ? AND charge_artikel_id IN (
        SELECT ca.id FROM charge_artikel ca JOIN produkte p ON p.id = ca.produkt_id WHERE p.art = 'gewicht')`
-  ).bind(gewichtG, positionId, bid);
+  ).bind(gewichtG, ...(spalte ? [stueck] : []), positionId, bid);
+}
+
+/**
+ * Einzelgewichte bei der Übergabe zwischenspeichern (beim Verlassen jedes
+ * Felds). Sind alle Stücke gewogen, gilt ihre Summe auch als Gewicht der
+ * Position. Ohne Spalte stueckgewichte: nichts gespeichert, kein Fehler.
+ */
+async function stueckSpeichern(db, bid, e) {
+  const pid = nummer(e.positionId, 'Position');
+  const pos = await db.prepare(
+    `SELECT bp.menge FROM bestell_positionen bp
+     JOIN bestellungen b ON b.id = bp.bestellung_id
+     JOIN charge_artikel ca ON ca.id = bp.charge_artikel_id JOIN produkte p ON p.id = ca.produkt_id
+     WHERE bp.id = ? AND bp.bestellung_id = ? AND p.art = 'gewicht'
+       AND b.status = 'vorgemerkt' AND b.uebergeben_am IS NULL`
+  ).bind(pid, bid).first();
+  if (!pos) throw new EingabeFehler('Position nicht gefunden, keine Gewichtsware oder schon übergeben.');
+  const liste = stueckPruefen(e.gewichte, pos.menge);
+  if (!(await hatStueckSpalte(db))) return { gespeichert: false };
+  const voll = liste.every(Boolean);
+  await db.prepare(
+    `UPDATE bestell_positionen SET stueckgewichte = ?${voll ? ', gewicht_g = ?' : ''} WHERE id = ?`
+  ).bind(stueckText(liste), ...(voll ? [liste.reduce((s, g) => s + g, 0)] : []), pid).run();
+  return { gespeichert: true };
 }
 
 // Bar kassiert: Zeitpunkt, Art und den Betrag zu diesem Zeitpunkt festhalten
@@ -345,22 +401,37 @@ async function bestellungAbschliessen(db, bid, e) {
     nummer(g.positionId, 'Position'),
     ganzzahl(g.gewichtG, 'Gewicht', { min: 1, max: 200000 }),
   ]));
+  // Einzelgewichte (optional): je Stück ein Wert, Summe = Gewicht der Position
+  const stueck = new Map();
+  for (const g of e.gewichte || []) {
+    if (Array.isArray(g.stueck)) stueck.set(nummer(g.positionId, 'Position'), g.stueck);
+  }
   const b = await db.prepare('SELECT status FROM bestellungen WHERE id = ?').bind(bid).first();
   if (!b) throw new EingabeFehler('Bestellung nicht gefunden.');
   if (b.status !== 'vorgemerkt') throw new EingabeFehler('Nur vorgemerkte Bestellungen können übergeben werden.');
   const { results: positionen } = await db.prepare(
-    `SELECT bp.id, bp.gewicht_g, p.art FROM bestell_positionen bp
+    `SELECT bp.id, bp.gewicht_g, bp.menge, p.art FROM bestell_positionen bp
      JOIN charge_artikel ca ON ca.id = bp.charge_artikel_id JOIN produkte p ON p.id = ca.produkt_id
      WHERE bp.bestellung_id = ?`
   ).bind(bid).all();
   for (const pid of gewichte.keys()) {
     if (!positionen.some((p) => p.id === pid && p.art === 'gewicht')) throw new EingabeFehler('Position nicht gefunden oder keine Gewichtsware.');
   }
+  const spalte = await hatStueckSpalte(db);
+  const stueckTexte = new Map();
+  for (const [pid, werte] of stueck) {
+    const pos = positionen.find((p) => p.id === pid);
+    if (!pos || !gewichte.has(pid)) continue;
+    const liste = stueckPruefen(werte, pos.menge);
+    if (!liste.every(Boolean)) throw new EingabeFehler('Bitte alle Gewichte eintragen.');
+    gewichte.set(pid, liste.reduce((s, g) => s + g, 0));
+    stueckTexte.set(pid, stueckText(liste));
+  }
   if (positionen.some((p) => p.art === 'gewicht' && !gewichte.has(p.id) && !p.gewicht_g)) {
     throw new EingabeFehler('Bitte alle Gewichte eintragen.');
   }
   await db.batch([
-    ...[...gewichte].map(([pid, g]) => gewichtSetzen(db, bid, pid, g)),
+    ...[...gewichte].map(([pid, g]) => gewichtSetzen(db, bid, pid, g, { spalte, stueck: stueckTexte.get(pid) ?? null })),
     db.prepare(`UPDATE bestellungen SET uebergeben_am = datetime('now'), geaendert_am = datetime('now')
                 ${zahlung === 'ueberweisung' ? ", zahlart = 'ueberweisung'" : ''} WHERE id = ?`).bind(bid),
     ...(zahlung === 'bar'
@@ -387,7 +458,11 @@ async function positionSetzen(db, bid, e) {
   ).bind(artikelId, bid).first();
   if (!b) throw new EingabeFehler('Bestellung nicht gefunden.');
   if (!b.artikel) throw new EingabeFehler('Artikel gehört nicht zu dieser Bestellrunde.');
-  if (b.status !== 'vorgemerkt') throw new EingabeFehler('Nur bei vorgemerkten Bestellungen möglich.');
+  if (b.status === 'storniert') throw new EingabeFehler('Bei stornierten Bestellungen nicht möglich – erst wiederherstellen.');
+  // Warteliste zählt nicht von der Menge ab: dort frei ändern (z. B. ein
+  // Gasthaus nimmt statt 12 auch 7 Gänse – dann „Nachrücken lassen")
+  const warteliste = b.status === 'warteliste';
+  const spalte = await hatStueckSpalte(db);
   const { results: positionen } = await db.prepare(
     'SELECT id, charge_artikel_id, menge FROM bestell_positionen WHERE bestellung_id = ?'
   ).bind(bid).all();
@@ -402,16 +477,17 @@ async function positionSetzen(db, bid, e) {
   } else if (pos) {
     r = await db.prepare(
       `UPDATE bestell_positionen SET menge = ?1, gewicht_g = CASE WHEN menge = ?1 THEN gewicht_g END
-       WHERE id = ?2 AND ?1 - menge <= ${SQL_FREI}`
-    ).bind(menge, pos.id, artikelId).run();
+       ${spalte ? ', stueckgewichte = CASE WHEN menge = ?1 THEN stueckgewichte END' : ''}
+       WHERE id = ?2 AND (?4 OR ?1 - menge <= ${SQL_FREI})`
+    ).bind(menge, pos.id, artikelId, warteliste ? 1 : 0).run();
     if (!r.meta.changes) throw new EingabeFehler(`Nicht genug frei – noch ${Math.max(0, await frei())} verfügbar.`);
   } else {
     r = await db.prepare(
       `INSERT INTO bestell_positionen (bestellung_id, charge_artikel_id, menge, einzelpreis_cent, herkunft, ust_satz)
        SELECT ?1, ca.id, ?2, ca.preis_cent, pr.herkunft, pr.ust_satz
        FROM charge_artikel ca JOIN produkte pr ON pr.id = ca.produkt_id
-       WHERE ca.id = ?3 AND ?2 <= ${SQL_FREI}`
-    ).bind(bid, menge, artikelId).run();
+       WHERE ca.id = ?3 AND (?4 OR ?2 <= ${SQL_FREI})`
+    ).bind(bid, menge, artikelId, warteliste ? 1 : 0).run();
     if (!r.meta.changes) throw new EingabeFehler(`Nicht genug frei – noch ${Math.max(0, await frei())} verfügbar.`);
   }
   await db.prepare(`UPDATE bestellungen SET geaendert_am = datetime('now') WHERE id = ?`).bind(bid).run();
@@ -432,6 +508,7 @@ async function hofverkauf(db, e) {
       chargeArtikelId: nummer(p.artikelId, 'Artikelnummer'),
       menge: ganzzahl(p.menge, 'Menge', { min: 0, max: 999 }),
       gewichtG: ganzzahl(p.gewichtG, 'Gewicht', { min: 1, max: 200000, leer: true }),
+      stueck: Array.isArray(p.stueck) ? p.stueck : null,
     }))
     .filter((p) => p.menge > 0);
   if (!positionen.length) throw new EingabeFehler('Bitte mindestens einen Artikel wählen.');
@@ -447,6 +524,14 @@ async function hofverkauf(db, e) {
   for (const p of positionen) {
     const a = artikel.find((x) => x.id === p.chargeArtikelId);
     if (!a) throw new EingabeFehler('Artikel gehört nicht zu dieser Bestellrunde.');
+    if (a.art === 'gewicht' && p.stueck) {
+      const liste = stueckPruefen(p.stueck, p.menge);
+      if (!liste.every(Boolean)) throw new EingabeFehler('Bitte alle Gewichte eintragen.');
+      p.gewichtG = liste.reduce((s, g) => s + g, 0);
+      p.stueck = stueckText(liste);
+    } else {
+      p.stueck = null;
+    }
     if (a.art === 'gewicht' && !p.gewichtG) throw new EingabeFehler('Bitte alle Gewichte eintragen.');
     if (a.art !== 'gewicht') p.gewichtG = null;
     if (p.menge > a.frei) throw new EingabeFehler(`Nicht genug frei – noch ${Math.max(0, a.frei)} verfügbar.`);
@@ -461,6 +546,7 @@ async function hofverkauf(db, e) {
     kundeId = sammel ? sammel.id : await kundeSichern(db, null, { name: SAMMELKUNDE });
   }
 
+  const spalte = await hatStueckSpalte(db);
   const erg = await bestellungAnlegen(db, {
     chargeId,
     kundeId,
@@ -473,9 +559,9 @@ async function hofverkauf(db, e) {
     ausverkauftZulassen: true,
     zusatz: (nr) => [
       ...positionen.filter((p) => p.gewichtG).map((p) => db.prepare(
-        `UPDATE bestell_positionen SET gewicht_g = ?
+        `UPDATE bestell_positionen SET gewicht_g = ?${spalte ? ', stueckgewichte = ?' : ''}
          WHERE bestellung_id = (SELECT id FROM bestellungen WHERE nummer = ?) AND charge_artikel_id = ?`
-      ).bind(p.gewichtG, nr, p.chargeArtikelId)),
+      ).bind(p.gewichtG, ...(spalte ? [p.stueck] : []), nr, p.chargeArtikelId)),
       db.prepare(`UPDATE bestellungen SET uebergeben_am = datetime('now') WHERE nummer = ?`).bind(nr),
       ...(zahlung === 'bar' ? [db.prepare(`UPDATE bestellungen SET ${SQL_BAR_KASSIERT} WHERE nummer = ?`).bind(nr)] : []),
       db.prepare(SQL_ALS_GESEHEN).bind(nr),
@@ -1056,11 +1142,14 @@ async function bestellungAendern(db, bestellungId, e, ctx = {}) {
       return { bestellung, mail };
     }
     case 'gewicht': {
+      // Gesamtgewicht (Ansicht „Wiegen") – ersetzt etwaige Einzelgewichte
       const gewichtG = ganzzahl(e.gewichtG, 'Gewicht', { min: 1, max: 200000, leer: true });
-      r = await gewichtSetzen(db, bid, nummer(e.positionId, 'Position'), gewichtG).run();
+      r = await gewichtSetzen(db, bid, nummer(e.positionId, 'Position'), gewichtG, { spalte: await hatStueckSpalte(db) }).run();
       if (!r.meta.changes) throw new EingabeFehler('Position nicht gefunden oder keine Gewichtsware.');
       break;
     }
+    case 'stueck':
+      return stueckSpeichern(db, bid, e);
     case 'position':
       return positionSetzen(db, bid, e);
     case 'abschliessen':

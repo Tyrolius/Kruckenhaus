@@ -790,7 +790,8 @@ function ansichtNeu() {
               <span class="vw-klein">${a.art === 'gewicht' ? `${euro(a.preisCent)}/kg · ca. ${kgFormat.format(a.richtVonG / 1000)}–${kgFormat.format(a.richtBisG / 1000)} kg/Stück` : euro(a.preisCent)} · ${freiText(ch, a.id)}</span></div>
             <div class="vw-zaehler">
               <button type="button" data-aktion="minus" data-id="${a.id}" aria-label="${esc(a.name)} weniger">−</button>
-              <output id="menge-${a.id}" data-artikel="${a.id}">0</output>
+              <input type="number" class="vw-menge-feld" id="menge-${a.id}" data-artikel="${a.id}" value="0" min="0" max="999"
+                inputmode="numeric" aria-label="Menge ${esc(a.name)}" />
               <button type="button" data-aktion="plus" data-id="${a.id}" aria-label="${esc(a.name)} mehr">+</button>
             </div>
           </div>`).join('')}
@@ -828,8 +829,9 @@ function ansichtNeu() {
 
 function formularMengen() {
   const mengen = {};
-  document.querySelectorAll('#vw-formular output[data-artikel]').forEach((o) => {
-    mengen[o.dataset.artikel] = Number(o.value || o.textContent);
+  document.querySelectorAll('#vw-formular [data-artikel]').forEach((o) => {
+    const menge = Number(o.value);
+    mengen[o.dataset.artikel] = Number.isInteger(menge) && menge > 0 ? Math.min(menge, 999) : 0;
   });
   return mengen;
 }
@@ -992,7 +994,7 @@ async function gewichtSpeichern(input) {
   if (!p) return;
   const gewichtG = gewichtAusFeld(input);
   const erg = await speichern(`bestellung/${b.id}`, { aktion: 'gewicht', positionId: p.id, gewichtG: gewichtG ?? null },
-    () => ({}), { neuZeichnen: false, still: true });
+    () => { delete p.stueckG; return {}; }, { neuZeichnen: false, still: true });
   input.classList.toggle('vw-feld--fehler', !erg);
 }
 
@@ -1001,10 +1003,22 @@ async function gewichtSpeichern(input) {
 // der Betrag steht sofort da, und ein Knopf erledigt Übergabe und – bei
 // Barzahlung – das Kassieren. Vorab wiegen (Ansicht „Wiegen") ist optional.
 
-// Getippte Stückgewichte einer Position (Text, wie eingegeben)
+// Getippte Stückgewichte einer Position (Text, wie eingegeben). Noch nichts
+// getippt: die gespeicherten Einzelgewichte (überstehen so ein Neuladen)
 function stueckTexte(p) {
-  const liste = zustand.stueck[p.id] || [];
+  const liste = zustand.stueck[p.id]
+    || (p.stueckG && p.stueckG.length === p.menge ? p.stueckG.map((g) => (g ? kgFormat.format(g / 1000) : '')) : []);
   return Array.from({ length: p.menge }, (_, i) => liste[i] || '');
+}
+
+// Einzelgewichte in Gramm (null = leer oder ungültig)
+const stueckGramm = (p) => stueckTexte(p).map((t) => grammAusText(t) || null);
+
+// Alle Stücke gewogen? Dann „3,52 · 3,61 · … kg" (Lieferschein, Details)
+function einzelgewichteText(p) {
+  const g = p.stueckG;
+  if (!g || g.length !== p.menge || g.length < 2 || !g.every(Boolean)) return '';
+  return `${g.map((x) => kgFormat.format(x / 1000)).join(' · ')} kg`;
 }
 
 function grammAusText(text) {
@@ -1018,6 +1032,7 @@ function wirksamesGewicht(p) {
   const texte = stueckTexte(p);
   const getippt = texte.filter((t) => t.trim());
   if (!getippt.length) return p.gewichtG || null;
+  if (!zustand.stueck[p.id] && p.stueckG && p.stueckG.every(Boolean)) return p.gewichtG || null;
   const gramm = texte.map(grammAusText);
   return gramm.every(Boolean) ? gramm.reduce((s, g) => s + g, 0) : null;
 }
@@ -1158,6 +1173,7 @@ function ansichtAbgabe() {
         <p class="${b.bezahlt ? '' : 'vw-warnung'}">✓ Übergeben · ${b.bezahlt ? `bezahlt (${ZAHLARTEN[b.bezahlt]})` : 'Geld noch nicht da'}</p>
         ${b.bezahlt ? '' : `<button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit vw-knopf--gross" data-aktion="bezahlt" data-wert="${b.zahlart}" data-id="${b.id}">${b.zahlart === 'bar' ? 'Bar erhalten' : 'Geld ist am Konto'}</button>
           <button type="button" class="vw-link" data-aktion="zahlungsinfo" data-id="${b.id}">Zahlungsinfo mit QR-Code zeigen</button>`}
+        <p><button type="button" class="vw-link" data-aktion="lieferschein" data-id="${b.id}">Lieferschein drucken</button></p>
       </section>
       ${kontakt}
       <p><button type="button" class="vw-link vw-link--leise" data-aktion="uebergeben" data-id="${b.id}">Übergabe rückgängig machen</button></p>`;
@@ -1173,7 +1189,7 @@ function ansichtAbgabe() {
       ${gewicht ? `<div class="vw-stueck">${stueckTexte(p).map((txt, i) => `<input type="text" inputmode="decimal" autocomplete="off"
           placeholder="Stück ${i + 1}" value="${esc(txt)}" data-stueck="${p.id}" data-bestellung="${b.id}" data-nr="${i}"
           aria-label="${esc(a.name)} Stück ${i + 1}, Gewicht in kg" />`).join('')}</div>
-        ${p.gewichtG ? `<p class="vw-klein">Vorab gewogen: ${kg(p.gewichtG)} – nur ausfüllen, wenn es andere Stücke werden.</p>` : ''}` : ''}
+        ${p.gewichtG && !(p.stueckG || []).some(Boolean) ? `<p class="vw-klein">Vorab gewogen: ${kg(p.gewichtG)} – nur ausfüllen, wenn es andere Stücke werden.</p>` : ''}` : ''}
     </div>`;
   }).join('');
   const hatGewicht = b.positionen.some((p) => artikelVon(ch, p.artikelId).art === 'gewicht');
@@ -1210,12 +1226,29 @@ function ansichtAbgabe() {
 function stueckEintragen(input) {
   const b = bestellungVon(input.dataset.bestellung);
   if (!b) return;
-  const liste = zustand.stueck[input.dataset.stueck] || [];
+  const p = b.positionen.find((x) => x.id === input.dataset.stueck);
+  // gespeicherte Einzelgewichte als Ausgangspunkt, damit keines verloren geht
+  const liste = zustand.stueck[input.dataset.stueck] || (p ? stueckTexte(p) : []);
   liste[Number(input.dataset.nr)] = input.value;
   zustand.stueck[input.dataset.stueck] = liste;
   const text = betragText(uebergabeBetrag(b));
   document.querySelectorAll(`[data-betrag="${b.id}"]`).forEach((el) => { el.textContent = text; });
   input.classList.toggle('vw-feld--fehler', Boolean(input.value.trim()) && !grammAusText(input.value));
+}
+
+// Beim Verlassen eines Stückfelds im Hintergrund speichern – bei 15 Gänsen
+// geht so nichts verloren, wenn das Handy die Seite neu lädt
+async function stueckZwischenspeichern(input) {
+  const b = bestellungVon(input.dataset.bestellung);
+  const p = b && b.positionen.find((x) => x.id === input.dataset.stueck);
+  if (!p || b.uebergeben) return;
+  const gewichte = stueckGramm(p);
+  const erg = await speichern(`bestellung/${b.id}`, { aktion: 'stueck', positionId: p.id, gewichte }, () => {
+    p.stueckG = gewichte;
+    if (gewichte.every(Boolean)) p.gewichtG = gewichte.reduce((s, g) => s + g, 0);
+    return { gespeichert: true };
+  }, { neuZeichnen: false, still: true });
+  input.classList.toggle('vw-feld--fehler', !erg || (Boolean(input.value.trim()) && !grammAusText(input.value)));
 }
 
 async function uebergabeAbschliessen(b, zahlung) {
@@ -1225,10 +1258,16 @@ async function uebergabeAbschliessen(b, zahlung) {
     if (artikelVon(ch, p.artikelId).art !== 'gewicht') continue;
     const g = wirksamesGewicht(p);
     if (!g) return meldung(`Bitte bei ${kundeVon(b).name} alle Gewichte eintragen.`);
-    if (g !== p.gewichtG) gewichte.push({ positionId: p.id, gewichtG: g });
+    const stueck = stueckGramm(p);
+    if (stueck.every(Boolean)) gewichte.push({ positionId: p.id, gewichtG: g, stueck });
+    else if (g !== p.gewichtG) gewichte.push({ positionId: p.id, gewichtG: g });
   }
   const erg = await speichern(`bestellung/${b.id}`, { aktion: 'abschliessen', zahlung: zahlung || null, gewichte }, () => {
-    gewichte.forEach((g) => { b.positionen.find((p) => p.id === g.positionId).gewichtG = g.gewichtG; });
+    gewichte.forEach((g) => {
+      const p = b.positionen.find((x) => x.id === g.positionId);
+      p.gewichtG = g.gewichtG;
+      if (g.stueck) p.stueckG = g.stueck;
+    });
     b.uebergeben = true;
     b.neu = false;
     if (zahlung === 'bar' && !b.bezahlt) { b.bezahlt = 'bar'; b.zahlart = 'bar'; }
@@ -1254,9 +1293,11 @@ async function uebergabeAbschliessen(b, zahlung) {
 // nach jedem Tippen offen (zustand.aendernOffen), weil neu gezeichnet wird.
 function mengeAendernBlock(b) {
   const ch = chargeVon(b);
-  const dazu = ch.artikel.filter((a) => !b.positionen.some((p) => p.artikelId === a.id) && freieMenge(ch, a.id) > 0);
-  return `<details class="vw-aendern" data-aendern="${b.id}" ${zustand.aendernOffen === b.id ? 'open' : ''}>
+  const warteliste = b.status === 'warteliste';
+  const dazu = ch.artikel.filter((a) => !b.positionen.some((p) => p.artikelId === a.id) && (warteliste || freieMenge(ch, a.id) > 0));
+  return `<details class="vw-aendern" data-aendern="${b.id}" ${zustand.aendernOffen === b.id || warteliste ? 'open' : ''}>
     <summary>Menge ändern oder Artikel dazu</summary>
+    ${warteliste ? '<p class="vw-klein">Reicht es nicht für alles? Menge auf das Freie senken, dann „Nachrücken lassen".</p>' : ''}
     ${b.positionen.map((p) => {
       const a = artikelVon(ch, p.artikelId);
       return `<div class="vw-pos-kopf vw-pos-aendern"><span>${esc(a.name)}<br><span class="vw-klein">${freiText(ch, a.id)}</span></span>
@@ -1281,11 +1322,12 @@ function positionMengeSetzen(b, artikelId, menge) {
   const alt = pos ? pos.menge : 0;
   if (menge < 0) return;
   if (menge === 0 && b.positionen.length === 1) return meldung('Der letzte Artikel kann nicht entfernt werden – Bestellung stattdessen in den Details stornieren.');
-  if (menge > alt && freieMenge(ch, artikelId) < menge - alt) return meldung(`Nicht genug frei – noch ${Math.max(0, freieMenge(ch, artikelId))} verfügbar.`);
+  // Auf der Warteliste zählt nichts von der Menge ab – dort frei ändern
+  if (b.status === 'vorgemerkt' && menge > alt && freieMenge(ch, artikelId) < menge - alt) return meldung(`Nicht genug frei – noch ${Math.max(0, freieMenge(ch, artikelId))} verfügbar.`);
   if (pos) delete zustand.stueck[pos.id];
   speichern(`bestellung/${b.id}`, { aktion: 'position', artikelId, menge }, () => {
     if (menge === 0) b.positionen = b.positionen.filter((p) => p !== pos);
-    else if (pos) { pos.menge = menge; pos.gewichtG = undefined; } else {
+    else if (pos) { pos.menge = menge; pos.gewichtG = undefined; delete pos.stueckG; } else {
       b.positionen.push({ id: `${b.id}-p${Date.now()}`, artikelId, menge, einzelpreisCent: artikelVon(ch, artikelId).preisCent });
     }
     return {};
@@ -1385,7 +1427,7 @@ async function hofverkaufSpeichern(zahlung) {
       if (!gramm.every(Boolean)) return meldung(`Bitte bei „${a.name}" alle Gewichte eintragen.`);
       gewichtG = gramm.reduce((s, g) => s + g, 0);
     }
-    positionen.push({ artikelId: a.id, menge, gewichtG });
+    positionen.push({ artikelId: a.id, menge, gewichtG, ...(a.art === 'gewicht' ? { stueck: hofStueckTexte(a.id).map(grammAusText) } : {}) });
   }
   if (!positionen.length) return meldung('Bitte mindestens einen Artikel wählen.');
   const bekannt = name ? kundeNachName(name) : null;
@@ -1408,6 +1450,7 @@ async function hofverkaufSpeichern(zahlung) {
       positionen: positionen.map((p, i) => ({
         id: `b${Date.now()}-p${i}`, artikelId: p.artikelId, menge: p.menge,
         einzelpreisCent: artikelVon(ch, p.artikelId).preisCent, gewichtG: p.gewichtG || undefined,
+        ...(p.stueck ? { stueckG: p.stueck } : {}),
       })),
     };
     daten.bestellungen.push(b);
@@ -1670,7 +1713,7 @@ function voranmeldungenUebernehmenBeispiel(ch, ids) {
       id: `b${Date.now()}${kundeId}`, nummer: naechsteNummer(), chargeId: ch.id, kundeId,
       quelle: liste[0].quelle, erstellt: new Date().toISOString().slice(0, 10),
       status: reicht ? 'vorgemerkt' : 'warteliste', terminId: null, zahlart: 'bar', bezahlt: null,
-      uebergeben: false, anmerkung: liste.map((v) => v.notiz).filter(Boolean).join(' '),
+      uebergeben: false, anmerkung: liste.map((v) => v.notiz).filter(Boolean).join(' · '),
       interneNotiz: 'aus Vormerkung – Termin und Zahlart bestätigen', positionen,
     };
     daten.bestellungen.push(b);
@@ -2842,8 +2885,9 @@ function detailOeffnen(id) {
     const a = artikelVon(ch, p.artikelId);
     const betrag = positionBetrag(ch, p);
     const preis = preisVon(ch, p);
+    const einzeln = einzelgewichteText(p);
     const detail = a.art === 'gewicht'
-      ? (p.gewichtG ? `${kg(p.gewichtG)} × ${euro(preis)}/kg` : `${euro(preis)}/kg, noch nicht gewogen`)
+      ? (p.gewichtG ? `${kg(p.gewichtG)} × ${euro(preis)}/kg${einzeln ? `<br>je Stück: ${einzeln}` : ''}` : `${euro(preis)}/kg, noch nicht gewogen`)
       : `je ${euro(preis)}`;
     return `<tr><td>${p.menge}× ${esc(a.name)}<br><span class="vw-klein">${detail}</span></td>
       <td class="vw-zahl">${betragText(betrag)}</td></tr>`;
@@ -2902,7 +2946,7 @@ function detailOeffnen(id) {
     <div class="vw-abschnitt">
       <table class="vw-tabelle"><tbody>${positionen}</tbody>
         <tfoot><tr><td>Summe</td><td class="vw-zahl">${betragText(summe)}</td></tr></tfoot></table>
-      ${b.status === 'vorgemerkt' && !b.uebergeben ? mengeAendernBlock(b) : ''}
+      ${(b.status === 'vorgemerkt' && !b.uebergeben) || b.status === 'warteliste' ? mengeAendernBlock(b) : ''}
       <div class="vw-knopfreihe" role="group" aria-label="Zahlung gewünscht">
         <span class="vw-klein">Zahlung gewünscht:</span>
         ${Object.entries(ZAHLARTEN).map(([wert, text]) => `<button type="button" class="vw-chip" data-aktion="zahlart-setzen" data-id="${b.id}" data-wert="${wert}" aria-pressed="${b.zahlart === wert}">${text}</button>`).join('')}
@@ -2911,6 +2955,8 @@ function detailOeffnen(id) {
       ${b.interneNotiz ? `<p class="vw-klein">Intern: ${esc(b.interneNotiz)}</p>` : ''}
     </div>
     <div class="vw-abschnitt vw-knopfreihe">${aktionen}</div>
+    ${b.status === 'vorgemerkt' ? `<p class="vw-abschnitt"><button type="button" class="vw-link" data-aktion="lieferschein" data-id="${b.id}">Lieferschein drucken</button>
+      <span class="vw-klein">– z. B. für ein Gasthaus, mit jedem Stück und Gewicht</span></p>` : ''}
   </div>`;
   dialog.dataset.id = b.id;
   if (!dialog.open) dialog.showModal();
@@ -2970,7 +3016,7 @@ function exportieren() {
   const ch = aktiveCharge();
   const kopf = ['Bestellnr.', 'Datum', 'Kunde', 'Telefon', 'Adresse', 'Ort', 'Quelle', 'Status',
     'Übergabe', 'Termin', 'Artikel', 'Menge', 'Gewicht kg', 'Preis €', 'Preis je', 'Betrag €',
-    'geschätzt', 'Zahlart', 'Bezahlt', 'Übergeben', 'Anmerkung'];
+    'geschätzt', 'Zahlart', 'Bezahlt', 'Übergeben', 'Anmerkung', 'Einzelgewichte kg'];
   const zeilen = [kopf];
   bestellungenDerCharge(ch)
     .filter((b) => b.status !== 'storniert')
@@ -2986,7 +3032,8 @@ function exportieren() {
           t ? t.datum : '', a.name, p.menge,
           p.gewichtG ? p.gewichtG / 1000 : '', preisVon(ch, p) / 100, a.art === 'gewicht' ? 'kg' : 'Stück',
           betrag.cent / 100, betrag.geschaetzt ? 'ja' : '', ZAHLARTEN[b.zahlart],
-          b.bezahlt ? ZAHLARTEN[b.bezahlt] : 'offen', b.uebergeben ? 'ja' : 'nein', b.anmerkung]);
+          b.bezahlt ? ZAHLARTEN[b.bezahlt] : 'offen', b.uebergeben ? 'ja' : 'nein', b.anmerkung,
+          einzelgewichteText(p).replace(/ kg$/, '')]);
       });
     });
   csvHerunterladen(zeilen, `hofladen-${ch.titel.toLowerCase().replace(/[^a-z0-9äöüß]+/g, '-')}.csv`);
@@ -3080,6 +3127,35 @@ function listenDrucken(nurAuswahl) {
   window.print();
 }
 
+// Absender auf Packzettel und Lieferschein
+const ABSENDER = 'Bergbauernhof Kruckenhaus · Florian & Kathrin Häusler · Oberberg 70 · 6252 Breitenbach am Inn';
+
+// Ein Packzettel bzw. Lieferschein: Kunde, Termin, jede Position mit
+// Gewicht (bei mehreren Stücken auch jedes Stück einzeln), Summe, Zahlung
+function packzettelHtml(b, { titel = '' } = {}) {
+  const ch = chargeVon(b);
+  const k = kundeVon(b);
+  const t = terminVon(b);
+  const lieferung = t && t.art === 'lieferung';
+  return `<section class="vw-packzettel">
+    <p class="vw-packzettel-absender">${esc(ABSENDER)}</p>
+    <h2>${titel ? `${esc(titel)} ` : ''}${esc(b.nummer)} – ${esc(k.name)}</h2>
+    <p>${t ? terminText(t) : istHofverkauf(b) ? 'Verkauf am Hof' : 'Termin offen'}${lieferung && k.strasse ? ` · ${esc(adresseVon(k))}` : ''}${k.telefon ? ` · ${esc(k.telefon)}` : ''}</p>
+    <table class="vw-tabelle"><tbody>${b.positionen.map((p) => {
+      const a = artikelVon(ch, p.artikelId);
+      const einzeln = einzelgewichteText(p);
+      const preis = a.art === 'gewicht' ? `${euro(preisVon(ch, p))}/kg` : `je ${euro(preisVon(ch, p))}`;
+      return `<tr><td>${p.menge}× ${esc(a.name)} <span class="vw-druck-klein">(${preis})</span>
+          ${einzeln ? `<br><span class="vw-druck-klein">je Stück: ${einzeln}</span>` : ''}</td>
+        <td class="vw-zahl">${p.gewichtG ? kg(p.gewichtG) : ''}</td>
+        <td class="vw-zahl">${betragText(positionBetrag(ch, p))}</td></tr>`;
+    }).join('')}</tbody>
+    <tfoot><tr><td colspan="2">Summe · ${b.bezahlt ? `bezahlt (${ZAHLARTEN[b.bezahlt]})` : ZAHLARTEN[b.zahlart]}</td>
+      <td class="vw-zahl">${betragText(bestellBetrag(b))}</td></tr></tfoot></table>
+    ${!b.bezahlt && b.zahlart === 'ueberweisung' ? ueberweisungsBlock(b) : ''}
+  </section>`;
+}
+
 function packzettelDrucken() {
   const ch = aktiveCharge();
   const druck = document.getElementById('vw-druck');
@@ -3087,22 +3163,16 @@ function packzettelDrucken() {
   druck.innerHTML = bestellungenDerCharge(ch)
     .filter((b) => istAktiv(b) && !istHofverkauf(b))
     .sort((x, y) => kundeVon(x).name.localeCompare(kundeVon(y).name, 'de'))
-    .map((b) => {
-      const k = kundeVon(b);
-      const t = terminVon(b);
-      return `<section class="vw-packzettel">
-        <h2>${esc(k.name)} – ${esc(b.nummer)}</h2>
-        <p>${t ? terminText(t) : 'Termin offen'}${t && t.art === 'lieferung' ? ` · ${esc(k.strasse)}, ${esc(k.ort)}` : ''} · ${esc(k.telefon)}</p>
-        <table class="vw-tabelle"><tbody>${b.positionen.map((p) => {
-          const a = artikelVon(ch, p.artikelId);
-          return `<tr><td>${p.menge}× ${esc(a.name)}</td><td>${p.gewichtG ? kg(p.gewichtG) : ''}</td>
-            <td class="vw-zahl">${betragText(positionBetrag(ch, p))}</td></tr>`;
-        }).join('')}</tbody>
-        <tfoot><tr><td colspan="2">Summe · ${b.bezahlt ? 'bezahlt' : ZAHLARTEN[b.zahlart]}</td>
-          <td class="vw-zahl">${betragText(bestellBetrag(b))}</td></tr></tfoot></table>
-        ${!b.bezahlt && b.zahlart === 'ueberweisung' ? ueberweisungsBlock(b) : ''}
-      </section>`;
-    }).join('');
+    .map((b) => packzettelHtml(b)).join('');
+  window.print();
+}
+
+// Lieferschein für eine einzelne Bestellung (z. B. ein Gasthaus mit 15 Gänsen)
+function lieferscheinDrucken(b) {
+  const druck = document.getElementById('vw-druck');
+  if (!druck || !b) return;
+  druck.innerHTML = packzettelHtml(b, { titel: 'Lieferschein' })
+    + `<p class="vw-druck-klein">Gedruckt ${new Date().toLocaleString('de-AT', { dateStyle: 'short', timeStyle: 'short' })}</p>`;
   window.print();
 }
 
@@ -3278,10 +3348,10 @@ function initKlicks() {
       }
       case 'plus':
       case 'minus': {
-        const out = document.getElementById(`menge-${el.dataset.id}`);
-        const alt = Number(out.textContent);
-        const neu = el.dataset.aktion === 'plus' ? alt + 1 : Math.max(0, alt - 1);
-        out.textContent = String(neu);
+        const feldMenge = document.getElementById(`menge-${el.dataset.id}`);
+        const alt = Math.max(0, Math.floor(Number(feldMenge.value) || 0));
+        const neu = el.dataset.aktion === 'plus' ? Math.min(999, alt + 1) : Math.max(0, alt - 1);
+        feldMenge.value = String(neu);
         formularSummeAktualisieren();
         break;
       }
@@ -3353,6 +3423,9 @@ function initKlicks() {
       }
       case 'drucken':
         packzettelDrucken();
+        break;
+      case 'lieferschein':
+        lieferscheinDrucken(b);
         break;
       case 'alle-gesehen':
         alsGesehenMarkieren(bestellungenDerCharge().filter((x) => x.neu).map((x) => x.id)).then(() => {
@@ -3484,6 +3557,8 @@ function initEingaben() {
       zustand.hof.name = e.target.value;
     } else if (e.target.name === 'name' && e.target.form && e.target.form.id === 'vw-formular') {
       kundeVorschlagen(e.target.value);
+    } else if (e.target.dataset.artikel && e.target.form && e.target.form.id === 'vw-formular') {
+      formularSummeAktualisieren();
     }
   });
 
@@ -3498,6 +3573,7 @@ function initEingaben() {
     if (e.target.dataset.fotoHochladen !== undefined) produktFotoHochladen(e.target);
     if (e.target.dataset.weiteresFotoHochladen !== undefined) produktFotoHochladen(e.target, true);
     if (e.target.dataset.gewicht) gewichtSpeichern(e.target);
+    if (e.target.dataset.stueck) stueckZwischenspeichern(e.target);
     if (e.target.name === 'termin') adresseUmschalten();
     if (e.target.dataset.wahl === 'charge') {
       zustand.alleRunden = e.target.value === '*';

@@ -3855,6 +3855,24 @@ body.season-winter .winter-image { display: block; }
   font-size: 1.1rem;
 }
 
+/* Menge im Formular „Erfassen": auch direkt eintippbar (z. B. 15 Gänse) */
+.vw-zaehler .vw-menge-feld {
+  width: 3.4rem;
+  height: 40px;
+  padding: 0 0.25rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background-color: var(--color-white);
+  text-align: center;
+  font: inherit;
+  font-weight: 700;
+  font-size: 1.1rem;
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+.vw-zaehler .vw-menge-feld::-webkit-inner-spin-button,
+.vw-zaehler .vw-menge-feld::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+
 .vw-gesamt {
   display: flex;
   justify-content: space-between;
@@ -4170,6 +4188,7 @@ body.season-winter .winter-image { display: block; }
     font-size: 11pt;
   }
   .vw-packzettel h2 { font-size: 14pt; margin-bottom: 0.3rem; }
+  .vw-packzettel-absender { font-size: 8.5pt; margin-bottom: 0.3rem; }
   .vw-packzettel-bank {
     display: flex;
     align-items: center;

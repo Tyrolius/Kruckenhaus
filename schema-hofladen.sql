@@ -275,7 +275,13 @@ CREATE TABLE IF NOT EXISTS bestell_positionen (
   -- Herkunft und USt-Satz des Produkts zum Bestellzeitpunkt (wie der Preis
   -- eingefroren); NULL bei älteren Positionen → es gilt die Einstufung des Produkts
   herkunft          TEXT,
-  ust_satz          REAL
+  ust_satz          REAL,
+  -- Einzelgewichte je Stück in Gramm, durch Komma getrennt, leere Stelle =
+  -- noch nicht gewogen (z. B. '3510,3620,' bei 3 Gänsen). Für den Lieferschein
+  -- und damit getippte Gewichte bei der Übergabe ein Neuladen überstehen.
+  -- gewicht_g bleibt die Summe (gilt für die Abrechnung).
+  -- Vorhandene Datenbank: vorher einmal migration-2026-11-stueckgewichte.sql.
+  stueckgewichte    TEXT
 );
 
 CREATE INDEX IF NOT EXISTS idx_positionen_bestellung ON bestell_positionen (bestellung_id);

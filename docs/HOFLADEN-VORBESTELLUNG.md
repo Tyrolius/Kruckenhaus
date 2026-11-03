@@ -327,6 +327,15 @@ Voranmeldungen*; *Sortiment* in der PC-Seitenleiste bzw. über die Übersicht.
   „Nach Gewicht" bzw. „Fixpreis" ist nach dem ersten Verkauf gesperrt.
   Eier, Marmelade u. Ä. unter „Sonstiges".
 
+- **Große Mengen je Bestellung (November 2026, vor der ersten Gänse-Runde):**
+  Gasthäuser mit 10–15 Stück. Menge bei *Erfassen* eintippbar; Höchstmenge
+  gilt nur für Website/Bertha. Einzelgewichte je Stück werden beim Tippen
+  gespeichert (`bestell_positionen.stueckgewichte`, Migration
+  `migration-2026-11-stueckgewichte.sql`; ohne Spalte nur die Summe) und stehen
+  auf dem **Lieferschein je Bestellung** (Details bzw. nach der Übergabe).
+  Wartelisten-Bestellungen lassen sich in der Menge senken und dann
+  nachrücken (z. B. 7 statt 12). Wünsche aus Vormerkungen („eher große")
+  wandern beim Übernehmen in die Anmerkung der Bestellung.
 - **Mehrere Abholtage** je Bestellrunde, in der Übergabe nach Tag wählbar;
   **Abhol- und Lieferlisten zum Ausdrucken** (je Termin eine Seite, Kästchen
   für Gewichte) für Orte ohne Internet.
