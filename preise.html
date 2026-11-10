@@ -89,112 +89,53 @@
              inklusive Bettwäsche, Handtücher und Alpbachtal Card.</p>
         </div>
 
-        <div class="preise-grid preise-grid--fuenf">
-          <div class="preis-card featured">
-            <div class="preis-header">
-              <span class="preis-tipp">Unser Tipp</span>
-              <h3>Nebensaison</h3>
-              <span class="preis-badge" data-preis="saison-neben-zeitraum">März bis Mai · September bis 19. Dezember (außer Ostern)</span>
+        <!-- Eine Übersicht statt fünf Karten: je Saison eine Zeile. Was immer gilt,
+             steht einmal darunter. Werte kommen weiter aus js/preise-config.js. -->
+        <div class="saison-liste slide-up" role="list" aria-label="Preise je Saison">
+          <div class="saison-zeile saison-zeile--tipp" role="listitem">
+            <div class="saison-name">
+              <h3>Nebensaison <span class="preis-tipp">Unser Tipp</span></h3>
+              <span data-preis="saison-neben-zeitraum">März bis Mai · September bis 19. Dezember (außer Ostern)</span>
             </div>
-            <div class="preis-body">
-              <div class="preis-amount">
-                <div class="amount"><span data-preis="saison-neben-preis">€ 125</span></div>
-                <div class="unit">pro Nacht · ganze Wohnung · bis <span data-preis="belegung-max">4 Personen</span></div>
-              </div>
-              <ul class="preis-details">
-                <li>Mindestaufenthalt: <strong data-preis="saison-neben-mindest">2 Nächte</strong></li>
-                <li><strong>Langzeitrabatt</strong> ab 7 Nächten</li>
-                <li><a href="index.html#herbst-fruehling">Frühling &amp; Herbst am Hof</a></li>
-                <li>Bettwäsche &amp; Handtücher inklusive</li>
-                <li>Alpbachtal Card inklusive</li>
-                <li>zzgl. Endreinigung <strong data-preis="endreinigung">€ 80</strong> einmalig</li>
-                <li>zzgl. Aufenthaltsabgabe <strong data-preis="ortstaxe">3,50 € / Person / Nacht</strong></li>
-              </ul>
-            </div>
+            <div class="saison-bedingung">ab <strong data-preis="saison-neben-mindest">2 Nächte</strong> · Langzeitrabatt ab 7 Nächten · <a href="index.html#herbst-fruehling">Frühling &amp; Herbst am Hof</a></div>
+            <div class="saison-preis"><strong data-preis="saison-neben-preis">€ 125</strong> <span>pro Nacht</span></div>
           </div>
-          <div class="preis-card">
-            <div class="preis-header">
-              
+          <div class="saison-zeile" role="listitem">
+            <div class="saison-name">
               <h3>Frühsommer</h3>
-              <span class="preis-badge" data-preis="saison-fruehsommer-zeitraum">Juni</span>
+              <span data-preis="saison-fruehsommer-zeitraum">Juni</span>
             </div>
-            <div class="preis-body">
-              <div class="preis-amount">
-                <div class="amount"><span data-preis="saison-fruehsommer-preis">€ 150</span></div>
-                <div class="unit">pro Nacht · ganze Wohnung · bis <span data-preis="belegung-max">4 Personen</span></div>
-              </div>
-              <ul class="preis-details">
-                <li>Mindestaufenthalt: <strong data-preis="saison-fruehsommer-mindest">3 Nächte</strong></li>
-                <li>Bettwäsche &amp; Handtücher inklusive</li>
-                <li>Alpbachtal Card inklusive</li>
-                <li>zzgl. Endreinigung <strong data-preis="endreinigung">€ 80</strong> einmalig</li>
-                <li>zzgl. Aufenthaltsabgabe <strong data-preis="ortstaxe">3,50 € / Person / Nacht</strong></li>
-              </ul>
-            </div>
+            <div class="saison-bedingung">ab <strong data-preis="saison-fruehsommer-mindest">3 Nächte</strong></div>
+            <div class="saison-preis"><strong data-preis="saison-fruehsommer-preis">€ 150</strong> <span>pro Nacht</span></div>
           </div>
-          <div class="preis-card">
-            <div class="preis-header">
-              
+          <div class="saison-zeile" role="listitem">
+            <div class="saison-name">
               <h3>Winter</h3>
-              <span class="preis-badge" data-preis="saison-winter-zeitraum">7. Jänner bis Ende Februar · inkl. Semesterferien</span>
+              <span data-preis="saison-winter-zeitraum">7. Jänner bis Ende Februar · inkl. Semesterferien</span>
             </div>
-            <div class="preis-body">
-              <div class="preis-amount">
-                <div class="amount"><span data-preis="saison-winter-preis">€ 175</span></div>
-                <div class="unit">pro Nacht · ganze Wohnung · bis <span data-preis="belegung-max">4 Personen</span></div>
-              </div>
-              <ul class="preis-details">
-                <li>Mindestaufenthalt: <strong data-preis="saison-winter-mindest">4 Nächte</strong></li>
-                <li>Aufenthalt mindestens <strong data-preis="saison-winter-mindestbetrag">€ 1.000</strong> inkl. Endreinigung</li>
-                <li>Bettwäsche &amp; Handtücher inklusive</li>
-                <li>Alpbachtal Card inklusive</li>
-                <li>zzgl. Endreinigung <strong data-preis="endreinigung">€ 80</strong> einmalig</li>
-                <li>zzgl. Aufenthaltsabgabe <strong data-preis="ortstaxe">3,50 € / Person / Nacht</strong></li>
-              </ul>
-            </div>
+            <div class="saison-bedingung">ab <strong data-preis="saison-winter-mindest">4 Nächte</strong> · Aufenthalt mindestens <strong data-preis="saison-winter-mindestbetrag">€ 1.000</strong> inkl. Endreinigung</div>
+            <div class="saison-preis"><strong data-preis="saison-winter-preis">€ 175</strong> <span>pro Nacht</span></div>
           </div>
-          <div class="preis-card">
-            <div class="preis-header">
-              
+          <div class="saison-zeile" role="listitem">
+            <div class="saison-name">
               <h3>Sommer</h3>
-              <span class="preis-badge" data-preis="saison-sommer-zeitraum">Juli und August · Ostern</span>
+              <span data-preis="saison-sommer-zeitraum">Juli und August · Ostern</span>
             </div>
-            <div class="preis-body">
-              <div class="preis-amount">
-                <div class="amount"><span data-preis="saison-sommer-preis">€ 185</span></div>
-                <div class="unit">pro Nacht · ganze Wohnung · bis <span data-preis="belegung-max">4 Personen</span></div>
-              </div>
-              <ul class="preis-details">
-                <li>Mindestaufenthalt: <strong data-preis="saison-sommer-mindest">4 Nächte</strong></li>
-                <li>Aufenthalt mindestens <strong data-preis="saison-sommer-mindestbetrag">€ 1.000</strong> inkl. Endreinigung</li>
-                <li>Bettwäsche &amp; Handtücher inklusive</li>
-                <li>Alpbachtal Card inklusive</li>
-                <li>zzgl. Endreinigung <strong data-preis="endreinigung">€ 80</strong> einmalig</li>
-                <li>zzgl. Aufenthaltsabgabe <strong data-preis="ortstaxe">3,50 € / Person / Nacht</strong></li>
-              </ul>
-            </div>
+            <div class="saison-bedingung">ab <strong data-preis="saison-sommer-mindest">4 Nächte</strong> · Aufenthalt mindestens <strong data-preis="saison-sommer-mindestbetrag">€ 1.000</strong> inkl. Endreinigung</div>
+            <div class="saison-preis"><strong data-preis="saison-sommer-preis">€ 185</strong> <span>pro Nacht</span></div>
           </div>
-          <div class="preis-card">
-            <div class="preis-header">
-              
+          <div class="saison-zeile" role="listitem">
+            <div class="saison-name">
               <h3>Weihnachten &amp; Silvester</h3>
-              <span class="preis-badge" data-preis="saison-weihnachten-zeitraum">20. Dezember bis 6. Jänner</span>
+              <span data-preis="saison-weihnachten-zeitraum">20. Dezember bis 6. Jänner</span>
             </div>
-            <div class="preis-body">
-              <div class="preis-amount">
-                <div class="amount"><span data-preis="saison-weihnachten-preis">€ 225</span></div>
-                <div class="unit">pro Nacht · ganze Wohnung · bis <span data-preis="belegung-max">4 Personen</span></div>
-              </div>
-              <ul class="preis-details">
-                <li>Mindestaufenthalt: <strong data-preis="saison-weihnachten-mindest">4 Nächte</strong></li>
-                <li>Aufenthalt mindestens <strong data-preis="saison-weihnachten-mindestbetrag">€ 1.000</strong> inkl. Endreinigung</li>
-                <li>Bettwäsche &amp; Handtücher inklusive</li>
-                <li>Alpbachtal Card inklusive</li>
-                <li>zzgl. Endreinigung <strong data-preis="endreinigung">€ 80</strong> einmalig</li>
-                <li>zzgl. Aufenthaltsabgabe <strong data-preis="ortstaxe">3,50 € / Person / Nacht</strong></li>
-              </ul>
-            </div>
+            <div class="saison-bedingung">ab <strong data-preis="saison-weihnachten-mindest">4 Nächte</strong> · Aufenthalt mindestens <strong data-preis="saison-weihnachten-mindestbetrag">€ 1.000</strong> inkl. Endreinigung</div>
+            <div class="saison-preis"><strong data-preis="saison-weihnachten-preis">€ 225</strong> <span>pro Nacht</span></div>
           </div>
+        </div>
+        <div class="saison-immer slide-up">
+          <p><strong>Immer dabei:</strong> die ganze Wohnung für bis zu <span data-preis="belegung-max">4 Personen</span>, Bettwäsche, Handtücher und die Alpbachtal Card.</p>
+          <p><strong>Dazu kommen:</strong> Endreinigung <strong data-preis="endreinigung">€ 80</strong> einmalig und die Aufenthaltsabgabe von <strong data-preis="ortstaxe">3,50 € / Person / Nacht</strong>.</p>
         </div>
 
         <!-- Gesamtpreis-Beispiele: verpflichtende Nebenkosten gehören sichtbar zum Preis
@@ -254,7 +195,7 @@
                 <tr>
                   <td>Endreinigung</td>
                   <td><strong data-preis="endreinigung">€ 80</strong></td>
-                  <td>Einmalig pro Aufenthalt, verpflichtend</td>
+                  <td>Fällt bei jedem Aufenthalt einmal an</td>
                 </tr>
                 <tr>
                   <td>Aufenthaltsabgabe (Ortstaxe)</td>
@@ -269,7 +210,7 @@
                 <tr>
                   <td>Haustier</td>
                   <td><strong data-preis="haustier">€ 20</strong> / Aufenthalt</td>
-                  <td>Nur nach Vorabgenehmigung</td>
+                  <td>Bitte vorher mit uns absprechen</td>
                 </tr>
                 <tr>
                   <td>Späterer Check-out (bis 14:00)</td>

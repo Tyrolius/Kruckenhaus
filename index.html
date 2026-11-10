@@ -163,9 +163,9 @@
       <div class="start-hero-overlay" aria-hidden="true"></div>
       <div class="container start-hero-inhalt">
         <div class="start-hero-text">
-          <span class="start-hero-label">Seit 1895 · Breitenbach am Inn</span>
-          <h1>Urlaub am Bergbauernhof – in Alleinlage.</h1>
-          <p>100 m² Ferienwohnung für 2–4 Personen, 15 Gehminuten zum Berglsteiner See.</p>
+          <span class="start-hero-label">Urlaub am Bergbauernhof · Alleinlage · seit 1895</span>
+          <h1>Bei uns gibt’s mehr Alpakas als Nachbarn.</h1>
+          <p>100 m² Ferienwohnung für 2–4 Personen am Oberberg in Breitenbach am Inn, 15 Gehminuten zum Berglsteiner See.</p>
           <div class="start-hero-buttons">
             <a href="ferienwohnung.html" class="btn btn-primary">Ferienwohnung ansehen</a>
             <a href="preise.html#buchung" class="btn btn-green">Verfügbarkeit prüfen</a>
@@ -180,7 +180,7 @@
 
     <!-- WEGWEISER: Feriengäste links, Hofladen-Kunden rechts (Handy: untereinander) -->
     <section class="wegweiser" aria-label="Wegweiser">
-      <div class="container wegweiser-grid">
+      <div class="container wegweiser-grid wegweiser-grid--gewichtet">
         <a href="ferienwohnung.html" class="wegweiser-karte">
           <img src="images/wohnung/wohnung-stube-fruehstueckstisch.jpg"
                alt="Holzgetäfelte Stube der Ferienwohnung mit Eckbank und rundem Tisch"
@@ -194,7 +194,7 @@
         </a>
         <!-- Bis zur Freigabe der Bestellbedingungen zum Hofladen-Abschnitt der Bauernhof-Seite;
              zum Start der Online-Vorbestellung wieder auf hofladen.html zeigen lassen -->
-        <a href="bauernhof.html#hofladen" class="wegweiser-karte">
+        <a href="bauernhof.html#hofladen" class="wegweiser-karte wegweiser-karte--klein">
           <img src="images/bauernhof/bienen-kinder-waben.jpg"
                alt="Unsere Kinder in Imkeranzügen zeigen zwei Bienenwaben"
                width="1600" height="739" loading="lazy" decoding="async" />
@@ -213,8 +213,8 @@
       <div class="container start-intro-grid">
         <div class="start-intro-text">
           <span class="start-label">Willkommen auf dem Kruckenhaushof</span>
-          <h2>Bei uns gibt’s mehr Alpakas als Nachbarn.</h2>
-          <p>Unser Hof liegt in Alleinlage am sonnigen Oberberg in Breitenbach am Inn. Rundherum nur Wiesen, Wälder und der Blick auf die Tiroler Bergwelt.</p>
+          <h2>Rundherum nur Wiesen, Wald und Berge.</h2>
+          <p>Unser Hof liegt in Alleinlage am sonnigen Oberberg in Breitenbach am Inn. Die Zufahrt endet bei uns – Autos fahren keine vorbei.</p>
           <p>Die Alpakas auf der Weide sind die leisesten Nachbarn, die man sich wünschen kann. Eier, hausgemachte Nudeln und Marmeladen vom Hof bekommt ihr auf Vorbestellung. Kathrin und Florian Häusler freuen sich auf euch.</p>
           <ul class="start-fakten">
             <li>100 m² Ferienwohnung</li>
@@ -244,6 +244,14 @@
         </div>
       </div>
     </section>
+
+    <!-- BILDBAND: ein Foto über die ganze Breite -->
+    <figure class="bildband" aria-label="Der Hof über dem Morgennebel">
+      <img src="images/hof/hof-luftbild-nebel-morgenlicht.jpg"
+           alt="Luftbild: der Kruckenhaushof im Morgenlicht am Hang, darunter liegt Nebel über dem Inntal"
+           width="1280" height="720" loading="lazy" decoding="async" />
+      <figcaption>Morgennebel im Inntal – der Hof liegt darüber.</figcaption>
+    </figure>
 
     <!-- WAS EUCH ERWARTET -->
     <section class="section start-erwartet" aria-label="Was euch erwartet">
@@ -340,18 +348,18 @@
           <h2>4,98 von 5 bei 55 Bewertungen</h2>
           <p>Superhost auf Airbnb seit neun Jahren. Alle Zitate stammen wörtlich von dort.</p>
         </div>
-        <div class="start-stimmen-grid">
+        <!-- Echte Airbnb-Bewertungen, wörtlich. Eine groß, drei kleiner darunter. -->
+        <figure class="start-stimme start-stimme--gross">
+          <blockquote>„Wunderschön war es auf dem Bauernhof der Häuslers! Die Ferienwohnung ist super geräumig und gemütlich eingerichtet. Der Blick aus dem Fenster ins Tal ist traumhaft, dazu die Kuhglocken – Urlaubsfeeling pur!“</blockquote>
+          <figcaption>Sebastian · September 2023 · Airbnb</figcaption>
+        </figure>
+        <div class="start-stimmen-grid start-stimmen-grid--drei">
 
           <!-- Echte Airbnb-Bewertungen. Bitte nur mit tatsächlich abgegebenen
                Zitaten befüllen – erfundene Bewertungen sind wettbewerbswidrig. -->
           <figure class="start-stimme">
             <blockquote>„Die Wohnung ist sehr groß und schön eingerichtet. Besonders gefallen hat uns die ruhige Lage und der tolle Bergblick.“</blockquote>
             <figcaption>Karin · Jänner 2026 · Airbnb</figcaption>
-          </figure>
-
-          <figure class="start-stimme">
-            <blockquote>„Wunderschön war es auf dem Bauernhof der Häuslers! Die Ferienwohnung ist super geräumig und gemütlich eingerichtet. Der Blick aus dem Fenster ins Tal ist traumhaft, dazu die Kuhglocken – Urlaubsfeeling pur!“</blockquote>
-            <figcaption>Sebastian · September 2023 · Airbnb</figcaption>
           </figure>
 
           <figure class="start-stimme">
