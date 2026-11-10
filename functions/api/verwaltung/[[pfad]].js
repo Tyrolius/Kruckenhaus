@@ -1151,7 +1151,22 @@ async function bestellungAendern(db, bestellungId, e, ctx = {}) {
       // übernommenen Voranmeldung) und Lieferadresse der Bestellung setzen
       const b = await db.prepare('SELECT kunde_id FROM bestellungen WHERE id = ?').bind(bid).first();
       if (!b) throw new EingabeFehler('Bestellung nicht gefunden.');
+      // Name ändern (z. B. Tippfehler): gilt für den Kunden selbst, also für alle
+      // seine Bestellungen und Vormerkungen. Erst prüfen, dann alles speichern.
+      // Kein zweiter Kunde gleichen Namens – beim Erfassen wird über den Namen
+      // wiedergefunden. Der Sammelkunde der Hofverkäufe bleibt, wie er heißt.
+      const neuerName = text(e.name, 120);
+      const kunde = await db.prepare('SELECT name FROM kunden WHERE id = ?').bind(b.kunde_id).first();
+      const umbenennen = Boolean(neuerName && kunde && neuerName !== kunde.name);
+      if (umbenennen) {
+        if (kunde.name === SAMMELKUNDE) throw new EingabeFehler('Der Sammelkunde für Verkäufe ohne Namen kann nicht umbenannt werden.');
+        const doppelt = await db.prepare('SELECT 1 FROM kunden WHERE lower(name) = lower(?) AND id <> ?').bind(neuerName, b.kunde_id).first();
+        if (doppelt || neuerName === SAMMELKUNDE) {
+          throw new EingabeFehler(`Einen Kunden „${neuerName}" gibt es schon – bitte unterscheidbar schreiben, z. B. mit dem Ort.`);
+        }
+      }
       await kundeSichern(db, b.kunde_id, e);
+      if (umbenennen) await db.prepare('UPDATE kunden SET name = ? WHERE id = ?').bind(neuerName, b.kunde_id).run();
       const k = await db.prepare('SELECT strasse, plz, ort FROM kunden WHERE id = ?').bind(b.kunde_id).first();
       const adresse = k.strasse && k.ort ? `${k.strasse}, ${`${k.plz || ''} ${k.ort}`.trim()}` : null;
       r = await aenderung('lieferadresse = COALESCE(?, lieferadresse)', adresse);

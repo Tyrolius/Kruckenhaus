@@ -161,6 +161,19 @@ ok(await api('POST', `bestellung/${bVoran}`, { aktion: 'kontakt', telefon: '+43 
 s = ok(await api('GET', 'stand'));
 assert.equal(s.bestellungen.find((b) => b.id === bVoran).lieferadresse, 'Weg 2, 6233 Kramsach');
 assert.equal(s.kunden.find((k) => k.name === 'Vera Voran').telefon, '+43 660 9');
+// Kundennamen ändern: gilt für den Kunden; ein schon vergebener Name wird abgelehnt
+const veraId = s.kunden.find((k) => k.name === 'Vera Voran').id;
+const andererName = s.kunden.find((k) => k.id !== veraId).name;
+r = await api('POST', `bestellung/${bVoran}`, { aktion: 'kontakt', name: andererName.toUpperCase(), telefon: '+43 660 0' });
+assert.equal(r.status, 400);
+s = ok(await api('GET', 'stand'));
+assert.equal(s.kunden.find((k) => k.id === veraId).name, 'Vera Voran');
+assert.equal(s.kunden.find((k) => k.id === veraId).telefon, '+43 660 9', 'bei abgelehntem Namen wird nichts gespeichert');
+ok(await api('POST', `bestellung/${bVoran}`, { aktion: 'kontakt', name: '  Vera Voran-Huber ' }));
+s = ok(await api('GET', 'stand'));
+assert.equal(s.kunden.find((k) => k.id === veraId).name, 'Vera Voran-Huber');
+assert.equal(s.kunden.filter((k) => k.name.startsWith('Vera Voran')).length, 1, 'kein zweiter Kunde entsteht');
+ok(await api('POST', `bestellung/${bVoran}`, { aktion: 'kontakt', name: 'Vera Voran' }));
 r = ok(await api('POST', 'voranmeldung', { kunde: { name: 'Otto Später' }, produktId: huhn, menge: 1, zeitraum: 'fruehjahr', jahr: new Date().getFullYear() + 1 }));
 // Vormerkung bearbeiten: Produkt, Menge, Zeitraum, Notiz; Kunde und Quelle bleiben
 const vOtto = r.voranmeldungId;
