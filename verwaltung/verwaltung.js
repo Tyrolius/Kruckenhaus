@@ -114,7 +114,7 @@ function detailOeffnen(id) {
       terminWahl,
       notizFeld,
       b.positionen.map((p) => preisFeld(b, p)).join(''),
-      !b.uebergeben ? mengeAendernBlock(b) : '',
+      !b.uebergeben ? mengeAendernBlock(b) : korrigierenKnopf(b),
       `<div class="vw-knopfreihe" role="group" aria-label="Zahlung gewünscht">
         <span class="vw-klein">Zahlung gewünscht:</span>
         ${Object.entries(ZAHLARTEN).map(([wert, text]) => `<button type="button" class="vw-chip" data-aktion="zahlart-setzen" data-id="${b.id}" data-wert="${wert}" aria-pressed="${b.zahlart === wert}">${text}</button>`).join('')}
@@ -862,6 +862,31 @@ function initKlicks() {
           zustand.filter = 'alle';
           zeigen();
           meldung('Alle als gesehen markiert.');
+        });
+        break;
+      case 'korrigieren':
+        // Übergebene Bestellung korrigieren (Gewicht vertippt, Innereien dazu):
+        // Übergabe zurücknehmen und gleich die Übergabe-Karte mit allen
+        // gespeicherten Einzelgewichten öffnen – nur das falsche Feld ändern,
+        // dann wieder „Übergeben". Schon bezahlt: erst die Zahlung zurücksetzen,
+        // damit der kassierte Betrag nicht zum alten Stand eingefroren bleibt.
+        if (!b) break;
+        if (b.bezahlt) {
+          meldung('Schon als bezahlt markiert – erst „Zahlung rückgängig machen", dann korrigieren.');
+          break;
+        }
+        bestellungAendern(b, { aktion: 'uebergeben', wert: false }, () => { b.uebergeben = false; },
+          'Zum Korrigieren geöffnet – ändern, dann wieder „Übergeben".').then((erg) => {
+          if (!erg) return;
+          if (daten.chargen.some((c) => c.id === b.chargeId)) {
+            zustand.chargeId = b.chargeId;
+            zustand.alleRunden = false;
+            if (terminArt(b)) zustand.uebergabeArt = terminArt(b);
+          }
+          zustand.abgabeId = b.id;
+          const dialog = document.getElementById('vw-dialog');
+          if (dialog && dialog.open) dialog.close();
+          if (aktuelleAnsicht() === 'abgabe') zeigen(); else location.hash = '#abgabe';
         });
         break;
       case 'abgabe':

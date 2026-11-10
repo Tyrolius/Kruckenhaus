@@ -251,6 +251,7 @@ function ansichtAbgabe() {
         ${b.bezahlt ? '' : `<button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit vw-knopf--gross" data-aktion="bezahlt" data-wert="${b.zahlart}" data-id="${b.id}">${b.zahlart === 'bar' ? 'Bar erhalten' : 'Geld ist am Konto'}</button>
           <button type="button" class="vw-link" data-aktion="zahlungsinfo" data-id="${b.id}">Zahlungsinfo mit QR-Code zeigen</button>`}
         <p><button type="button" class="vw-link" data-aktion="lieferschein" data-id="${b.id}">Lieferschein drucken</button></p>
+        ${korrigierenKnopf(b)}
       </section>
       ${kontakt}
       <p><button type="button" class="vw-link vw-link--leise" data-aktion="uebergeben" data-id="${b.id}">Übergabe rückgängig machen</button></p>`;
@@ -298,6 +299,17 @@ function ansichtAbgabe() {
   // Erstes leeres Gewichtsfeld gleich bereit zum Tippen
   const erstes = [...inhalt().querySelectorAll('[data-stueck]')].find((f) => !f.value);
   if (erstes && window.matchMedia('(pointer: fine)').matches) erstes.focus();
+}
+
+// „Korrigieren" bei einer schon übergebenen Bestellung: öffnet wieder die
+// Übergabe-Karte, alle Einzelgewichte bleiben stehen (Aktion in verwaltung.js)
+function korrigierenKnopf(b) {
+  if (!b.uebergeben || b.status !== 'vorgemerkt') return '';
+  return b.bezahlt
+    ? `<p class="vw-klein">Gewicht vertippt oder Artikel vergessen? Erst die Zahlung zurücksetzen, dann korrigieren:
+        <button type="button" class="vw-link" data-aktion="bezahlt" data-wert="" data-id="${b.id}">Zahlung rückgängig machen</button></p>`
+    : `<p><button type="button" class="vw-knopf" data-aktion="korrigieren" data-id="${b.id}">Gewichte korrigieren oder Artikel dazu</button>
+        <br><span class="vw-klein">Alle Gewichte bleiben stehen – nur das falsche ändern.</span></p>`;
 }
 
 // Betrag in der Karte nach jeder Gewichtseingabe aktualisieren
