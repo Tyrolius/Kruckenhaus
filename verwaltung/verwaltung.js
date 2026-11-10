@@ -83,6 +83,18 @@ function detailOeffnen(id) {
   const gross = 'vw-knopf vw-knopf--voll vw-knopf--breit vw-knopf--gross';
   const bezahltKnopf = (art, klasse) => `<button type="button" class="${klasse}" data-aktion="bezahlt" data-wert="${art}" data-id="${b.id}">${art === 'bar' ? 'Bar erhalten' : 'Geld am Konto'}</button>`;
   const andereArt = b.zahlart === 'bar' ? 'ueberweisung' : 'bar';
+  // Termin wechseln (z. B. Zustellung statt Abholung) – solange nicht übergeben
+  const terminWahl = !b.uebergeben && !istHofverkauf(b) && t && ch.termine.length > 1
+    ? `<div class="vw-termin-wahl" role="group" aria-label="Termin ändern"><span class="vw-klein">Termin ändern:</span>
+        <div class="vw-chips">${ch.termine.map((x) => `<button type="button" class="vw-chip" data-aktion="termin-setzen" data-id="${b.id}" data-wert="${x.id}"
+          aria-pressed="${x.id === b.terminId}"${x.id === b.terminId ? ' disabled' : ''}>${terminText(x)}</button>`).join('')}</div></div>`
+    : '';
+  // Interne Notiz, z. B. „eingefroren, holt nach dem Urlaub" – steht dann auch in der Übergabe
+  const notizFeld = istHofverkauf(b) ? '' : `<form class="vw-notiz" id="vw-notiz-formular" data-id="${b.id}" novalidate>
+      <label class="vw-feld"><span>Interne Notiz (sieht der Kunde nicht)</span>
+        <textarea name="notiz" rows="2" maxlength="1000" placeholder="z. B. eingefroren, holt nach dem Urlaub ab">${esc(b.interneNotiz || '')}</textarea></label>
+      <button type="submit" class="vw-knopf vw-knopf--klein">Notiz speichern</button>
+    </form>`;
   let haupt = '';
   let mehr = [];
   if (b.status === 'vorgemerkt') {
@@ -99,6 +111,8 @@ function detailOeffnen(id) {
       haupt = '<p class="vw-erledigt-hinweis">Übergeben und bezahlt ✓</p>';
     }
     mehr = [
+      terminWahl,
+      notizFeld,
       b.positionen.map((p) => preisFeld(b, p)).join(''),
       !b.uebergeben ? mengeAendernBlock(b) : '',
       `<div class="vw-knopfreihe" role="group" aria-label="Zahlung gewünscht">
@@ -116,6 +130,8 @@ function detailOeffnen(id) {
     haupt = `<button type="button" class="${gross}" data-aktion="nachruecken" data-id="${b.id}">Nachrücken lassen</button>
       ${mengeAendernBlock(b)}`;
     mehr = [
+      terminWahl,
+      notizFeld,
       b.positionen.map((p) => preisFeld(b, p)).join(''),
       `<ul class="vw-aufgaben"><li><button type="button" class="vw-warnung" data-aktion="stornieren" data-id="${b.id}">Von der Warteliste streichen</button></li></ul>`,
     ];
@@ -145,7 +161,7 @@ function detailOeffnen(id) {
       <table class="vw-tabelle"><tbody>${positionen}</tbody>
         <tfoot><tr><td>Summe</td><td class="vw-zahl">${betragText(summe)}</td></tr></tfoot></table>
       ${b.anmerkung ? `<p class="vw-hinweis">„${esc(b.anmerkung)}"</p>` : ''}
-      ${b.interneNotiz ? `<p class="vw-klein">Intern: ${esc(b.interneNotiz)}</p>` : ''}
+      ${b.interneNotiz ? `<p class="vw-hinweis">${istHofverkauf(b) ? '' : 'Notiz: '}${esc(b.interneNotiz)}</p>` : ''}
     </div>
     <div class="vw-abschnitt">
       ${t ? `<p><strong>${terminText(t)}</strong></p>` : ''}
@@ -171,7 +187,7 @@ function detailOeffnen(id) {
       </details>
     </div>
     ${mehrHtml ? `<details class="vw-mehr vw-detail-mehr" data-detail-mehr="${b.id}"${mehrOffen ? ' open' : ''}>
-      <summary>Mehr: Preis, Menge, Stornieren, Lieferschein …</summary>${mehrHtml}</details>` : ''}
+      <summary>Mehr: Termin, Notiz, Preis, Menge, Stornieren …</summary>${mehrHtml}</details>` : ''}
   </div>`;
   dialog.dataset.id = b.id;
   if (!dialog.open) dialog.showModal();
@@ -193,6 +209,14 @@ function kontaktSpeichern(form) {
     ['telefon', 'email', 'strasse', 'plz', 'ort'].forEach((f) => { if (eingabe[f]) k[f] = eingabe[f]; });
     return {};
   }, { erfolg: `Kontakt von ${k.name} gespeichert.` });
+}
+
+function notizSpeichern(form) {
+  const b = bestellungVon(form.dataset.id);
+  if (!b || istHofverkauf(b)) return;
+  const text = feld(form, 'notiz').value.trim();
+  speichern(`bestellung/${b.id}`, { aktion: 'notiz', text }, () => { b.interneNotiz = text; return {}; },
+    { erfolg: text ? 'Notiz gespeichert.' : 'Notiz entfernt.' });
 }
 
 function dialogAktualisieren() {
@@ -952,6 +976,11 @@ function initEingaben() {
     if (id === 'vw-kontakt-formular') {
       e.preventDefault();
       kontaktSpeichern(e.target);
+      return;
+    }
+    if (id === 'vw-notiz-formular') {
+      e.preventDefault();
+      notizSpeichern(e.target);
       return;
     }
     if (id === 'vw-produkt-formular') {

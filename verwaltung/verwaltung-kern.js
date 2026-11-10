@@ -122,6 +122,12 @@ const istAktiv = (b) => b.status === 'vorgemerkt';
 const istDauer = (ch) => Boolean(ch && ch.art === 'dauer');
 // Verkauf am Hof ohne Vorbestellung: kein Termin, gleich übergeben
 const istHofverkauf = (b) => !b.terminId && b.interneNotiz === 'Verkauf am Hof';
+// Termin vorbei, aber noch nicht übergeben (z. B. Kunde holt später ab,
+// Ware eingefroren) – bleibt offen und wird eigens hervorgehoben
+const istUeberfaellig = (b) => istAktiv(b) && !b.uebergeben && Boolean(terminVon(b)) && tageBis(terminVon(b).datum) < 0;
+const ueberfaelligText = (b) => `${terminVon(b).art === 'abholung' ? 'Abholtag' : 'Liefertag'} vorbei`;
+// Eigene interne Notiz (nicht die Kennzeichnung „Verkauf am Hof")
+const notizVon = (b) => (istHofverkauf(b) ? '' : b.interneNotiz || '');
 // Ohne Termin und noch zu klären (übernommene Voranmeldungen)
 const ohneTerminOffen = (b) => istAktiv(b) && !terminVon(b) && !istHofverkauf(b) && !istDauer(chargeVon(b));
 
@@ -347,6 +353,7 @@ function marken(b) {
     ? `<span class="vw-marke">${t.art === 'abholung' ? 'Abholung' : 'Lieferung'} ${datumKurz(t.datum)}</span>`
     : istDauer(chargeVon(b)) ? '<span class="vw-marke">Abholung nach Absprache</span>'
       : '<span class="vw-marke vw-marke--offen">Termin offen</span>');
+  if (istUeberfaellig(b)) teile.push(`<span class="vw-marke vw-marke--offen">${ueberfaelligText(b)}</span>`);
   if (istAktiv(b)) {
     teile.push(b.bezahlt
       ? `<span class="vw-marke vw-marke--gut">bezahlt (${ZAHLARTEN[b.bezahlt]})</span>`
@@ -367,6 +374,7 @@ function standMarken(b) {
   else if (istDauer(chargeVon(b))) teile.push('<span class="vw-marke">Abholung nach Absprache</span>');
   else teile.push('<span class="vw-marke vw-marke--rand">Termin offen</span>');
   if (b.status === 'warteliste') return teile.join('');
+  if (istUeberfaellig(b)) teile.push(`<span class="vw-marke vw-marke--offen">${ueberfaelligText(b)}</span>`);
   teile.push(b.bezahlt
     ? `<span class="vw-marke vw-marke--gut">bezahlt · ${ZAHLARTEN[b.bezahlt]}</span>`
     : `<span class="vw-marke vw-marke--rand">offen · ${ZAHLARTEN[b.zahlart]}</span>`);
