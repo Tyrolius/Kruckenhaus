@@ -6901,3 +6901,15 @@ button.vw-foto-wahl:focus-visible {
   .vw-ls-linie { width: 6.5cm; height: 1.3cm; border-bottom: 1px solid var(--color-black); margin-bottom: 0.15rem; }
   .vw-ls-fusszeile { margin: 0.9rem 0 0; padding-top: 0.4rem; border-top: 1px solid var(--color-border); font-size: 9pt; color: var(--color-text-light); }
 }
+
+/* ============================================================
+   72. VERWALTUNG – TERMIN ÄNDERN, INTERNE NOTIZ, TERMIN VORBEI
+   Bestelldetail unter „Mehr": Termin wechseln (z. B. Zustellung statt
+   Abholung) und interne Notiz; Notiz und „Abholtag vorbei" in den Listen.
+   ============================================================ */
+.vw-termin-wahl { margin: 0.5rem 0 0.75rem; }
+.vw-termin-wahl .vw-chips { margin: 0.3rem 0 0; }
+.vw-termin-wahl .vw-chip:disabled { cursor: default; opacity: 1; }
+.vw-notiz { margin: 0.5rem 0 0.9rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--color-beige); }
+.vw-notiz .vw-feld { margin-bottom: 0.4rem; }
+.vw-stopp-zeile .vw-zeile-stand--marken { grid-column: 1 / -1; grid-row: auto; justify-content: flex-start; }

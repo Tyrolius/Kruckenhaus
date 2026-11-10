@@ -48,7 +48,9 @@ function rundenStand(ch) {
     aktiv,
     warteliste: alle.filter((b) => b.status === 'warteliste').length,
     offenCent: aktiv.filter((b) => !b.bezahlt).reduce((s, b) => s + bestellBetrag(b).cent, 0),
-    nichtUebergeben: aktiv.filter((b) => !b.uebergeben && !ohneTerminOffen(b)).length,
+    // Termin vorbei zählt eigens, damit nichts doppelt in der Liste steht
+    ueberfaellig: aktiv.filter(istUeberfaellig).length,
+    nichtUebergeben: aktiv.filter((b) => !b.uebergeben && !ohneTerminOffen(b) && !istUeberfaellig(b)).length,
     geldFehlt: aktiv.filter((b) => b.uebergeben && !b.bezahlt).length,
     neue: alle.filter((b) => b.neu).length,
     ohneTermin: aktiv.filter(ohneTerminOffen).length,
@@ -58,6 +60,7 @@ function rundenStand(ch) {
 
 // Was in einer Runde zu tun ist: [Feld im Stand, Text, Ziel, Filter in „Bestellungen"]
 const RUNDEN_AUFGABEN = [
+  ['ueberfaellig', 'Termin vorbei – noch nicht übergeben', '#bestellungen', 'ueberfaellig'],
   ['neue', 'Neue Bestellungen über die Website', '#bestellungen', 'neu'],
   ['ohneTermin', 'Termin mit dem Kunden klären', '#bestellungen', 'termin-offen'],
   ['vormerkungen', 'Vormerkungen übernehmen', '#voranmeldungen', ''],
@@ -197,6 +200,7 @@ const FILTER = [
   ['lieferung', 'Lieferung'],
   ['offen', 'Nicht bezahlt'],
   ['termin-offen', 'Termin offen'],
+  ['ueberfaellig', 'Termin vorbei'],
   ['warteliste', 'Warteliste'],
   ['hof', 'Verkauf am Hof'],
   ['storniert', 'Storniert'],
@@ -207,6 +211,7 @@ function passtZumFilter(b) {
     case 'abholung':
     case 'lieferung': return istAktiv(b) && terminArt(b) === zustand.filter;
     case 'termin-offen': return ohneTerminOffen(b);
+    case 'ueberfaellig': return istUeberfaellig(b);
     case 'neu': return b.neu;
     case 'hof': return istAktiv(b) && istHofverkauf(b);
     case 'offen': return istAktiv(b) && !b.bezahlt;
@@ -243,6 +248,9 @@ function ansichtBestellungen() {
     </div>
     <div class="vw-liste" id="vw-liste"></div>`;
   listeAktualisieren();
+  // Gewählten Filter in der Chip-Zeile sichtbar halten (am Handy scrollt sie seitlich)
+  const gewaehlt = inhalt().querySelector('.vw-chips--zeile [aria-pressed="true"]');
+  if (gewaehlt && gewaehlt.scrollIntoView) gewaehlt.scrollIntoView({ block: 'nearest', inline: 'center' });
 }
 
 function listeAktualisieren() {

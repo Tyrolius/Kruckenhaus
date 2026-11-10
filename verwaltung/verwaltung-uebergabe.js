@@ -173,6 +173,8 @@ function ansichtUebergabe() {
         <span class="vw-zeile-betrag">${betragText(uebergabeBetrag(b))}</span>
         <span class="vw-zeile-info">${esc(artikelKurz(b))}</span>
         ${lieferung ? `<span class="vw-zeile-stand">${k.strasse ? esc(k.strasse) : '<span class="vw-warnung">Adresse fehlt</span>'}</span>` : ''}
+        ${istUeberfaellig(b) || notizVon(b) ? `<span class="vw-zeile-stand vw-zeile-stand--marken">${istUeberfaellig(b)
+          ? `<span class="vw-marke vw-marke--offen">${ueberfaelligText(b)}</span>` : ''}${notizVon(b) ? `<span>Notiz: ${esc(notizVon(b))}</span>` : ''}</span>` : ''}
       </button>${extra}</div>`;
   };
 
@@ -236,7 +238,8 @@ function ansichtAbgabe() {
   </div>`;
   const kopf = `<div class="vw-kopf">${zurueck}<h1>${esc(k.name)}</h1>
     <p class="vw-klein">${esc(b.nummer)}${t ? ` · ${terminText(t)}` : ''}${lieferung && k.strasse ? ` · ${esc(adresseVon(k))}` : ''}</p>
-    ${b.anmerkung ? `<p class="vw-hinweis">„${esc(b.anmerkung)}"</p>` : ''}</div>`;
+    ${b.anmerkung ? `<p class="vw-hinweis">„${esc(b.anmerkung)}"</p>` : ''}
+    ${notizVon(b) ? `<p class="vw-hinweis">Notiz: ${esc(notizVon(b))}</p>` : ''}</div>`;
 
   // Schon übergeben: Stand und das, was noch zu tun sein kann
   if (b.uebergeben) {

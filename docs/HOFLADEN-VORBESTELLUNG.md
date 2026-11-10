@@ -322,6 +322,16 @@ Einrichten · Ferienwohnung* gegliedert. Weitere Grundsätze:
 - **Preis je Bestellung** ist überall eingeklappt („ändern"), weil selten gebraucht.
 - **Sortiment:** fehlende Einstufung (Herkunft, USt-Satz) als ein Hinweis oben
   mit *Alle auf einmal einstufen*; Kopieren und Ausblenden im Menü „⋯".
+- **Termin ändern** (z. B. Zustellung statt Abholung): in den Details unter
+  *Mehr*, solange nicht übergeben. Eine Liefergebühr wird dabei nicht
+  nachgerechnet; fehlt die Adresse, klappt „Kontakt ändern" auf.
+- **Kunde holt später ab** (z. B. eingefroren): Die Bestellung bleibt offen.
+  Ist der Termin vorbei, trägt sie die Marke „Abholtag vorbei" bzw. „Liefertag
+  vorbei", die Übersicht zeigt „Termin vorbei – noch nicht übergeben", und in
+  *Bestellungen* gibt es den Filter „Termin vorbei". Den Grund hält die
+  **interne Notiz** fest (Details unter *Mehr*, Spalte `interne_notiz`); sie
+  steht auch in der Übergabe-Liste. Bei „Verkauf am Hof" dient das Feld als
+  Kennzeichnung und ist nicht änderbar.
 
 - **Übergabe in einem Schritt:** Vakuumierte Stücke werden oft erst beim
   Abholen einem Kunden zugeordnet. Deshalb tippt Kathrin bei der Übergabe die
