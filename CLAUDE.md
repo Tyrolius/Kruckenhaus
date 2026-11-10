@@ -60,7 +60,11 @@ functions/_lib/bestellung.js  Bestellungen von außen (hofladen.html und Bertha)
                            Kunde wiederfinden, Bestätigungsmails – für beide Wege dieselben
 functions/api/extern/      Schnittstelle für Bertha: _middleware.js (Schlüssel), v1/[[pfad]].js
 functions/api/verwaltung/  Schnittstelle der Verwaltung (_middleware.js = Zugang)
-verwaltung/                Hofladen-Verwaltung (inkl. Produktkatalog); ?entwurf = Beispielmodus
+verwaltung/                Hofladen-Verwaltung (inkl. Produktkatalog); ?entwurf = Beispielmodus.
+                           Logik in sieben Dateien verwaltung-*.js + verwaltung.js (klassische Skripte,
+                           gemeinsamer Namensraum, Reihenfolge in index.html; Überblick im Kopf von
+                           verwaltung.js). CSS dazu: Abschnitte 40, 47 und 70 in css/style.css; nach
+                           CSS-Änderungen ?v=… in index.html, angebot.html und preise.html hochzählen
 verwaltung/angebot.html + angebot.js   Angebot für Anfragen zur Ferienwohnung: rechnet nach
                            js/preise-config.js (Saison je Nacht, Ostern, Langzeitrabatt, Ortstaxe) und baut den Antworttext
 verwaltung/preise.html + preise.js     Preise ändern – derzeit nur Entwurf ohne Speichern (Plan: docs/PREISVERWALTUNG.md)

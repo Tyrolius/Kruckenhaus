@@ -621,15 +621,15 @@ Startbildschirm hinzufügen – dann wirkt sie wie eine App.
    **Große Mengen (z. B. ein Gasthaus mit 15 Gänsen):** Bei *Erfassen* die
    Stückzahl direkt eintippen (Höchstmenge der Runde gilt nur für die
    Website). Jedes Gewicht wird beim Weitertippen gespeichert – lädt das Handy
-   die Seite neu, ist nichts verloren. Nach der Übergabe (oder in den Details)
-   *Lieferschein drucken*: Logo, jedes Stück mit Gewicht, Summe und Feld „Ware erhalten" – ohne
+   die Seite neu, ist nichts verloren. Nach der Übergabe (oder in den Details unter „Mehr")
+   *Lieferschein drucken* (gleicher Aufbau wie der Lieferschein aus der Bertha-App, zusätzlich mit Preisen): Logo, jedes Stück mit Gewicht, Summe und Feld „Ware erhalten" – ohne
    Bankdaten und QR-Code, die gehören auf die Rechnung. Steht ein Gasthaus auf der Warteliste, weil nicht mehr genug
    frei ist: in den Details die Menge auf das Freie senken, dann
    *Nachrücken lassen*.
-   **Gasthaus-Preis (Mengenrabatt):** Bei *Erfassen* steht neben jedem Artikel
-   der Preis, vorbelegt mit dem Rundenpreis – einfach überschreiben (z. B.
-   17 statt 19 €/kg). Nachträglich geht es in den Details und bei der
-   Übergabe im Feld „Preis". Gilt nur für diese Bestellung (rot markiert als
+   **Gasthaus-Preis (Mengenrabatt):** Bei *Erfassen* steht unter jedem Artikel
+   der Rundenpreis mit „ändern" – antippen und überschreiben (z. B.
+   17 statt 19 €/kg). Nachträglich geht es in den Details (unter „Mehr") und
+   bei der Übergabe über „Preis ändern". Gilt nur für diese Bestellung (rot markiert als
    „Sonderpreis"), solange sie noch nicht bezahlt ist; Lieferschein,
    Zahlungsinfo/QR-Code und Auswertung rechnen damit. **Der Preis wird je Kunde und
    Produkt gemerkt:** Beim nächsten *Erfassen* steht er schon drin („Preis vom

@@ -11,2933 +11,28 @@
  * entwurf-daten.js, nur im Arbeitsspeicher, nichts wird gespeichert.
  *
  * Ansichten (Adresse hinter #):
- *   uebersicht · bestellungen · neu · hofverkauf · uebergabe · voranmeldungen ·
- *   sortiment · bereiche · produkt (bearbeiten) · wiegen · zahlungen ·
+ *   uebersicht · bestellungen · neu · hofverkauf · vormerken · uebergabe · voranmeldungen · mehr ·
+ *   sortiment · einstufen · bereiche · produkt (bearbeiten) · wiegen · zahlungen ·
  *   charge (bearbeiten) · charge-neu · bertha (Verbindung zu Bertha)
  * Eine Bestellrunde heißt in der Datenbank „charge" (Tabelle chargen).
  * Die ständige Runde „Dauersortiment" (art 'dauer') hat keine Mengen und
  * keinen Bestellschluss; ihre Artikel kommen aus dem Sortiment
  * (Produkte mit verkaufsart 'dauer', Plan: docs/SCHNITTSTELLE-BERTHA.md).
+ *
+ * Aufgeteilt in mehrere Dateien, die index.html in dieser Reihenfolge lädt
+ * (klassische Skripte ohne Build – alle teilen sich denselben Namensraum):
+ *   verwaltung-kern.js          1–4   Zustand, Helfer, Daten, Laden/Speichern, Bausteine
+ *   verwaltung-bestellungen.js  5.1–5.3  Übersicht, „Mehr", Bestellungen, Erfassen
+ *   verwaltung-uebergabe.js     5.4–5.6  Wiegen, Übergabe, Verkauf am Hof, Zahlungen
+ *   verwaltung-runden.js        5.7–5.8a Vormerkungen, Bestellrunde, Auswertung
+ *   verwaltung-sortiment.js     5.9–5.9b Sortiment, Fotos, Einstufung, Bereiche
+ *   verwaltung-bertha.js        5.10  Verbindung zu Bertha
+ *   verwaltung.js (diese Datei, zuletzt)  6–9  Detail-Dialog, Export und Druck,
+ *                               Meldung, Navigation und Ereignisse, Start
+ * Neue Datei? In index.html vor verwaltung.js eintragen.
  * ============================================================ */
 
 'use strict';
-
-/* ------------------------------------------------------------
-   1. ZUSTAND
-   ------------------------------------------------------------ */
-const BEISPIEL = new URLSearchParams(location.search).has('entwurf');
-let daten = null;            // Stand aus der Schnittstelle (bzw. Beispieldaten)
-let ladeFehler = '';
-let beschaeftigt = false;    // verhindert doppeltes Absenden
-const zustand = {
-  chargeId: null,
-  aendernOffen: null,      // Bestellung, deren „Menge ändern" aufgeklappt ist
-  kundenImport: null,
-  vaBearbeiten: null,      // ID der Vormerkung, die gerade bearbeitet wird      // Vorschau „Kunden übernehmen" (Bertha-Seite)
-  filter: 'alle',
-  suche: '',
-  uebergabeArt: 'abholung',
-  nutzer: '',
-  chargeForm: null,          // Arbeitskopie im Formular „Bestellrunde"
-  produktForm: null,         // Arbeitskopie im Formular „Produkt" (Sortiment)
-  stueck: {},                // Übergabe: getippte Gewichte je Position { posId: ['1,85', …] }
-  abgabeId: null,            // Übergabe: gerade geöffneter Kunde
-  zahlungsinfoDanach: null,  // Übergabe: Zahlungsinfo nach dem Wechsel zur Liste zeigen
-  uebergabeTermin: null,     // Übergabe: nur dieser Termin (null = alle Tage)
-  alleRunden: false,         // Bestellungen: alle laufenden Bestellrunden zusammen
-  auswertung: null,          // geladene Jahresauswertung { jahr, jahre, runden, bestellungen }
-  reihenfolge: false,        // Liefertour: Reihenfolge-Modus mit ↑ ↓
-  hof: { mengen: {}, stueck: {}, name: '' }, // Verkauf am Hof (Formular)
-};
-
-/* ------------------------------------------------------------
-   2. HELFER (Formatierung, Escaping)
-   ------------------------------------------------------------ */
-const euroFormat = new Intl.NumberFormat('de-AT', { style: 'currency', currency: 'EUR' });
-const kgFormat = new Intl.NumberFormat('de-AT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-const euro = (cent) => euroFormat.format(cent / 100);
-const kg = (g) => `${kgFormat.format(g / 1000)} kg`;
-
-function esc(wert) {
-  return String(wert == null ? '' : wert)
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;')
-    .replace(/"/g, '&quot;');
-}
-
-function datumKurz(iso) {
-  return new Date(`${iso}T12:00:00`).toLocaleDateString('de-AT', {
-    weekday: 'short', day: 'numeric', month: 'numeric',
-  });
-}
-
-function tageBis(iso) {
-  const heute = new Date();
-  heute.setHours(0, 0, 0, 0);
-  return Math.round((new Date(`${iso}T00:00:00`) - heute) / 86400000);
-}
-
-function uhrzeit(hhmm) {
-  return hhmm.endsWith(':00') ? String(Number(hhmm.slice(0, 2))) : hhmm;
-}
-
-// Uhrzeit nur, wenn von und bis gesetzt sind; Hinweis (z. B. „genauer Tag folgt“) dahinter
-function terminText(t) {
-  const art = t.art === 'abholung' ? 'Abholung' : 'Lieferung';
-  const zeit = t.von && t.bis ? `, ${uhrzeit(t.von)}–${uhrzeit(t.bis)} Uhr` : '';
-  return `${art} ${datumKurz(t.datum)}${zeit}${t.hinweis ? ` (${t.hinweis})` : ''}`;
-}
-
-const QUELLEN = { web: 'Website', whatsapp: 'WhatsApp', telefon: 'Telefon', persoenlich: 'persönlich' };
-const ZAHLARTEN = { bar: 'bar', ueberweisung: 'Überweisung' };
-// Einstufung je Produkt für Steuer und SVS (gleiche Begriffe wie in Bertha)
-const HERKUNFT = { urprodukt: 'Urprodukt', verarbeitung: 'Be- und Verarbeitung', zukauf: 'Zukauf (Handelsware)' };
-const ustSaetze = () => daten.ustSaetze || [4.9, 10, 13, 20];
-const satzText = (satz) => `${String(satz).replace('.', ',')} %`;
-// „Urprodukt · 10 % USt" bzw. „nicht eingestuft"
-const einstufungText = (herkunft, satz) => (herkunft || satz != null
-  ? [herkunft ? HERKUNFT[herkunft] : 'Herkunft offen', satz != null ? `${satzText(satz)} USt` : 'USt-Satz offen'].join(' · ')
-  : 'nicht eingestuft');
-// Bestellungen aus dem Bertha-Kundenportal kommen als 'web' an
-const quelleText = (b) => (b.ueberBertha ? 'Bertha-Portal' : QUELLEN[b.quelle] || b.quelle);
-const ZEITRAEUME = {
-  naechste: 'nächste Bestellrunde',
-  fruehjahr: 'Frühjahr',
-  sommer: 'Sommer',
-  herbst: 'Herbst',
-  martini: 'Martini',
-  weihnachten: 'Weihnachten',
-};
-const zeitraumText = (v) => (v.zeitraum === 'naechste' ? ZEITRAEUME.naechste : `${ZEITRAEUME[v.zeitraum]} ${v.jahr}`);
-
-/* ------------------------------------------------------------
-   3. DATEN UND BERECHNUNGEN
-   ------------------------------------------------------------ */
-const aktiveCharge = () => daten.chargen.find((c) => c.id === zustand.chargeId);
-const chargeVon = (b) => daten.chargen.concat(daten.archiv || []).find((c) => c.id === b.chargeId);
-const kundeVon = (b) => daten.kunden.find((k) => k.id === b.kundeId);
-const artikelVon = (ch, id) => ch.artikel.find((a) => a.id === id);
-// Übernommene Voranmeldungen haben anfangs keinen Termin (null)
-const terminVon = (b) => chargeVon(b).termine.find((t) => t.id === b.terminId) || null;
-// Dauersortiment ohne Termin: Abholung am Hof nach Absprache
-const terminArt = (b) => (terminVon(b) ? terminVon(b).art : istDauer(chargeVon(b)) ? 'abholung' : null);
-const produktVon = (id) => daten.produkte.find((p) => p.id === id);
-const bestellungVon = (id) => daten.bestellungen.find((b) => b.id === id);
-
-const bestellungenDerCharge = (ch = aktiveCharge()) =>
-  daten.bestellungen.filter((b) => b.chargeId === ch.id);
-
-const istAktiv = (b) => b.status === 'vorgemerkt';
-const istDauer = (ch) => Boolean(ch && ch.art === 'dauer');
-// Verkauf am Hof ohne Vorbestellung: kein Termin, gleich übergeben
-const istHofverkauf = (b) => !b.terminId && b.interneNotiz === 'Verkauf am Hof';
-// Ohne Termin und noch zu klären (übernommene Voranmeldungen)
-const ohneTerminOffen = (b) => istAktiv(b) && !terminVon(b) && !istHofverkauf(b) && !istDauer(chargeVon(b));
-
-function bestellteMenge(ch, artikelId) {
-  return bestellungenDerCharge(ch)
-    .filter(istAktiv)
-    .reduce((summe, b) => summe + b.positionen
-      .filter((p) => p.artikelId === artikelId)
-      .reduce((s, p) => s + p.menge, 0), 0);
-}
-
-// Dauersortiment: keine Mengen – „frei" ist, was nicht ausverkauft ist
-const DAUER_FREI = 999;
-function freieMenge(ch, artikelId) {
-  if (istDauer(ch)) {
-    const p = produktVon(artikelVon(ch, artikelId).produktId);
-    return p && p.verkaufsart === 'dauer' && p.verfuegbar !== false && p.aktiv !== false ? DAUER_FREI : 0;
-  }
-  return artikelVon(ch, artikelId).kontingent - bestellteMenge(ch, artikelId);
-}
-
-// „noch 3 frei" – beim Dauersortiment nur „verfügbar" bzw. „ausverkauft"
-function freiText(ch, artikelId) {
-  const frei = Math.max(0, freieMenge(ch, artikelId));
-  if (istDauer(ch)) return frei ? 'verfügbar' : 'ausverkauft';
-  return `noch ${frei} frei`;
-}
-
-// Gewichtsware ohne Gewicht wird mit dem mittleren Richtgewicht geschätzt.
-// Bestehende Bestellungen rechnen mit ihrem Preis zum Bestellzeitpunkt
-// (einzelpreisCent), neue Eingaben mit dem aktuellen Preis der Bestellrunde.
-const preisVon = (ch, pos) => pos.einzelpreisCent ?? artikelVon(ch, pos.artikelId).preisCent;
-
-function positionBetrag(ch, pos) {
-  const a = artikelVon(ch, pos.artikelId);
-  const preis = preisVon(ch, pos);
-  if (a.art !== 'gewicht') return { cent: preis * pos.menge, geschaetzt: false };
-  if (pos.gewichtG) return { cent: Math.round((preis * pos.gewichtG) / 1000), geschaetzt: false };
-  const mittelG = (a.richtVonG + a.richtBisG) / 2;
-  return { cent: Math.round((preis * mittelG * pos.menge) / 1000), geschaetzt: true };
-}
-
-function bestellBetrag(b) {
-  const ch = chargeVon(b);
-  return b.positionen.reduce((erg, pos) => {
-    const p = positionBetrag(ch, pos);
-    return { cent: erg.cent + p.cent, geschaetzt: erg.geschaetzt || p.geschaetzt };
-  }, { cent: 0, geschaetzt: false });
-}
-
-function betragText({ cent, geschaetzt }) {
-  return geschaetzt ? `ca. ${euro(cent)}` : euro(cent);
-}
-
-function artikelKurz(b) {
-  const ch = chargeVon(b);
-  return b.positionen
-    .map((p) => `${p.menge}× ${artikelVon(ch, p.artikelId).name}`)
-    .join(' · ');
-}
-
-function naechsteNummer() {
-  const hoechste = daten.bestellungen
-    .map((b) => Number(b.nummer.split('-')[1]))
-    .reduce((a, b) => Math.max(a, b), 0);
-  return `${new Date().getFullYear()}-${String(hoechste + 1).padStart(3, '0')}`;
-}
-
-function gewichtsPositionen(ch = aktiveCharge()) {
-  const liste = [];
-  bestellungenDerCharge(ch).filter(istAktiv).forEach((b) => {
-    b.positionen.forEach((p, index) => {
-      if (artikelVon(ch, p.artikelId).art === 'gewicht') liste.push({ b, p, index });
-    });
-  });
-  return liste.sort((x, y) => kundeVon(x.b).name.localeCompare(kundeVon(y.b).name, 'de'));
-}
-
-/* ------------------------------------------------------------
-   3a. LADEN UND SPEICHERN
-   ------------------------------------------------------------ */
-function skriptLaden(pfad) {
-  return new Promise((ok, fehler) => {
-    const skript = document.createElement('script');
-    skript.src = pfad;
-    skript.onload = ok;
-    skript.onerror = () => fehler(new Error(`${pfad} nicht gefunden.`));
-    document.head.appendChild(skript);
-  });
-}
-
-async function laden() {
-  if (BEISPIEL) {
-    if (!daten) {
-      await skriptLaden('entwurf-daten.js');
-      daten = JSON.parse(JSON.stringify(ENTWURF_DATEN));
-      // Positionen brauchen eine Kennung (wie aus der Datenbank)
-      daten.bestellungen.forEach((b) => b.positionen.forEach((p, i) => { p.id = p.id || `${b.id}-p${i}`; }));
-      dauersortimentBeispiel();
-    }
-  } else {
-    let antwort;
-    try {
-      antwort = await fetch('/api/verwaltung/stand', { headers: { Accept: 'application/json' }, cache: 'no-store' });
-    } catch {
-      // Meist: Anmeldung abgelaufen, Access leitet auf die Anmeldeseite um
-      throw new Error('Keine Verbindung oder Anmeldung abgelaufen – bitte Seite neu laden.');
-    }
-    const erg = await antwort.json().catch(() => ({}));
-    if (!antwort.ok || !erg.ok) throw new Error(erg.error || `Laden fehlgeschlagen (${antwort.status}).`);
-    daten = erg;
-    zustand.nutzer = erg.nutzer || '';
-  }
-  if (!daten.chargen.some((c) => c.id === zustand.chargeId)) {
-    zustand.chargeId = daten.chargen.length ? daten.chargen[0].id : null;
-  }
-}
-
-async function senden(pfad, eingabe) {
-  let antwort;
-  try {
-    antwort = await fetch(`/api/verwaltung/${pfad}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-      body: JSON.stringify(eingabe),
-    });
-  } catch {
-    throw new Error('Nicht gespeichert – keine Verbindung oder Anmeldung abgelaufen. Bitte Seite neu laden.');
-  }
-  const erg = await antwort.json().catch(() => ({}));
-  if (!antwort.ok || !erg.ok) throw new Error(erg.error || `Nicht gespeichert (${antwort.status}).`);
-  return erg;
-}
-
-/**
- * Speichert eine Änderung: über die Schnittstelle und lädt danach den
- * Stand neu – im Beispielmodus stattdessen beispielAenderung() lokal.
- * Optionen: erfolg (Meldung), neuZeichnen (Standard true), still (keine
- * Sperre für weitere Eingaben, z. B. beim Wiegen).
- * @returns {Promise<object|null>} Ergebnis oder null bei Fehler
- */
-async function speichern(pfad, eingabe, beispielAenderung, optionen = {}) {
-  const { erfolg, neuZeichnen: zeichnen = true, still = false } = optionen;
-  if (beschaeftigt && !still) return null;
-  if (!still) {
-    beschaeftigt = true;
-    document.body.classList.add('vw-beschaeftigt');
-  }
-  try {
-    let erg;
-    if (BEISPIEL) {
-      erg = beispielAenderung();
-    } else {
-      erg = await senden(pfad, eingabe);
-      await laden();
-    }
-    if (zeichnen) neuZeichnen();
-    if (erfolg) meldung(typeof erfolg === 'function' ? erfolg(erg) : erfolg);
-    return erg;
-  } catch (fehler) {
-    meldung(fehler.message || 'Fehler beim Speichern.');
-    return null;
-  } finally {
-    if (!still) {
-      beschaeftigt = false;
-      document.body.classList.remove('vw-beschaeftigt');
-    }
-  }
-}
-
-/* ------------------------------------------------------------
-   4. BAUSTEINE (wiederkehrende HTML-Teile)
-   ------------------------------------------------------------ */
-// Bestellrunde: eine kompakte Auswahl oben auf jeder Seite
-const CHARGE_KURZ = {
-  entwurf: 'In Vorbereitung', stammkunden: 'Nur Stammkunden', offen: 'Offen für Bestellungen',
-  geschlossen: 'Bestellschluss vorbei', archiviert: 'Abgeschlossen',
-};
-
-function chargeWahl({ alle = false } = {}) {
-  const ch = aktiveCharge();
-  if (!ch) return '';
-  const mitAlle = alle && daten.chargen.length > 1;
-  if (mitAlle && zustand.alleRunden) {
-    return `<div class="vw-runde"><select class="vw-runde-wahl" data-wahl="charge" aria-label="Bestellrunde wählen">
-      <option value="*" selected>Alle laufenden Bestellrunden</option>
-      ${daten.chargen.map((c) => `<option value="${c.id}">${esc(c.titel)}</option>`).join('')}</select>
-      <span class="vw-klein">${daten.chargen.length} Bestellrunden zusammen</span></div>`;
-  }
-  const auswahl = daten.chargen.length > 1
-    ? `<select class="vw-runde-wahl" data-wahl="charge" aria-label="Bestellrunde wählen">${mitAlle ? '<option value="*">Alle laufenden Bestellrunden</option>' : ''}${daten.chargen
-      .map((c) => `<option value="${c.id}" ${c.id === ch.id ? 'selected' : ''}>${esc(c.titel)}</option>`).join('')}</select>`
-    : `<strong class="vw-runde-name">${esc(ch.titel)}</strong>`;
-  return `<div class="vw-runde">${auswahl}
-    <span class="vw-klein">${istDauer(ch) ? 'Immer erhältlich, ohne Bestellschluss'
-      : [CHARGE_KURZ[ch.status], `Bestellschluss ${datumKurz(ch.bestellschluss)}`].filter(Boolean).join(' · ')}</span></div>`;
-}
-
-function marken(b) {
-  const t = terminVon(b);
-  const teile = [];
-  if (b.neu) teile.push('<span class="vw-marke vw-marke--neu">neu</span>');
-  if (b.ueberBertha) teile.push('<span class="vw-marke vw-marke--info">über Bertha</span>');
-  if (b.status === 'warteliste') teile.push('<span class="vw-marke vw-marke--info">Warteliste</span>');
-  if (b.status === 'storniert') teile.push('<span class="vw-marke">storniert</span>');
-  if (istHofverkauf(b)) teile.push('<span class="vw-marke">Verkauf am Hof</span>');
-  else teile.push(t
-    ? `<span class="vw-marke">${t.art === 'abholung' ? 'Abholung' : 'Lieferung'} ${datumKurz(t.datum)}</span>`
-    : istDauer(chargeVon(b)) ? '<span class="vw-marke">Abholung nach Absprache</span>'
-      : '<span class="vw-marke vw-marke--offen">Termin offen</span>');
-  if (istAktiv(b)) {
-    teile.push(b.bezahlt
-      ? `<span class="vw-marke vw-marke--gut">bezahlt (${ZAHLARTEN[b.bezahlt]})</span>`
-      : `<span class="vw-marke vw-marke--offen">offen · ${ZAHLARTEN[b.zahlart]}</span>`);
-    if (b.uebergeben) teile.push('<span class="vw-marke vw-marke--gut">übergeben</span>');
-  }
-  return `<div class="vw-marken">${teile.join('')}</div>`;
-}
-
-// Kurzer Stand einer Bestellung als Text, z. B. „Abholung Sa., 10.10. · bar, offen"
-function standText(b) {
-  if (b.status === 'storniert') return 'storniert';
-  const t = terminVon(b);
-  const wo = istHofverkauf(b) ? 'Verkauf am Hof' : t ? `${t.art === 'abholung' ? 'Abholung' : 'Lieferung'} ${datumKurz(t.datum)}` : 'Termin offen';
-  if (b.status === 'warteliste') return wo;
-  const zahlung = b.bezahlt ? `bezahlt (${ZAHLARTEN[b.bezahlt]})` : `${ZAHLARTEN[b.zahlart]}, offen`;
-  return `${wo} · ${b.uebergeben ? 'übergeben · ' : ''}${zahlung}`;
-}
-
-function bestellZeile(b) {
-  const k = kundeVon(b);
-  const grau = !istAktiv(b) || b.uebergeben ? ' vw-zeile--grau' : '';
-  const marke = b.neu ? '<span class="vw-marke vw-marke--neu">neu</span> '
-    : b.status === 'warteliste' ? '<span class="vw-marke vw-marke--info">Warteliste</span> ' : '';
-  const offen = istAktiv(b) && (!terminVon(b) && !istHofverkauf(b));
-  return `<button type="button" class="vw-zeile${grau}" data-aktion="oeffnen" data-id="${b.id}">
-    <span class="vw-zeile-name">${marke}${esc(k.name)}</span>
-    <span class="vw-zeile-betrag">${betragText(bestellBetrag(b))}</span>
-    <span class="vw-zeile-info">${esc(artikelKurz(b))}</span>
-    <span class="vw-zeile-stand${offen ? ' vw-warnung' : ''}">${esc(standText(b))} · ${esc(b.nummer)}${zustand.alleRunden && aktuelleAnsicht() === 'bestellungen' ? ` · ${esc(chargeVon(b).titel)}` : ''}</span>
-  </button>`;
-}
-
-function whatsappLink(b, text) {
-  const nummer = kundeVon(b).telefon.replace(/[^\d]/g, '');
-  return `https://wa.me/${nummer}?text=${encodeURIComponent(text)}`;
-}
-
-const vorname = (k) => k.name.split(' ')[0];
-
-function bereitText(b) {
-  const k = kundeVon(b);
-  const t = terminVon(b);
-  if (!t && istDauer(chargeVon(b))) {
-    return `Hallo ${vorname(k)}, eure Bestellung ${b.nummer} liegt bereit: ${artikelKurz(b)}. `
-      + `Betrag: ${betragText(bestellBetrag(b))}. Wann passt es euch, sie bei uns am Hof abzuholen? Liebe Grüße, Kathrin & Florian`;
-  }
-  if (!t) return bestaetigungText(b);
-  const wann = t.art === 'abholung'
-    ? `Ihr könnt sie am ${datumKurz(t.datum)} zwischen ${uhrzeit(t.von)} und ${uhrzeit(t.bis)} Uhr bei uns am Hof abholen.`
-    : `Wir liefern am ${datumKurz(t.datum)} zwischen ${uhrzeit(t.von)} und ${uhrzeit(t.bis)} Uhr.`;
-  return `Hallo ${vorname(k)}, eure Bestellung ${b.nummer} ist fertig: ${artikelKurz(b)}. `
-    + `Betrag: ${betragText(bestellBetrag(b))}. ${wann} Liebe Grüße, Kathrin & Florian`;
-}
-
-// Für übernommene Voranmeldungen: dabei, Preis nennen, Termin erfragen
-function bestaetigungText(b) {
-  const ch = chargeVon(b);
-  const k = kundeVon(b);
-  const preise = b.positionen.map((p) => {
-    const a = artikelVon(ch, p.artikelId);
-    const preis = preisVon(ch, p);
-    return `${p.menge}× ${a.name} (${a.art === 'gewicht' ? `${euro(preis)}/kg` : `je ${euro(preis)}`})`;
-  }).join(', ');
-  const termine = ch.termine.map((t) => terminText(t)).join(' oder ');
-  return `Hallo ${vorname(k)}, ihr hattet euch vormerken lassen – ihr seid dabei: ${preise}. `
-    + `Passt euch ${termine}? Und zahlt ihr bar oder per Überweisung? Liebe Grüße, Kathrin & Florian`;
-}
-
-// Ankündigung einer Bestellrunde – zum Weiterleiten in WhatsApp-Kanal,
-// Übertragungsliste oder Gruppe. Der Link zeigt später auf hofladen.html.
-function ankuendigungText(ch) {
-  const artikel = ch.artikel.map((a) => {
-    const preis = a.art === 'gewicht' ? `${euro(a.preisCent)}/kg` : euro(a.preisCent);
-    return `• ${a.name} – ${preis}`;
-  }).join('\n');
-  const termine = ch.termine.map((t) => `• ${terminText(t)}`).join('\n');
-  return `Neu vom Hof Kruckenhaus: ${ch.titel}\n\n${artikel}\n\n${termine}\n\n`
-    + `Bestellschluss: ${datumKurz(ch.bestellschluss)}\n`
-    + 'Jetzt vorbestellen: https://www.kruckenhaus.at/hofladen.html\n\n'
-    + 'Liebe Grüße, Kathrin & Florian';
-}
-
-function ankuendigungOeffnen() {
-  const ch = aktiveCharge();
-  const dialog = document.getElementById('vw-dialog');
-  if (!dialog) return;
-  const text = ankuendigungText(ch);
-  dialog.innerHTML = `<div class="vw-dialog-inhalt">
-    <div class="vw-dialog-kopf">
-      <h2 id="vw-dialog-titel">Ankündigung für WhatsApp</h2>
-      <button type="button" class="vw-schliessen" data-aktion="schliessen" aria-label="Schließen">×</button>
-    </div>
-    <p class="vw-klein">Text prüfen, dann in WhatsApp öffnen und dort Kanal, Übertragungsliste oder Gruppe auswählen.</p>
-    <label class="vw-feld"><span>Text</span>
-      <textarea id="vw-ankuendigung" rows="12">${esc(text)}</textarea></label>
-    <div class="vw-knopfreihe">
-      <button type="button" class="vw-knopf vw-knopf--voll" data-aktion="ankuendigung-whatsapp">In WhatsApp öffnen</button>
-      <button type="button" class="vw-knopf" data-aktion="ankuendigung-kopieren">Text kopieren</button>
-    </div>
-  </div>`;
-  delete dialog.dataset.id;
-  if (!dialog.open) dialog.showModal();
-}
-
-const adresseVon = (k) => `${k.strasse}, ${`${k.plz} ${k.ort}`.trim()}`;
-
-function navLink(b) {
-  return `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(adresseVon(kundeVon(b)))}`;
-}
-
-// Route über mehrere Stopps ab dem eigenen Standort. Google Maps nimmt
-// höchstens 9 Zwischenstopps – längere Touren werden in Teile geteilt.
-function routenLinks(bestellungen) {
-  const adressen = bestellungen.map((b) => adresseVon(kundeVon(b)));
-  const teile = [];
-  for (let i = 0; i < adressen.length; i += 10) teile.push(adressen.slice(i, i + 10));
-  return teile.map((teil, n) => {
-    const ziel = teil[teil.length - 1];
-    const zwischen = teil.slice(0, -1);
-    const url = `https://www.google.com/maps/dir/?api=1&travelmode=driving&destination=${encodeURIComponent(ziel)}`
-      + (zwischen.length ? `&waypoints=${encodeURIComponent(zwischen.join('|'))}` : '');
-    const von = n * 10 + 1;
-    return { url, text: teile.length > 1 ? `Route Stopp ${von}–${von + teil.length - 1}` : `Route in Google Maps (${teil.length} ${teil.length === 1 ? 'Stopp' : 'Stopps'})` };
-  });
-}
-
-// Zahlungsinfo für Überweisung (WhatsApp-Text und Anzeige mit QR-Code)
-function zahlungsText(b) {
-  const k = kundeVon(b);
-  const bank = daten.bank;
-  const betrag = betragText(bestellBetrag(b));
-  const gruss = istHofverkauf(b) && k.name.startsWith('Verkauf am Hof') ? 'Hallo' : `Hallo ${vorname(k)}`;
-  return bank
-    ? `${gruss}, danke für euren Einkauf! Betrag: ${betrag}. Bitte überweisen an ${bank.inhaber}, IBAN ${bank.iban}`
-      + `${bank.bic ? `, BIC ${bank.bic}` : ''}, Verwendungszweck: Bestellung ${b.nummer}. Liebe Grüße, Kathrin & Florian`
-    : `${gruss}, danke für euren Einkauf! Betrag: ${betrag}, Verwendungszweck: Bestellung ${b.nummer}. Liebe Grüße, Kathrin & Florian`;
-}
-
-function zahlungsinfoOeffnen(b) {
-  const dialog = document.getElementById('vw-dialog');
-  if (!dialog) return;
-  const k = kundeVon(b);
-  dialog.innerHTML = `<div class="vw-dialog-inhalt">
-    <div class="vw-dialog-kopf">
-      <div><h2 id="vw-dialog-titel">Zahlungsinfo</h2><span class="vw-klein">${esc(k.name)} · ${esc(b.nummer)}</span></div>
-      <button type="button" class="vw-schliessen" data-aktion="schliessen" aria-label="Schließen">×</button>
-    </div>
-    <p class="vw-gross-betrag">${betragText(bestellBetrag(b))}</p>
-    ${daten.bank ? `<div class="vw-zahlungsinfo">${ueberweisungsQr(b, daten.bank, `Bestellung ${b.nummer}`)}
-      <p>${esc(daten.bank.inhaber)}<br>IBAN ${esc(daten.bank.iban)}${daten.bank.bic ? `<br>BIC ${esc(daten.bank.bic)}` : ''}<br>
-        Verwendungszweck: <strong>Bestellung ${esc(b.nummer)}</strong></p></div>
-      <p class="vw-klein">Der Kunde kann den Code mit seiner Banking-App scannen.</p>`
-    : '<p class="vw-warnung">Die Bankverbindung ist in Cloudflare noch nicht hinterlegt (BANK_IBAN) – bitte mündlich weitergeben.</p>'}
-    <div class="vw-knopfreihe">
-      ${k.telefon ? `<a class="vw-knopf vw-knopf--voll" href="${whatsappLink(b, zahlungsText(b))}" target="_blank" rel="noopener">Per WhatsApp schicken</a>` : ''}
-      <button type="button" class="vw-knopf" data-aktion="schliessen">Fertig</button>
-    </div>
-  </div>`;
-  delete dialog.dataset.id;
-  if (!dialog.open) dialog.showModal();
-}
-
-/* ------------------------------------------------------------
-   5. ANSICHTEN
-   ------------------------------------------------------------ */
-const inhalt = () => document.getElementById('vw-inhalt');
-
-// Widerrufe (aus „Vertrag widerrufen" auf der Website) – über alle Bestellrunden
-function zeitpunktKurz(sqlZeit) {
-  return new Date(`${sqlZeit.replace(' ', 'T')}Z`).toLocaleString('de-AT', {
-    timeZone: 'Europe/Vienna', day: 'numeric', month: 'numeric', hour: '2-digit', minute: '2-digit',
-  });
-}
-
-function widerrufeKarte() {
-  const liste = daten.widerrufe || [];
-  if (!liste.length) return '';
-  return `<section class="vw-karte vw-karte--achtung" aria-label="Widerrufe"><h2>Widerrufe (${liste.length})</h2>
-    <p class="vw-klein">Eingang wurde dem Kunden automatisch bestätigt. Bestellung ggf. stornieren bzw. Artikel klären,
-      bezahlte Beträge innerhalb von 14 Tagen erstatten, dann als erledigt markieren.</p>
-    ${liste.map((w) => `<div class="vw-widerruf">
-      <p><strong>${esc(w.name)}</strong> · Nr. ${esc(w.nummer)} · ${zeitpunktKurz(w.eingegangen)} Uhr<br>
-        Widerrufen: ${esc(w.umfang)}${w.email ? ` · <a href="mailto:${esc(w.email)}">${esc(w.email)}</a>` : ''}
-        ${w.bestellungId ? '' : '<br><span class="vw-warnung">Passt zu keiner Bestellung (Nummer oder E-Mail falsch) – bitte klären.</span>'}</p>
-      <div class="vw-knopfreihe">
-        ${w.bestellungId && bestellungVon(w.bestellungId) ? `<button type="button" class="vw-knopf vw-knopf--klein" data-aktion="oeffnen" data-id="${w.bestellungId}">Bestellung öffnen</button>` : ''}
-        <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="widerruf-erledigt" data-id="${w.id}">Erledigt</button>
-      </div></div>`).join('')}
-  </section>`;
-}
-
-// 5.1 Übersicht
-// Alle laufenden Bestellrunden auf einen Blick, ohne Runde auswählen zu müssen:
-// oben, was zu tun ist (über alle Runden zusammen), darunter je Runde eine Karte
-// mit Stand, „Noch frei" und den Handgriffen dieser Runde. Allgemeines
-// (neue Runde, Sortiment, Bertha, Auswertung) eingeklappt unter „Mehr".
-function rundenStand(ch) {
-  const alle = bestellungenDerCharge(ch);
-  const aktiv = alle.filter(istAktiv);
-  return {
-    ch,
-    aktiv,
-    warteliste: alle.filter((b) => b.status === 'warteliste').length,
-    offenCent: aktiv.filter((b) => !b.bezahlt).reduce((s, b) => s + bestellBetrag(b).cent, 0),
-    nichtUebergeben: aktiv.filter((b) => !b.uebergeben && !ohneTerminOffen(b)).length,
-    geldFehlt: aktiv.filter((b) => b.uebergeben && !b.bezahlt).length,
-    neue: alle.filter((b) => b.neu).length,
-    ohneTermin: aktiv.filter(ohneTerminOffen).length,
-    vormerkungen: passendeVoranmeldungen(ch).length,
-  };
-}
-
-function rundenKarte(st, mehrereRunden) {
-  const { ch, aktiv } = st;
-  const dauer = istDauer(ch);
-  const zeile = (inhaltHtml) => `<li>${inhaltHtml}</li>`;
-  const oeffnen = (ziel, text) => `<button type="button" data-aktion="runde-oeffnen" data-runde="${ch.id}" data-ziel="${ziel}">${text}</button>`;
-  const aktion = (name, text) => `<button type="button" data-aktion="${name}" data-runde="${ch.id}">${text}</button>`;
-  const hatGewichtsware = ch.artikel.some((a) => a.art === 'gewicht');
-
-  let freiHtml;
-  if (dauer) {
-    const artikel = ch.artikel.filter((a) => (produktVon(a.produktId) || {}).verkaufsart === 'dauer');
-    const aus = artikel.filter((a) => freieMenge(ch, a.id) <= 0);
-    freiHtml = `<p class="vw-klein">${artikel.length - aus.length} von ${artikel.length} Dauerartikeln verfügbar${aus.length
-      ? ` · ausverkauft: ${aus.map((a) => esc(a.name)).join(', ')}` : ''}. „Ausverkauft" und Preise ändert ihr im
-      <a href="#sortiment">Sortiment</a>.</p>`;
-  } else {
-    freiHtml = ch.artikel.map((a) => {
-      const frei = freieMenge(ch, a.id);
-      const anteil = a.kontingent ? Math.min(100, Math.round(((a.kontingent - frei) / a.kontingent) * 100)) : 100;
-      return `<div class="vw-frei-zeile">
-        <span class="vw-frei-name">${esc(a.name)}</span>
-        <span class="vw-balken${frei <= 0 ? ' vw-balken--voll' : ''}" aria-hidden="true"><span style="width:${anteil}%"></span></span>
-        <strong class="vw-frei-zahl">${frei > 0 ? `${frei} frei` : 'aus'}</strong>
-      </div>`;
-    }).join('');
-  }
-
-  const stand = [
-    `${aktiv.length} ${aktiv.length === 1 ? 'Bestellung' : 'Bestellungen'}`,
-    st.offenCent ? `<span class="vw-warnung">${euro(st.offenCent)} offen</span>` : (aktiv.length ? 'alles bezahlt' : ''),
-    st.nichtUebergeben ? `${st.nichtUebergeben} noch zu übergeben` : '',
-  ].filter(Boolean).join(' · ');
-  const fertig = !dauer && aktiv.length && aktiv.every((b) => b.uebergeben && b.bezahlt) && !st.warteliste;
-
-  return `<section class="vw-karte vw-runden-karte" aria-label="${esc(ch.titel)}">
-    <div class="vw-runden-kopf"><h2>${esc(ch.titel)}</h2>
-      <span class="vw-klein">${dauer ? 'Immer erhältlich, ohne Bestellschluss'
-        : [CHARGE_KURZ[ch.status], `Bestellschluss ${datumKurz(ch.bestellschluss)}`].filter(Boolean).join(' · ')}</span></div>
-    <p class="vw-runden-stand">${stand}</p>
-    ${freiHtml}
-    <div class="vw-knopfreihe">
-      <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="runde-oeffnen" data-runde="${ch.id}" data-ziel="#bestellungen">Bestellungen</button>
-      ${st.nichtUebergeben ? `<button type="button" class="vw-knopf vw-knopf--klein" data-aktion="runde-oeffnen" data-runde="${ch.id}" data-ziel="#uebergabe">Übergabe</button>` : ''}
-      ${st.offenCent ? `<button type="button" class="vw-knopf vw-knopf--klein" data-aktion="runde-oeffnen" data-runde="${ch.id}" data-ziel="#zahlungen">Zahlungen</button>` : ''}
-    </div>
-    ${fertig ? `<p class="vw-klein">Alles übergeben und bezahlt. Abgeschlossene Runden verschwinden aus dem Alltag, bleiben aber in der Auswertung.</p>
-      <button type="button" class="vw-knopf vw-knopf--breit" data-aktion="runde-status" data-id="${ch.id}" data-wert="archiviert">Bestellrunde abschließen</button>` : ''}
-    <details class="vw-mehr"><summary>Mehr${mehrereRunden ? ' zu dieser Runde' : ''}: Bearbeiten, Drucken, Export …</summary>
-      <ul class="vw-aufgaben">
-        ${dauer ? '' : zeile(oeffnen('#charge', 'Bestellrunde bearbeiten (Preise, Mengen, Termine)'))}
-        ${zeile(aktion('ankuendigung', 'Ankündigung für WhatsApp'))}
-        ${zeile(aktion('listen-drucken', 'Abhol- und Lieferlisten drucken (alle Tage)'))}
-        ${zeile(oeffnen('#zahlungen', 'Alle Zahlungen'))}
-        ${zeile(hatGewichtsware ? oeffnen('#wiegen', 'Vorab wiegen und Packzettel drucken') : aktion('drucken', 'Packzettel drucken'))}
-        ${zeile(aktion('export', 'Liste für Excel herunterladen'))}
-      </ul>
-      ${dauer ? '' : `<p class="vw-klein">Termine: ${ch.termine.length ? ch.termine.map(terminText).join(' · ') : 'noch keine'}</p>`}
-    </details>
-  </section>`;
-}
-
-function ansichtUebersicht() {
-  // Bestellrunden mit Termin zuerst, das Dauersortiment zuletzt
-  const runden = daten.chargen.filter((c) => !istDauer(c)).concat(daten.chargen.filter(istDauer));
-  const staende = runden.map(rundenStand);
-  const mehrereRunden = runden.length > 1;
-  const summe = (feld) => staende.reduce((s, st) => s + st[feld], 0);
-  const aktivGesamt = staende.reduce((s, st) => s + st.aktiv.length, 0);
-  const offenGesamt = summe('offenCent');
-
-  // Zu tun: nur Einträge mit Anzahl > 0, jeder mit Zahl rechts.
-  // Was sich in „Bestellungen" filtern lässt, über alle Runden zusammen;
-  // Übergabe, Zahlungen und Vormerkungen gehören zu einer Runde, daher je Runde.
-  const ueberAlle = (anzahl, text, filter) => (anzahl
-    ? `<li><button type="button" data-aktion="filter-alle" data-wert="${filter}"><span>${text}</span><span class="vw-anzahl">${anzahl}</span></button></li>`
-    : '');
-  const jeRunde = (feld, text, ziel) => staende.filter((st) => st[feld]).map((st) => `<li><button type="button"
-      data-aktion="runde-oeffnen" data-runde="${st.ch.id}" data-ziel="${ziel}"><span>${text}${mehrereRunden
-      ? ` <span class="vw-klein">· ${esc(st.ch.titel)}</span>` : ''}</span><span class="vw-anzahl">${st[feld]}</span></button></li>`).join('');
-  const aufgaben = [
-    ueberAlle(summe('neue'), 'Neue Bestellungen über die Website', 'neu'),
-    ueberAlle(summe('ohneTermin'), 'Termin mit dem Kunden klären', 'termin-offen'),
-    jeRunde('vormerkungen', 'Vormerkungen übernehmen', '#voranmeldungen'),
-    ueberAlle(summe('warteliste'), 'Auf der Warteliste', 'warteliste'),
-    jeRunde('nichtUebergeben', 'Noch abzuholen bzw. zu liefern', '#uebergabe'),
-    jeRunde('geldFehlt', 'Übergeben, Geld noch nicht da', '#zahlungen'),
-  ].join('');
-
-  const mehr = (inhaltHtml) => `<li>${inhaltHtml}</li>`;
-  inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Übersicht</h1></div>
-    <p class="vw-klein vw-uebersicht-hinweis">${mehrereRunden ? `${runden.length} laufende Bestellrunden zusammen` : esc(runden[0].titel)}</p>
-    ${widerrufeKarte()}
-    <section class="vw-karte" aria-label="Zu tun"><h2>Zu tun</h2>
-      ${aufgaben ? `<ul class="vw-aufgaben">${aufgaben}</ul>` : '<p class="vw-erledigt-hinweis">Alles erledigt ✓</p>'}
-    </section>
-    <div class="vw-kennzahlen vw-kennzahlen--zwei">
-      <div class="vw-kennzahl"><strong>${aktivGesamt}</strong><span>Bestellungen${mehrereRunden ? ' in allen Runden' : ''}</span></div>
-      <div class="vw-kennzahl${offenGesamt ? ' vw-kennzahl--achtung' : ''}"><strong>${euro(offenGesamt)}</strong><span>noch nicht bezahlt</span></div>
-    </div>
-    ${staende.map((st) => rundenKarte(st, mehrereRunden)).join('')}
-    <details class="vw-karte vw-mehr"><summary>Mehr: Neue Bestellrunde, Sortiment, Auswertung …</summary>
-      <ul class="vw-aufgaben">
-        ${mehr('<a href="#charge-neu">Neue Bestellrunde anlegen</a>')}
-        ${mehr('<a href="#sortiment">Sortiment – Produkte anlegen und ändern</a>')}
-        ${mehr('<a href="#bertha">Verbindung zu Bertha (Eierkunden-Portal)</a>')}
-        ${mehr('<a href="#auswertung">Auswertung für die Buchhaltung (Jahr, Excel)</a>')}
-      </ul>
-    </details>
-    ${nutzerZeile()}`;
-}
-
-// 5.2 Bestellungen
-const FILTER = [
-  ['alle', 'Alle'],
-  ['neu', 'Neu'],
-  ['abholung', 'Abholung'],
-  ['lieferung', 'Lieferung'],
-  ['offen', 'Nicht bezahlt'],
-  ['termin-offen', 'Termin offen'],
-  ['warteliste', 'Warteliste'],
-  ['hof', 'Verkauf am Hof'],
-  ['storniert', 'Storniert'],
-];
-
-function passtZumFilter(b) {
-  switch (zustand.filter) {
-    case 'abholung':
-    case 'lieferung': return istAktiv(b) && terminArt(b) === zustand.filter;
-    case 'termin-offen': return ohneTerminOffen(b);
-    case 'neu': return b.neu;
-    case 'hof': return istAktiv(b) && istHofverkauf(b);
-    case 'offen': return istAktiv(b) && !b.bezahlt;
-    case 'warteliste': return b.status === 'warteliste';
-    case 'storniert': return b.status === 'storniert';
-    default: return b.status !== 'storniert';
-  }
-}
-
-// Bestellungen der gewählten Runde – oder aller laufenden Runden zusammen
-const listenBestellungen = () => (zustand.alleRunden ? daten.bestellungen.filter((b) => chargeVon(b) && daten.chargen.includes(chargeVon(b)))
-  : bestellungenDerCharge());
-
-function ansichtBestellungen() {
-  const alle = listenBestellungen();
-  const anzahl = (wert) => {
-    const vorher = zustand.filter;
-    zustand.filter = wert;
-    const n = alle.filter(passtZumFilter).length;
-    zustand.filter = vorher;
-    return n;
-  };
-  // „Neu" nur anbieten, wenn es etwas Neues gibt
-  const filter = FILTER.filter(([wert]) => wert !== 'neu' || anzahl('neu') || zustand.filter === 'neu');
-  // Bestellrunden direkt hier anlegen und bearbeiten, nicht nur über die Übersicht
-  const ch = aktiveCharge();
-  const bearbeiten = ch && !istDauer(ch) && !zustand.alleRunden;
-  inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Bestellungen</h1>${chargeWahl({ alle: true })}
-      <div class="vw-knopfreihe vw-knopfreihe--klein">
-        ${bearbeiten ? '<a class="vw-knopf vw-knopf--klein" href="#charge">Bestellrunde bearbeiten</a>' : ''}
-        <a class="vw-knopf vw-knopf--klein" href="#charge-neu">+ Neue Bestellrunde</a>
-      </div>
-      <div class="vw-such-zeile">
-        <input type="search" class="vw-suche" id="vw-suche" placeholder="Suchen …"
-          aria-label="Bestellungen durchsuchen" value="${esc(zustand.suche)}" />
-        <select class="vw-filter-wahl" data-wahl="filter" aria-label="Anzeigen">${filter.map(([wert, text]) =>
-          `<option value="${wert}" ${zustand.filter === wert ? 'selected' : ''}>${text} (${anzahl(wert)})</option>`).join('')}</select>
-      </div>
-      ${zustand.filter === 'neu' && alle.some((b) => b.neu)
-        ? '<button type="button" class="vw-knopf vw-knopf--klein" data-aktion="alle-gesehen">Alle als gesehen markieren</button>' : ''}
-    </div>
-    <div class="vw-liste" id="vw-liste"></div>`;
-  listeAktualisieren();
-}
-
-function listeAktualisieren() {
-  const liste = document.getElementById('vw-liste');
-  if (!liste) return;
-  const suche = zustand.suche.trim().toLowerCase();
-  const treffer = listenBestellungen()
-    .filter(passtZumFilter)
-    .filter((b) => {
-      if (!suche) return true;
-      const k = kundeVon(b);
-      return `${k.name} ${k.ort} ${b.nummer} ${k.telefon}`.toLowerCase().includes(suche);
-    })
-    // Neue zuerst (neueste oben), sonst nach Name
-    .sort((x, y) => (zustand.filter === 'neu'
-      ? y.nummer.localeCompare(x.nummer)
-      : kundeVon(x).name.localeCompare(kundeVon(y).name, 'de')));
-  liste.innerHTML = treffer.length
-    ? treffer.map(bestellZeile).join('')
-    : '<p class="vw-klein">Keine Bestellungen gefunden.</p>';
-}
-
-// Erfassen: zwei Arten, oben umschaltbar
-function erfassenUmschalter(aktiv) {
-  return `<div class="vw-segment" role="group" aria-label="Was erfassen?">
-    <a href="#neu" aria-pressed="${aktiv === 'neu'}">Vorbestellung</a>
-    <a href="#hofverkauf" aria-pressed="${aktiv === 'hof'}">Verkauf am Hof</a>
-  </div>`;
-}
-
-// 5.3 Bestellung erfassen (Telefon, WhatsApp, persönlich)
-function ansichtNeu() {
-  const ch = aktiveCharge();
-  inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Erfassen</h1>${erfassenUmschalter('neu')}${chargeWahl()}
-      <p class="vw-klein">Bestellung per Telefon, WhatsApp oder persönlich – für einen späteren Termin.
-        Ohne Preis und Termin? <a href="#voranmeldungen">Vormerkung</a>.</p></div>
-    <form class="vw-karte" id="vw-formular" novalidate>
-      <fieldset class="vw-feldgruppe"><legend>Wie kam die Bestellung?</legend>
-        <div class="vw-auswahl vw-auswahl--reihe">
-          <label><input type="radio" name="quelle" value="whatsapp" checked /> WhatsApp</label>
-          <label><input type="radio" name="quelle" value="telefon" /> Telefon</label>
-          <label><input type="radio" name="quelle" value="persoenlich" /> persönlich</label>
-        </div>
-      </fieldset>
-
-      <label class="vw-feld"><span>Name</span>
-        <input name="name" list="vw-kundenliste" autocomplete="off" required placeholder="Name eintippen – bekannte Kunden werden vorgeschlagen" />
-      </label>
-      <datalist id="vw-kundenliste">${daten.kunden.map((k) => `<option value="${esc(k.name)}">${esc(k.ort)}</option>`).join('')}</datalist>
-      <label class="vw-feld"><span>Telefon</span><input name="telefon" type="tel" inputmode="tel" /></label>
-      <label class="vw-feld"><span>E-Mail (optional – für Bestätigungen und „Meine Bestellungen")</span><input name="email" type="email" autocomplete="off" /></label>
-
-      <fieldset class="vw-feldgruppe"><legend>Was?</legend>
-        ${ch.artikel.map((a) => `
-          <div class="vw-zaehler-zeile">
-            <div><strong>${esc(a.name)}</strong><br>
-              <span class="vw-klein">${a.art === 'gewicht' ? `ca. ${kgFormat.format(a.richtVonG / 1000)}–${kgFormat.format(a.richtBisG / 1000)} kg/Stück · ` : ''}${freiText(ch, a.id)}</span>
-              <label class="vw-pos-preis vw-pos-preis--erfassen"><span class="vw-klein">Preis${a.art === 'gewicht' ? ' €/kg' : ' €'}</span>
-                <input type="text" inputmode="decimal" autocomplete="off" value="${textAusCent(a.preisCent)}" data-erfassen-preis="${a.id}"
-                  aria-label="Preis ${esc(a.name)} für diese Bestellung (z. B. Gasthaus-Preis)" /></label>
-              <span class="vw-klein vw-preis-hinweis" id="preis-hinweis-${a.id}"></span></div>
-            <div class="vw-zaehler">
-              <button type="button" data-aktion="minus" data-id="${a.id}" aria-label="${esc(a.name)} weniger">−</button>
-              <input type="number" class="vw-menge-feld" id="menge-${a.id}" data-artikel="${a.id}" value="0" min="0" max="999"
-                inputmode="numeric" aria-label="Menge ${esc(a.name)}" />
-              <button type="button" data-aktion="plus" data-id="${a.id}" aria-label="${esc(a.name)} mehr">+</button>
-            </div>
-          </div>`).join('')}
-      </fieldset>
-
-      <fieldset class="vw-feldgruppe"><legend>Abholung oder Lieferung?</legend>
-        <div class="vw-auswahl">${ch.termine.map((t, i) => `
-          <label><input type="radio" name="termin" value="${t.id}" data-art="${t.art}" ${i === 0 ? 'checked' : ''} /> ${terminText(t)}</label>`).join('')}
-        </div>
-      </fieldset>
-
-      <div id="vw-adresse">
-        <label class="vw-feld"><span>Straße und Hausnummer</span><input name="strasse" autocomplete="off" /></label>
-        <label class="vw-feld"><span>PLZ</span><input name="plz" inputmode="numeric" autocomplete="off" /></label>
-        <label class="vw-feld"><span>Ort</span><input name="ort" autocomplete="off" /></label>
-        <p class="vw-klein">Liefergebiet: ${daten.liefergebiet && daten.liefergebiet.length
-          ? daten.liefergebiet.map((l) => `${esc(l.plz)} ${esc(l.ort)}`).join(', ')
-          : esc(daten.tourReihenfolge.join(', '))}</p>
-      </div>
-
-      <fieldset class="vw-feldgruppe"><legend>Zahlung</legend>
-        <div class="vw-auswahl vw-auswahl--reihe">
-          <label><input type="radio" name="zahlart" value="bar" checked /> bar</label>
-          <label><input type="radio" name="zahlart" value="ueberweisung" /> Überweisung</label>
-        </div>
-      </fieldset>
-
-      <label class="vw-feld"><span>Anmerkung (optional)</span><textarea name="anmerkung" rows="2"></textarea></label>
-
-      <div class="vw-gesamt"><span>Summe</span><span id="vw-summe">0,00 €</span></div>
-      <button type="submit" class="vw-knopf vw-knopf--voll vw-knopf--breit">Bestellung speichern</button>
-    </form>`;
-  adresseUmschalten();
-}
-
-function formularMengen() {
-  const mengen = {};
-  document.querySelectorAll('#vw-formular [data-artikel]').forEach((o) => {
-    const menge = Number(o.value);
-    mengen[o.dataset.artikel] = Number.isInteger(menge) && menge > 0 ? Math.min(menge, 999) : 0;
-  });
-  return mengen;
-}
-
-// Preis im Formular „Erfassen" (vorbelegt mit dem Rundenpreis); undefined = Rundenpreis
-function erfassenPreis(artikelId) {
-  const el = document.querySelector(`#vw-formular [data-erfassen-preis="${artikelId}"]`);
-  const cent = el ? centAusText(el.value) : null;
-  return cent == null ? undefined : cent;
-}
-
-function formularSummeAktualisieren() {
-  const ch = aktiveCharge();
-  const mengen = formularMengen();
-  const erg = Object.entries(mengen)
-    .filter(([, m]) => m > 0)
-    .reduce((s, [artikelId, menge]) => {
-      const p = positionBetrag(ch, { artikelId, menge, einzelpreisCent: erfassenPreis(artikelId) });
-      return { cent: s.cent + p.cent, geschaetzt: s.geschaetzt || p.geschaetzt };
-    }, { cent: 0, geschaetzt: false });
-  const feld = document.getElementById('vw-summe');
-  if (feld) feld.textContent = betragText(erg);
-}
-
-function adresseUmschalten() {
-  const gewaehlt = document.querySelector('#vw-formular input[name="termin"]:checked');
-  const adresse = document.getElementById('vw-adresse');
-  if (!gewaehlt || !adresse) return;
-  adresse.hidden = gewaehlt.dataset.art !== 'lieferung';
-}
-
-// form.name wäre der Name des Formulars selbst – daher über elements gehen.
-const feld = (form, name) => form.elements.namedItem(name);
-
-// Preise im Formular „Erfassen": gemerkter Preis des Kunden, sonst Rundenpreis
-function erfassenPreiseVorbelegen(k) {
-  const ch = aktiveCharge();
-  document.querySelectorAll('#vw-formular [data-erfassen-preis]').forEach((el) => {
-    const a = artikelVon(ch, el.dataset.erfassenPreis);
-    const gemerkt = k ? kundenPreis(k.id, a.produktId) : undefined;
-    el.value = textAusCent(gemerkt ?? a.preisCent);
-    el.closest('.vw-pos-preis').classList.toggle('vw-pos-preis--sonder', gemerkt !== undefined && gemerkt !== a.preisCent);
-    const hinweis = document.getElementById(`preis-hinweis-${a.id}`);
-    if (hinweis) hinweis.textContent = gemerkt !== undefined && gemerkt !== a.preisCent ? `Preis vom letzten Mal (sonst ${euro(a.preisCent)})` : '';
-  });
-  formularSummeAktualisieren();
-}
-
-function kundeVorschlagen(name) {
-  const k = daten.kunden.find((x) => x.name.toLowerCase() === name.trim().toLowerCase());
-  const form = document.getElementById('vw-formular');
-  if (form) erfassenPreiseVorbelegen(k);
-  if (!k || !form) return;
-  feld(form, 'telefon').value = k.telefon;
-  feld(form, 'email').value = k.email || '';
-  feld(form, 'strasse').value = k.strasse;
-  feld(form, 'plz').value = k.plz;
-  feld(form, 'ort').value = k.ort;
-}
-
-const kundeNachName = (name) => daten.kunden.find((x) => x.name.toLowerCase() === name.trim().toLowerCase());
-
-async function bestellungSpeichern(form) {
-  const ch = aktiveCharge();
-  const name = feld(form, 'name').value.trim();
-  const mengen = formularMengen();
-  const positionen = Object.entries(mengen)
-    .filter(([, m]) => m > 0)
-    .map(([artikelId, menge]) => {
-      const preisCent = erfassenPreis(artikelId);
-      // Nur mitschicken, wenn er vom Rundenpreis abweicht (Gasthaus-Preis)
-      return preisCent !== undefined && preisCent !== artikelVon(ch, artikelId).preisCent
-        ? { artikelId, menge, preisCent } : { artikelId, menge };
-    });
-  const termin = form.querySelector('input[name="termin"]:checked');
-  const kontakt = {
-    name,
-    telefon: feld(form, 'telefon').value.trim(),
-    email: feld(form, 'email').value.trim(),
-    strasse: feld(form, 'strasse').value.trim(),
-    plz: feld(form, 'plz').value.trim(),
-    ort: feld(form, 'ort').value.trim(),
-  };
-
-  if (!name) return meldung('Bitte einen Namen eintragen.');
-  if (!positionen.length) return meldung('Bitte mindestens einen Artikel wählen.');
-  if (!termin) return meldung('Bitte einen Termin wählen.');
-  if (termin.dataset.art === 'lieferung' && (!kontakt.strasse || !kontakt.ort)) {
-    return meldung('Für die Lieferung bitte Adresse eintragen.');
-  }
-  const bekannt = kundeNachName(name);
-  const eingabe = {
-    chargeId: ch.id,
-    kundeId: bekannt ? bekannt.id : null,
-    kunde: kontakt,
-    terminId: termin.value,
-    quelle: form.querySelector('input[name="quelle"]:checked').value,
-    zahlart: form.querySelector('input[name="zahlart"]:checked').value,
-    anmerkung: feld(form, 'anmerkung').value.trim(),
-    positionen,
-  };
-
-  const erg = await speichern('bestellung', eingabe, () => {
-    let k = bekannt;
-    if (!k) {
-      k = { id: `k${Date.now()}`, name, telefon: '', strasse: '', plz: '', ort: '', stammkunde: false };
-      daten.kunden.push(k);
-    }
-    ['telefon', 'email', 'strasse', 'plz', 'ort'].forEach((f) => { if (kontakt[f]) k[f] = kontakt[f]; });
-    const reicht = positionen.every((p) => freieMenge(ch, p.artikelId) >= p.menge);
-    const b = {
-      id: `b${Date.now()}`, nummer: naechsteNummer(), chargeId: ch.id, kundeId: k.id,
-      quelle: eingabe.quelle, erstellt: new Date().toISOString().slice(0, 10),
-      status: reicht ? 'vorgemerkt' : 'warteliste', terminId: eingabe.terminId, zahlart: eingabe.zahlart,
-      bezahlt: null, uebergeben: false, anmerkung: eingabe.anmerkung,
-      positionen: positionen.map((p, i) => ({ id: `b${Date.now()}-p${i}`, artikelId: p.artikelId, menge: p.menge,
-        einzelpreisCent: p.preisCent ?? artikelVon(ch, p.artikelId).preisCent })),
-    };
-    positionen.forEach((p) => {
-      const produktId = artikelVon(ch, p.artikelId).produktId;
-      daten.kundenPreise = (daten.kundenPreise || []).filter((x) => !(x.kundeId === k.id && x.produktId === produktId));
-      if (p.preisCent !== undefined) daten.kundenPreise.push({ kundeId: k.id, produktId, preisCent: p.preisCent });
-    });
-    daten.bestellungen.push(b);
-    return { bestellung: b };
-  }, { neuZeichnen: false });
-  if (!erg) return;
-
-  const vorgemerkt = erg.bestellung.status === 'vorgemerkt';
-  zustand.filter = vorgemerkt ? 'alle' : 'warteliste';
-  zustand.suche = '';
-  location.hash = '#bestellungen';
-  meldung(vorgemerkt
-    ? `Gespeichert: ${erg.bestellung.nummer} für ${name}.`
-    : `Nicht genug frei – ${name} steht auf der Warteliste.`);
-}
-
-// 5.4 Wiegen
-function ansichtWiegen() {
-  const ch = aktiveCharge();
-  const liste = gewichtsPositionen(ch);
-  const fertig = liste.filter((x) => x.p.gewichtG).length;
-  inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Wiegen</h1>${chargeWahl()}
-      <p class="vw-klein">Optional – nur nötig, wenn ihr vorab packt, z. B. für die Liefertour oder um Packzettel mit Endbetrag zu drucken.
-        Sonst tippt ihr die Gewichte einfach bei der <a href="#uebergabe">Übergabe</a> ein.
-        Hier: Gesamtgewicht je Bestellung in kg (z. B. 6,15).</p></div>
-    <section class="vw-karte">
-      <p><strong id="vw-wiegen-stand">${fertig} von ${liste.length}</strong> gewogen</p>
-      <div class="vw-balken"><span id="vw-wiegen-balken" style="width:${liste.length ? Math.round((fertig / liste.length) * 100) : 0}%"></span></div>
-      ${liste.length ? liste.map(({ b, p, index }) => {
-        const a = artikelVon(ch, p.artikelId);
-        return `<label class="vw-wiegen-zeile${p.gewichtG ? ' vw-wiegen-zeile--fertig' : ''}">
-          <span><strong>${esc(kundeVon(b).name)}</strong><br><span class="vw-klein">${p.menge}× ${esc(a.name)} · ${esc(b.nummer)}</span></span>
-          <input type="text" inputmode="decimal" placeholder="kg" autocomplete="off"
-            data-gewicht="${b.id}" data-index="${index}" value="${p.gewichtG ? kgFormat.format(p.gewichtG / 1000) : ''}"
-            aria-label="Gewicht für ${esc(kundeVon(b).name)} in kg" />
-          <span class="vw-wiegen-betrag" id="betrag-${b.id}-${index}">${gewichtsZeileText(ch, p)}</span>
-        </label>`;
-      }).join('') : '<p class="vw-klein">In dieser Bestellrunde gibt es keine Gewichtsware.</p>'}
-      <div class="vw-knopfreihe"><button type="button" class="vw-knopf" data-aktion="drucken">Packzettel drucken</button></div>
-    </section>`;
-}
-
-function gewichtsZeileText(ch, p) {
-  const preis = preisVon(ch, p);
-  if (!p.gewichtG) return `${euro(preis)}/kg · noch nicht gewogen`;
-  return `${kg(p.gewichtG)} × ${euro(preis)}/kg = ${euro(positionBetrag(ch, p).cent)}`;
-}
-
-function gewichtAusFeld(input) {
-  const kilo = parseFloat(input.value.replace(/\s/g, '').replace(',', '.'));
-  return Number.isFinite(kilo) && kilo > 0 ? Math.round(kilo * 1000) : undefined;
-}
-
-function gewichtEintragen(input) {
-  const b = bestellungVon(input.dataset.gewicht);
-  const p = b.positionen[Number(input.dataset.index)];
-  p.gewichtG = gewichtAusFeld(input);
-  const ch = chargeVon(b);
-  document.getElementById(`betrag-${b.id}-${input.dataset.index}`).textContent = gewichtsZeileText(ch, p);
-  input.closest('.vw-wiegen-zeile').classList.toggle('vw-wiegen-zeile--fertig', Boolean(p.gewichtG));
-  const liste = gewichtsPositionen(ch);
-  const fertig = liste.filter((x) => x.p.gewichtG).length;
-  document.getElementById('vw-wiegen-stand').textContent = `${fertig} von ${liste.length}`;
-  document.getElementById('vw-wiegen-balken').style.width = `${Math.round((fertig / liste.length) * 100)}%`;
-}
-
-// Beim Verlassen des Feldes speichern; die Ansicht bleibt stehen, damit
-// man gleich im nächsten Feld weitertippen kann.
-async function gewichtSpeichern(input) {
-  const b = bestellungVon(input.dataset.gewicht);
-  const p = b && b.positionen[Number(input.dataset.index)];
-  if (!p) return;
-  const gewichtG = gewichtAusFeld(input);
-  const erg = await speichern(`bestellung/${b.id}`, { aktion: 'gewicht', positionId: p.id, gewichtG: gewichtG ?? null },
-    () => { delete p.stueckG; return {}; }, { neuZeichnen: false, still: true });
-  input.classList.toggle('vw-feld--fehler', !erg);
-}
-
-// 5.5 Übergabe (Abholung und Liefertour)
-// Kathrin tippt beim Kunden die Gewichte vom Etikett ab (ein Feld je Stück),
-// der Betrag steht sofort da, und ein Knopf erledigt Übergabe und – bei
-// Barzahlung – das Kassieren. Vorab wiegen (Ansicht „Wiegen") ist optional.
-
-// Getippte Stückgewichte einer Position (Text, wie eingegeben). Noch nichts
-// getippt: die gespeicherten Einzelgewichte (überstehen so ein Neuladen)
-function stueckTexte(p) {
-  const liste = zustand.stueck[p.id]
-    || (p.stueckG && p.stueckG.length === p.menge ? p.stueckG.map((g) => (g ? kgFormat.format(g / 1000) : '')) : []);
-  return Array.from({ length: p.menge }, (_, i) => liste[i] || '');
-}
-
-// Einzelgewichte in Gramm (null = leer oder ungültig)
-const stueckGramm = (p) => stueckTexte(p).map((t) => grammAusText(t) || null);
-
-// Alle Stücke gewogen? Dann „3,52 · 3,61 · … kg" (Lieferschein, Details)
-function einzelgewichteText(p) {
-  const g = p.stueckG;
-  if (!g || g.length !== p.menge || g.length < 2 || !g.every(Boolean)) return '';
-  return `${g.map((x) => kgFormat.format(x / 1000)).join(' · ')} kg`;
-}
-
-function grammAusText(text) {
-  const kilo = parseFloat(String(text).replace(/\s|kg/gi, '').replace(',', '.'));
-  return Number.isFinite(kilo) && kilo > 0 ? Math.round(kilo * 1000) : undefined;
-}
-
-// Gewicht für die Abrechnung: alle Stücke getippt → Summe; nichts getippt →
-// vorab gewogenes Gewicht; teilweise getippt → noch unvollständig (null)
-function wirksamesGewicht(p) {
-  const texte = stueckTexte(p);
-  const getippt = texte.filter((t) => t.trim());
-  if (!getippt.length) return p.gewichtG || null;
-  if (!zustand.stueck[p.id] && p.stueckG && p.stueckG.every(Boolean)) return p.gewichtG || null;
-  const gramm = texte.map(grammAusText);
-  return gramm.every(Boolean) ? gramm.reduce((s, g) => s + g, 0) : null;
-}
-
-function uebergabeBetrag(b) {
-  const ch = chargeVon(b);
-  return b.positionen.reduce((erg, p) => {
-    const art = artikelVon(ch, p.artikelId).art;
-    const pos = art === 'gewicht' ? { ...p, gewichtG: wirksamesGewicht(p) || undefined } : p;
-    const x = positionBetrag(ch, pos);
-    return { cent: erg.cent + x.cent, geschaetzt: erg.geschaetzt || x.geschaetzt };
-  }, { cent: 0, geschaetzt: false });
-}
-
-// Reihenfolge der Liefertour: Ort (Liefergebiet), dann selbst festgelegt,
-// dann Straße und Hausnummer
-function tourSortieren(liste) {
-  const ortRang = (ort) => {
-    const i = daten.tourReihenfolge.indexOf(ort);
-    return i === -1 ? 99 : i;
-  };
-  return [...liste].sort((x, y) => {
-    const kx = kundeVon(x);
-    const ky = kundeVon(y);
-    return ortRang(kx.ort) - ortRang(ky.ort)
-      || kx.ort.localeCompare(ky.ort, 'de')
-      || (kx.tourRang ?? 1e9) - (ky.tourRang ?? 1e9)
-      || kx.strasse.localeCompare(ky.strasse, 'de', { numeric: true })
-      || kx.name.localeCompare(ky.name, 'de');
-  });
-}
-
-// Liste: je Kunde eine ruhige Zeile. Antippen öffnet den Kunden allein
-// (Ansicht „abgabe") mit Gewichten, Betrag und einem Hauptknopf.
-function ansichtUebergabe() {
-  const ch = aktiveCharge();
-  const aktiv = bestellungenDerCharge(ch).filter(istAktiv);
-  const anzahl = (art) => aktiv.filter((b) => terminArt(b) === art && !b.uebergeben).length;
-  const lieferung = zustand.uebergabeArt === 'lieferung';
-  const termine = ch.termine.filter((t) => t.art === zustand.uebergabeArt);
-  // Mehrere Abhol- bzw. Liefertage: nach Tag auswählbar
-  if (!termine.some((t) => t.id === zustand.uebergabeTermin)) zustand.uebergabeTermin = null;
-  const auswahl = aktiv.filter((b) => terminArt(b) === zustand.uebergabeArt
-    && (!zustand.uebergabeTermin || b.terminId === zustand.uebergabeTermin));
-  const ohneTermin = aktiv.filter(ohneTerminOffen).length;
-  const offenAm = (t) => aktiv.filter((b) => b.terminId === t.id && !b.uebergeben).length;
-  const tage = termine.length > 1
-    ? `<div class="vw-chips" role="group" aria-label="Tag wählen">
-        <button type="button" class="vw-chip" data-aktion="uebergabe-tag" data-wert="" aria-pressed="${!zustand.uebergabeTermin}">Alle Tage</button>
-        ${termine.map((t) => `<button type="button" class="vw-chip" data-aktion="uebergabe-tag" data-wert="${t.id}"
-          aria-pressed="${zustand.uebergabeTermin === t.id}">${datumKurz(t.datum)} (${offenAm(t)})</button>`).join('')}
-      </div>`
-    : '';
-
-  const sortiert = lieferung
-    ? tourSortieren(auswahl)
-    : [...auswahl].sort((x, y) => kundeVon(x).name.localeCompare(kundeVon(y).name, 'de'));
-  const offen = sortiert.filter((b) => !b.uebergeben);
-  const erledigt = sortiert.filter((b) => b.uebergeben);
-
-  const zeile = (b, extra = '') => {
-    const k = kundeVon(b);
-    return `<div class="vw-stopp-zeile">
-      <button type="button" class="vw-zeile vw-zeile--pfeil" data-aktion="abgabe" data-id="${b.id}">
-        <span class="vw-zeile-name">${esc(k.name)}</span>
-        <span class="vw-zeile-betrag">${betragText(uebergabeBetrag(b))}</span>
-        <span class="vw-zeile-info">${esc(artikelKurz(b))}</span>
-        ${lieferung ? `<span class="vw-zeile-stand">${k.strasse ? esc(k.strasse) : '<span class="vw-warnung">Adresse fehlt</span>'}</span>` : ''}
-      </button>${extra}</div>`;
-  };
-
-  let liste = '';
-  if (lieferung) {
-    let orte = [...new Set(offen.map((b) => kundeVon(b).ort))];
-    liste = orte.map((ort) => {
-      const imOrt = offen.filter((b) => kundeVon(b).ort === ort);
-      return `<h2 class="vw-ort-titel">${esc(ort)}</h2>${imOrt.map((b, i) => zeile(b, zustand.reihenfolge
-        ? `<div class="vw-pfeile">
-            <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="tour" data-id="${b.id}" data-wert="-1" ${i ? '' : 'disabled'} aria-label="${esc(kundeVon(b).name)} früher">↑</button>
-            <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="tour" data-id="${b.id}" data-wert="1" ${i < imOrt.length - 1 ? '' : 'disabled'} aria-label="${esc(kundeVon(b).name)} später">↓</button>
-          </div>` : '')).join('')}`;
-    }).join('');
-  } else {
-    liste = offen.map((b) => zeile(b)).join('');
-  }
-  if (!offen.length) liste = `<p class="vw-erledigt-hinweis">${erledigt.length ? 'Alles übergeben ✓' : 'Keine Bestellungen.'}</p>`;
-
-  const routen = lieferung && !zustand.reihenfolge ? routenLinks(offen.filter((b) => kundeVon(b).strasse)) : [];
-  inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Übergabe</h1>${chargeWahl()}
-      <div class="vw-segment" role="group" aria-label="Abholung oder Lieferung">
-        <button type="button" data-aktion="uebergabe-art" data-wert="abholung" aria-pressed="${!lieferung}">Abholung <span class="vw-anzahl">${anzahl('abholung')}</span></button>
-        <button type="button" data-aktion="uebergabe-art" data-wert="lieferung" aria-pressed="${lieferung}">Liefertour <span class="vw-anzahl">${anzahl('lieferung')}</span></button>
-      </div>
-      ${tage || (termine.length ? `<p class="vw-klein">${termine.map(terminText).join(' · ')}</p>` : '')}
-      ${ohneTermin ? `<p><button type="button" class="vw-link" data-aktion="filter" data-wert="termin-offen">${ohneTermin} Bestellungen ohne Termin ›</button></p>` : ''}
-    </div>
-    ${routen.map((r) => `<a class="vw-knopf vw-knopf--voll vw-knopf--breit" href="${r.url}" target="_blank" rel="noopener">${esc(r.text)}</a>`).join('')}
-    <div class="vw-liste">${liste}</div>
-    ${lieferung && offen.length > 1 ? `<p><button type="button" class="vw-link" data-aktion="reihenfolge">${zustand.reihenfolge ? 'Fertig sortiert' : 'Reihenfolge ändern'}</button></p>` : ''}
-    ${!lieferung ? '<p><a class="vw-link" href="#hofverkauf">Kunde ohne Bestellung? Verkauf am Hof ›</a></p>' : ''}
-    ${offen.length ? `<p><button type="button" class="vw-link" data-aktion="liste-drucken">${lieferung ? 'Liefertour' : 'Abholliste'} zum Mitnehmen drucken</button>
-      <br><span class="vw-klein">Für Orte ohne Internet: Gewichte auf Papier notieren und später hier eintippen.</span></p>` : ''}
-    ${erledigt.length ? `<details class="vw-erledigt"><summary>Erledigt (${erledigt.length})</summary>
-      <div class="vw-liste">${erledigt.map((b) => `<button type="button" class="vw-zeile vw-zeile--grau vw-zeile--pfeil" data-aktion="abgabe" data-id="${b.id}">
-        <span class="vw-zeile-name">✓ ${esc(kundeVon(b).name)}</span>
-        <span class="vw-zeile-betrag">${betragText(bestellBetrag(b))}</span>
-        <span class="vw-zeile-stand${b.bezahlt ? '' : ' vw-warnung'}">${b.bezahlt ? `bezahlt (${ZAHLARTEN[b.bezahlt]})` : 'Geld noch nicht da'}</span>
-      </button>`).join('')}</div></details>` : ''}`;
-}
-
-// Ein Kunde bei der Übergabe: Gewichte, Betrag, ein Hauptknopf
-function ansichtAbgabe() {
-  const b = bestellungVon(zustand.abgabeId);
-  if (!b) { location.hash = '#uebergabe'; return; }
-  const ch = chargeVon(b);
-  const k = kundeVon(b);
-  const t = terminVon(b);
-  const lieferung = terminArt(b) === 'lieferung';
-  const betrag = betragText(uebergabeBetrag(b));
-  const zurueck = '<a class="vw-zurueck" href="#uebergabe">‹ Übergabe</a>';
-  const kontakt = `<div class="vw-kontakt-zeile">
-    ${k.telefon ? `<a href="tel:${esc(k.telefon.replace(/\s/g, ''))}">Anrufen</a>
-      <a href="${whatsappLink(b, bereitText(b))}" target="_blank" rel="noopener">WhatsApp</a>` : ''}
-    ${lieferung && k.strasse ? `<a href="${navLink(b)}" target="_blank" rel="noopener">Navi</a>` : ''}
-    <button type="button" class="vw-link" data-aktion="oeffnen" data-id="${b.id}">Details</button>
-  </div>`;
-  const kopf = `<div class="vw-kopf">${zurueck}<h1>${esc(k.name)}</h1>
-    <p class="vw-klein">${esc(b.nummer)}${t ? ` · ${terminText(t)}` : ''}${lieferung && k.strasse ? ` · ${esc(adresseVon(k))}` : ''}</p>
-    ${b.anmerkung ? `<p class="vw-hinweis">„${esc(b.anmerkung)}"</p>` : ''}</div>`;
-
-  // Schon übergeben: Stand und das, was noch zu tun sein kann
-  if (b.uebergeben) {
-    inhalt().innerHTML = `${kopf}
-      <section class="vw-karte">
-        <p>${esc(artikelKurz(b))}</p>
-        <div class="vw-summe"><span>Summe</span><strong>${betragText(bestellBetrag(b))}</strong></div>
-        <p class="${b.bezahlt ? '' : 'vw-warnung'}">✓ Übergeben · ${b.bezahlt ? `bezahlt (${ZAHLARTEN[b.bezahlt]})` : 'Geld noch nicht da'}</p>
-        ${b.bezahlt ? '' : `<button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit vw-knopf--gross" data-aktion="bezahlt" data-wert="${b.zahlart}" data-id="${b.id}">${b.zahlart === 'bar' ? 'Bar erhalten' : 'Geld ist am Konto'}</button>
-          <button type="button" class="vw-link" data-aktion="zahlungsinfo" data-id="${b.id}">Zahlungsinfo mit QR-Code zeigen</button>`}
-        <p><button type="button" class="vw-link" data-aktion="lieferschein" data-id="${b.id}">Lieferschein drucken</button></p>
-      </section>
-      ${kontakt}
-      <p><button type="button" class="vw-link vw-link--leise" data-aktion="uebergeben" data-id="${b.id}">Übergabe rückgängig machen</button></p>`;
-    return;
-  }
-
-  const positionen = b.positionen.map((p) => {
-    const a = artikelVon(ch, p.artikelId);
-    const gewicht = a.art === 'gewicht';
-    return `<div class="vw-pos">
-      <div class="vw-pos-kopf"><strong>${p.menge}× ${esc(a.name)}</strong>
-        ${preisFeld(b, p) ? '' : `<span class="vw-klein">${gewicht ? `${euro(preisVon(ch, p))}/kg` : `je ${euro(preisVon(ch, p))}`}</span>`}</div>
-      ${preisFeld(b, p)}
-      ${gewicht ? `<div class="vw-stueck">${stueckTexte(p).map((txt, i) => `<input type="text" inputmode="decimal" autocomplete="off"
-          placeholder="Stück ${i + 1}" value="${esc(txt)}" data-stueck="${p.id}" data-bestellung="${b.id}" data-nr="${i}"
-          aria-label="${esc(a.name)} Stück ${i + 1}, Gewicht in kg" />`).join('')}</div>
-        ${p.gewichtG && !(p.stueckG || []).some(Boolean) ? `<p class="vw-klein">Vorab gewogen: ${kg(p.gewichtG)} – nur ausfüllen, wenn es andere Stücke werden.</p>` : ''}` : ''}
-    </div>`;
-  }).join('');
-  const hatGewicht = b.positionen.some((p) => artikelVon(ch, p.artikelId).art === 'gewicht');
-
-  let haupt;
-  let neben;
-  if (b.bezahlt) {
-    haupt = `<button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit vw-knopf--gross" data-aktion="abschliessen" data-id="${b.id}" data-wert="">Übergeben (schon bezahlt)</button>`;
-    neben = '';
-  } else if (b.zahlart === 'ueberweisung') {
-    haupt = `<button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit vw-knopf--gross" data-aktion="abschliessen" data-id="${b.id}" data-wert="ueberweisung">Übergeben · zahlt per Überweisung</button>`;
-    neben = `<button type="button" class="vw-link" data-aktion="abschliessen" data-id="${b.id}" data-wert="bar">Zahlt doch bar</button>`;
-  } else {
-    haupt = `<button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit vw-knopf--gross" data-aktion="abschliessen" data-id="${b.id}" data-wert="bar">Übergeben · bar kassiert</button>`;
-    neben = `<button type="button" class="vw-link" data-aktion="abschliessen" data-id="${b.id}" data-wert="ueberweisung">Zahlt lieber per Überweisung</button>`;
-  }
-
-  inhalt().innerHTML = `${kopf}
-    <section class="vw-karte">
-      ${hatGewicht ? '<p class="vw-klein">Gewichte vom Etikett eintippen (kg).</p>' : ''}
-      ${positionen}
-      ${mengeAendernBlock(b)}
-      <div class="vw-summe"><span>Summe</span><strong data-betrag="${b.id}">${betrag}</strong></div>
-      ${haupt}
-      ${neben ? `<p class="vw-mitte">${neben}</p>` : ''}
-    </section>
-    ${kontakt}`;
-  // Erstes leeres Gewichtsfeld gleich bereit zum Tippen
-  const erstes = [...inhalt().querySelectorAll('[data-stueck]')].find((f) => !f.value);
-  if (erstes && window.matchMedia('(pointer: fine)').matches) erstes.focus();
-}
-
-// Betrag in der Karte nach jeder Gewichtseingabe aktualisieren
-function stueckEintragen(input) {
-  const b = bestellungVon(input.dataset.bestellung);
-  if (!b) return;
-  const p = b.positionen.find((x) => x.id === input.dataset.stueck);
-  // gespeicherte Einzelgewichte als Ausgangspunkt, damit keines verloren geht
-  const liste = zustand.stueck[input.dataset.stueck] || (p ? stueckTexte(p) : []);
-  liste[Number(input.dataset.nr)] = input.value;
-  zustand.stueck[input.dataset.stueck] = liste;
-  const text = betragText(uebergabeBetrag(b));
-  document.querySelectorAll(`[data-betrag="${b.id}"]`).forEach((el) => { el.textContent = text; });
-  input.classList.toggle('vw-feld--fehler', Boolean(input.value.trim()) && !grammAusText(input.value));
-}
-
-// Beim Verlassen eines Stückfelds im Hintergrund speichern – bei 15 Gänsen
-// geht so nichts verloren, wenn das Handy die Seite neu lädt
-async function stueckZwischenspeichern(input) {
-  const b = bestellungVon(input.dataset.bestellung);
-  const p = b && b.positionen.find((x) => x.id === input.dataset.stueck);
-  if (!p || b.uebergeben) return;
-  const gewichte = stueckGramm(p);
-  const erg = await speichern(`bestellung/${b.id}`, { aktion: 'stueck', positionId: p.id, gewichte }, () => {
-    p.stueckG = gewichte;
-    if (gewichte.every(Boolean)) p.gewichtG = gewichte.reduce((s, g) => s + g, 0);
-    return { gespeichert: true };
-  }, { neuZeichnen: false, still: true });
-  input.classList.toggle('vw-feld--fehler', !erg || (Boolean(input.value.trim()) && !grammAusText(input.value)));
-}
-
-async function uebergabeAbschliessen(b, zahlung) {
-  const ch = chargeVon(b);
-  const gewichte = [];
-  for (const p of b.positionen) {
-    if (artikelVon(ch, p.artikelId).art !== 'gewicht') continue;
-    const g = wirksamesGewicht(p);
-    if (!g) return meldung(`Bitte bei ${kundeVon(b).name} alle Gewichte eintragen.`);
-    const stueck = stueckGramm(p);
-    if (stueck.every(Boolean)) gewichte.push({ positionId: p.id, gewichtG: g, stueck });
-    else if (g !== p.gewichtG) gewichte.push({ positionId: p.id, gewichtG: g });
-  }
-  const erg = await speichern(`bestellung/${b.id}`, { aktion: 'abschliessen', zahlung: zahlung || null, gewichte }, () => {
-    gewichte.forEach((g) => {
-      const p = b.positionen.find((x) => x.id === g.positionId);
-      p.gewichtG = g.gewichtG;
-      if (g.stueck) p.stueckG = g.stueck;
-    });
-    b.uebergeben = true;
-    b.neu = false;
-    if (zahlung === 'bar' && !b.bezahlt) { b.bezahlt = 'bar'; b.zahlart = 'bar'; }
-    if (zahlung === 'ueberweisung') b.zahlart = 'ueberweisung';
-    return {};
-  }, { erfolg: `${kundeVon(b).name}: übergeben${zahlung === 'bar' ? ' und bar kassiert' : ''}.` });
-  if (!erg) return;
-  b.positionen.forEach((p) => { delete zustand.stueck[p.id]; });
-  // Bei Überweisung gleich die Zahlungsinfo zeigen – zum Scannen oder per WhatsApp.
-  // Beim Zurückwechseln zur Liste erst nach dem Seitenwechsel öffnen.
-  const aktuell = bestellungVon(b.id);
-  const info = zahlung === 'ueberweisung' && aktuell && !aktuell.bezahlt ? aktuell.id : null;
-  if (aktuelleAnsicht() === 'abgabe') {
-    zustand.zahlungsinfoDanach = info;
-    location.hash = '#uebergabe';
-  } else if (info) {
-    zahlungsinfoOeffnen(aktuell);
-  }
-}
-
-// „Menge ändern oder Artikel dazu" – bei der Übergabe und in den Details
-// einer vorgemerkten Bestellung (z. B. Kunde will eine zweite Gans). Bleibt
-// nach jedem Tippen offen (zustand.aendernOffen), weil neu gezeichnet wird.
-function mengeAendernBlock(b) {
-  const ch = chargeVon(b);
-  const warteliste = b.status === 'warteliste';
-  const dazu = ch.artikel.filter((a) => !b.positionen.some((p) => p.artikelId === a.id) && (warteliste || freieMenge(ch, a.id) > 0));
-  return `<details class="vw-aendern" data-aendern="${b.id}" ${zustand.aendernOffen === b.id || warteliste ? 'open' : ''}>
-    <summary>Menge ändern oder Artikel dazu</summary>
-    ${warteliste ? '<p class="vw-klein">Reicht es nicht für alles? Menge auf das Freie senken, dann „Nachrücken lassen".</p>' : ''}
-    ${b.positionen.map((p) => {
-      const a = artikelVon(ch, p.artikelId);
-      return `<div class="vw-pos-kopf vw-pos-aendern"><span>${esc(a.name)}<br><span class="vw-klein">${freiText(ch, a.id)}</span></span>
-        <div class="vw-zaehler">
-          <button type="button" data-aktion="pos-menge" data-id="${b.id}" data-artikel="${a.id}" data-wert="${p.menge - 1}" aria-label="${esc(a.name)} eins weniger">−</button>
-          <output>${p.menge}</output>
-          <button type="button" data-aktion="pos-menge" data-id="${b.id}" data-artikel="${a.id}" data-wert="${p.menge + 1}" aria-label="${esc(a.name)} eins mehr">+</button>
-        </div></div>`;
-    }).join('')}
-    ${dazu.length ? `<select class="vw-dazu" data-dazu="${b.id}" aria-label="Artikel dazu">
-      <option value="">+ Artikel dazu …</option>
-      ${dazu.map((a) => `<option value="${a.id}">${esc(a.name)} (${freiText(ch, a.id)})</option>`).join('')}</select>` : ''}
-    ${b.positionen.some((p) => artikelVon(ch, p.artikelId).art === 'gewicht')
-      ? '<p class="vw-klein">Bei Ware nach Gewicht wird ein schon eingetragenes Gewicht beim Ändern der Stückzahl gelöscht – bitte neu wiegen.</p>' : ''}
-  </details>`;
-}
-
-// Gemerkter Preis eines Kunden für ein Produkt (Gasthaus-Preis) oder undefined
-function kundenPreis(kundeId, produktId) {
-  const k = (daten.kundenPreise || []).find((x) => x.kundeId === kundeId && x.produktId === produktId);
-  return k ? k.preisCent : undefined;
-}
-
-// Preisfeld einer Position – immer sichtbar (Details, Übergabe), solange
-// nicht bezahlt. Ein eigener Preis wird für den Kunden gemerkt; gibt es einen
-// gemerkten, der hier noch nicht gilt (z. B. Website-Bestellung), steht ein
-// Knopf zum Übernehmen daneben.
-function preisFeld(b, p) {
-  const ch = chargeVon(b);
-  const a = artikelVon(ch, p.artikelId);
-  if (b.bezahlt || !['vorgemerkt', 'warteliste'].includes(b.status)) return '';
-  const preis = preisVon(ch, p);
-  const sonder = preis !== a.preisCent;
-  const gemerkt = kundenPreis(b.kundeId, a.produktId);
-  const vorschlag = gemerkt !== undefined && gemerkt !== preis
-    ? `<button type="button" class="vw-knopf vw-knopf--klein" data-aktion="preis-gemerkt" data-id="${b.id}" data-pos="${p.id}" data-wert="${gemerkt}">
-        Preis vom letzten Mal: ${euro(gemerkt)}${a.art === 'gewicht' ? '/kg' : ''} übernehmen</button>` : '';
-  return `<label class="vw-pos-preis${sonder ? ' vw-pos-preis--sonder' : ''}">
-    <span>${b.positionen.length > 1 ? `${esc(a.name)}: ` : ''}Preis${a.art === 'gewicht' ? ' €/kg' : ' €'}</span>
-    <input type="text" inputmode="decimal" autocomplete="off" value="${textAusCent(preis)}"
-      data-preis-pos="${p.id}" data-bestellung="${b.id}" aria-label="Preis ${esc(a.name)} für diese Bestellung" />
-    <span class="vw-klein">${sonder ? `Sonderpreis (sonst ${euro(a.preisCent)}) – wird für ${esc(kundeVon(b).name)} gemerkt` : 'ändern = nur für diese Bestellung, wird gemerkt'}</span></label>
-    ${vorschlag}`;
-}
-
-// Eigener Preis für diese Bestellung (z. B. Gasthaus bei großer Menge)
-function positionPreisSetzen(input) {
-  const b = bestellungVon(input.dataset.bestellung);
-  const p = b && b.positionen.find((x) => x.id === input.dataset.preisPos);
-  if (!p) return;
-  const preisCent = centAusText(input.value);
-  if (preisCent == null) { input.value = textAusCent(preisVon(chargeVon(b), p)); return meldung('Bitte einen gültigen Preis eintragen.'); }
-  if (preisCent === preisVon(chargeVon(b), p)) return;
-  preisSpeichern(b, p, preisCent);
-}
-
-function preisSpeichern(b, p, preisCent) {
-  const ch = chargeVon(b);
-  const a = artikelVon(ch, p.artikelId);
-  const sonder = preisCent !== a.preisCent;
-  speichern(`bestellung/${b.id}`, { aktion: 'preis', positionId: p.id, preisCent }, () => {
-    p.einzelpreisCent = preisCent;
-    daten.kundenPreise = (daten.kundenPreise || []).filter((x) => !(x.kundeId === b.kundeId && x.produktId === a.produktId));
-    if (sonder) daten.kundenPreise.push({ kundeId: b.kundeId, produktId: a.produktId, preisCent });
-    return {};
-  }, { erfolg: `${kundeVon(b).name}: Preis ${euro(preisCent)} gespeichert${sonder ? ' und für nächstes Mal gemerkt' : ''}.` });
-}
-
-// Menge eines Artikels ändern bzw. Artikel dazu (bei der Übergabe)
-function positionMengeSetzen(b, artikelId, menge) {
-  const ch = chargeVon(b);
-  const pos = b.positionen.find((p) => p.artikelId === artikelId);
-  const alt = pos ? pos.menge : 0;
-  if (menge < 0) return;
-  if (menge === 0 && b.positionen.length === 1) return meldung('Der letzte Artikel kann nicht entfernt werden – Bestellung stattdessen in den Details stornieren.');
-  // Auf der Warteliste zählt nichts von der Menge ab – dort frei ändern
-  if (b.status === 'vorgemerkt' && menge > alt && freieMenge(ch, artikelId) < menge - alt) return meldung(`Nicht genug frei – noch ${Math.max(0, freieMenge(ch, artikelId))} verfügbar.`);
-  if (pos) delete zustand.stueck[pos.id];
-  speichern(`bestellung/${b.id}`, { aktion: 'position', artikelId, menge }, () => {
-    if (menge === 0) b.positionen = b.positionen.filter((p) => p !== pos);
-    else if (pos) { pos.menge = menge; pos.gewichtG = undefined; delete pos.stueckG; } else {
-      b.positionen.push({ id: `${b.id}-p${Date.now()}`, artikelId, menge, einzelpreisCent: artikelVon(ch, artikelId).preisCent });
-    }
-    return {};
-  });
-}
-
-// Liefertour: Kunde eine Stelle früher (-1) oder später (+1) anfahren
-function tourVerschieben(b, richtung) {
-  const ch = chargeVon(b);
-  const ort = kundeVon(b).ort;
-  const imOrt = tourSortieren(bestellungenDerCharge(ch)
-    .filter((x) => istAktiv(x) && terminArt(x) === 'lieferung' && kundeVon(x).ort === ort));
-  const kunden = [...new Set(imOrt.map((x) => x.kundeId))];
-  const offeneKunden = [...new Set(imOrt.filter((x) => !x.uebergeben).map((x) => x.kundeId))];
-  const i = offeneKunden.indexOf(b.kundeId);
-  const nachbar = offeneKunden[i + richtung];
-  if (nachbar == null) return;
-  const a = kunden.indexOf(b.kundeId);
-  const z = kunden.indexOf(nachbar);
-  [kunden[a], kunden[z]] = [kunden[z], kunden[a]];
-  speichern('tour', { kundeIds: kunden }, () => {
-    kunden.forEach((kid, n) => { daten.kunden.find((k) => k.id === kid).tourRang = (n + 1) * 10; });
-    return {};
-  });
-}
-
-// 5.5a Verkauf am Hof (ohne Vorbestellung)
-function hofStueckTexte(artikelId) {
-  const menge = zustand.hof.mengen[artikelId] || 0;
-  const liste = zustand.hof.stueck[artikelId] || [];
-  return Array.from({ length: menge }, (_, i) => liste[i] || '');
-}
-
-function hofBetrag(ch) {
-  return ch.artikel.reduce((erg, a) => {
-    const menge = zustand.hof.mengen[a.id] || 0;
-    if (!menge) return erg;
-    const gramm = hofStueckTexte(a.id).map(grammAusText);
-    const gewichtG = a.art === 'gewicht' && gramm.every(Boolean) ? gramm.reduce((s, g) => s + g, 0) : undefined;
-    const x = positionBetrag(ch, { artikelId: a.id, menge, gewichtG });
-    return { cent: erg.cent + x.cent, geschaetzt: erg.geschaetzt || x.geschaetzt };
-  }, { cent: 0, geschaetzt: false });
-}
-
-function ansichtHofverkauf() {
-  const ch = aktiveCharge();
-  const betrag = betragText(hofBetrag(ch));
-  inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Erfassen</h1>${erfassenUmschalter('hof')}${chargeWahl()}
-      <p class="vw-klein">Kunde ohne Vorbestellung: Stücke wählen, Gewichte vom Etikett eintippen, kassieren.</p></div>
-    <section class="vw-karte">
-      <label class="vw-feld"><span>Name (optional)</span>
-        <input id="vw-hof-name" list="vw-kundenliste-hof" autocomplete="off" value="${esc(zustand.hof.name)}" placeholder="leer lassen, wenn unbekannt" /></label>
-      <datalist id="vw-kundenliste-hof">${daten.kunden.map((k) => `<option value="${esc(k.name)}">${esc(k.ort)}</option>`).join('')}</datalist>
-      ${ch.artikel.filter((a) => freieMenge(ch, a.id) > 0 || zustand.hof.mengen[a.id]).map((a) => {
-        const menge = zustand.hof.mengen[a.id] || 0;
-        return `<div class="vw-pos">
-          <div class="vw-pos-kopf">
-            <div><strong>${esc(a.name)}</strong><br><span class="vw-klein">${a.art === 'gewicht' ? `${euro(a.preisCent)}/kg` : euro(a.preisCent)} · ${freiText(ch, a.id)}</span></div>
-            <div class="vw-zaehler">
-              <button type="button" data-aktion="hof-menge" data-id="${a.id}" data-wert="${menge - 1}" aria-label="${esc(a.name)} weniger">−</button>
-              <output>${menge}</output>
-              <button type="button" data-aktion="hof-menge" data-id="${a.id}" data-wert="${menge + 1}" aria-label="${esc(a.name)} mehr">+</button>
-            </div>
-          </div>
-          ${a.art === 'gewicht' && menge ? `<div class="vw-stueck">${hofStueckTexte(a.id).map((t, i) => `<input type="text" inputmode="decimal"
-            autocomplete="off" placeholder="kg" value="${esc(t)}" data-hofstueck="${a.id}" data-nr="${i}"
-            aria-label="${esc(a.name)} Stück ${i + 1}, Gewicht in kg" />`).join('')}</div>` : ''}
-        </div>`;
-      }).join('')}
-      <div class="vw-summe"><span>Summe</span><strong data-hofbetrag>${betrag}</strong></div>
-      <button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit vw-knopf--gross" data-aktion="hof-speichern" data-wert="bar">Verkauft · bar kassiert</button>
-      <p class="vw-mitte"><button type="button" class="vw-link" data-aktion="hof-speichern" data-wert="ueberweisung">Zahlt per Überweisung</button></p>
-    </section>`;
-}
-
-function hofStueckEintragen(input) {
-  const liste = zustand.hof.stueck[input.dataset.hofstueck] || [];
-  liste[Number(input.dataset.nr)] = input.value;
-  zustand.hof.stueck[input.dataset.hofstueck] = liste;
-  const text = betragText(hofBetrag(aktiveCharge()));
-  document.querySelectorAll('[data-hofbetrag]').forEach((el) => { el.textContent = text; });
-  input.classList.toggle('vw-feld--fehler', Boolean(input.value.trim()) && !grammAusText(input.value));
-}
-
-async function hofverkaufSpeichern(zahlung) {
-  const ch = aktiveCharge();
-  const name = (document.getElementById('vw-hof-name') || { value: '' }).value.trim();
-  const positionen = [];
-  for (const a of ch.artikel) {
-    const menge = zustand.hof.mengen[a.id] || 0;
-    if (!menge) continue;
-    if (menge > freieMenge(ch, a.id)) return meldung(`„${a.name}": nur noch ${Math.max(0, freieMenge(ch, a.id))} frei.`);
-    let gewichtG = null;
-    if (a.art === 'gewicht') {
-      const gramm = hofStueckTexte(a.id).map(grammAusText);
-      if (!gramm.every(Boolean)) return meldung(`Bitte bei „${a.name}" alle Gewichte eintragen.`);
-      gewichtG = gramm.reduce((s, g) => s + g, 0);
-    }
-    positionen.push({ artikelId: a.id, menge, gewichtG, ...(a.art === 'gewicht' ? { stueck: hofStueckTexte(a.id).map(grammAusText) } : {}) });
-  }
-  if (!positionen.length) return meldung('Bitte mindestens einen Artikel wählen.');
-  const bekannt = name ? kundeNachName(name) : null;
-  const eingabe = { chargeId: ch.id, kundeId: bekannt ? bekannt.id : null, kunde: { name }, positionen, zahlung };
-
-  const erg = await speichern('hofverkauf', eingabe, () => {
-    let k = bekannt;
-    if (!k) {
-      const kName = name || 'Verkauf am Hof (ohne Namen)';
-      k = daten.kunden.find((x) => x.name === kName);
-      if (!k) {
-        k = { id: `k${Date.now()}`, name: kName, telefon: '', strasse: '', plz: '', ort: '', stammkunde: false };
-        daten.kunden.push(k);
-      }
-    }
-    const b = {
-      id: `b${Date.now()}`, nummer: naechsteNummer(), chargeId: ch.id, kundeId: k.id, quelle: 'persoenlich',
-      erstellt: new Date().toISOString().slice(0, 10), status: 'vorgemerkt', terminId: null, zahlart: zahlung,
-      bezahlt: zahlung === 'bar' ? 'bar' : null, uebergeben: true, anmerkung: '', interneNotiz: 'Verkauf am Hof',
-      positionen: positionen.map((p, i) => ({
-        id: `b${Date.now()}-p${i}`, artikelId: p.artikelId, menge: p.menge,
-        einzelpreisCent: artikelVon(ch, p.artikelId).preisCent, gewichtG: p.gewichtG || undefined,
-        ...(p.stueck ? { stueckG: p.stueck } : {}),
-      })),
-    };
-    daten.bestellungen.push(b);
-    return { bestellung: { id: b.id, nummer: b.nummer } };
-  }, { neuZeichnen: false });
-  if (!erg) return;
-  zustand.hof = { mengen: {}, stueck: {}, name: '' };
-  zeigen();
-  meldung(`Verkauft${zahlung === 'bar' ? ' und bar kassiert' : ''}: ${erg.bestellung.nummer}.`);
-  const b = bestellungVon(String(erg.bestellung.id));
-  if (zahlung === 'ueberweisung' && b) zahlungsinfoOeffnen(b);
-}
-
-// 5.6 Zahlungen
-function ansichtZahlungen() {
-  const ch = aktiveCharge();
-  const aktiv = bestellungenDerCharge(ch).filter(istAktiv);
-  const offen = aktiv.filter((b) => !b.bezahlt);
-  const bezahlt = aktiv.filter((b) => b.bezahlt);
-  const summe = (liste) => liste.reduce((s, b) => s + bestellBetrag(b).cent, 0);
-  const geschaetzt = offen.some((b) => bestellBetrag(b).geschaetzt);
-
-  const zeile = (b) => `<div class="vw-zahlung">
-    <button type="button" class="vw-zahlung-name" data-aktion="oeffnen" data-id="${b.id}">${esc(kundeVon(b).name)}</button>
-    <strong class="vw-zeile-betrag">${betragText(bestellBetrag(b))}</strong>
-    <span class="vw-klein vw-zahlung-info">Referenz ${esc(b.nummer)}${b.bezahlt ? '' : ` · möchte ${ZAHLARTEN[b.zahlart]}`}${b.uebergeben ? ' · übergeben' : ''}</span>
-    ${b.bezahlt
-      ? `<button type="button" class="vw-knopf" data-aktion="bezahlt" data-wert="" data-id="${b.id}">${ZAHLARTEN[b.bezahlt]} ✓ (rückgängig)</button>`
-      : `<button type="button" class="vw-knopf vw-knopf--voll" data-aktion="bezahlt" data-wert="${b.zahlart}" data-id="${b.id}">${b.zahlart === 'bar' ? 'Bar erhalten' : 'Geld am Konto'}</button>`}
-  </div>`;
-
-  inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Zahlungen</h1>${chargeWahl()}</div>
-    <div class="vw-kennzahlen">
-      <div class="vw-kennzahl"><strong>${euro(summe(aktiv))}</strong><span>Gesamt${geschaetzt ? ' (teils geschätzt)' : ''}</span></div>
-      <div class="vw-kennzahl"><strong>${euro(summe(bezahlt))}</strong><span>bezahlt</span></div>
-      <div class="vw-kennzahl${offen.length ? ' vw-kennzahl--achtung' : ''}"><strong>${euro(summe(offen))}</strong><span>offen (${offen.length})</span></div>
-      <div class="vw-kennzahl"><strong>${aktiv.filter((b) => b.bezahlt === 'bar').length} / ${aktiv.filter((b) => b.bezahlt === 'ueberweisung').length}</strong><span>bar / Überweisung</span></div>
-    </div>
-    <section class="vw-karte"><h2>Noch offen</h2>
-      ${offen.length ? offen.map(zeile).join('') : '<p class="vw-klein">Alles bezahlt.</p>'}
-    </section>
-    <section class="vw-karte"><h2>Bereits bezahlt</h2>
-      ${bezahlt.length ? bezahlt.map(zeile).join('') : '<p class="vw-klein">Noch nichts.</p>'}
-    </section>
-    <button type="button" class="vw-knopf vw-knopf--breit" data-aktion="export">Liste für Excel herunterladen</button>`;
-}
-
-// 5.7 Voranmeldungen (unverbindlich, für spätere Bestellrunden)
-
-// Saison einer Bestellrunde aus dem Datum des ersten Termins – nur für die
-// Vorauswahl beim Übernehmen, lässt sich per Häkchen ändern.
-function saisonVon(ch) {
-  const datum = ch.termine.map((t) => t.datum).sort()[0] || ch.bestellschluss;
-  const [jahr, monat, tag] = datum.split('-').map(Number);
-  let zeitraum = 'fruehjahr';
-  if (monat >= 6 && monat <= 8) zeitraum = 'sommer';
-  else if (monat === 9 || monat === 10) zeitraum = 'herbst';
-  else if (monat === 11 && tag <= 20) zeitraum = 'martini';
-  else if (monat === 11 || monat === 12) zeitraum = 'weihnachten';
-  return { zeitraum, jahr };
-}
-
-// Offene Voranmeldungen für Produkte, die in dieser Bestellrunde angeboten werden
-function passendeVoranmeldungen(ch) {
-  const produkte = new Set(ch.artikel.map((a) => a.produktId));
-  return daten.voranmeldungen
-    .filter((v) => v.status === 'offen' && produkte.has(v.produktId))
-    .sort((x, y) => x.erstellt.localeCompare(y.erstellt));
-}
-
-function vorausgewaehlt(v, saison) {
-  return v.zeitraum === 'naechste' || (v.zeitraum === saison.zeitraum && v.jahr === saison.jahr);
-}
-
-function ansichtVoranmeldungen() {
-  const ch = aktiveCharge();
-  const saison = ch ? saisonVon(ch) : null;
-  const passend = ch ? passendeVoranmeldungen(ch) : [];
-  const offen = daten.voranmeldungen.filter((v) => v.status === 'offen');
-  const jahr = new Date().getFullYear();
-
-  // Planungsübersicht: Summe je Zeitraum und Produkt
-  const gruppen = new Map();
-  offen.forEach((v) => {
-    const schluessel = zeitraumText(v);
-    if (!gruppen.has(schluessel)) gruppen.set(schluessel, new Map());
-    const g = gruppen.get(schluessel);
-    const eintrag = g.get(v.produktId) || { menge: 0, kunden: new Set() };
-    eintrag.menge += v.menge;
-    eintrag.kunden.add(v.kundeId);
-    g.set(v.produktId, eintrag);
-  });
-  const planung = [...gruppen].map(([zeitraum, g]) => `
-    <div class="vw-artikel-zeile"><strong>${esc(zeitraum)}</strong>
-      ${[...g].map(([produktId, e]) => `<div class="vw-zeile-kopf vw-klein">
-        <span>${esc(produktVon(produktId).name)}</span><span>${e.menge} Stück · ${e.kunden.size} ${e.kunden.size === 1 ? 'Kunde' : 'Kunden'}</span></div>`).join('')}
-    </div>`).join('');
-
-  const vaZeile = (v, mitHaken) => {
-    const k = daten.kunden.find((x) => x.id === v.kundeId);
-    if (zustand.vaBearbeiten === v.id) return vaBearbeitenFormular(v, k);
-    return `<label class="vw-va-zeile">
-      ${mitHaken ? `<input type="checkbox" name="va" value="${v.id}" ${vorausgewaehlt(v, saison) ? 'checked' : ''} />` : ''}
-      <span class="vw-va-text"><strong>${esc(k.name)}</strong> · ${v.menge}× ${esc(produktVon(v.produktId).name)}<br>
-        <span class="vw-klein">${esc(zeitraumText(v))} · ${QUELLEN[v.quelle]} · gemeldet ${datumKurz(v.erstellt)}${v.notiz ? ` · „${esc(v.notiz)}"` : ''}</span></span>
-      <span class="vw-va-knoepfe">
-        <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="va-bearbeiten" data-id="${v.id}">Bearbeiten</button>
-        <button type="button" class="vw-knopf vw-knopf--warnung vw-knopf--klein" data-aktion="va-absagen" data-id="${v.id}">Absagen</button>
-      </span>
-    </label>`;
-  };
-  const andere = offen.filter((v) => !passend.includes(v));
-
-  inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Vormerkungen</h1>
-      <p class="vw-klein">Unverbindlich, noch ohne Preis und Termin. Zählen erst von der Menge ab, wenn sie in eine Bestellrunde übernommen werden – wer sich zuerst gemeldet hat, kommt zuerst dran.</p>
-      ${chargeWahl()}</div>
-    <div class="vw-spalten">
-      ${ch ? `<section class="vw-karte" aria-label="Übernehmen">
-        <h2>Passend zu „${esc(ch.titel)}"</h2>
-        ${passend.length ? `<p class="vw-klein">Vorausgewählt: „nächste Bestellrunde" und ${esc(ZEITRAEUME[saison.zeitraum])} ${saison.jahr}.</p>
-          <div id="vw-va-auswahl">${passend.map((v) => vaZeile(v, true)).join('')}</div>
-          <button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit" data-aktion="va-uebernehmen">Ausgewählte als Bestellungen übernehmen</button>`
-        : '<p class="vw-klein">Keine offenen Vormerkungen für die Produkte dieser Bestellrunde.</p>'}
-      </section>` : '<section class="vw-karte"><p class="vw-klein">Sobald eine Bestellrunde angelegt ist, lassen sich passende Vormerkungen hier übernehmen.</p></section>'}
-      <div>
-        <section class="vw-karte" aria-label="Planung"><h2>Planung: offen vorgemerkt</h2>
-          ${planung || '<p class="vw-klein">Keine offenen Vormerkungen.</p>'}</section>
-        <section class="vw-karte" aria-label="Vormerkung erfassen"><h2>Vormerkung erfassen</h2>
-          <form id="vw-va-formular" novalidate>
-            <label class="vw-feld"><span>Name</span>
-              <input name="name" list="vw-kundenliste-va" autocomplete="off" required /></label>
-            <datalist id="vw-kundenliste-va">${daten.kunden.map((k) => `<option value="${esc(k.name)}">${esc(k.ort)}</option>`).join('')}</datalist>
-            <label class="vw-feld"><span>Produkt</span>
-              <select name="produkt">${daten.produkte.filter((p) => p.aktiv !== false).map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('')}</select></label>
-            <label class="vw-feld"><span>Menge</span><input name="menge" type="number" inputmode="numeric" min="1" value="1" /></label>
-            <label class="vw-feld"><span>Für wann?</span>
-              <select name="zeitraum">${Object.entries(ZEITRAEUME).map(([wert, text]) => `<option value="${wert}">${text}</option>`).join('')}</select></label>
-            <label class="vw-feld" id="vw-va-jahr" hidden><span>Jahr</span>
-              <select name="jahr"><option>${jahr}</option><option>${jahr + 1}</option></select></label>
-            <fieldset class="vw-feldgruppe"><legend>Wie kam sie?</legend>
-              <div class="vw-auswahl vw-auswahl--reihe">
-                <label><input type="radio" name="quelle" value="whatsapp" checked /> WhatsApp</label>
-                <label><input type="radio" name="quelle" value="telefon" /> Telefon</label>
-                <label><input type="radio" name="quelle" value="persoenlich" /> persönlich</label>
-              </div></fieldset>
-            <label class="vw-feld"><span>Notiz (optional)</span><input name="notiz" autocomplete="off" /></label>
-            <button type="submit" class="vw-knopf vw-knopf--voll vw-knopf--breit">Vormerkung speichern</button>
-          </form>
-        </section>
-        ${andere.length ? `<section class="vw-karte" aria-label="Weitere"><h2>Für spätere Bestellrunden</h2>${andere.map((v) => vaZeile(v, false)).join('')}</section>` : ''}
-      </div>
-    </div>`;
-}
-
-// Eine offene Vormerkung ändern: Produkt, Menge, Zeitraum, Notiz.
-// Kunde und Quelle bleiben (anderer Kunde = absagen und neu erfassen).
-function vaBearbeitenFormular(v, k) {
-  const jahr = new Date().getFullYear();
-  const jahre = [...new Set([jahr, jahr + 1, v.jahr].filter(Boolean))].sort();
-  return `<form class="vw-va-bearbeiten" id="vw-va-bearbeiten" data-id="${esc(v.id)}" novalidate>
-      <p><strong>${esc(k ? k.name : '')}</strong> <span class="vw-klein">· ${QUELLEN[v.quelle]} · gemeldet ${datumKurz(v.erstellt)}</span></p>
-      <label class="vw-feld"><span>Produkt</span>
-        <select name="produkt">${daten.produkte.filter((p) => p.aktiv !== false || p.id === v.produktId).map((p) =>
-          `<option value="${p.id}" ${p.id === v.produktId ? 'selected' : ''}>${esc(p.name)}</option>`).join('')}</select></label>
-      <div class="vw-zwei-felder">
-        <label class="vw-feld"><span>Menge</span><input name="menge" type="number" inputmode="numeric" min="1" value="${v.menge}" /></label>
-        <label class="vw-feld"><span>Für wann?</span>
-          <select name="va-zeitraum">${Object.entries(ZEITRAEUME).map(([wert, text]) =>
-            `<option value="${wert}" ${v.zeitraum === wert ? 'selected' : ''}>${text}</option>`).join('')}</select></label>
-      </div>
-      <label class="vw-feld" data-va-jahr ${v.zeitraum === 'naechste' ? 'hidden' : ''}><span>Jahr</span>
-        <select name="jahr">${jahre.map((j) => `<option ${j === (v.jahr || jahr) ? 'selected' : ''}>${j}</option>`).join('')}</select></label>
-      <label class="vw-feld"><span>Notiz (optional)</span><input name="notiz" value="${esc(v.notiz || '')}" autocomplete="off" /></label>
-      <div class="vw-knopfreihe">
-        <button type="submit" class="vw-knopf vw-knopf--voll">Änderung speichern</button>
-        <button type="button" class="vw-knopf" data-aktion="va-bearbeiten-abbrechen">Abbrechen</button>
-      </div>
-    </form>`;
-}
-
-async function vormerkungAendern(form) {
-  const id = form.dataset.id;
-  const v = daten.voranmeldungen.find((x) => x.id === id);
-  if (!v) return;
-  const menge = Number(feld(form, 'menge').value);
-  if (!Number.isInteger(menge) || menge < 1 || menge > 999) return meldung('Bitte eine gültige Menge eintragen.');
-  const zeitraum = feld(form, 'va-zeitraum').value;
-  const eingabe = {
-    produktId: feld(form, 'produkt').value,
-    menge,
-    zeitraum,
-    jahr: zeitraum === 'naechste' ? null : Number(feld(form, 'jahr').value),
-    notiz: feld(form, 'notiz').value.trim(),
-  };
-  // Formular erst nach erfolgreichem Speichern schließen – bei einem Fehler
-  // bleibt das Eingetippte stehen
-  const erg = await speichern(`voranmeldung/${id}`, eingabe, () => {
-    Object.assign(v, eingabe);
-    return {};
-  }, { neuZeichnen: false });
-  if (!erg) return;
-  zustand.vaBearbeiten = null;
-  ansichtVoranmeldungen();
-  meldung('Vormerkung geändert.');
-}
-
-async function voranmeldungSpeichern(form) {
-  const name = feld(form, 'name').value.trim();
-  const menge = Number(feld(form, 'menge').value);
-  const zeitraum = feld(form, 'zeitraum').value;
-  if (!name) return meldung('Bitte einen Namen eintragen.');
-  if (!Number.isInteger(menge) || menge < 1) return meldung('Bitte eine gültige Menge eintragen.');
-  const bekannt = kundeNachName(name);
-  const eingabe = {
-    kundeId: bekannt ? bekannt.id : null,
-    kunde: { name },
-    produktId: feld(form, 'produkt').value,
-    menge,
-    zeitraum,
-    jahr: zeitraum === 'naechste' ? null : Number(feld(form, 'jahr').value),
-    quelle: form.querySelector('input[name="quelle"]:checked').value,
-    notiz: feld(form, 'notiz').value.trim(),
-  };
-  const text = `${name}, ${menge}× ${produktVon(eingabe.produktId).name} (${zeitraumText(eingabe)})`;
-  await speichern('voranmeldung', eingabe, () => {
-    let k = bekannt;
-    if (!k) {
-      k = { id: `k${Date.now()}`, name, telefon: '', strasse: '', plz: '', ort: '', stammkunde: false };
-      daten.kunden.push(k);
-    }
-    daten.voranmeldungen.push({
-      ...eingabe, id: `v${Date.now()}`, kundeId: k.id, status: 'offen', erstellt: new Date().toISOString().slice(0, 10),
-    });
-    return {};
-  }, { erfolg: `Vorgemerkt: ${text}.` });
-}
-
-// Beispielmodus: gleiche Logik wie voranmeldungenUebernehmen() in
-// functions/_lib/hofladen.js – je Kunde eine Bestellung, in Reihenfolge der
-// Anmeldung, Rest → Warteliste.
-function voranmeldungenUebernehmenBeispiel(ch, ids) {
-  const auswahl = passendeVoranmeldungen(ch).filter((v) => ids.includes(v.id));
-  const jeKunde = new Map();
-  auswahl.forEach((v) => {
-    if (!jeKunde.has(v.kundeId)) jeKunde.set(v.kundeId, []);
-    jeKunde.get(v.kundeId).push(v);
-  });
-  const bestellungen = [];
-  jeKunde.forEach((liste, kundeId) => {
-    const mengen = new Map();
-    liste.forEach((v) => {
-      const a = ch.artikel.find((x) => x.produktId === v.produktId);
-      mengen.set(a.id, (mengen.get(a.id) || 0) + v.menge);
-    });
-    const positionen = [...mengen].map(([artikelId, menge]) => ({ artikelId, menge }));
-    const reicht = positionen.every((p) => freieMenge(ch, p.artikelId) >= p.menge);
-    const b = {
-      id: `b${Date.now()}${kundeId}`, nummer: naechsteNummer(), chargeId: ch.id, kundeId,
-      quelle: liste[0].quelle, erstellt: new Date().toISOString().slice(0, 10),
-      status: reicht ? 'vorgemerkt' : 'warteliste', terminId: null, zahlart: 'bar', bezahlt: null,
-      uebergeben: false, anmerkung: liste.map((v) => v.notiz).filter(Boolean).join(' · '),
-      interneNotiz: 'aus Vormerkung – Termin und Zahlart bestätigen', positionen,
-    };
-    daten.bestellungen.push(b);
-    liste.forEach((v) => { v.status = 'uebernommen'; });
-    bestellungen.push(b);
-  });
-  daten.voranmeldungen = daten.voranmeldungen.filter((v) => v.status === 'offen');
-  return { bestellungen };
-}
-
-async function voranmeldungenUebernehmen(ids) {
-  const ch = aktiveCharge();
-  if (!ids.length) return meldung('Bitte mindestens eine Vormerkung auswählen.');
-  const erg = await speichern('voranmeldungen/uebernehmen', { chargeId: ch.id, ids },
-    () => voranmeldungenUebernehmenBeispiel(ch, ids), { neuZeichnen: false });
-  if (!erg) return;
-  const vorgemerkt = erg.bestellungen.filter((b) => b.status === 'vorgemerkt').length;
-  const warteliste = erg.bestellungen.length - vorgemerkt;
-  zustand.filter = 'termin-offen';
-  location.hash = '#bestellungen';
-  zeigen();
-  meldung(`${erg.bestellungen.length} übernommen: ${vorgemerkt} vorgemerkt${warteliste ? `, ${warteliste} auf der Warteliste (nicht genug frei)` : ''} – jetzt Termine bestätigen.`);
-}
-
-// 5.8 Bestellrunde anlegen / bearbeiten
-const CHARGE_STATUS = {
-  entwurf: 'In Vorbereitung – Kunden sehen sie noch nicht',
-  offen: 'Offen – Kunden können bestellen',
-  geschlossen: 'Bestellschluss – keine Website-Bestellungen mehr',
-  archiviert: 'Abgeschlossen – wird ausgeblendet',
-};
-// Bereiche des Sortiments kommen aus der Datenbank (daten.bereiche, in
-// ihrer Reihenfolge) und werden unter „Sortiment → Bereiche" gepflegt
-const bereichName = (id) => ((daten.bereiche || []).find((b) => b.id === id) || {}).name || 'Ohne Bereich';
-const bereichRang = (id) => {
-  const i = (daten.bereiche || []).findIndex((b) => b.id === id);
-  return i < 0 ? 9999 : i;
-};
-const produkteImBereich = (id) => daten.produkte.filter((p) => p.bereichId === id).length;
-
-// Liste nach Bereichen gruppieren: [[bereich, liste], …], leere entfallen
-function nachBereichen(liste, bereichVon) {
-  const bereiche = daten.bereiche || [];
-  const gruppen = bereiche.map((b) => [b, liste.filter((x) => bereichVon(x) === b.id)]);
-  const ohne = liste.filter((x) => !bereiche.some((b) => b.id === bereichVon(x)));
-  if (ohne.length) gruppen.push([{ id: null, name: 'Ohne Bereich' }, ohne]);
-  return gruppen.filter(([, l]) => l.length);
-}
-const ARTEN = { gewicht: 'nach Gewicht (Preis pro kg)', stueck: 'Fixpreis je Stück', paket: 'Fixpreis je Paket' };
-
-const centAusText = (wert) => {
-  const zahl = parseFloat(String(wert).replace(/\s|€/g, '').replace(',', '.'));
-  return Number.isFinite(zahl) && zahl >= 0 ? Math.round(zahl * 100) : null;
-};
-const textAusCent = (cent) => (cent == null ? '' : (cent / 100).toFixed(2).replace('.', ','));
-
-// Vorschlag für neue Bestellrunden: Werte der letzten Bestellrunde je Produkt, sonst Startpreis
-function vorschlagFuer(produkt) {
-  if (daten.preisVorschlaege) {
-    const v = daten.preisVorschlaege.find((x) => x.produktId === produkt.id);
-    if (v) return v;
-  }
-  const letzte = [...daten.chargen].reverse().flatMap((c) => c.artikel).find((a) => a.produktId === produkt.id);
-  return letzte
-    ? { preisCent: letzte.preisCent, kontingent: letzte.kontingent, maxProBestellung: letzte.maxProBestellung }
-    : { preisCent: produkt.startpreisCent ?? null, kontingent: null, maxProBestellung: null };
-}
-
-function chargeFormStarten(neu) {
-  const ch = neu ? null : aktiveCharge();
-  const morgen = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
-  zustand.chargeForm = {
-    id: ch ? ch.id : null,
-    titel: ch ? ch.titel : '',
-    bestellschluss: ch ? ch.bestellschluss : morgen,
-    status: ch ? ch.status || 'offen' : 'entwurf',
-    imPortal: ch ? ch.imPortal !== false : true,
-    termine: ch ? ch.termine.map((t) => ({ ...t })) : [],
-    // je Produkt: angeboten ja/nein und Werte
-    artikel: daten.produkte
-      .filter((p) => p.aktiv !== false || (ch && ch.artikel.some((a) => a.produktId === p.id)))
-      .map((p) => {
-        const vorhanden = ch && ch.artikel.find((a) => a.produktId === p.id);
-        const vorschlag = vorhanden || vorschlagFuer(p);
-        return {
-          produkt: p,
-          id: vorhanden ? vorhanden.id : null,
-          an: Boolean(vorhanden),
-          preis: textAusCent(vorschlag.preisCent),
-          kontingent: vorschlag.kontingent ?? '',
-          max: vorschlag.maxProBestellung ?? '',
-          bestellt: vorhanden ? bestellteMenge(ch, vorhanden.id) : 0,
-        };
-      }),
-  };
-}
-
-// Eingaben aus dem Formular in die Arbeitskopie übernehmen (vor jedem Neuzeichnen)
-function chargeFormLesen() {
-  const form = document.getElementById('vw-charge-formular');
-  const f = zustand.chargeForm;
-  if (!form || !f) return;
-  f.titel = feld(form, 'titel').value;
-  f.bestellschluss = feld(form, 'bestellschluss').value;
-  f.status = feld(form, 'status').value;
-  f.imPortal = feld(form, 'imPortal').checked;
-  f.termine = [...form.querySelectorAll('[data-termin]')].map((zeile) => ({
-    id: zeile.dataset.termin || null,
-    art: zeile.querySelector('[name="t-art"]').value,
-    datum: zeile.querySelector('[name="t-datum"]').value,
-    von: zeile.querySelector('[name="t-von"]').value,
-    bis: zeile.querySelector('[name="t-bis"]').value,
-    hinweis: zeile.querySelector('[name="t-hinweis"]').value.trim(),
-  }));
-  form.querySelectorAll('[data-produkt]').forEach((zeile) => {
-    const a = f.artikel.find((x) => x.produkt.id === zeile.dataset.produkt);
-    a.an = zeile.querySelector('[name="a-an"]').checked;
-    a.preis = zeile.querySelector('[name="a-preis"]').value;
-    a.kontingent = zeile.querySelector('[name="a-menge"]').value;
-    a.max = zeile.querySelector('[name="a-max"]').value;
-  });
-}
-
-function ansichtCharge(neu) {
-  if (!neu && istDauer(aktiveCharge())) {
-    inhalt().innerHTML = `<div class="vw-kopf"><h1>Dauersortiment</h1></div>
-      <section class="vw-karte"><p>Das Dauersortiment ist immer offen und hat keinen Bestellschluss. Welche Artikel dazugehören,
-        was sie kosten und ob sie ausverkauft sind, legt ihr im Sortiment fest (Produkt bearbeiten → „Dauerartikel").</p>
-        <div class="vw-knopfreihe"><a class="vw-knopf vw-knopf--voll" href="#sortiment">Zum Sortiment</a>
-        <a class="vw-knopf" href="#uebersicht">Zurück</a></div></section>`;
-    return;
-  }
-  if (!zustand.chargeForm || (neu ? zustand.chargeForm.id : zustand.chargeForm.id !== zustand.chargeId)) {
-    if (!neu && !aktiveCharge()) return ansichtLeer();
-    chargeFormStarten(neu);
-  }
-  const f = zustand.chargeForm;
-  const gruppen = nachBereichen(f.artikel, (a) => a.produkt.bereichId);
-  const statusListe = { ...CHARGE_STATUS };
-  if (f.status === 'stammkunden') statusListe.stammkunden = 'Nur Stammkunden';
-
-  inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>${f.id ? 'Bestellrunde bearbeiten' : 'Neue Bestellrunde'}</h1>
-      <p class="vw-klein">${f.id ? 'Preisänderungen gelten nur für neue Bestellungen.' : 'Preis, Menge und Höchstmenge sind mit den Werten der letzten Bestellrunde vorbelegt.'}</p></div>
-    <form id="vw-charge-formular" novalidate>
-      <section class="vw-karte">
-        <label class="vw-feld"><span>Titel</span><input name="titel" value="${esc(f.titel)}" placeholder="z. B. Masthühner Herbst" required /></label>
-        <label class="vw-feld"><span>Bestellschluss</span><input name="bestellschluss" type="date" value="${esc(f.bestellschluss)}" required /></label>
-        <label class="vw-feld"><span>Status</span><select name="status">${Object.entries(statusListe).map(([wert, text]) =>
-          `<option value="${wert}" ${f.status === wert ? 'selected' : ''}>${text}</option>`).join('')}</select></label>
-        <label class="vw-haken"><input type="checkbox" name="imPortal" ${f.imPortal ? 'checked' : ''} />
-          Auch im Bertha-Portal anbieten (für Eierkunden)</label>
-      </section>
-      <section class="vw-karte"><h2>Termine</h2>
-        ${f.termine.map((t) => `<div class="vw-termin-zeile" data-termin="${esc(t.id || '')}">
-          <select name="t-art" aria-label="Art"><option value="abholung" ${t.art === 'abholung' ? 'selected' : ''}>Abholung</option><option value="lieferung" ${t.art === 'lieferung' ? 'selected' : ''}>Lieferung</option></select>
-          <input name="t-datum" type="date" value="${esc(t.datum)}" aria-label="Datum" />
-          <input name="t-von" type="time" value="${esc(t.von)}" aria-label="von" />
-          <input name="t-bis" type="time" value="${esc(t.bis)}" aria-label="bis" />
-          <button type="button" class="vw-knopf vw-knopf--warnung vw-knopf--klein" data-aktion="termin-entfernen" aria-label="Termin entfernen">×</button>
-          <input name="t-hinweis" class="vw-termin-hinweis" value="${esc(t.hinweis || '')}" maxlength="200"
-            placeholder="Hinweis (optional), z. B. genauer Tag folgt" aria-label="Hinweis für Kunden" />
-        </div>`).join('') || '<p class="vw-klein">Noch keine Termine.</p>'}
-        <p class="vw-klein">Genauer Tag oder Uhrzeit noch offen? Voraussichtlichen Tag eintragen, Uhrzeit leer lassen und einen
-          Hinweis dazuschreiben. Später ändern: Bestellungen wandern mit, die Kunden bitte selbst kurz informieren.</p>
-        <div class="vw-knopfreihe">
-          <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="termin-dazu" data-wert="abholung">+ Abholtermin</button>
-          <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="termin-dazu" data-wert="lieferung">+ Liefertermin</button>
-        </div>
-      </section>
-      <section class="vw-karte"><h2>Was wird angeboten?</h2>
-        <p class="vw-klein">Häkchen setzen, Preis (bei Gewichtsware pro kg) und vorhandene Menge eintragen. Höchstmenge pro Bestellung ist optional.
-          Fehlt ein Produkt? Im <a href="#sortiment">Sortiment</a> anlegen.</p>
-        ${gruppen.map(([b, liste]) => `<h3 class="vw-ort-titel">${esc(b.name)}</h3>
-          ${liste.map((a) => `<div class="vw-artikel-form" data-produkt="${a.produkt.id}">
-            <label class="vw-artikel-name"><input type="checkbox" name="a-an" ${a.an ? 'checked' : ''} /> ${esc(a.produkt.name)}
-              ${a.bestellt ? `<span class="vw-klein"> · ${a.bestellt} bestellt</span>` : ''}</label>
-            <label><span class="vw-klein">Preis €${a.produkt.art === 'gewicht' ? '/kg' : ''}</span><input name="a-preis" inputmode="decimal" value="${esc(a.preis)}" /></label>
-            <label><span class="vw-klein">Menge</span><input name="a-menge" type="number" inputmode="numeric" min="0" value="${esc(a.kontingent)}" /></label>
-            <label><span class="vw-klein">max.</span><input name="a-max" type="number" inputmode="numeric" min="1" value="${esc(a.max)}" placeholder="–" /></label>
-          </div>`).join('')}`).join('')}
-      </section>
-      <div class="vw-knopfreihe">
-        <button type="submit" class="vw-knopf vw-knopf--voll">${f.id ? 'Änderungen speichern' : 'Bestellrunde anlegen'}</button>
-        <a class="vw-knopf" href="#uebersicht">Abbrechen</a>
-      </div>
-    </form>`;
-}
-
-async function chargeSpeichern() {
-  chargeFormLesen();
-  const f = zustand.chargeForm;
-  if (!f.titel.trim()) return meldung('Bitte einen Titel eintragen.');
-  if (!f.bestellschluss) return meldung('Bitte den Bestellschluss eintragen.');
-  if (f.termine.some((t) => !t.datum)) return meldung('Bitte bei jedem Termin ein Datum eintragen.');
-  const artikel = [];
-  for (const a of f.artikel.filter((x) => x.an)) {
-    const preisCent = centAusText(a.preis);
-    const kontingent = Number(a.kontingent);
-    if (preisCent == null) return meldung(`Bitte einen Preis für „${a.produkt.name}" eintragen.`);
-    if (a.kontingent === '' || !Number.isInteger(kontingent) || kontingent < 0) return meldung(`Bitte die Menge für „${a.produkt.name}" eintragen.`);
-    if (a.bestellt && kontingent < a.bestellt) return meldung(`„${a.produkt.name}": schon ${a.bestellt} bestellt – Menge nicht darunter setzen.`);
-    artikel.push({ id: a.id, produktId: a.produkt.id, preisCent, kontingent, maxProBestellung: a.max === '' ? null : Number(a.max) });
-  }
-  if (!artikel.length) return meldung('Bitte mindestens ein Produkt anbieten.');
-  const entfernt = f.artikel.filter((a) => !a.an && a.bestellt);
-  if (entfernt.length) return meldung(`„${entfernt[0].produkt.name}" wurde schon bestellt und bleibt in der Bestellrunde.`);
-
-  const eingabe = {
-    titel: f.titel.trim(), bestellschluss: f.bestellschluss, status: f.status, imPortal: f.imPortal,
-    termine: f.termine.map((t) => ({ id: t.id, art: t.art, datum: t.datum, von: t.von, bis: t.bis, hinweis: t.hinweis || '' })),
-    artikel,
-  };
-  const erg = await speichern(f.id ? `charge/${f.id}` : 'charge', eingabe, () => {
-    const id = f.id || `c${Date.now()}`;
-    const neueCharge = {
-      id, titel: eingabe.titel, bestellschluss: eingabe.bestellschluss, status: eingabe.status, imPortal: eingabe.imPortal,
-      termine: eingabe.termine.map((t, i) => ({ ...t, id: t.id || `t${Date.now()}${i}` })),
-      artikel: artikel.map((a, i) => {
-        const p = produktVon(a.produktId);
-        return { id: a.id || `a${Date.now()}${i}`, produktId: a.produktId, name: p.name, art: p.art,
-          preisCent: a.preisCent, kontingent: a.kontingent, maxProBestellung: a.maxProBestellung,
-          richtVonG: p.richtVonG, richtBisG: p.richtBisG };
-      }),
-    };
-    const index = daten.chargen.findIndex((c) => c.id === id);
-    if (index >= 0) daten.chargen[index] = neueCharge; else daten.chargen.push(neueCharge);
-    if (eingabe.status === 'archiviert') daten.chargen = daten.chargen.filter((c) => c.id !== id);
-    return { chargeId: id };
-  }, { neuZeichnen: false });
-  if (!erg) return;
-  zustand.chargeForm = null;
-  if (eingabe.status !== 'archiviert') zustand.chargeId = erg.chargeId;
-  else zustand.chargeId = daten.chargen.length ? daten.chargen[0].id : null;
-  location.hash = '#uebersicht';
-  zeigen();
-  const passend = aktiveCharge() ? passendeVoranmeldungen(aktiveCharge()).length : 0;
-  meldung(`Bestellrunde gespeichert.${passend ? ` ${passend} Vormerkungen passen dazu.` : ''}`);
-}
-
-// 5.8a Auswertung für die Buchhaltung
-// Gezählt wird nach dem Tag der Übergabe – erst dann ist verkauft. Enthält
-// auch abgeschlossene Bestellrunden (die Daten kommen deshalb eigens von
-// /api/verwaltung/auswertung, nicht aus dem Tagesstand).
-
-// Beispielmodus: dieselbe Form aus den Beispieldaten (übergeben = heute)
-function auswertungBeispiel() {
-  const jahr = String(new Date().getFullYear());
-  const runden = daten.chargen.concat(daten.archiv || []);
-  const bestellungen = daten.bestellungen.filter((b) => istAktiv(b) && b.uebergeben).map((b) => {
-    const ch = chargeVon(b);
-    const positionen = b.positionen.map((p) => {
-      const a = artikelVon(ch, p.artikelId);
-      const produkt = produktVon(a.produktId) || {};
-      return { produkt: a.name, bereich: bereichName(produkt.bereichId), bereichRang: bereichRang(produkt.bereichId), art: a.art, menge: p.menge,
-        gewichtG: p.gewichtG || null, cent: positionBetrag(ch, p).cent,
-        herkunft: produkt.herkunft || null, ustSatz: produkt.ustSatz ?? null };
-    });
-    return { id: b.id, nummer: b.nummer, chargeId: b.chargeId, kunde: kundeVon(b).name, quelle: b.quelle,
-      hofverkauf: istHofverkauf(b), zahlart: b.zahlart, bezahlt: b.bezahlt, bezahltAm: b.bezahlt ? new Date().toISOString().slice(0, 10) : null,
-      uebergebenAm: new Date().toISOString().slice(0, 10), cent: positionen.reduce((x, p) => x + p.cent, 0), positionen };
-  });
-  return { jahr, jahre: [jahr], bestellungen, runden: runden.map((c) => ({
-    id: c.id, titel: c.titel, status: c.status || 'offen', bestellschluss: c.bestellschluss,
-    nichtUebergeben: daten.bestellungen.filter((b) => b.chargeId === c.id && istAktiv(b) && !b.uebergeben).length,
-  })) };
-}
-
-async function auswertungLaden(jahr) {
-  zustand.auswertung = { laedt: true, jahr };
-  if (aktuelleAnsicht() === 'auswertung') zeigen();
-  try {
-    if (BEISPIEL) {
-      zustand.auswertung = auswertungBeispiel();
-    } else {
-      const antwort = await fetch(`/api/verwaltung/auswertung${jahr ? `?jahr=${encodeURIComponent(jahr)}` : ''}`,
-        { headers: { Accept: 'application/json' }, cache: 'no-store' });
-      const erg = await antwort.json().catch(() => ({}));
-      if (!antwort.ok || !erg.ok) throw new Error(erg.error || 'Auswertung konnte nicht geladen werden.');
-      zustand.auswertung = erg;
-    }
-  } catch (fehler) {
-    zustand.auswertung = { fehler: fehler.message || 'Keine Verbindung – bitte Seite neu laden.' };
-  }
-  if (aktuelleAnsicht() === 'auswertung') zeigen();
-}
-
-function ansichtAuswertung() {
-  const aw = zustand.auswertung;
-  if (!aw) { auswertungLaden(null); return; }
-  if (aw.laedt) { inhalt().innerHTML = '<div class="vw-kopf"><h1>Auswertung</h1></div><p class="vw-klein">Wird geladen …</p>'; return; }
-  if (aw.fehler) {
-    inhalt().innerHTML = `<div class="vw-kopf"><h1>Auswertung</h1></div><section class="vw-karte"><p>${esc(aw.fehler)}</p>
-      <button type="button" class="vw-knopf" data-aktion="auswertung-neu">Noch einmal versuchen</button></section>`;
-    return;
-  }
-  const summe = (liste) => liste.reduce((x, b) => x + b.cent, 0);
-  const bar = aw.bestellungen.filter((b) => b.bezahlt === 'bar');
-  const ueberwiesen = aw.bestellungen.filter((b) => b.bezahlt === 'ueberweisung');
-  const offen = aw.bestellungen.filter((b) => !b.bezahlt);
-
-  // Je Bereich und je Produkt
-  const jeProdukt = new Map();
-  aw.bestellungen.forEach((b) => b.positionen.forEach((p) => {
-    const e = jeProdukt.get(p.produkt) || { produkt: p.produkt, bereich: p.bereich, bereichRang: p.bereichRang, art: p.art, menge: 0, gramm: 0, cent: 0 };
-    e.menge += p.menge;
-    e.gramm += p.gewichtG || 0;
-    e.cent += p.cent;
-    jeProdukt.set(p.produkt, e);
-  }));
-  const produkte = [...jeProdukt.values()].sort((x, y) => x.bereichRang - y.bereichRang || y.cent - x.cent);
-  const bereiche = [...new Set(produkte.map((p) => p.bereich))]
-    .map((name) => [name, produkte.filter((p) => p.bereich === name).reduce((x, p) => x + p.cent, 0)])
-    .filter(([, cent]) => cent);
-
-  // Je Einstufung und USt-Satz: Preise sind Bruttopreise (inkl. USt)
-  const jeSteuer = new Map();
-  aw.bestellungen.forEach((b) => b.positionen.forEach((p) => {
-    const schluessel = `${p.herkunft || ''}|${p.ustSatz ?? ''}`;
-    const e = jeSteuer.get(schluessel) || { herkunft: p.herkunft, ustSatz: p.ustSatz, cent: 0 };
-    e.cent += p.cent;
-    jeSteuer.set(schluessel, e);
-  }));
-  const steuer = [...jeSteuer.values()].map((e) => ({ ...e, ...ustAnteil(e.cent, e.ustSatz) }))
-    .sort((x, y) => (x.herkunft || 'zz').localeCompare(y.herkunft || 'zz') || (x.ustSatz ?? 99) - (y.ustSatz ?? 99));
-  const warenCent = steuer.reduce((x, e) => x + e.cent, 0);
-  const lieferCent = summe(aw.bestellungen) - warenCent;
-  const offenEingestuft = steuer.some((e) => !e.herkunft || e.ustSatz == null);
-
-  const runden = aw.runden.map((r) => {
-    const liste = aw.bestellungen.filter((b) => b.chargeId === r.id);
-    const offenCent = summe(liste.filter((b) => !b.bezahlt));
-    const fertig = !r.nichtUebergeben && !offenCent;
-    return `<div class="vw-runden-zeile">
-      <div><strong>${esc(r.titel)}</strong><br>
-        <span class="vw-klein">${r.status === 'archiviert' ? 'abgeschlossen' : (CHARGE_KURZ[r.status] || 'laufend')}
-        · ${liste.length} übergeben${r.nichtUebergeben ? ` · ${r.nichtUebergeben} noch offen` : ''}${offenCent ? ` · ${euro(offenCent)} nicht bezahlt` : ''}</span></div>
-      <strong class="vw-zahl">${euro(summe(liste))}</strong>
-      ${r.status === 'archiviert'
-        ? `<button type="button" class="vw-link vw-link--leise" data-aktion="runde-status" data-id="${r.id}" data-wert="geschlossen">wieder öffnen</button>`
-        : fertig && liste.length ? `<button type="button" class="vw-knopf vw-knopf--klein" data-aktion="runde-status" data-id="${r.id}" data-wert="archiviert">Abschließen</button>` : '<span></span>'}
-    </div>`;
-  }).join('');
-
-  inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Auswertung</h1>
-      <div class="vw-runde"><select class="vw-runde-wahl" data-wahl="jahr" aria-label="Jahr">${aw.jahre.map((j) =>
-        `<option ${j === aw.jahr ? 'selected' : ''}>${esc(j)}</option>`).join('')}</select>
-      <span class="vw-klein">Gezählt nach dem Tag der Übergabe (Abholung, Lieferung, Verkauf am Hof).</span></div></div>
-    <div class="vw-kennzahlen vw-kennzahlen--zwei">
-      <div class="vw-kennzahl"><strong>${euro(summe(aw.bestellungen))}</strong><span>Umsatz ${esc(aw.jahr)} (${aw.bestellungen.length} Verkäufe)</span></div>
-      <div class="vw-kennzahl${offen.length ? ' vw-kennzahl--achtung' : ''}"><strong>${euro(summe(offen))}</strong><span>davon noch nicht bezahlt (${offen.length})</span></div>
-      <div class="vw-kennzahl"><strong>${euro(summe(bar))}</strong><span>bar bezahlt</span></div>
-      <div class="vw-kennzahl"><strong>${euro(summe(ueberwiesen))}</strong><span>per Überweisung bezahlt</span></div>
-    </div>
-    <section class="vw-karte"><h2>Nach Bereich</h2>
-      ${bereiche.length ? bereiche.map(([name, cent]) => `<div class="vw-zeile-kopf vw-auswertung-zeile"><span>${esc(name)}</span><strong>${euro(cent)}</strong></div>`).join('')
-        : '<p class="vw-klein">In diesem Jahr wurde noch nichts übergeben.</p>'}
-    </section>
-    ${steuer.length ? `<section class="vw-karte"><h2>Nach Einstufung und USt-Satz</h2>
-      <table class="vw-tabelle vw-auswertung-tabelle"><thead><tr><th>Einstufung</th><th class="vw-zahl">Brutto</th><th class="vw-zahl">Netto</th><th class="vw-zahl">USt</th></tr></thead>
-      <tbody>${steuer.map((e) => `<tr${!e.herkunft || e.ustSatz == null ? ' class="vw-warnung"' : ''}><td>${esc(einstufungText(e.herkunft, e.ustSatz))}</td>
-        <td class="vw-zahl">${euro(e.cent)}</td><td class="vw-zahl">${e.ustSatz != null ? euro(e.nettoCent) : ''}</td>
-        <td class="vw-zahl">${e.ustSatz != null ? euro(e.ustCent) : ''}</td></tr>`).join('')}
-        ${lieferCent ? `<tr><td>Liefergebühren</td><td class="vw-zahl">${euro(lieferCent)}</td><td></td><td></td></tr>` : ''}</tbody></table>
-      <p class="vw-klein">Preise sind Bruttopreise. Es zählt der Satz zum Zeitpunkt der Bestellung.${offenEingestuft
-        ? ' Rot = Produkt noch nicht (ganz) eingestuft – im Sortiment Einstufung und USt-Satz eintragen.' : ''}${lieferCent
-        ? ' Liefergebühren folgen als Nebenleistung dem Satz der gelieferten Ware.' : ''}</p>
-    </section>` : ''}
-    ${produkte.length ? `<section class="vw-karte"><h2>Nach Produkt</h2>
-      <table class="vw-tabelle vw-auswertung-tabelle"><thead><tr><th>Produkt</th><th class="vw-zahl">Menge</th><th class="vw-zahl">kg</th><th class="vw-zahl">Umsatz</th></tr></thead>
-      <tbody>${produkte.map((p) => `<tr><td>${esc(p.produkt)}</td><td class="vw-zahl">${p.menge}</td>
-        <td class="vw-zahl">${p.art === 'gewicht' ? kgFormat.format(p.gramm / 1000) : ''}</td><td class="vw-zahl">${euro(p.cent)}</td></tr>`).join('')}</tbody></table>
-    </section>` : ''}
-    <section class="vw-karte"><h2>Bestellrunden</h2>${runden || '<p class="vw-klein">Keine.</p>'}
-      <p class="vw-klein">Abgeschlossene Runden verschwinden aus Übersicht, Bestellungen und Übergabe, bleiben hier aber erhalten.</p></section>
-    <button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit" data-aktion="auswertung-export" ${aw.bestellungen.length ? '' : 'disabled'}>Für die Buchhaltung herunterladen (Excel)</button>
-    <p class="vw-klein">Eine Zeile je verkauftem Artikel mit Datum, Bestellnummer, Kunde, Bereich, Menge, Gewicht, Betrag und Zahlung – zum Weitergeben an die Buchhaltung.
-      Mit Einstufung, USt-Satz, Netto und USt je Zeile.</p>`;
-}
-
-// Bruttobetrag → Netto und USt (auf Cent gerundet; Netto = Brutto − USt)
-function ustAnteil(bruttoCent, satz) {
-  if (satz == null) return { nettoCent: bruttoCent, ustCent: 0 };
-  const ustCent = Math.round((bruttoCent * satz) / (100 + satz));
-  return { nettoCent: bruttoCent - ustCent, ustCent };
-}
-
-function auswertungExport() {
-  const aw = zustand.auswertung;
-  const runde = (id) => (aw.runden.find((r) => r.id === id) || {}).titel || '';
-  const zeilen = [['Übergabe am', 'Bestellnr.', 'Bestellrunde', 'Kunde', 'Art', 'Bereich', 'Produkt', 'Menge',
-    'Gewicht kg', 'Betrag €', 'Einstufung', 'USt %', 'Netto €', 'USt €', 'Zahlart', 'Bezahlt am']];
-  aw.bestellungen.forEach((b) => b.positionen.forEach((p) => {
-    const anteil = ustAnteil(p.cent, p.ustSatz);
-    zeilen.push([b.uebergebenAm, b.nummer, runde(b.chargeId), b.kunde,
-      b.hofverkauf ? 'Verkauf am Hof' : `Vorbestellung (${quelleText(b)})`,
-      p.bereich, p.produkt, p.menge, p.gewichtG ? p.gewichtG / 1000 : '', p.cent / 100,
-      p.herkunft ? HERKUNFT[p.herkunft] : '', p.ustSatz ?? '',
-      p.ustSatz != null ? anteil.nettoCent / 100 : '', p.ustSatz != null ? anteil.ustCent / 100 : '',
-      b.bezahlt ? ZAHLARTEN[b.bezahlt] : `offen (${ZAHLARTEN[b.zahlart]})`, b.bezahltAm || '']);
-  }));
-  csvHerunterladen(zeilen, `hofladen-auswertung-${aw.jahr}.csv`);
-}
-
-// Bestellrunde abschließen bzw. wieder öffnen
-async function rundeStatus(id, status) {
-  const erg = await speichern(`charge/${id}/status`, { status }, () => {
-    if (status === 'archiviert') {
-      const ch = daten.chargen.find((c) => c.id === id);
-      ch.status = 'archiviert';
-      daten.archiv = (daten.archiv || []).concat(ch);
-      daten.chargen = daten.chargen.filter((c) => c !== ch);
-    } else {
-      const ch = (daten.archiv || []).find((c) => c.id === id);
-      ch.status = status;
-      daten.archiv = daten.archiv.filter((c) => c !== ch);
-      daten.chargen.push(ch);
-    }
-    if (!daten.chargen.some((c) => c.id === zustand.chargeId)) zustand.chargeId = daten.chargen.length ? daten.chargen[0].id : null;
-    return {};
-  }, { neuZeichnen: false, erfolg: status === 'archiviert' ? 'Bestellrunde abgeschlossen – sie bleibt in der Auswertung.' : 'Bestellrunde wieder geöffnet.' });
-  if (!erg) return;
-  if (aktuelleAnsicht() === 'auswertung') auswertungLaden(zustand.auswertung && zustand.auswertung.jahr);
-  else zeigen();
-}
-
-// 5.9 Sortiment – Produkte anlegen, ändern, aus- und einblenden
-// Ausgeblendete Produkte stehen beim Anlegen einer Bestellrunde nicht zur
-// Wahl, alte Bestellungen bleiben unberührt. Gelöscht wird nie.
-const kgText = (g) => (g ? kgFormat.format(g / 1000) : '');
-
-function ansichtSortiment() {
-  const gruppen = nachBereichen(daten.produkte, (p) => p.bereichId);
-  inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Sortiment</h1>
-      <p class="vw-klein">Alle Produkte, die ihr anbieten könnt. Preis und Menge legt ihr je Bestellrunde fest – hier steht nur ein Preisvorschlag.
-        Dauerartikel (z. B. Nudeln, Seife) haben einen festen Preis und sind immer bestellbar, bis ihr sie als ausverkauft markiert.
-        Was gerade nicht verkauft wird, einfach ausblenden.</p>
-      <div class="vw-knopfreihe">
-        <button type="button" class="vw-knopf vw-knopf--voll" data-aktion="produkt-neu">+ Neues Produkt</button>
-        <a class="vw-knopf" href="#bereiche">Bereiche bearbeiten</a>
-      </div></div>
-    ${gruppen.map(([b, liste]) => `<section class="vw-karte"><h2>${esc(b.name)}</h2>
-      ${liste.map((p) => `<div class="vw-produkt-zeile${p.aktiv === false ? ' vw-zeile--grau' : ''}">
-        <div class="vw-produkt-info">${p.bild
-          ? `<img class="vw-produkt-foto" src="${esc(fotoSrc(p.bild))}" alt="" loading="lazy" decoding="async" />`
-          : '<span class="vw-produkt-foto vw-produkt-foto--leer">kein Foto</span>'}<div><strong>${esc(p.name)}</strong>${p.aktiv === false ? ' <span class="vw-marke">ausgeblendet</span>' : ''}${p.verkaufsart === 'dauer'
-          ? ` <span class="vw-marke ${p.verfuegbar === false ? 'vw-marke--offen' : 'vw-marke--info'}">${p.verfuegbar === false ? 'ausverkauft' : 'Dauerartikel'}</span>` : ''}<br>
-          <span class="vw-klein">${p.verkaufsart === 'dauer'
-            ? `immer erhältlich · ${p.dauerpreisCent != null ? euro(p.dauerpreisCent) : 'noch ohne Preis'}`
-            : `${p.art === 'gewicht' ? 'nach Gewicht' : 'Fixpreis'}${p.startpreisCent != null
-              ? ` · Vorschlag ${euro(p.startpreisCent)}${p.art === 'gewicht' ? '/kg' : ''}` : ''}`}${p.allergene ? ` · Allergene: ${esc(p.allergene)}` : ''}<br>
-          <span class="${p.herkunft && p.ustSatz != null ? '' : 'vw-warnung'}">${einstufungText(p.herkunft, p.ustSatz)}</span></span></div></div>
-        <div class="vw-knopfreihe vw-knopfreihe--klein">
-          ${p.verkaufsart === 'dauer' && p.aktiv !== false ? `<button type="button" class="vw-knopf vw-knopf--klein${p.verfuegbar === false ? ' vw-knopf--voll' : ''}" data-aktion="produkt-verfuegbar" data-id="${p.id}">${p.verfuegbar === false ? 'Wieder verfügbar' : 'Ausverkauft'}</button>` : ''}
-          <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="produkt-bearbeiten" data-id="${p.id}">Bearbeiten</button>
-          <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="produkt-kopieren" data-id="${p.id}"
-            aria-label="${esc(p.name)} als neues Produkt kopieren">Kopieren</button>
-          <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="produkt-aktiv" data-id="${p.id}">${p.aktiv === false ? 'Wieder anbieten' : 'Ausblenden'}</button>
-        </div>
-      </div>`).join('')}</section>`).join('')}`;
-}
-
-// Produkt aus dem Stand → Werte für das Formular (Preise als Text)
-const produktFormWerte = (p) => ({
-  ...p, preis: textAusCent(p.startpreisCent), von: kgText(p.richtVonG), bis: kgText(p.richtBisG),
-  verkaufsart: p.verkaufsart || 'runde', dauerpreis: textAusCent(p.dauerpreisCent),
-  verfuegbar: p.verfuegbar !== false, imPortal: p.imPortal !== false,
-  weitereBilder: [...(p.weitereBilder || [])],
-});
-
-// vorlageId: „Kopieren" – neues Produkt mit allen Angaben der Vorlage
-// (z. B. weitere Nudelsorte), nur Name mit „(Kopie)", wieder angeboten.
-function produktFormStarten(id, vorlageId = null) {
-  const p = id ? produktVon(id) : null;
-  const vorlage = !p && vorlageId ? produktVon(vorlageId) : null;
-  zustand.produktForm = p
-    ? produktFormWerte(p)
-    : vorlage
-    ? { ...produktFormWerte(vorlage), id: null, name: `${vorlage.name} (Kopie)`, verwendet: false,
-      aktiv: true, verfuegbar: true, kopieVon: vorlage.name }
-    : { id: null, name: '', art: 'stueck', bereichId: (daten.bereiche[0] || {}).id || '', preis: '', von: '', bis: '', beschreibung: '',
-      pflichtangaben: '', allergene: '', bild: '', weitereBilder: [], aktiv: true, verwendet: false,
-      verkaufsart: 'runde', dauerpreis: '', verfuegbar: true, imPortal: true, herkunft: null, ustSatz: null };
-  if (fotoliste === null) fotolisteLaden();
-}
-
-// Produktfotos: Am einfachsten direkt hier vom Handy hochladen (Kamera oder
-// Galerie) – das Foto wird vorher im Browser verkleinert und in der
-// Datenbank gespeichert. Zusätzlich wählbar: alle Fotos der Website aus
-// images/fotos.json (schreibt die Bild-Automatik auf GitHub).
-let fotoliste = null;
-const fotoSrc = (pfad) => (pfad.startsWith('data:') ? pfad : `/${pfad}`);
-
-async function fotolisteLaden() {
-  fotoliste = [];
-  try {
-    const antwort = await fetch('/images/fotos.json', { cache: 'no-cache' });
-    if (antwort.ok) {
-      const liste = await antwort.json();
-      fotoliste = Array.isArray(liste) ? liste.filter((f) => typeof f === 'string') : [];
-    }
-  } catch (_) { /* ohne Liste bleibt nur „Kein Foto" bzw. das bisherige Foto */ }
-  // Nur die Foto-Bereiche neu zeichnen – schon Getipptes bleibt stehen
-  fotoBereicheZeichnen();
-}
-
-function fotoBereicheZeichnen() {
-  const f = zustand.produktForm;
-  if (!f) return;
-  const haupt = document.getElementById('vw-foto-auswahl');
-  if (haupt) haupt.innerHTML = fotoAuswahl(f);
-  const weitere = document.getElementById('vw-weitere-fotos');
-  if (weitere) weitere.innerHTML = weitereFotosAuswahl(f);
-}
-
-// „images/hofladen/honig-glas.jpg" → „honig glas"
-const fotoName = (pfad) => pfad.split('/').pop().replace(/\.[a-z]+$/i, '').replace(/[-_]+/g, ' ');
-
-function fotoWahl(pfad, gewaehlt) {
-  return `<label class="vw-foto-wahl">
-    <input type="radio" name="bild" value="${esc(pfad)}" ${gewaehlt === pfad ? 'checked' : ''} />
-    ${pfad ? `<img src="${esc(fotoSrc(pfad))}" alt="" loading="lazy" decoding="async" />` : '<span class="vw-foto-leer">Kein Foto</span>'}
-    ${pfad.startsWith('images/') ? `<span class="vw-foto-name">${esc(fotoName(pfad))}</span>`
-      : pfad ? '' : '<span class="vw-foto-name">ohne Bild</span>'}</label>`;
-}
-
-function fotoAuswahl(f) {
-  const eigene = daten.eigeneFotos || [];
-  const website = fotoliste || [];
-  const hofladen = website.filter((x) => x.startsWith('images/hofladen/'));
-  // Das gewählte Foto steht immer oben neben „Kein Foto" – auch ein Website-Foto
-  // oder eines, das in keiner Liste (mehr) steht –, damit es beim Bearbeiten
-  // gleich zu sehen ist und nicht zwischen allen Website-Fotos untergeht
-  const aktuell = f.bild && !eigene.includes(f.bild) && !hofladen.includes(f.bild) ? [f.bild] : [];
-  const oben = [...aktuell, ...eigene, ...hofladen];
-  // Zugeklappt, damit der Speichern-Knopf am Handy nah bleibt
-  const weitere = website.filter((x) => !x.startsWith('images/hofladen/') && x !== f.bild);
-  return `<fieldset class="vw-feldgruppe"><legend>Foto auf der Hofladen-Seite</legend>
-      <label class="vw-knopf vw-knopf--voll vw-foto-knopf">
-        <input type="file" accept="image/*" data-foto-hochladen />
-        Foto aufnehmen oder wählen</label>
-      <p class="vw-klein" id="vw-foto-status" aria-live="polite">${oben.length ? 'Oder ein vorhandenes Foto antippen:' : ''}</p>
-      <div class="vw-foto-raster">${fotoWahl('', f.bild)}${oben.map((x) => fotoWahl(x, f.bild)).join('')}</div>
-      ${weitere.length ? `<details class="vw-foto-weitere">
-        <summary>Foto von der Website nehmen (${weitere.length})</summary>
-        <div class="vw-foto-raster">${weitere.map((x) => fotoWahl(x, f.bild)).join('')}</div></details>` : ''}
-    </fieldset>`;
-}
-
-// Weitere Fotos zur Beschreibung (höchstens WEITERE_FOTOS_MAX): gewählte mit
-// „Entfernen", darunter hochladen oder ein vorhandenes Foto antippen. Die
-// Kunden sehen alle im gleichen quadratischen Format – Hochformat oder
-// Querformat ist egal, nur das Wichtige sollte in der Mitte sein.
-const WEITERE_FOTOS_MAX = 4;
-
-function weitereFotosAuswahl(f) {
-  const titel = `<legend>Weitere Fotos zur Beschreibung <span class="vw-klein">(höchstens ${WEITERE_FOTOS_MAX})</span></legend>`;
-  if (daten.weitereBilderMoeglich === false) {
-    return `<fieldset class="vw-feldgruppe">${titel}
-      <p class="vw-klein">Noch nicht eingerichtet: dafür einmal schema-hofladen.sql in der D1-Konsole ausführen.</p></fieldset>`;
-  }
-  const gewaehlt = f.weitereBilder || [];
-  const voll = gewaehlt.length >= WEITERE_FOTOS_MAX;
-  const angebot = [...new Set([...(daten.eigeneFotos || []), ...(fotoliste || [])])]
-    .filter((x) => !gewaehlt.includes(x));
-  return `<fieldset class="vw-feldgruppe">${titel}
-      <p class="vw-klein">Die Kunden sehen sie beim Aufklappen der Angaben, alle gleich groß und quadratisch zugeschnitten
-        – das Wichtige sollte in der Bildmitte sein. Antippen vergrößert sie.</p>
-      ${gewaehlt.length ? `<div class="vw-foto-raster">${gewaehlt.map((x, i) => `<div class="vw-foto-gewaehlt">
-          <img src="${esc(fotoSrc(x))}" alt="Weiteres Foto ${i + 1}" loading="lazy" decoding="async" />
-          <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="weiteres-foto-weg" data-wert="${i}"
-            aria-label="Weiteres Foto ${i + 1} entfernen">Entfernen</button></div>`).join('')}</div>`
-        : '<p class="vw-klein">Noch keine weiteren Fotos.</p>'}
-      ${voll ? `<p class="vw-klein">Vier Fotos sind das Höchste – zum Tauschen erst eines entfernen.</p>` : `
-      <label class="vw-knopf vw-knopf--voll vw-foto-knopf">
-        <input type="file" accept="image/*" data-weiteres-foto-hochladen />
-        Weiteres Foto aufnehmen oder wählen</label>
-      <p class="vw-klein" id="vw-weitere-status" aria-live="polite"></p>
-      ${angebot.length ? `<details class="vw-foto-weitere">
-        <summary>Vorhandenes Foto hinzufügen (${angebot.length})</summary>
-        <div class="vw-foto-raster">${angebot.map((x) => `<button type="button" class="vw-foto-wahl" data-aktion="weiteres-foto-dazu"
-          data-wert="${esc(x)}"><img src="${esc(fotoSrc(x))}" alt="" loading="lazy" decoding="async" />
-          ${x.startsWith('images/') ? `<span class="vw-foto-name">${esc(fotoName(x))}</span>` : ''}</button>`).join('')}</div>
-      </details>` : ''}`}
-    </fieldset>`;
-}
-
-function weiteresFotoDazu(pfad) {
-  const f = zustand.produktForm;
-  if (!f || !pfad) return;
-  f.weitereBilder = f.weitereBilder || [];
-  if (f.weitereBilder.includes(pfad)) return;
-  if (f.weitereBilder.length >= WEITERE_FOTOS_MAX) { meldung(`Höchstens ${WEITERE_FOTOS_MAX} weitere Fotos.`); return; }
-  f.weitereBilder.push(pfad);
-  fotoBereicheZeichnen();
-  meldung('Foto hinzugefügt – jetzt noch „Speichern" tippen.');
-}
-
-function weiteresFotoWeg(index) {
-  const f = zustand.produktForm;
-  if (!f || !f.weitereBilder) return;
-  f.weitereBilder.splice(index, 1);
-  fotoBereicheZeichnen();
-  meldung('Foto entfernt – jetzt noch „Speichern" tippen.');
-}
-
-// Foto im Browser verkleinern (lange Seite max. 1200 px, JPEG). Browser
-// drehen Handyfotos dabei richtig (EXIF), das Original bleibt am Handy.
-function fotoVerkleinern(datei, max = 1200, qualitaet = 0.82) {
-  return new Promise((ok, fehler) => {
-    const url = URL.createObjectURL(datei);
-    const bild = new Image();
-    bild.onload = () => {
-      const faktor = Math.min(1, max / Math.max(bild.naturalWidth, bild.naturalHeight));
-      const leinwand = document.createElement('canvas');
-      leinwand.width = Math.max(1, Math.round(bild.naturalWidth * faktor));
-      leinwand.height = Math.max(1, Math.round(bild.naturalHeight * faktor));
-      const ctx = leinwand.getContext('2d');
-      ctx.fillStyle = '#ffffff'; // durchsichtige PNG-Flächen weiß statt schwarz
-      ctx.fillRect(0, 0, leinwand.width, leinwand.height);
-      ctx.drawImage(bild, 0, 0, leinwand.width, leinwand.height);
-      URL.revokeObjectURL(url);
-      ok(leinwand.toDataURL('image/jpeg', qualitaet));
-    };
-    bild.onerror = () => { URL.revokeObjectURL(url); fehler(new Error('Foto nicht lesbar')); };
-    bild.src = url;
-  });
-}
-
-// weiteres = true: als weiteres Foto zur Beschreibung statt als Hauptfoto
-async function produktFotoHochladen(eingabeFeld, weiteres = false) {
-  const datei = eingabeFeld.files && eingabeFeld.files[0];
-  const f = zustand.produktForm;
-  if (!datei || !f) return;
-  const status = document.getElementById(weiteres ? 'vw-weitere-status' : 'vw-foto-status');
-  if (status) status.textContent = 'Foto wird vorbereitet …';
-  let daten64;
-  try {
-    daten64 = await fotoVerkleinern(datei);
-  } catch {
-    if (status) status.textContent = '';
-    meldung('Dieses Foto lässt sich nicht öffnen – bitte ein anderes wählen.');
-    return;
-  }
-  if (status) status.textContent = 'Foto wird hochgeladen …';
-  const erg = await speichern('foto', { daten: daten64 }, () => {
-    daten.eigeneFotos = [daten64, ...(daten.eigeneFotos || [])];
-    return { bild: daten64 };
-  }, { neuZeichnen: false });
-  if (!erg) { if (status) status.textContent = ''; return; }
-  if (!erg.bild.startsWith('data:') && !(daten.eigeneFotos || []).includes(erg.bild)) {
-    daten.eigeneFotos = [erg.bild, ...(daten.eigeneFotos || [])];
-  }
-  if (weiteres) {
-    weiteresFotoDazu(erg.bild);
-    return;
-  }
-  // Neues Foto gleich auswählen; nur die Foto-Bereiche neu zeichnen
-  f.bild = erg.bild;
-  fotoBereicheZeichnen();
-  meldung('Foto hochgeladen und ausgewählt – jetzt noch „Speichern" tippen.');
-}
-
-function ansichtProdukt() {
-  const f = zustand.produktForm;
-  if (!f) { location.hash = '#sortiment'; return; }
-  const arten = f.art === 'paket' ? ARTEN : { gewicht: ARTEN.gewicht, stueck: ARTEN.stueck };
-  const artGesperrt = f.id && f.verwendet;
-  inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>${f.id ? 'Produkt bearbeiten' : 'Neues Produkt'}</h1>
-      ${!f.id && f.kopieVon ? `<p class="vw-klein">Kopie von „${esc(f.kopieVon)}" – alle Angaben sind übernommen. Bitte den Namen anpassen und Foto, Pflichtangaben und Allergene prüfen.</p>` : ''}</div>
-    <form class="vw-karte" id="vw-produkt-formular" novalidate>
-      <label class="vw-feld"><span>Name (so sehen ihn die Kunden)</span>
-        <input name="name" value="${esc(f.name)}" placeholder="z. B. Freilandeier 10 Stück" required /></label>
-      <label class="vw-feld"><span>Bereich <a class="vw-klein" href="#bereiche">(Bereiche bearbeiten)</a></span><select name="bereichId">${daten.bereiche.map((b) =>
-        `<option value="${esc(b.id)}" ${f.bereichId === b.id ? 'selected' : ''}>${esc(b.name)}</option>`).join('')}</select></label>
-      <fieldset class="vw-feldgruppe"><legend>Wie wird verkauft?</legend>
-        <div class="vw-auswahl">${Object.entries(arten).map(([wert, text]) => `<label>
-          <input type="radio" name="art" value="${wert}" ${f.art === wert ? 'checked' : ''} ${artGesperrt && f.art !== wert && (wert === 'gewicht' || f.art === 'gewicht') ? 'disabled' : ''} /> ${text}</label>`).join('')}</div>
-        ${artGesperrt ? '<p class="vw-klein">Schon verkauft – zwischen „nach Gewicht" und „Fixpreis" lässt sich nicht mehr wechseln.</p>' : ''}
-      </fieldset>
-      <div id="vw-richtgewicht" ${f.art === 'gewicht' ? '' : 'hidden'}>
-        <p class="vw-klein">Gewicht pro Stück (ungefähr) – damit wird vor dem Wiegen ein „ca."-Preis gezeigt.</p>
-        <div class="vw-zwei-felder">
-          <label class="vw-feld"><span>von kg</span><input name="von" inputmode="decimal" value="${esc(f.von)}" placeholder="1,8" /></label>
-          <label class="vw-feld"><span>bis kg</span><input name="bis" inputmode="decimal" value="${esc(f.bis)}" placeholder="2,4" /></label>
-        </div>
-      </div>
-      <fieldset class="vw-feldgruppe"><legend>Wie wird es angeboten?</legend>
-        <div class="vw-auswahl">
-          <label><input type="radio" name="verkaufsart" value="runde" ${f.verkaufsart !== 'dauer' ? 'checked' : ''} />
-            In Bestellrunden (Preis und Menge je Runde, z. B. Fleisch)</label>
-          <label><input type="radio" name="verkaufsart" value="dauer" ${f.verkaufsart === 'dauer' ? 'checked' : ''} />
-            Dauerartikel – immer erhältlich (z. B. Nudeln, Seife)</label>
-        </div>
-      </fieldset>
-      <label class="vw-feld" id="vw-startpreis" ${f.verkaufsart === 'dauer' ? 'hidden' : ''}><span>Preisvorschlag in € <span class="vw-klein">(für die erste Bestellrunde; bei Gewicht pro kg)</span></span>
-        <input name="preis" inputmode="decimal" value="${esc(f.preis)}" placeholder="z. B. 4,50" /></label>
-      <div id="vw-dauer" ${f.verkaufsart === 'dauer' ? '' : 'hidden'}>
-        <label class="vw-feld"><span>Preis in € <span class="vw-klein">(fest, gilt ab sofort für neue Bestellungen)</span></span>
-          <input name="dauerpreis" inputmode="decimal" value="${esc(f.dauerpreis)}" placeholder="z. B. 4,00" /></label>
-        <label class="vw-haken vw-haken--gross"><input type="checkbox" name="verfuegbar" ${f.verfuegbar ? 'checked' : ''} />
-          Verfügbar <span class="vw-klein">(Häkchen weg = ausverkauft)</span></label>
-        <label class="vw-haken"><input type="checkbox" name="imPortal" ${f.imPortal ? 'checked' : ''} />
-          Auch im Bertha-Portal anbieten (für Eierkunden)</label>
-      </div>
-      <fieldset class="vw-feldgruppe"><legend>Steuer und SVS</legend>
-        <label class="vw-feld"><span>Einstufung</span><select name="herkunft">
-          <option value="">noch nicht eingestuft</option>
-          ${Object.entries(HERKUNFT).map(([wert, text]) => `<option value="${wert}" ${f.herkunft === wert ? 'selected' : ''}>${text}</option>`).join('')}</select></label>
-        <label class="vw-feld"><span>USt-Satz</span><select name="ustSatz">
-          <option value="">noch nicht festgelegt</option>
-          ${ustSaetze().map((satz) => `<option value="${satz}" ${f.ustSatz === satz ? 'selected' : ''}>${satzText(satz)}</option>`).join('')}</select></label>
-        <p class="vw-klein">Gilt für neue Bestellungen; bestehende behalten ihren Satz. Wird auch an Bertha weitergegeben.</p>
-      </fieldset>
-      <label class="vw-feld"><span>Beschreibung (optional)</span><textarea name="beschreibung" rows="2">${esc(f.beschreibung)}</textarea></label>
-      <div id="vw-weitere-fotos">${weitereFotosAuswahl(f)}</div>
-      <label class="vw-feld"><span>Zutaten, Füllmenge, Herkunft (bei Lebensmitteln Pflicht)</span><textarea name="pflichtangaben" rows="2">${esc(f.pflichtangaben)}</textarea></label>
-      <label class="vw-feld"><span>Allergene (z. B. „Ei, Weizen (Gluten)" – leer, wenn keine)</span><input name="allergene" value="${esc(f.allergene)}" /></label>
-      <div id="vw-foto-auswahl">${fotoAuswahl(f)}</div>
-      <div class="vw-knopfreihe">
-        <button type="submit" class="vw-knopf vw-knopf--voll">${f.id ? 'Speichern' : 'Produkt anlegen'}</button>
-        <a class="vw-knopf" href="#sortiment">Abbrechen</a>
-      </div>
-    </form>`;
-}
-
-function produktEingabe(f, aenderung = {}) {
-  return {
-    name: f.name.trim(), art: f.art, bereichId: f.bereichId, startpreisCent: f.preis === '' ? null : centAusText(f.preis),
-    verkaufsart: f.verkaufsart || 'runde', dauerpreisCent: f.dauerpreis === '' || f.dauerpreis == null ? null : centAusText(f.dauerpreis),
-    verfuegbar: f.verfuegbar !== false, imPortal: f.imPortal !== false,
-    richtVonG: f.art === 'gewicht' ? grammAusText(f.von) : null, richtBisG: f.art === 'gewicht' ? grammAusText(f.bis) : null,
-    beschreibung: f.beschreibung, pflichtangaben: f.pflichtangaben, allergene: f.allergene, bild: f.bild || '',
-    weitereBilder: [...(f.weitereBilder || [])],
-    aktiv: f.aktiv !== false, herkunft: f.herkunft || null, ustSatz: f.ustSatz ?? null,
-    ...aenderung,
-  };
-}
-
-async function produktSpeichern(form) {
-  const f = zustand.produktForm;
-  ['name', 'bereichId', 'preis', 'von', 'bis', 'beschreibung', 'pflichtangaben', 'allergene', 'dauerpreis'].forEach((n) => { f[n] = feld(form, n).value; });
-  const art = form.querySelector('input[name="art"]:checked');
-  f.art = art ? art.value : f.art;
-  const verkaufsart = form.querySelector('input[name="verkaufsart"]:checked');
-  f.verkaufsart = verkaufsart ? verkaufsart.value : f.verkaufsart;
-  f.verfuegbar = feld(form, 'verfuegbar').checked;
-  f.imPortal = feld(form, 'imPortal').checked;
-  f.herkunft = feld(form, 'herkunft').value || null;
-  f.ustSatz = feld(form, 'ustSatz').value === '' ? null : Number(feld(form, 'ustSatz').value);
-  const bild = form.querySelector('input[name="bild"]:checked');
-  if (bild) f.bild = bild.value;
-  const eingabe = produktEingabe(f);
-  if (!eingabe.name) return meldung('Bitte einen Namen eintragen.');
-  if (f.preis !== '' && eingabe.startpreisCent == null) return meldung('Bitte den Preis als Zahl eintragen, z. B. 4,50.');
-  if (f.verkaufsart === 'dauer') {
-    if (f.art === 'gewicht') return meldung('Ware nach Gewicht kann kein Dauerartikel sein – bitte „Fixpreis" wählen.');
-    if (eingabe.dauerpreisCent == null) return meldung('Bitte den Preis des Dauerartikels als Zahl eintragen, z. B. 4,00.');
-  }
-  if (f.art === 'gewicht' && (!eingabe.richtVonG || !eingabe.richtBisG || eingabe.richtBisG < eingabe.richtVonG)) {
-    return meldung('Bitte das ungefähre Gewicht pro Stück eintragen (von – bis).');
-  }
-  if (daten.produkte.some((p) => p.id !== f.id && p.name.toLowerCase() === eingabe.name.toLowerCase())) {
-    return meldung('Ein Produkt mit diesem Namen gibt es schon.');
-  }
-  const erg = await speichern(f.id ? `produkt/${f.id}` : 'produkt', eingabe, () => {
-    const werte = { ...eingabe };
-    if (f.id) Object.assign(produktVon(f.id), werte);
-    else daten.produkte.push({ id: `p${Date.now()}`, verwendet: false, ...werte });
-    dauersortimentBeispiel();
-    return {};
-  }, { neuZeichnen: false });
-  if (!erg) return;
-  zustand.produktForm = null;
-  location.hash = '#sortiment';
-  zeigen();
-  meldung(`„${eingabe.name}" gespeichert.`);
-}
-
-function produktAktivUmschalten(p) {
-  const f = produktFormWerte(p);
-  const aktiv = p.aktiv === false;
-  speichern(`produkt/${p.id}`, produktEingabe(f, { aktiv }), () => { p.aktiv = aktiv; return {}; },
-    { erfolg: aktiv ? `„${p.name}" wird wieder angeboten.` : `„${p.name}" ist ausgeblendet.` });
-}
-
-// Dauerartikel: „verfügbar / ausverkauft" direkt in der Liste umschalten
-function produktVerfuegbarUmschalten(p) {
-  const verfuegbar = p.verfuegbar === false;
-  speichern(`produkt/${p.id}/verfuegbar`, { verfuegbar }, () => { p.verfuegbar = verfuegbar; return {}; },
-    { erfolg: verfuegbar ? `„${p.name}" ist wieder verfügbar.` : `„${p.name}" ist als ausverkauft markiert.` });
-}
-
-// Beispielmodus: ständige Runde wie dauersortimentAbgleichen() auf dem Server
-function dauersortimentBeispiel() {
-  const dauer = daten.produkte.filter((p) => p.verkaufsart === 'dauer' && p.dauerpreisCent != null);
-  let ch = daten.chargen.find(istDauer);
-  if (!ch && !dauer.length) return;
-  if (!ch) {
-    ch = { id: 'c-dauer', titel: 'Dauersortiment', status: 'offen', bestellschluss: '9999-12-31', art: 'dauer', imPortal: true, termine: [], artikel: [] };
-    daten.chargen.push(ch);
-  }
-  dauer.forEach((p) => {
-    const a = ch.artikel.find((x) => x.produktId === p.id);
-    if (a) a.preisCent = p.dauerpreisCent;
-    else ch.artikel.push({ id: `a-${p.id}`, produktId: p.id, name: p.name, art: p.art, preisCent: p.dauerpreisCent, kontingent: 0 });
-  });
-}
-
-// 5.9a Bereiche des Sortiments – anlegen, umbenennen, ordnen, leere löschen
-function ansichtBereiche() {
-  const liste = daten.bereiche || [];
-  inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Bereiche</h1>
-      <p class="vw-klein">So wird das Sortiment gegliedert – hier in der Verwaltung und auf der Hofladen-Seite, in dieser
-        Reihenfolge. Löschen lässt sich nur ein leerer Bereich; Produkte ordnet ihr unter „Sortiment → Bearbeiten" um.</p>
-      <a class="vw-knopf" href="#sortiment">Zurück zum Sortiment</a></div>
-    <section class="vw-karte" aria-label="Bereiche">
-      ${liste.map((b, i) => {
-        const anzahl = produkteImBereich(b.id);
-        return `<form class="vw-bereich-zeile" data-bereich="${esc(b.id)}" novalidate>
-          <label class="vw-feld"><span class="vw-klein">${anzahl === 1 ? '1 Produkt' : `${anzahl} Produkte`}</span>
-            <input name="name" value="${esc(b.name)}" maxlength="60" aria-label="Name des Bereichs" required /></label>
-          <div class="vw-knopfreihe vw-knopfreihe--klein">
-            <button type="submit" class="vw-knopf vw-knopf--klein">Umbenennen</button>
-            <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="bereich-schieben" data-id="${esc(b.id)}" data-wert="-1"
-              aria-label="${esc(b.name)} nach oben" ${i === 0 ? 'disabled' : ''}>↑</button>
-            <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="bereich-schieben" data-id="${esc(b.id)}" data-wert="1"
-              aria-label="${esc(b.name)} nach unten" ${i === liste.length - 1 ? 'disabled' : ''}>↓</button>
-            <button type="button" class="vw-knopf vw-knopf--klein vw-knopf--warnung" data-aktion="bereich-loeschen" data-id="${esc(b.id)}"
-              ${anzahl || liste.length === 1 ? 'disabled' : ''}>Löschen</button>
-          </div>
-        </form>`;
-      }).join('')}
-    </section>
-    <form class="vw-karte" id="vw-bereich-neu" novalidate><h2>Neuer Bereich</h2>
-      <label class="vw-feld"><span>Name (so sehen ihn die Kunden)</span>
-        <input name="name" maxlength="60" placeholder="z. B. Eier und Marmelade" required /></label>
-      <button type="submit" class="vw-knopf vw-knopf--voll">Bereich anlegen</button>
-    </form>
-    ${nutzerZeile()}`;
-}
-
-function bereichAnlegen(form) {
-  const name = feld(form, 'name').value.trim();
-  if (!name) return meldung('Bitte einen Namen eintragen.');
-  if (daten.bereiche.some((b) => b.name.toLowerCase() === name.toLowerCase())) return meldung('Einen Bereich mit diesem Namen gibt es schon.');
-  speichern('bereich', { name }, () => {
-    daten.bereiche.push({ id: `b${Date.now()}`, name });
-    return {};
-  }, { erfolg: `Bereich „${name}" angelegt – jetzt im Sortiment Produkte zuordnen.` });
-}
-
-function bereichUmbenennen(form) {
-  const b = daten.bereiche.find((x) => x.id === form.dataset.bereich);
-  const name = feld(form, 'name').value.trim();
-  if (!b) return;
-  if (!name) return meldung('Bitte einen Namen eintragen.');
-  if (name === b.name) return meldung('Der Name ist unverändert.');
-  if (daten.bereiche.some((x) => x !== b && x.name.toLowerCase() === name.toLowerCase())) return meldung('Einen Bereich mit diesem Namen gibt es schon.');
-  speichern(`bereich/${b.id}`, { name }, () => { b.name = name; return {}; }, { erfolg: `Umbenannt in „${name}".` });
-}
-
-function bereichSchieben(id, richtung) {
-  const ids = daten.bereiche.map((b) => b.id);
-  const i = ids.indexOf(id);
-  const j = i + richtung;
-  if (i < 0 || j < 0 || j >= ids.length) return;
-  [ids[i], ids[j]] = [ids[j], ids[i]];
-  speichern('bereiche/reihenfolge', { ids }, () => {
-    daten.bereiche = ids.map((x) => daten.bereiche.find((b) => b.id === x));
-    return {};
-  });
-}
-
-function bereichLoeschen(id) {
-  const b = daten.bereiche.find((x) => x.id === id);
-  if (!b || !window.confirm(`Bereich „${b.name}" löschen?`)) return;
-  speichern(`bereich/${id}/loeschen`, {}, () => {
-    daten.bereiche = daten.bereiche.filter((x) => x.id !== id);
-    return {};
-  }, { erfolg: `Bereich „${b.name}" gelöscht.` });
-}
-
-// Ohne Bestellrunde: freundlicher Hinweis statt leerer Ansichten
-// 5.10 Verbindung zu Bertha (Plan: docs/SCHNITTSTELLE-BERTHA.md, Abschnitt 6.1)
-// Bertha holt den Katalog etwa alle 15 Minuten. Ampel: grün, wenn der
-// letzte erfolgreiche Abruf höchstens eine Stunde her ist.
-const BERTHA_RECHTE = {
-  katalog: 'Dauerartikel lesen (Nudeln, Seife …)',
-  angebot: 'Fleischrunden lesen',
-  bestellen: 'Fleisch bestellen',
-};
-const BERTHA_FEHLER = {
-  nicht_angemeldet: 'Schlüssel falsch oder gesperrt',
-  keine_berechtigung: 'Recht fehlt',
-  pausiert: 'Schnittstelle war pausiert',
-  nicht_gefunden: 'unbekannter Aufruf',
-  methode: 'unbekannter Aufruf',
-  ungueltig: 'fehlerhafte Anfrage',
-  zu_viele: 'zu viele Anfragen',
-  intern: 'Fehler auf der Website',
-};
-let neuerSchluessel = null; // nur bis zum Verlassen der Ansicht sichtbar
-
-// D1-Zeit (UTC, „2026-10-13 08:15:00") → Minuten bis jetzt
-function minutenHer(sqlZeit) {
-  return Math.max(0, Math.round((Date.now() - new Date(`${String(sqlZeit).replace(' ', 'T')}Z`)) / 60000));
-}
-function herText(sqlZeit) {
-  const min = minutenHer(sqlZeit);
-  if (min < 1) return 'gerade eben';
-  if (min < 60) return `vor ${min} Minute${min === 1 ? '' : 'n'}`;
-  const std = Math.round(min / 60);
-  if (min < 48 * 60) return `vor ${std} Stunde${std === 1 ? '' : 'n'}`;
-  return `am ${zeitpunktKurz(sqlZeit)}`;
-}
-
-// Kunden übernehmen – z. B. einmalig die Kundenliste aus Bertha (dort:
-// Einstellungen → Hofladen → „Kundenliste exportieren"). Jede CSV mit den
-// Spalten Name, Telefon, E-Mail, Straße, PLZ, Ort (Notiz optional) geht.
-// Erst Vorschau, dann übernehmen; bekannte Kunden werden nur ergänzt.
-const IMPORT_SPALTEN = {
-  name: ['name'], telefon: ['telefon', 'tel', 'phone'], email: ['e-mail', 'email', 'mail'],
-  strasse: ['straße', 'strasse', 'adresse'], plz: ['plz'], ort: ['ort'], notiz: ['notiz', 'anmerkung'],
-};
-
-function csvLesen(text) {
-  const inhalt = text.replace(/^\ufeff/, '');
-  const trenner = (inhalt.split(/\r?\n/)[0].match(/;/g) || []).length >= (inhalt.split(/\r?\n/)[0].match(/,/g) || []).length ? ';' : ',';
-  const zeilen = [];
-  let zeile = [];
-  let feld = '';
-  let inAnf = false;
-  for (let i = 0; i < inhalt.length; i++) {
-    const c = inhalt[i];
-    if (inAnf) {
-      if (c === '"' && inhalt[i + 1] === '"') { feld += '"'; i++; } else if (c === '"') inAnf = false; else feld += c;
-    } else if (c === '"') inAnf = true;
-    else if (c === trenner) { zeile.push(feld); feld = ''; }
-    else if (c === '\n' || c === '\r') {
-      if (c === '\r' && inhalt[i + 1] === '\n') i++;
-      zeile.push(feld); feld = '';
-      if (zeile.some((x) => x.trim())) zeilen.push(zeile);
-      zeile = [];
-    } else feld += c;
-  }
-  zeile.push(feld);
-  if (zeile.some((x) => x.trim())) zeilen.push(zeile);
-  // Excel-Schutz aus dem Export ('+43 …) wieder entfernen
-  return zeilen.map((z) => z.map((x) => x.trim().replace(/^'(?=[=+\-@])/, '')));
-}
-
-function kundenAusCsv(text) {
-  const [kopf, ...rest] = csvLesen(text);
-  if (!kopf) return { fehler: 'Die Datei ist leer.' };
-  const spalte = {};
-  kopf.forEach((titel, i) => {
-    const t = titel.toLowerCase();
-    Object.entries(IMPORT_SPALTEN).forEach(([feld, namen]) => { if (spalte[feld] == null && namen.includes(t)) spalte[feld] = i; });
-  });
-  if (spalte.name == null) return { fehler: 'Keine Spalte „Name" gefunden – bitte die CSV aus Bertha verwenden.' };
-  const kunden = rest.map((z) => Object.fromEntries(Object.entries(spalte).map(([feld, i]) => [feld, z[i] || ''])))
-    .filter((k) => k.name);
-  const bekannt = (k) => daten.kunden.some((x) => (k.email && x.email && x.email.toLowerCase() === k.email.toLowerCase())
-    || x.name.trim().toLowerCase() === k.name.trim().toLowerCase());
-  return { kunden, bekannt: kunden.filter(bekannt).length };
-}
-
-function kundenImportKarte() {
-  const imp = zustand.kundenImport;
-  if (!imp) {
-    return `<section class="vw-karte" aria-label="Kunden übernehmen"><h2>Kunden übernehmen</h2>
-      <p class="vw-klein">Einmalig die Kundenliste aus Bertha holen: in der Bertha-App unter Einstellungen → Hofladen
-        „Kundenliste exportieren", die Datei hier auswählen. Ihr seht zuerst eine Vorschau. Schon bekannte Kunden
-        (gleiche E-Mail oder gleicher Name) werden nur ergänzt, nie überschrieben.</p>
-      <label class="vw-knopf"><input type="file" accept=".csv,text/csv" data-kunden-import hidden /> CSV-Datei wählen …</label>
-    </section>`;
-  }
-  if (imp.fehler) {
-    return `<section class="vw-karte"><h2>Kunden übernehmen</h2><p class="vw-warnung">${esc(imp.fehler)}</p>
-      <button type="button" class="vw-knopf" data-aktion="kunden-import-verwerfen">Andere Datei wählen</button></section>`;
-  }
-  const n = imp.kunden.length;
-  return `<section class="vw-karte" aria-label="Kunden übernehmen"><h2>Kunden übernehmen – Vorschau</h2>
-    <p><strong>${n} Kunden</strong> in der Datei: ${n - imp.bekannt} neu, ${imp.bekannt} schon bekannt (werden nur ergänzt).</p>
-    <table class="vw-tabelle"><tbody>${imp.kunden.slice(0, 8).map((k) => `<tr><td>${esc(k.name)}<br>
-      <span class="vw-klein">${esc([k.telefon, k.email, [k.strasse, `${k.plz || ''} ${k.ort || ''}`.trim()].filter(Boolean).join(', ')].filter(Boolean).join(' · '))}</span></td></tr>`).join('')}
-      ${n > 8 ? `<tr><td class="vw-klein">… und ${n - 8} weitere</td></tr>` : ''}</tbody></table>
-    <label class="vw-haken"><input type="checkbox" id="vw-import-stamm" /> Alle als Stammkunden markieren</label>
-    <p class="vw-klein">Stammkunden bekommen den Vorlauf bei Bestellrunden (Stammkunden-Link).</p>
-    <div class="vw-knopfreihe">
-      <button type="button" class="vw-knopf vw-knopf--voll" data-aktion="kunden-import">${n} Kunden übernehmen</button>
-      <button type="button" class="vw-knopf" data-aktion="kunden-import-verwerfen">Abbrechen</button>
-    </div></section>`;
-}
-
-function kundenImportDatei(input) {
-  const datei = input.files && input.files[0];
-  if (!datei) return;
-  const leser = new FileReader();
-  leser.onload = () => { zustand.kundenImport = kundenAusCsv(String(leser.result || '')); zeigen(); };
-  leser.onerror = () => meldung('Die Datei konnte nicht gelesen werden.');
-  leser.readAsText(datei, 'utf-8');
-}
-
-async function kundenImportieren() {
-  const imp = zustand.kundenImport;
-  if (!imp || !imp.kunden) return;
-  const stamm = Boolean((document.getElementById('vw-import-stamm') || {}).checked);
-  const erg = await speichern('kunden-import', { kunden: imp.kunden, stammkunde: stamm }, () => {
-    let neu = 0;
-    imp.kunden.forEach((k) => {
-      if (daten.kunden.some((x) => x.name.toLowerCase() === k.name.toLowerCase())) return;
-      neu++;
-      daten.kunden.push({ id: `k${Date.now()}${neu}`, name: k.name, telefon: k.telefon || '', email: k.email || '',
-        strasse: k.strasse || '', plz: k.plz || '', ort: k.ort || '', stammkunde: stamm, notiz: k.notiz || '' });
-    });
-    return { neu, ergaenzt: imp.kunden.length - neu, uebersprungen: 0 };
-  }, { neuZeichnen: false });
-  if (!erg) return;
-  zustand.kundenImport = null;
-  zeigen();
-  meldung(`Kunden übernommen – neu: ${erg.neu}, ergänzt: ${erg.ergaenzt}${erg.uebersprungen ? `, übersprungen: ${erg.uebersprungen}` : ''}.`);
-}
-
-function ansichtBertha() {
-  const s = daten.schnittstelle;
-  if (!s) {
-    inhalt().innerHTML = `<div class="vw-kopf"><h1>Verbindung zu Bertha</h1></div>
-      <section class="vw-karte"><p>Die Schnittstelle ist noch nicht eingerichtet: Die Tabellen fehlen in der Datenbank.
-        Bitte den Block „Schnittstelle" aus docs/SCHNITTSTELLE-BERTHA.md einmal in der D1-Konsole ausführen.</p></section>`;
-    return;
-  }
-  const aktiv = s.zugaenge.filter((z) => !z.gesperrt);
-  let ampel;
-  if (s.pausiert) ampel = ['vw-ampel--rot', 'Schnittstelle pausiert – Bertha bekommt gerade keine Daten.'];
-  else if (!aktiv.length) ampel = ['vw-ampel--grau', 'Noch nicht verbunden – zuerst einen Schlüssel anlegen.'];
-  else if (!s.letzterErfolg) ampel = ['vw-ampel--grau', 'Schlüssel angelegt, Bertha hat aber noch nie abgerufen.'];
-  else if (minutenHer(s.letzterErfolg.zeitpunkt) <= 60) {
-    ampel = ['vw-ampel--gruen', `${esc(s.letzterErfolg.zugang || 'Bertha')} hat zuletzt ${herText(s.letzterErfolg.zeitpunkt)} abgerufen – alles in Ordnung.`];
-  } else ampel = ['vw-ampel--gelb', `Letzter Abruf ${herText(s.letzterErfolg.zeitpunkt)} – Bertha meldet sich gerade nicht.`];
-
-  inhalt().innerHTML = `
-    <div class="vw-kopf"><h1>Verbindung zu Bertha</h1>
-      <p class="vw-klein">Über diese Verbindung zeigt das Bertha-Kundenportal euren Eierkunden die Dauerartikel und – wenn
-        freigeschaltet – die Fleischrunden mit „Auch im Bertha-Portal". Gepflegt wird alles hier; Fleischbestellungen aus dem
-        Portal landen ganz normal in der Bestellliste, mit dem Zeichen „über Bertha".</p></div>
-    <section class="vw-karte vw-ampel ${ampel[0]}" aria-label="Zustand"><p><strong>${ampel[1]}</strong></p>
-      <p class="vw-klein">Letzte 24 Stunden: ${s.letzte24h.aufrufe} Abrufe${s.letzte24h.fehler ? `, davon ${s.letzte24h.fehler} mit Fehler` : ''}.</p>
-      ${s.fehler.length ? `<h2>Letzte Fehler (7 Tage)</h2><ul class="vw-bertha-fehler">${s.fehler.map((f) =>
-        `<li>${esc(zeitpunktKurz(f.zeitpunkt))} · ${esc(BERTHA_FEHLER[f.code] || `Fehler ${f.status}`)}${f.zugang ? ` · ${esc(f.zugang)}` : ''}
-          <span class="vw-klein">(${esc(f.aufruf)})</span></li>`).join('')}</ul>` : ''}
-    </section>
-    ${neuerSchluessel ? `<section class="vw-karte vw-schluessel" aria-label="Neuer Schlüssel">
-      <h2>Neuer Schlüssel für „${esc(neuerSchluessel.name)}"</h2>
-      <p><strong>Jetzt kopieren und in Bertha unter „Hofladen verbinden" einfügen.</strong>
-        Er wird nur dieses eine Mal angezeigt und nirgends gespeichert.</p>
-      <code class="vw-schluessel-text" id="vw-schluessel-text">${esc(neuerSchluessel.schluessel)}</code>
-      <div class="vw-knopfreihe">
-        <button type="button" class="vw-knopf vw-knopf--voll" data-aktion="schluessel-kopieren">Kopieren</button>
-        <button type="button" class="vw-knopf" data-aktion="schluessel-fertig">Fertig – ist eingetragen</button>
-      </div>
-      <p class="vw-klein">Nie per E-Mail oder WhatsApp verschicken. Den alten Schlüssel erst sperren, wenn „Verbindung testen" in Bertha mit dem neuen klappt.</p>
-    </section>` : ''}
-    <section class="vw-karte" aria-label="Schlüssel"><h2>Schlüssel</h2>
-      ${s.zugaenge.length ? s.zugaenge.map((z) => `<div class="vw-produkt-zeile${z.gesperrt ? ' vw-zeile--grau' : ''}">
-        <div><strong>${esc(z.name)}</strong>${z.gesperrt ? ' <span class="vw-marke">gesperrt</span>' : ''}<br>
-          <span class="vw-klein">${z.rechte.map((r) => esc(BERTHA_RECHTE[r] || r)).join(' · ')}<br>
-          angelegt ${esc(zeitpunktKurz(z.erstellt))} · ${z.zuletztGenutzt ? `zuletzt genutzt ${esc(herText(z.zuletztGenutzt))}` : 'noch nie genutzt'}</span></div>
-        ${z.gesperrt ? '' : `<div class="vw-knopfreihe vw-knopfreihe--klein">
-          <button type="button" class="vw-knopf vw-knopf--klein vw-knopf--warnung" data-aktion="zugang-sperren" data-id="${z.id}">Sperren</button></div>`}
-      </div>`).join('') : '<p class="vw-klein">Noch kein Schlüssel angelegt.</p>'}
-      <form id="vw-zugang-formular" class="vw-zugang-formular" novalidate>
-        <h3>Neuen Schlüssel anlegen</h3>
-        <label class="vw-feld"><span>Name</span><input name="name" value="Bertha" placeholder="z. B. Bertha oder Bertha Test" /></label>
-        <fieldset class="vw-feldgruppe"><legend>Was darf Bertha?</legend>
-          ${Object.entries(BERTHA_RECHTE).map(([wert, textRecht]) => `<label class="vw-haken">
-            <input type="checkbox" name="rechte" value="${wert}" ${wert === 'katalog' ? 'checked' : ''} /> ${esc(textRecht)}</label>`).join('')}
-          <p class="vw-klein">„Fleisch bestellen" erst freischalten, wenn der Hinweis im Bertha-Portal steht und die Bestellbedingungen geprüft sind.</p>
-        </fieldset>
-        <button type="submit" class="vw-knopf vw-knopf--voll">Schlüssel anlegen</button>
-      </form>
-    </section>
-    ${kundenImportKarte()}
-    <section class="vw-karte" aria-label="Not-Aus"><h2>Schnittstelle ${s.pausiert ? 'pausiert' : 'aktiv'}</h2>
-      <p class="vw-klein">Pausieren stoppt sofort alle Abrufe von Bertha. Die Website und eure Bestellungen laufen normal weiter.</p>
-      <button type="button" class="vw-knopf ${s.pausiert ? 'vw-knopf--voll' : 'vw-knopf--warnung'}" data-aktion="schnittstelle-pausieren"
-        data-wert="${s.pausiert ? '0' : '1'}">${s.pausiert ? 'Wieder einschalten' : 'Schnittstelle pausieren'}</button>
-    </section>`;
-}
-
-async function zugangAnlegenFormular(form) {
-  const name = feld(form, 'name').value.trim();
-  const rechte = [...form.querySelectorAll('input[name="rechte"]:checked')].map((x) => x.value);
-  if (!name) return meldung('Bitte einen Namen eintragen.');
-  if (!rechte.length) return meldung('Bitte mindestens ein Recht auswählen.');
-  const erg = await speichern('schnittstelle/zugang', { name, rechte }, () => {
-    daten.schnittstelle.zugaenge.unshift({ id: `z${Date.now()}`, name, rechte,
-      erstellt: new Date().toISOString().slice(0, 19).replace('T', ' '), zuletztGenutzt: null, gesperrt: null });
-    return { schluessel: 'kh_test_BEISPIEL-nur-im-Beispielmodus-nicht-gueltig' };
-  }, { neuZeichnen: false });
-  if (!erg) return;
-  neuerSchluessel = { name, schluessel: erg.schluessel };
-  zeigen();
-}
-
-async function schluesselKopieren() {
-  if (!neuerSchluessel) return;
-  try {
-    await navigator.clipboard.writeText(neuerSchluessel.schluessel);
-    meldung('Schlüssel kopiert.');
-  } catch {
-    // Ohne Zugriff auf die Zwischenablage: Text markieren, dann selbst kopieren
-    const el = document.getElementById('vw-schluessel-text');
-    if (el) window.getSelection().selectAllChildren(el);
-    meldung('Bitte den markierten Schlüssel selbst kopieren.');
-  }
-}
-
-function zugangSperren(id) {
-  const z = daten.schnittstelle.zugaenge.find((x) => x.id === id);
-  if (!z || !window.confirm(`Schlüssel „${z.name}" sperren? Bertha kann damit sofort nicht mehr abrufen.`)) return;
-  speichern(`schnittstelle/zugang/${id}/sperren`, {}, () => { z.gesperrt = new Date().toISOString(); return {}; },
-    { erfolg: `„${z.name}" ist gesperrt.` });
-}
-
-function schnittstellePausieren(pausiert) {
-  speichern('schnittstelle/pausieren', { pausiert }, () => { daten.schnittstelle.pausiert = pausiert; return {}; },
-    { erfolg: pausiert ? 'Schnittstelle pausiert.' : 'Schnittstelle wieder eingeschaltet.' });
-}
 
 function ansichtLeer() {
   inhalt().innerHTML = `
@@ -2983,22 +78,55 @@ function detailOeffnen(id) {
       <td class="vw-zahl">${betragText(betrag)}</td></tr>`;
   }).join('');
 
-  let aktionen = '';
+  // Oben steht die eine nächste Aktion; Seltenes (Preis, Menge, Zahlungswunsch,
+  // Rückgängig, Stornieren, Lieferschein) liegt eingeklappt unter „Mehr".
+  const gross = 'vw-knopf vw-knopf--voll vw-knopf--breit vw-knopf--gross';
+  const bezahltKnopf = (art, klasse) => `<button type="button" class="${klasse}" data-aktion="bezahlt" data-wert="${art}" data-id="${b.id}">${art === 'bar' ? 'Bar erhalten' : 'Geld am Konto'}</button>`;
+  const andereArt = b.zahlart === 'bar' ? 'ueberweisung' : 'bar';
+  let haupt = '';
+  let mehr = [];
   if (b.status === 'vorgemerkt') {
-    aktionen = `
-      <button type="button" class="vw-knopf${b.uebergeben ? '' : ' vw-knopf--voll'}" data-aktion="uebergeben" data-id="${b.id}">${b.uebergeben ? 'Übergeben ✓ (rückgängig)' : 'Übergeben'}</button>
-      ${b.bezahlt
-        ? `<button type="button" class="vw-knopf" data-aktion="bezahlt" data-wert="" data-id="${b.id}">Bezahlt (${ZAHLARTEN[b.bezahlt]}) – rückgängig</button>`
-        : `<button type="button" class="vw-knopf" data-aktion="bezahlt" data-wert="bar" data-id="${b.id}">Bar erhalten</button>
-           <button type="button" class="vw-knopf" data-aktion="bezahlt" data-wert="ueberweisung" data-id="${b.id}">Geld am Konto</button>`}
-      <button type="button" class="vw-knopf vw-knopf--warnung" data-aktion="stornieren" data-id="${b.id}">Stornieren</button>`;
+    if (!b.uebergeben && (t || istDauer(ch) || istHofverkauf(b))) {
+      haupt = `<button type="button" class="${gross}" data-aktion="abgabe" data-id="${b.id}">Übergeben …</button>
+        <p class="vw-klein vw-mitte">Gewichte eintippen und kassieren – in einem Schritt.</p>
+        ${b.bezahlt ? '' : `<div class="vw-knopfreihe vw-knopfreihe--gleich">
+          <span class="vw-klein">Vorab bezahlt:</span>${bezahltKnopf('bar', 'vw-knopf vw-knopf--klein')}${bezahltKnopf('ueberweisung', 'vw-knopf vw-knopf--klein')}</div>`}`;
+    } else if (b.uebergeben && !b.bezahlt) {
+      haupt = `${bezahltKnopf(b.zahlart, gross)}
+        <div class="vw-knopfreihe vw-knopfreihe--gleich">${bezahltKnopf(andereArt, 'vw-knopf vw-knopf--klein')}
+          <button type="button" class="vw-knopf vw-knopf--klein" data-aktion="zahlungsinfo" data-id="${b.id}">Zahlungsinfo mit QR-Code</button></div>`;
+    } else if (b.uebergeben) {
+      haupt = '<p class="vw-erledigt-hinweis">Übergeben und bezahlt ✓</p>';
+    }
+    mehr = [
+      b.positionen.map((p) => preisFeld(b, p)).join(''),
+      !b.uebergeben ? mengeAendernBlock(b) : '',
+      `<div class="vw-knopfreihe" role="group" aria-label="Zahlung gewünscht">
+        <span class="vw-klein">Zahlung gewünscht:</span>
+        ${Object.entries(ZAHLARTEN).map(([wert, text]) => `<button type="button" class="vw-chip" data-aktion="zahlart-setzen" data-id="${b.id}" data-wert="${wert}" aria-pressed="${b.zahlart === wert}">${text}</button>`).join('')}
+      </div>`,
+      `<ul class="vw-aufgaben">
+        <li><button type="button" data-aktion="lieferschein" data-id="${b.id}"><span>Lieferschein drucken<br><span class="vw-klein">z. B. für ein Gasthaus, mit jedem Stück und Gewicht</span></span></button></li>
+        <li><button type="button" data-aktion="uebergeben" data-id="${b.id}">${b.uebergeben ? 'Übergabe rückgängig machen' : 'Nur als übergeben markieren (ohne Wiegen und Kassieren)'}</button></li>
+        ${b.bezahlt ? `<li><button type="button" data-aktion="bezahlt" data-wert="" data-id="${b.id}">Zahlung (${ZAHLARTEN[b.bezahlt]}) rückgängig machen</button></li>` : ''}
+        <li><button type="button" class="vw-warnung" data-aktion="stornieren" data-id="${b.id}">Bestellung stornieren</button></li>
+      </ul>`,
+    ];
   } else if (b.status === 'warteliste') {
-    aktionen = `
-      <button type="button" class="vw-knopf vw-knopf--voll" data-aktion="nachruecken" data-id="${b.id}">Nachrücken lassen</button>
-      <button type="button" class="vw-knopf vw-knopf--warnung" data-aktion="stornieren" data-id="${b.id}">Von Warteliste streichen</button>`;
+    haupt = `<button type="button" class="${gross}" data-aktion="nachruecken" data-id="${b.id}">Nachrücken lassen</button>
+      ${mengeAendernBlock(b)}`;
+    mehr = [
+      b.positionen.map((p) => preisFeld(b, p)).join(''),
+      `<ul class="vw-aufgaben"><li><button type="button" class="vw-warnung" data-aktion="stornieren" data-id="${b.id}">Von der Warteliste streichen</button></li></ul>`,
+    ];
   } else {
-    aktionen = `<button type="button" class="vw-knopf" data-aktion="wiederherstellen" data-id="${b.id}">Wiederherstellen</button>`;
+    haupt = `<button type="button" class="${gross}" data-aktion="wiederherstellen" data-id="${b.id}">Wiederherstellen</button>`;
   }
+  const mehrHtml = mehr.filter(Boolean).join('');
+  // „Mehr" bleibt offen, solange man darin arbeitet (nach jedem Speichern wird neu gezeichnet),
+  // und klappt von selbst auf, wenn ein Preis vom letzten Mal zum Übernehmen bereitsteht
+  const mehrOffen = zustand.detailMehr === b.id || mehrHtml.includes('data-aktion="preis-gemerkt"');
+  const kontaktFehlt = t && t.art === 'lieferung' && !k.strasse;
 
   dialog.innerHTML = `<div class="vw-dialog-inhalt">
     <div class="vw-dialog-kopf">
@@ -3008,15 +136,29 @@ function detailOeffnen(id) {
     </div>
     <div class="vw-abschnitt">${marken(b)}
       ${(daten.widerrufe || []).filter((w) => w.bestellungId === b.id).map((w) =>
-        `<p class="vw-warnung">Widerruf am ${zeitpunktKurz(w.eingegangen)} Uhr: ${esc(w.umfang)}</p>`).join('')}</div>
+        `<p class="vw-warnung">Widerruf am ${zeitpunktKurz(w.eingegangen)} Uhr: ${esc(w.umfang)}</p>`).join('')}
+      ${t ? '' : (b.status === 'storniert' || istDauer(ch) || istHofverkauf(b) ? '' : `<p><strong>Termin noch offen</strong> – mit dem Kunden klären und hier wählen:</p>
+        <div class="vw-knopfreihe">${ch.termine.map((x) => `<button type="button" class="vw-knopf" data-aktion="termin-setzen" data-id="${b.id}" data-wert="${x.id}">${terminText(x)}</button>`).join('')}</div>`)}
+    </div>
+    ${haupt ? `<div class="vw-abschnitt vw-detail-haupt">${haupt}</div>` : ''}
     <div class="vw-abschnitt">
-      ${t ? `<p><strong>${terminText(t)}</strong></p>` : `<p><strong>Termin noch offen</strong> – mit dem Kunden klären und hier wählen:</p>
-        <div class="vw-knopfreihe">${ch.termine.map((x) => `<button type="button" class="vw-knopf" data-aktion="termin-setzen" data-id="${b.id}" data-wert="${x.id}">${terminText(x)}</button>`).join('')}</div>`}
+      <table class="vw-tabelle"><tbody>${positionen}</tbody>
+        <tfoot><tr><td>Summe</td><td class="vw-zahl">${betragText(summe)}</td></tr></tfoot></table>
+      ${b.anmerkung ? `<p class="vw-hinweis">„${esc(b.anmerkung)}"</p>` : ''}
+      ${b.interneNotiz ? `<p class="vw-klein">Intern: ${esc(b.interneNotiz)}</p>` : ''}
+    </div>
+    <div class="vw-abschnitt">
+      ${t ? `<p><strong>${terminText(t)}</strong></p>` : ''}
       ${t && t.art === 'lieferung' ? (k.strasse
         ? `<p>${esc(k.strasse)}, ${esc(`${k.plz} ${k.ort}`.trim())}</p>`
         : '<p class="vw-warnung">Lieferadresse fehlt – bitte unter „Kontakt ändern" eintragen.</p>') : ''}
       <p>${k.telefon ? esc(k.telefon) : '<span class="vw-klein">keine Telefonnummer</span>'}${k.email ? `<br><a href="mailto:${esc(k.email)}">${esc(k.email)}</a>` : ''}</p>
-      <details class="vw-kontakt" ${t && t.art === 'lieferung' && !k.strasse ? 'open' : ''}>
+      <div class="vw-kontakt-zeile vw-kontakt-zeile--links">
+        ${k.telefon ? `<a href="tel:${esc(k.telefon.replace(/\s/g, ''))}">Anrufen</a>` : ''}
+        ${k.telefon ? `<a href="${whatsappLink(b, bereitText(b))}" target="_blank" rel="noopener">${t ? 'WhatsApp „ist fertig"' : 'WhatsApp „Bestätigung"'}</a>` : ''}
+        ${t && t.art === 'lieferung' && k.strasse ? `<a href="${navLink(b)}" target="_blank" rel="noopener">Navi</a>` : ''}
+      </div>
+      <details class="vw-kontakt" ${kontaktFehlt ? 'open' : ''}>
         <summary>Kontakt ändern</summary>
         <form id="vw-kontakt-formular" data-id="${b.id}" novalidate>
           <label class="vw-feld"><span>Telefon</span><input name="telefon" type="tel" value="${esc(k.telefon)}" /></label>
@@ -3027,27 +169,9 @@ function detailOeffnen(id) {
           <button type="submit" class="vw-knopf vw-knopf--voll">Kontakt speichern</button>
         </form>
       </details>
-      <div class="vw-knopfreihe">
-        ${k.telefon ? `<a class="vw-knopf" href="tel:${esc(k.telefon.replace(/\s/g, ''))}">Anrufen</a>` : ''}
-        ${k.telefon ? `<a class="vw-knopf" href="${whatsappLink(b, bereitText(b))}" target="_blank" rel="noopener">${t ? 'WhatsApp „ist fertig"' : 'WhatsApp „Bestätigung"'}</a>` : ''}
-        ${t && t.art === 'lieferung' && k.strasse ? `<a class="vw-knopf" href="${navLink(b)}" target="_blank" rel="noopener">Navi</a>` : ''}
-      </div>
     </div>
-    <div class="vw-abschnitt">
-      <table class="vw-tabelle"><tbody>${positionen}</tbody>
-        <tfoot><tr><td>Summe</td><td class="vw-zahl">${betragText(summe)}</td></tr></tfoot></table>
-      ${b.positionen.map((p) => preisFeld(b, p)).join('')}
-      ${(b.status === 'vorgemerkt' && !b.uebergeben) || b.status === 'warteliste' ? mengeAendernBlock(b) : ''}
-      <div class="vw-knopfreihe" role="group" aria-label="Zahlung gewünscht">
-        <span class="vw-klein">Zahlung gewünscht:</span>
-        ${Object.entries(ZAHLARTEN).map(([wert, text]) => `<button type="button" class="vw-chip" data-aktion="zahlart-setzen" data-id="${b.id}" data-wert="${wert}" aria-pressed="${b.zahlart === wert}">${text}</button>`).join('')}
-      </div>
-      ${b.anmerkung ? `<p>„${esc(b.anmerkung)}"</p>` : ''}
-      ${b.interneNotiz ? `<p class="vw-klein">Intern: ${esc(b.interneNotiz)}</p>` : ''}
-    </div>
-    <div class="vw-abschnitt vw-knopfreihe">${aktionen}</div>
-    ${b.status === 'vorgemerkt' ? `<p class="vw-abschnitt"><button type="button" class="vw-link" data-aktion="lieferschein" data-id="${b.id}">Lieferschein drucken</button>
-      <span class="vw-klein">– z. B. für ein Gasthaus, mit jedem Stück und Gewicht</span></p>` : ''}
+    ${mehrHtml ? `<details class="vw-mehr vw-detail-mehr" data-detail-mehr="${b.id}"${mehrOffen ? ' open' : ''}>
+      <summary>Mehr: Preis, Menge, Stornieren, Lieferschein …</summary>${mehrHtml}</details>` : ''}
   </div>`;
   dialog.dataset.id = b.id;
   if (!dialog.open) dialog.showModal();
@@ -3240,11 +364,11 @@ function druckenWennBereit(druck) {
   setTimeout(los, 3000);
 }
 
-// Ein Packzettel bzw. Lieferschein: Kunde, Termin, jede Position mit
-// Gewicht (bei mehreren Stücken auch jedes Stück einzeln) und Summe.
-// zahlung = false (Lieferschein): ohne Zahlart, Bankdaten und QR-Code –
-// die Zahlungsaufforderung gehört auf die Rechnung.
-// unterschrift = true (Lieferschein): Feld „Ware erhalten" für den Kunden
+// Ein Packzettel: Kunde, Termin, jede Position mit Gewicht (bei mehreren
+// Stücken auch jedes Stück einzeln) und Summe.
+// zahlung = false: ohne Zahlart, Bankdaten und QR-Code.
+// unterschrift = true: Feld „Ware erhalten" für den Kunden.
+// Der Lieferschein hat ein eigenes Blatt: lieferscheinHtml().
 function packzettelHtml(b, { titel = '', zahlung = true, unterschrift = false } = {}) {
   const ch = chargeVon(b);
   const k = kundeVon(b);
@@ -3293,11 +417,69 @@ function packzettelDrucken() {
 
 // Lieferschein für eine einzelne Bestellung (z. B. ein Gasthaus mit 15 Gänsen).
 // Ohne Zahlungsangaben – die stehen auf der Rechnung.
+// Lieferschein im Aufbau des Bertha-Lieferscheins (DeliveryNotePdfBuilder in
+// der App), damit ein Kunde von beiden denselben Beleg kennt: links Titel,
+// Nummer, Tag und Stempel, rechts das Logo; darunter Absender, „Lieferung an",
+// Positionen mit Spaltenköpfen, unten eine Unterschriftszeile und die Fußzeile.
+// Anders als in Bertha bleiben Preise, Beträge und Summe drauf (Fleisch nach
+// Gewicht – das Gasthaus will den Betrag sehen). Ohne Zahlart, Bankdaten und
+// QR-Code: die Zahlungsaufforderung gehört auf die Rechnung.
+function lieferscheinHtml(b) {
+  const ch = chargeVon(b);
+  const k = kundeVon(b);
+  const t = terminVon(b);
+  const lieferung = t && t.art === 'lieferung';
+  const datumLang = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const tag = t ? `${lieferung ? 'Liefertag' : 'Abholtag'} ${datumLang(t.datum)}` : istHofverkauf(b) ? 'Verkauf am Hof' : '';
+  const [betrieb, ...anschrift] = ABSENDER.split(' · ');
+  const mitGewicht = b.positionen.some((p) => artikelVon(ch, p.artikelId).art === 'gewicht');
+  const zeilen = b.positionen.map((p) => {
+    const a = artikelVon(ch, p.artikelId);
+    const einzeln = einzelgewichteText(p);
+    return `<tr><td>${esc(a.name)}${einzeln ? `<br><span class="vw-druck-klein">je Stück: ${einzeln}</span>` : ''}</td>
+      <td class="vw-zahl">${p.menge}</td>
+      ${mitGewicht ? `<td class="vw-zahl">${p.gewichtG ? kg(p.gewichtG) : ''}</td>` : ''}
+      <td class="vw-zahl">${euro(preisVon(ch, p))}${a.art === 'gewicht' ? '/kg' : ''}</td>
+      <td class="vw-zahl">${betragText(positionBetrag(ch, p))}</td></tr>`;
+  }).join('');
+  return `<section class="vw-lieferschein">
+    <div class="vw-ls-kopf">
+      <div>
+        <h2>Lieferschein</h2>
+        <p class="vw-ls-meta">Nr. ${esc(b.nummer)}${tag ? `<br>${tag}` : ''}</p>
+        <span class="vw-ls-stempel${b.uebergeben ? ' vw-ls-stempel--erledigt' : ''}">${b.uebergeben ? 'Übergeben' : 'Offen'}</span>
+      </div>
+      <img class="vw-ls-logo" src="${LOGO}" alt="Kruckenhaus 1895" width="323" height="112" />
+    </div>
+    <div class="vw-ls-block">
+      <strong>${esc(betrieb)}</strong>
+      <span class="vw-ls-grau">${anschrift.map(esc).join(' · ')}</span>
+      <span class="vw-ls-grau">UID: ${esc(UID)}</span>
+    </div>
+    <div class="vw-ls-block">
+      <span class="vw-ls-grau">${lieferung ? 'Lieferung an' : 'Übergabe an'}</span>
+      <strong class="vw-ls-empfaenger">${esc(k.name)}</strong>
+      ${k.strasse ? `<span>${esc(adresseVon(k))}</span>` : ''}
+      ${k.telefon ? `<span class="vw-ls-grau">${esc(k.telefon)}</span>` : ''}
+    </div>
+    <table class="vw-ls-tabelle">
+      <thead><tr><th>Artikel</th><th class="vw-zahl">Menge</th>${mitGewicht ? '<th class="vw-zahl">Gewicht</th>' : ''}<th class="vw-zahl">Preis</th><th class="vw-zahl">Betrag</th></tr></thead>
+      <tbody>${zeilen}</tbody>
+      <tfoot><tr><td colspan="${mitGewicht ? 4 : 3}">Summe</td><td class="vw-zahl">${betragText(bestellBetrag(b))}</td></tr></tfoot>
+    </table>
+    <div class="vw-ls-fuss">
+      <span class="vw-ls-grau">Ware erhalten</span>
+      <span class="vw-ls-linie"></span>
+      <span class="vw-druck-klein">Ort, Datum, Unterschrift</span>
+      <p class="vw-ls-fusszeile">Gedruckt ${new Date().toLocaleString('de-AT', { dateStyle: 'short', timeStyle: 'short' })}</p>
+    </div>
+  </section>`;
+}
+
 function lieferscheinDrucken(b) {
   const druck = document.getElementById('vw-druck');
   if (!druck || !b) return;
-  druck.innerHTML = packzettelHtml(b, { titel: 'Lieferschein', zahlung: false, unterschrift: true })
-    + `<p class="vw-druck-klein">Gedruckt ${new Date().toLocaleString('de-AT', { dateStyle: 'short', timeStyle: 'short' })}</p>`;
+  druck.innerHTML = lieferscheinHtml(b);
   druckenWennBereit(druck);
 }
 
@@ -3327,7 +509,10 @@ const ANSICHTEN = {
   abgabe: ansichtAbgabe,
   zahlungen: ansichtZahlungen,
   voranmeldungen: ansichtVoranmeldungen,
+  vormerken: ansichtVormerken,
+  mehr: ansichtMehr,
   sortiment: ansichtSortiment,
+  einstufen: ansichtEinstufen,
   bereiche: ansichtBereiche,
   auswertung: ansichtAuswertung,
   produkt: ansichtProdukt,
@@ -3336,7 +521,7 @@ const ANSICHTEN = {
   bertha: ansichtBertha,
 };
 // Diese Ansichten funktionieren auch ohne laufende Bestellrunde
-const OHNE_CHARGE = ['voranmeldungen', 'charge-neu', 'sortiment', 'bereiche', 'produkt', 'auswertung', 'bertha'];
+const OHNE_CHARGE = ['voranmeldungen', 'vormerken', 'mehr', 'charge-neu', 'sortiment', 'einstufen', 'bereiche', 'produkt', 'auswertung', 'bertha'];
 
 function aktuelleAnsicht() {
   const name = location.hash.slice(1);
@@ -3357,20 +542,22 @@ function zeigen() {
     ANSICHTEN[name]();
   }
   const menuepunkt = {
-    hofverkauf: 'neu', abgabe: 'uebergabe', produkt: 'sortiment', bereiche: 'sortiment', wiegen: 'uebersicht', zahlungen: 'uebersicht',
-    charge: 'bestellungen', 'charge-neu': 'bestellungen',
+    hofverkauf: 'neu', vormerken: 'neu', abgabe: 'uebergabe', produkt: 'sortiment', einstufen: 'sortiment', bereiche: 'sortiment', wiegen: 'uebersicht',
+    zahlungen: 'bestellungen', charge: 'bestellungen', 'charge-neu': 'bestellungen',
   }[name] || name;
+  // Am Handy steht in der Leiste „Mehr" für alles, was dort keinen eigenen Platz hat
+  const unterMehr = ['mehr', 'voranmeldungen', 'sortiment', 'auswertung', 'bertha'].includes(menuepunkt);
   // Neuer Schlüssel nur so lange sichtbar, bis die Ansicht verlassen wird
   if (name !== 'bertha') neuerSchluessel = null;
   document.querySelectorAll('.vw-nav a[data-ansicht]').forEach((a) => {
-    if (a.dataset.ansicht === menuepunkt) a.setAttribute('aria-current', 'page');
+    if (a.dataset.ansicht === menuepunkt || (a.dataset.ansicht === 'mehr' && unterMehr)) a.setAttribute('aria-current', 'page');
     else a.removeAttribute('aria-current');
   });
 }
 
 function neuZeichnen() {
   // Formulare nicht neu zeichnen, sonst gehen Eingaben verloren
-  if (!['neu', 'charge', 'charge-neu', 'produkt'].includes(aktuelleAnsicht())) zeigen();
+  if (!['neu', 'vormerken', 'einstufen', 'charge', 'charge-neu', 'produkt'].includes(aktuelleAnsicht())) zeigen();
   dialogAktualisieren();
 }
 
@@ -3398,7 +585,7 @@ function initKlicks() {
 
     switch (el.dataset.aktion) {
       case 'runde-oeffnen':
-        zustand.filter = 'alle';
+        zustand.filter = el.dataset.filter || 'alle';
         if (location.hash === el.dataset.ziel) zeigen();
         else location.hash = el.dataset.ziel;
         break;
@@ -3565,8 +752,16 @@ function initKlicks() {
         });
         break;
       case 'abgabe':
+        if (b && daten.chargen.some((c) => c.id === b.chargeId)) {
+          zustand.chargeId = b.chargeId;
+          zustand.alleRunden = false;
+          if (terminArt(b)) zustand.uebergabeArt = terminArt(b);
+        }
         zustand.abgabeId = el.dataset.id;
-        location.hash = '#abgabe';
+        if (aktuelleAnsicht() === 'abgabe') {
+          document.getElementById('vw-dialog').close();
+          zeigen();
+        } else location.hash = '#abgabe';
         break;
       case 'runde-status':
         rundeStatus(el.dataset.id, el.dataset.wert);
@@ -3624,6 +819,10 @@ function initKlicks() {
         else produktFormStarten(el.dataset.aktion === 'produkt-neu' ? null : el.dataset.id);
         if (aktuelleAnsicht() === 'produkt') zeigen();
         else location.hash = '#produkt';
+        break;
+      case 'sortiment-filter':
+        zustand.nurOhneEinstufung = !zustand.nurOhneEinstufung;
+        zeigen();
         break;
       case 'produkt-aktiv':
         produktAktivUmschalten(produktVon(el.dataset.id));
@@ -3688,6 +887,7 @@ function initEingaben() {
     } else if (e.target.name === 'name' && e.target.form && e.target.form.id === 'vw-formular') {
       kundeVorschlagen(e.target.value);
     } else if ((e.target.dataset.artikel || e.target.dataset.erfassenPreis) && e.target.form && e.target.form.id === 'vw-formular') {
+      if (e.target.dataset.erfassenPreis) erfassenPreisZeile(e.target);
       formularSummeAktualisieren();
     }
   });
@@ -3697,6 +897,8 @@ function initEingaben() {
   document.addEventListener('toggle', (e) => {
     const id = e.target.dataset && e.target.dataset.aendern;
     if (id) zustand.aendernOffen = e.target.open ? id : null;
+    const mehrId = e.target.dataset && e.target.dataset.detailMehr;
+    if (mehrId) zustand.detailMehr = e.target.open ? mehrId : null;
   }, true);
   document.addEventListener('change', (e) => {
     if (e.target.dataset.kundenImport !== undefined) kundenImportDatei(e.target);
@@ -3735,6 +937,10 @@ function initEingaben() {
       const jahr = document.getElementById('vw-va-jahr');
       if (jahr) jahr.hidden = e.target.value === 'naechste';
     }
+    if (e.target.name === 'alle-herkunft' || e.target.name === 'alle-ustSatz') {
+      const name = e.target.name.slice(5);
+      e.target.form.querySelectorAll(`[data-produkt] [name="${name}"]`).forEach((wahl) => { wahl.value = e.target.value; });
+    }
     if (e.target.name === 'va-zeitraum') {
       const jahr = e.target.form && e.target.form.querySelector('[data-va-jahr]');
       if (jahr) jahr.hidden = e.target.value === 'naechste';
@@ -3751,6 +957,11 @@ function initEingaben() {
     if (id === 'vw-produkt-formular') {
       e.preventDefault();
       produktSpeichern(e.target);
+      return;
+    }
+    if (id === 'vw-einstufen-formular') {
+      e.preventDefault();
+      einstufungSpeichern(e.target);
       return;
     }
     if (id === 'vw-va-bearbeiten') {
@@ -3774,6 +985,11 @@ function initEingaben() {
     if (id === 'vw-va-formular') voranmeldungSpeichern(e.target);
     else if (id === 'vw-formular') bestellungSpeichern(e.target);
     else chargeSpeichern();
+  });
+
+  // Aufgeklappte Menüs (⋯ im Sortiment) schließen, sobald woanders geklickt wird
+  document.addEventListener('click', (e) => {
+    document.querySelectorAll('.vw-menue[open]').forEach((m) => { if (!m.contains(e.target)) m.open = false; });
   });
 
   // Klick auf den Hintergrund schließt den Dialog

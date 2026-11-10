@@ -6635,3 +6635,269 @@ button.vw-foto-wahl:focus-visible {
 }
 .pv-zr-knopf:hover { border-color: var(--color-primary); color: var(--color-primary); }
 .pv-zr-neu { margin-bottom: 0.75rem; }
+
+/* ============================================================
+   70. VERWALTUNG – ÜBERSICHTLICHERE BEDIENUNG
+   Ergänzt Abschnitt 40/47: Handy-Leiste mit „Mehr", Gruppen in der
+   Seitenleiste, Reiter je Bestellrunde, Filter als Chips, Status als
+   Marken, eingeklappte Preise, Summe und Speichern unten fest.
+   ============================================================ */
+
+/* --- Navigation: am Handy fünf Punkte, am PC drei Gruppen --- */
+.vw-nav-gruppe { display: none; }
+.vw-nav a.vw-nav-nur-handy { display: flex; }
+
+/* --- Reiter einer Bestellrunde (Bestellungen · Übergabe · Zahlungen · Bearbeiten) --- */
+.vw-reiter {
+  display: flex;
+  gap: 0.25rem;
+  margin: 0.25rem 0 0.75rem;
+  border-bottom: 1px solid var(--color-border);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.vw-reiter::-webkit-scrollbar { display: none; }
+.vw-reiter a {
+  flex: 1 1 0;
+  padding: 0.6rem 0.2rem;
+  text-align: center;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--color-text-light);
+  text-decoration: none;
+  border-bottom: 3px solid transparent;
+  margin-bottom: -1px;
+}
+.vw-reiter a:hover { color: var(--color-primary); }
+.vw-reiter a[aria-current="page"] { color: var(--color-primary); border-bottom-color: var(--color-primary); }
+
+/* --- Erfassen: drei Arten nebeneinander --- */
+.vw-segment a { font-size: 0.85rem; text-align: center; line-height: 1.15; padding: 0 0.25rem; }
+
+/* --- Bestellungen: Suche über die ganze Breite, Filter als Chips in einer Zeile --- */
+.vw-kopf .vw-suche { width: 100%; }
+.vw-chips--zeile {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: none;
+  margin: 0.5rem calc(-1 * var(--spacing-sm));
+  padding: 0 var(--spacing-sm);
+}
+.vw-chips--zeile::-webkit-scrollbar { display: none; }
+.vw-chips--zeile .vw-chip { flex: none; white-space: nowrap; }
+.vw-chip-zahl { opacity: 0.7; font-variant-numeric: tabular-nums; }
+
+/* --- Status als Marken in der Bestellliste: offen umrandet, erledigt gefüllt --- */
+.vw-marke--rand {
+  background-color: transparent;
+  color: var(--color-terracotta);
+  box-shadow: inset 0 0 0 1px var(--color-terracotta);
+}
+.vw-zeile-stand--marken { display: flex; flex-wrap: wrap; align-items: center; gap: 0.3rem; margin-top: 0.15rem; }
+/* Bestellnummer in der Liste erst ab Tablet – am Handy steht sie in den Details */
+.vw-zeile-nummer { display: none; font-variant-numeric: tabular-nums; }
+
+/* --- Preis je Artikel: eingeklappt, weil selten geändert --- */
+.vw-preis-aendern { margin: 0.2rem 0 0.4rem; }
+.vw-preis-aendern summary {
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--color-text-light);
+  padding: 0.3rem 0;
+  list-style: none;
+}
+.vw-preis-aendern summary::-webkit-details-marker { display: none; }
+.vw-preis-aendern-wort { color: var(--color-primary); font-weight: 700; text-decoration: underline; }
+.vw-preis-aendern[open] .vw-preis-aendern-wort { display: none; }
+.vw-preis-aendern--sonder summary { color: var(--color-terracotta); font-weight: 700; }
+.vw-preis-aendern .vw-pos-preis { margin: 0.2rem 0 0.3rem; }
+
+/* --- Mengenwahl: bleibt auch bei langen Artikelnamen im Rahmen.
+   Ein fieldset wird sonst so breit wie sein Inhalt und ragt aus der Karte. --- */
+.vw-feldgruppe { min-width: 0; }
+.vw-zaehler-zeile > div:first-child { min-width: 0; flex: 1 1 auto; }
+.vw-preis-aendern .vw-pos-preis--erfassen { flex-wrap: wrap; }
+.vw-zaehler { flex: none; }
+
+/* --- Summe und Speichern bleiben beim Scrollen sichtbar --- */
+.vw-speicherleiste {
+  position: sticky;
+  bottom: calc(3.6rem + env(safe-area-inset-bottom));
+  z-index: 5;
+  margin: 0.75rem calc(-1 * var(--spacing-sm)) 0;
+  padding: 0.25rem var(--spacing-sm) 0.75rem;
+  background-color: var(--color-white);
+  border-top: 1px solid var(--color-beige);
+  border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+}
+.vw-speicherleiste .vw-gesamt { margin: 0.4rem 0; }
+.vw-speicherleiste .vw-summe { border-top: 0; margin: 0; padding: 0.3rem 0 0.5rem; }
+
+/* --- Übersicht: Aufgaben in der Rundenkarte, „Noch frei" aufklappbar --- */
+.vw-uebersicht-hinweis { font-size: 0.95rem; }
+.vw-aufgaben--runde { margin-bottom: 0.5rem; }
+.vw-aufgaben .vw-erledigt-hinweis { padding: 0.6rem 0; }
+.vw-aufgaben button.vw-warnung { color: var(--color-terracotta); }
+.vw-runden-karte .vw-frei { margin-top: 0; }
+
+/* --- Übergabe: Fortschritt --- */
+.vw-fortschritt { display: flex; align-items: center; gap: 0.75rem; margin: 0.25rem 0 0.75rem; }
+.vw-fortschritt .vw-balken { flex: 1 1 auto; margin: 0; }
+.vw-fortschritt .vw-klein { white-space: nowrap; }
+
+/* --- Bestelldetail: eine Hauptaktion, Seltenes unter „Mehr" --- */
+.vw-detail-haupt .vw-knopf--gross { display: flex; }
+.vw-knopfreihe--gleich { align-items: center; justify-content: center; margin-top: 0.6rem; }
+.vw-kontakt-zeile--links { justify-content: flex-start; gap: 0 1.25rem; margin: 0; }
+.vw-detail-mehr { padding-top: 0.25rem; }
+.vw-detail-mehr > .vw-knopfreihe { align-items: center; margin: 0.5rem 0; }
+
+/* --- Sortiment: seltene Aktionen im Menü, Sammel-Einstufung --- */
+.vw-menue { position: relative; }
+.vw-menue summary { list-style: none; min-width: 2.6rem; justify-content: center; font-size: 1.1rem; line-height: 1; }
+.vw-menue summary::-webkit-details-marker { display: none; }
+.vw-menue-liste {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.25rem);
+  z-index: 10;
+  min-width: 13rem;
+  background-color: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  box-shadow: var(--shadow-md);
+  padding: 0.25rem;
+}
+.vw-menue-liste button {
+  display: block;
+  width: 100%;
+  padding: 0.65rem 0.75rem;
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: left;
+  color: var(--color-text);
+  background: none;
+  border: 0;
+  border-radius: calc(var(--border-radius) - 2px);
+  cursor: pointer;
+}
+.vw-menue-liste button:hover { background-color: var(--color-cream); color: var(--color-primary); }
+
+.vw-einstufen-zeile {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 0.5rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid var(--color-beige);
+}
+.vw-einstufen-zeile > :first-child { grid-column: 1 / -1; font-weight: 700; }
+.vw-einstufen-zeile--alle { border-top: 0; padding-top: 0; }
+.vw-einstufen-zeile--alle > :first-child { color: var(--color-primary); }
+.vw-einstufen-zeile select {
+  width: 100%;
+  min-height: 42px;
+  padding: 0.4rem 0.5rem;
+  font: inherit;
+  font-size: 0.9rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--border-radius);
+  background-color: var(--color-white);
+}
+#vw-einstufen-formular .vw-knopf--breit { margin-top: 0.75rem; }
+
+@media (min-width: 768px) {
+  .vw-reiter a { flex: 0 0 auto; padding: 0.6rem 1rem; font-size: 0.9rem; }
+  .vw-zeile-nummer { display: inline; }
+  .vw-chips--zeile { flex-wrap: wrap; overflow: visible; margin: 0.5rem 0; padding: 0; }
+  .vw-zeile-stand--marken { grid-column: 2 / 3; grid-row: 1 / 3; align-self: center; justify-content: flex-end; margin-top: 0; }
+  .vw-zeile-stand--marken .vw-zeile-nummer { margin-left: 0.5rem; }
+  .vw-frei-liste { columns: 2; column-gap: var(--spacing-md); }
+  .vw-frei-liste .vw-frei-zeile { break-inside: avoid; }
+  .vw-einstufen-zeile { grid-template-columns: 1fr 15rem 9rem; align-items: center; }
+  .vw-einstufen-zeile > :first-child { grid-column: auto; }
+}
+
+@media (min-width: 1024px) {
+  .vw-nav a.vw-nav-nur-handy { display: none; }
+  .vw-nav-gruppe {
+    display: block;
+    margin: 0.9rem 0 0.15rem;
+    padding: 0 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: var(--color-text-light);
+  }
+  .vw-nav-marke + .vw-nav-gruppe { margin-top: 0; }
+  .vw-nav { overflow-y: auto; }
+  .vw-segment a { font-size: 0.95rem; }
+  .vw-speicherleiste { bottom: 0; }
+}
+.vw-detail-mehr > .vw-knopfreihe { flex-wrap: nowrap; }
+.vw-detail-mehr > .vw-knopfreihe .vw-chip { flex: none; }
+
+/* ============================================================
+   71. VERWALTUNG – LIEFERSCHEIN IM AUFBAU DES BERTHA-LIEFERSCHEINS
+   Gleiches Blatt wie das PDF aus der Bertha-App: Kopf in zwei Spalten
+   (links Titel, Nummer, Tag, Stempel – rechts Logo), Absender,
+   „Lieferung an", Positionen mit Spaltenköpfen, Unterschriftszeile
+   und Fußzeile am Blattende. Hier zusätzlich mit Preisen und Summe.
+   ============================================================ */
+@media print {
+  .vw-lieferschein {
+    display: flex;
+    flex-direction: column;
+    min-height: 24cm;
+    font-size: 11pt;
+    color: var(--color-black);
+  }
+  .vw-ls-kopf {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.9rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .vw-ls-kopf h2 { font-family: var(--font-heading); font-size: 22pt; font-weight: 700; margin: 0 0 0.2rem; }
+  .vw-ls-meta { margin: 0 0 0.35rem; color: var(--color-text-light); line-height: 1.35; }
+  .vw-ls-stempel {
+    display: inline-block;
+    padding: 0.1rem 0.55rem;
+    border: 1px solid var(--color-terracotta);
+    border-radius: 999px;
+    color: var(--color-terracotta);
+    font-size: 8.5pt;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .vw-ls-stempel--erledigt { border-color: var(--color-primary); color: var(--color-primary); }
+  .vw-ls-logo { display: block; width: 4.6cm; height: auto; }
+  .vw-ls-block { display: flex; flex-direction: column; gap: 0.1rem; margin-bottom: 0.9rem; line-height: 1.35; }
+  .vw-ls-grau { color: var(--color-text-light); font-size: 10pt; }
+  .vw-ls-empfaenger { font-size: 13pt; }
+  .vw-ls-tabelle { width: 100%; border-collapse: collapse; margin-top: 0.3rem; }
+  .vw-ls-tabelle th {
+    padding: 0 0 0.3rem;
+    text-align: left;
+    font-size: 8.5pt;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-light);
+  }
+  .vw-ls-tabelle td { padding: 0.35rem 0; border-top: 1px solid var(--color-border); vertical-align: top; }
+  .vw-ls-tabelle th + th,
+  .vw-ls-tabelle td + td { padding-left: 0.8rem; }
+  .vw-ls-tabelle .vw-zahl { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .vw-ls-tabelle tr { break-inside: avoid; }
+  .vw-ls-tabelle tfoot td { font-weight: 700; border-top: 1px solid var(--color-black); }
+  /* Unterschrift und Fußzeile stehen wie in Bertha unten am Blatt */
+  .vw-ls-fuss { margin-top: auto; padding-top: 1.5rem; break-inside: avoid; }
+  .vw-ls-fuss > span { display: block; }
+  .vw-ls-linie { width: 6.5cm; height: 1.3cm; border-bottom: 1px solid var(--color-black); margin-bottom: 0.15rem; }
+  .vw-ls-fusszeile { margin: 0.9rem 0 0; padding-top: 0.4rem; border-top: 1px solid var(--color-border); font-size: 9pt; color: var(--color-text-light); }
+}
