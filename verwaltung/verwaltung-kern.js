@@ -120,6 +120,8 @@ const bestellungenDerCharge = (ch = aktiveCharge()) =>
 
 const istAktiv = (b) => b.status === 'vorgemerkt';
 const istDauer = (ch) => Boolean(ch && ch.art === 'dauer');
+// Gemeinsamer Kunde aller Hofverkäufe ohne Namen (wie SAMMELKUNDE in der Schnittstelle)
+const SAMMELKUNDE = 'Verkauf am Hof (ohne Namen)';
 // Verkauf am Hof ohne Vorbestellung: kein Termin, gleich übergeben
 const istHofverkauf = (b) => !b.terminId && b.interneNotiz === 'Verkauf am Hof';
 // Termin vorbei, aber noch nicht übergeben (z. B. Kunde holt später ab,

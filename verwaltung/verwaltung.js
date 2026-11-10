@@ -167,7 +167,7 @@ function detailOeffnen(id) {
       ${t ? `<p><strong>${terminText(t)}</strong></p>` : ''}
       ${t && t.art === 'lieferung' ? (k.strasse
         ? `<p>${esc(k.strasse)}, ${esc(`${k.plz} ${k.ort}`.trim())}</p>`
-        : '<p class="vw-warnung">Lieferadresse fehlt – bitte unter „Kontakt ändern" eintragen.</p>') : ''}
+        : '<p class="vw-warnung">Lieferadresse fehlt – bitte unter „Name und Kontakt ändern" eintragen.</p>') : ''}
       <p>${k.telefon ? esc(k.telefon) : '<span class="vw-klein">keine Telefonnummer</span>'}${k.email ? `<br><a href="mailto:${esc(k.email)}">${esc(k.email)}</a>` : ''}</p>
       <div class="vw-kontakt-zeile vw-kontakt-zeile--links">
         ${k.telefon ? `<a href="tel:${esc(k.telefon.replace(/\s/g, ''))}">Anrufen</a>` : ''}
@@ -175,8 +175,10 @@ function detailOeffnen(id) {
         ${t && t.art === 'lieferung' && k.strasse ? `<a href="${navLink(b)}" target="_blank" rel="noopener">Navi</a>` : ''}
       </div>
       <details class="vw-kontakt" ${kontaktFehlt ? 'open' : ''}>
-        <summary>Kontakt ändern</summary>
+        <summary>Name und Kontakt ändern</summary>
         <form id="vw-kontakt-formular" data-id="${b.id}" novalidate>
+          ${k.name === SAMMELKUNDE ? '' : `<label class="vw-feld"><span>Name</span><input name="name" value="${esc(k.name)}" autocomplete="off" required />
+            <span class="vw-klein">Gilt für alle Bestellungen und Vormerkungen dieses Kunden.</span></label>`}
           <label class="vw-feld"><span>Telefon</span><input name="telefon" type="tel" value="${esc(k.telefon)}" /></label>
           <label class="vw-feld"><span>E-Mail</span><input name="email" type="email" value="${esc(k.email || '')}" /></label>
           <label class="vw-feld"><span>Straße und Hausnummer</span><input name="strasse" value="${esc(k.strasse)}" /></label>
@@ -205,10 +207,21 @@ function kontaktSpeichern(form) {
   const k = kundeVon(b);
   const eingabe = { aktion: 'kontakt' };
   ['telefon', 'email', 'strasse', 'plz', 'ort'].forEach((f) => { eingabe[f] = feld(form, f).value.trim(); });
+  // Name ändern: kein zweiter Kunde gleichen Namens (die Schnittstelle prüft es ebenfalls)
+  const namensFeld = feld(form, 'name');
+  const name = namensFeld ? namensFeld.value.trim() : k.name;
+  if (!name) return meldung('Bitte einen Namen eintragen.');
+  if (name !== k.name) {
+    if (daten.kunden.some((x) => x.id !== k.id && x.name.toLowerCase() === name.toLowerCase())) {
+      return meldung(`Einen Kunden „${name}" gibt es schon – bitte unterscheidbar schreiben, z. B. mit dem Ort.`);
+    }
+    eingabe.name = name;
+  }
   speichern(`bestellung/${b.id}`, eingabe, () => {
     ['telefon', 'email', 'strasse', 'plz', 'ort'].forEach((f) => { if (eingabe[f]) k[f] = eingabe[f]; });
+    if (eingabe.name) k.name = eingabe.name;
     return {};
-  }, { erfolg: `Kontakt von ${k.name} gespeichert.` });
+  }, { erfolg: `Kontakt von ${name} gespeichert.` });
 }
 
 function notizSpeichern(form) {

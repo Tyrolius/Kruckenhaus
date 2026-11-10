@@ -324,7 +324,13 @@ Einrichten · Ferienwohnung* gegliedert. Weitere Grundsätze:
   mit *Alle auf einmal einstufen*; Kopieren und Ausblenden im Menü „⋯".
 - **Termin ändern** (z. B. Zustellung statt Abholung): in den Details unter
   *Mehr*, solange nicht übergeben. Eine Liefergebühr wird dabei nicht
-  nachgerechnet; fehlt die Adresse, klappt „Kontakt ändern" auf.
+  nachgerechnet; fehlt die Adresse, klappt „Name und Kontakt ändern" auf.
+- **Kundennamen ändern** (z. B. Tippfehler): in den Details unter *Name und
+  Kontakt ändern*. Gilt für den Kunden selbst, also für alle seine Bestellungen
+  und Vormerkungen. Ein Name, den schon ein anderer Kunde trägt, wird
+  abgelehnt (Namensvettern unterscheidbar schreiben, z. B. mit dem Ort), weil
+  beim Erfassen über den Namen wiedergefunden wird. Der Sammelkunde der
+  Hofverkäufe ohne Namen lässt sich nicht umbenennen.
 - **Kunde holt später ab** (z. B. eingefroren): Die Bestellung bleibt offen.
   Ist der Termin vorbei, trägt sie die Marke „Abholtag vorbei" bzw. „Liefertag
   vorbei", die Übersicht zeigt „Termin vorbei – noch nicht übergeben", und in
