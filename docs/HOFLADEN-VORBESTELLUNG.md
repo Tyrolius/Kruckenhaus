@@ -302,6 +302,27 @@ steht „Bestellrunde" statt „Charge" (Florian, 07.10.2026), das Kontingent **
 Handy fünf Punkte: *Übersicht · Bestellungen · Erfassen · Übergabe ·
 Voranmeldungen*; *Sortiment* in der PC-Seitenleiste bzw. über die Übersicht.
 
+**Stand November 2026 (Bedienung aufgeräumt):** Unten am Handy *Übersicht ·
+Bestellungen · Erfassen · Übergabe · Mehr*; unter *Mehr* steht alles Übrige
+(Vormerkungen, neue Bestellrunde, Sortiment, Auswertung, Bertha, Angebot und
+Preise der Ferienwohnung). Am PC ist die Seitenleiste in *Tagesgeschäft ·
+Einrichten · Ferienwohnung* gegliedert. Weitere Grundsätze:
+
+- **Eine Runde, vier Reiter:** Unter der Rundenauswahl stehen *Bestellungen ·
+  Übergabe · Zahlungen · Bearbeiten* – alles zu einer Bestellrunde an einer Stelle.
+- **Übersicht:** je Runde eine Karte; was zu tun ist, steht nur dort (jede
+  Zeile führt direkt hin), „Noch frei" am Handy zugeklappt.
+- **Erfassen** hat drei Arten: *Bestellung · Verkauf am Hof · Vormerkung*.
+  Summe und Speichern bleiben beim Scrollen unten sichtbar.
+- **Bestellliste:** Filter als Chips mit Anzahl, Stand als Marken
+  (Termin, offen/bezahlt, übergeben).
+- **Details einer Bestellung:** oben die eine nächste Aktion („Übergeben …"
+  führt zur Übergabe mit Gewichten und Kassieren); Preis, Menge,
+  Zahlungswunsch, Lieferschein, Rückgängig und Stornieren unter *Mehr*.
+- **Preis je Bestellung** ist überall eingeklappt („ändern"), weil selten gebraucht.
+- **Sortiment:** fehlende Einstufung (Herkunft, USt-Satz) als ein Hinweis oben
+  mit *Alle auf einmal einstufen*; Kopieren und Ausblenden im Menü „⋯".
+
 - **Übergabe in einem Schritt:** Vakuumierte Stücke werden oft erst beim
   Abholen einem Kunden zugeordnet. Deshalb tippt Kathrin bei der Übergabe die
   Gewichte vom Etikett ab (ein Feld je Stück), der Betrag erscheint sofort,
@@ -338,7 +359,7 @@ Voranmeldungen*; *Sortiment* in der PC-Seitenleiste bzw. über die Übersicht.
   nachrücken (z. B. 7 statt 12). Wünsche aus Vormerkungen („eher große")
   wandern beim Übernehmen in die Anmerkung der Bestellung.
   **Eigener Preis je Bestellung** (Gasthaus-Preis bei großer Menge): beim
-  Erfassen, in den Details und bei der Übergabe als sichtbares Feld; ändert
+  Erfassen, in den Details (unter „Mehr") und bei der Übergabe hinter „ändern"; ändert
   `bestell_positionen.einzelpreis_cent` dieser Bestellung (nicht den
   Rundenpreis), nur solange nicht bezahlt. Der Preis wird je Kunde und Produkt
   gemerkt (Tabelle `kunden_preise`): beim Erfassen vorbelegt, beim Übernehmen

@@ -10,7 +10,7 @@
   <link rel="icon" type="image/x-icon" href="/favicon.ico" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <!-- ?v=… bei Änderungen für die Verwaltung hochzählen: style.css wird einen Tag lang zwischengespeichert, diese Seite nie -->
-  <link rel="stylesheet" href="../css/style.css?v=2026-10-17" />
+  <link rel="stylesheet" href="../css/style.css?v=2026-11-10" />
 </head>
 <body class="vw-body">
 
@@ -26,6 +26,7 @@
         <span>Hofladen Kruckenhaus</span>
         <img src="../images/logo/kruckenhaus-hirsch.png" alt="" width="45" height="60" />
       </span>
+      <span class="vw-nav-gruppe">Tagesgeschäft</span>
       <a href="#uebersicht" data-ansicht="uebersicht">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>
         <span>Übersicht</span>
@@ -42,10 +43,16 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M1 6h13v10H1z"/><path d="M14 10h4l3 3v3h-7"/><circle cx="5.5" cy="18" r="2"/><circle cx="17.5" cy="18" r="2"/></svg>
         <span>Übergabe</span>
       </a>
-      <a href="#voranmeldungen" data-ansicht="voranmeldungen">
+      <a href="#voranmeldungen" data-ansicht="voranmeldungen" class="vw-nav-nur-pc">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4"/></svg>
         <span>Vor&shy;merkungen</span>
       </a>
+      <!-- Nur am Handy: alles Weitere (am PC steht es in der Seitenleiste) -->
+      <a href="#mehr" data-ansicht="mehr" class="vw-nav-nur-handy">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h16"/></svg>
+        <span>Mehr</span>
+      </a>
+      <span class="vw-nav-gruppe">Einrichten</span>
       <a href="#sortiment" data-ansicht="sortiment" class="vw-nav-nur-pc">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 12l-8 8-9-9V3h8z"/><circle cx="7.5" cy="7.5" r="1.5"/></svg>
         <span>Sortiment</span>
@@ -58,13 +65,14 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
         <span>Bertha</span>
       </a>
+      <span class="vw-nav-gruppe">Ferienwohnung</span>
       <a href="angebot.html" class="vw-nav-nur-pc">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 10l9-6 9 6v10H3z"/><path d="M9 20v-6h6v6"/></svg>
-        <span>Angebot FeWo</span>
+        <span>Angebot</span>
       </a>
       <a href="preise.html" class="vw-nav-nur-pc">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20.6 13.4l-7.2 7.2a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8z"/><path d="M7.5 7.5h.01"/></svg>
-        <span>Preise FeWo</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M18 6.5a7 7 0 1 0 0 11"/><path d="M4 10h9M4 14h9"/></svg>
+        <span>Preise</span>
       </a>
     </nav>
 
