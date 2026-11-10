@@ -6913,3 +6913,194 @@ button.vw-foto-wahl:focus-visible {
 .vw-notiz { margin: 0.5rem 0 0.9rem; padding-bottom: 0.75rem; border-bottom: 1px solid var(--color-beige); }
 .vw-notiz .vw-feld { margin-bottom: 0.4rem; }
 .vw-stopp-zeile .vw-zeile-stand--marken { grid-column: 1 / -1; grid-row: auto; justify-content: flex-start; }
+
+/* ============================================================
+   73. WENIGER BAUKASTEN
+   Rundgang durch die Wohnung (ferienwohnung.html), Bildband und
+   großes Gästezitat (Startseite), Tiere mit Foto (bauernhof.html),
+   Saisonübersicht (preise.html), Lageskizze (lage.html, kontakt.html).
+   ============================================================ */
+
+/* --- Startseite: Text im Kopf lesbar halten, auch über hellen Bildstellen --- */
+.wegweiser-karte--klein .wegweiser-text h2 { font-size: 1.35rem; }
+
+/* --- Bildband: ein Foto über die ganze Breite --- */
+.bildband { position: relative; margin: 0; }
+.bildband img {
+  display: block;
+  width: 100%;
+  height: clamp(240px, 46vw, 560px);
+  object-fit: cover;
+}
+.bildband figcaption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 2.5rem var(--spacing-sm) 1rem;
+  color: var(--color-white);
+  font-family: var(--font-heading);
+  font-style: italic;
+  font-size: 1.05rem;
+  background: linear-gradient(180deg, transparent, var(--color-scrim-unten));
+}
+
+/* --- Bewertungen: ein Zitat groß, die anderen kleiner darunter --- */
+.start-stimme--gross {
+  margin-bottom: 1.5rem;
+  padding: var(--spacing-md);
+  border-left: 4px solid var(--color-terracotta);
+}
+.start-stimme--gross blockquote { font-size: clamp(1.25rem, 2.6vw, 1.75rem); line-height: 1.45; }
+
+/* --- Rundgang durch die Wohnung --- */
+.rundgang-raum {
+  display: grid;
+  gap: var(--spacing-sm);
+  padding-block: var(--spacing-md);
+  border-top: 1px solid var(--color-border);
+  scroll-margin-top: calc(var(--header-height) + 1rem);
+}
+.section-header + .rundgang-raum { border-top: 0; padding-top: 0; }
+.rundgang-fotos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+.rundgang-fotos .gallery-item { aspect-ratio: 4 / 3; }
+.rundgang-fotos .rundgang-foto-gross { grid-column: 1 / -1; aspect-ratio: 3 / 2; }
+.rundgang-text h3 { font-size: clamp(1.5rem, 3vw, 2rem); margin: 0.25rem 0 0.75rem; }
+.rundgang-text p { margin: 0 0 0.75rem; }
+.rundgang-fakten {
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid var(--color-border);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+.rundgang-zitat { font-family: var(--font-heading); font-style: italic; color: var(--color-dark); }
+.rundgang-zitat span {
+  display: block;
+  margin-top: 0.25rem;
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: 0.85rem;
+  color: var(--color-text-light);
+}
+
+/* --- Ausstattung als Text in Gruppen --- */
+.ausstattung-text { display: grid; gap: var(--spacing-sm) var(--spacing-md); }
+.ausstattung-text h3 { font-size: 1.15rem; margin-bottom: 0.35rem; color: var(--color-primary); }
+.ausstattung-text p { margin: 0; }
+.ausstattung-eckdaten {
+  margin-top: var(--spacing-md);
+  padding-top: var(--spacing-sm);
+  border-top: 1px solid var(--color-border);
+  font-size: 0.95rem;
+  color: var(--color-text-light);
+}
+
+/* --- Bitten an die Gäste: als Sätze, ohne Symbole --- */
+.bitten-liste { display: grid; gap: 0; }
+.bitten-liste li { padding: 0.7rem 0; border-bottom: 1px solid var(--color-border); line-height: 1.55; }
+.bitten-liste li:last-child { border-bottom: 0; }
+
+/* --- Bauernhof: jedes Tier mit eigenem Foto --- */
+.tier-karten { display: grid; gap: var(--spacing-sm); margin-top: var(--spacing-md); }
+.tier-karte {
+  display: grid;
+  grid-template-columns: 7.5rem 1fr;
+  gap: 1rem;
+  align-items: center;
+}
+.tier-karte img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: var(--border-radius-lg);
+}
+.tier-karte h3 { font-size: 1.2rem; margin-bottom: 0.25rem; }
+.tier-karte p { margin: 0; font-size: 0.95rem; }
+.tier-karte a { font-weight: 700; color: var(--color-primary); }
+
+.hof-vorteile { display: grid; gap: var(--spacing-sm); }
+.hof-vorteile article { padding-top: 0.9rem; border-top: 3px solid var(--color-primary); }
+.hof-vorteile h3 { font-size: 1.25rem; margin-bottom: 0.4rem; }
+.hof-vorteile p { margin: 0; }
+
+/* --- Preise: je Saison eine Zeile --- */
+.saison-liste {
+  background-color: var(--color-white);
+  border-radius: var(--border-radius-lg);
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.saison-zeile {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.3rem 1rem;
+  padding: 1.1rem var(--spacing-sm);
+  border-top: 1px solid var(--color-beige);
+}
+.saison-zeile:first-child { border-top: 0; }
+.saison-zeile--tipp { background-color: var(--color-cream); border-left: 4px solid var(--color-primary); }
+.saison-name h3 { font-size: 1.2rem; margin: 0 0 0.15rem; }
+.saison-name .preis-tipp { margin: 0 0 0 0.4rem; font-family: var(--font-body); vertical-align: middle; }
+.saison-name > span { font-size: 0.9rem; color: var(--color-text-light); }
+.saison-bedingung { grid-column: 1 / -1; grid-row: 2; font-size: 0.9rem; color: var(--color-text-light); }
+.saison-bedingung a { font-weight: 700; color: var(--color-primary); }
+.saison-preis { grid-column: 2; grid-row: 1; text-align: right; white-space: nowrap; }
+.saison-preis strong { font-family: var(--font-heading); font-size: 1.7rem; color: var(--color-primary); font-variant-numeric: tabular-nums; }
+.saison-preis span { display: block; font-size: 0.8rem; color: var(--color-text-light); }
+.saison-immer { margin-top: var(--spacing-sm); }
+.saison-immer p { margin: 0 0 0.4rem; }
+
+/* --- Lageskizze: nutzt die Bausteine der Wegkarte (Abschnitt 60).
+   Am Handy breiter als der Bildschirm; beginnt rechts, wo Hof und Zufahrt liegen. --- */
+.lageskizze { margin-top: 0; }
+@media (max-width: 767px) {
+  .lageskizze .wegkarte-scroll { direction: rtl; }
+  .lageskizze .wegkarte-svg { direction: ltr; width: 620px; }
+}
+
+/* --- Eigene Kopfbilder für Workation und Kontakt (ergänzt Abschnitt 51) --- */
+.page-hero--workation {
+  background-image: url('../images/hof/hof-sommer-regenbogen.jpg');
+  background-position: center 55%;
+}
+.page-hero--kontakt {
+  background-image: url('../images/hof/hof-sommer-obstwiese.jpg');
+  background-position: center 40%;
+}
+
+@media (min-width: 768px) {
+  .bildband figcaption { padding-inline: var(--spacing-md); font-size: 1.2rem; }
+  .rundgang-raum { grid-template-columns: 3fr 2fr; gap: var(--spacing-md); align-items: center; padding-block: var(--spacing-lg); }
+  .rundgang-raum--gedreht .rundgang-fotos { order: 2; }
+  .ausstattung-text { grid-template-columns: 1fr 1fr; }
+  .tier-karten { grid-template-columns: 1fr 1fr; gap: var(--spacing-md); }
+  .tier-karte { grid-template-columns: 10rem 1fr; }
+  .hof-vorteile { grid-template-columns: repeat(3, 1fr); gap: var(--spacing-md); }
+  .saison-zeile { grid-template-columns: minmax(0, 5fr) minmax(0, 6fr) auto; align-items: center; padding-inline: var(--spacing-md); }
+  .saison-bedingung { grid-column: 2; grid-row: 1; }
+  .saison-preis { grid-column: 3; }
+}
+
+@media (min-width: 1024px) {
+  /* Ferienwohnung groß, Hofladen schmal daneben */
+  .wegweiser-grid--gewichtet { grid-template-columns: 2fr 1fr; }
+  .wegweiser-grid--gewichtet .wegweiser-karte:first-child img { aspect-ratio: 2 / 1; }
+  .wegweiser-grid--gewichtet .wegweiser-karte--klein img { aspect-ratio: 1; }
+  /* Kopf der Startseite: links abdunkeln, damit die Überschrift nicht im Dach untergeht */
+  .start-hero-overlay {
+    background:
+      linear-gradient(90deg, var(--color-scrim-unten) 0%, transparent 70%),
+      linear-gradient(180deg, var(--color-scrim-oben) 0%, transparent 22%, var(--color-scrim-unten) 70%, var(--color-scrim-unten) 100%);
+  }
+  .start-stimmen-grid--drei { grid-template-columns: repeat(3, 1fr); }
+  .ausstattung-text { grid-template-columns: repeat(3, 1fr); }
+  .tier-karten { grid-template-columns: repeat(3, 1fr); }
+  .tier-karte { display: block; }
+  .tier-karte img { aspect-ratio: 3 / 2; margin-bottom: 0.9rem; }
+}
