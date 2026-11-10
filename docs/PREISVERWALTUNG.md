@@ -23,7 +23,8 @@ Schnittstellen noch nicht umgesetzt.
 | Preisänderung für das nächste Jahr | Preisliste mit **„gültig ab“**. Die Website zeigt ab diesem Tag die neuen Preise; der Angebotsrechner rechnet schon vorher mit dem Preis, der **am Anreisetag** gilt |
 | Rückgängig machen | Jede Preisliste bleibt gespeichert. „Wiederherstellen“ legt eine Kopie einer früheren Liste als neue an |
 | Was, wenn die Datenbank nicht erreichbar ist? | Die Website fällt auf die Werte in `js/preise-config.js` zurück. Die Datei bleibt deshalb bestehen |
-| Airbnb | bleibt **Handarbeit**. Speichern geht nur mit Haken „Airbnb-Preise sind angepasst“ (Bestpreis-Zusage) |
+| Airbnb | bleibt **Handarbeit**. Seit 25.10.2026 gibt es keine Bestpreis-Zusage mehr, Website und Airbnb dürfen abweichen – daher kein Pflicht-Haken beim Speichern |
+| Mindestbetrag | je Saison `mindestBetrag` (Nächte + Endreinigung, ohne Ortstaxe), maßgeblich ist die Saison der Anreise; derzeit 1.000 € in Winter, Sommer, Weihnachten & Silvester |
 
 ---
 

@@ -24,9 +24,12 @@
  *   - Aufenthaltsabgabe (Ortstaxe) pro Person und Nacht, ab 15 Jahren.
  *   - Langzeitrabatt ab 7 bzw. 14 Nächten auf den Nachtpreis – nur in der
  *     Nebensaison (Saison mit langzeitRabatt: true).
+ *   - Mindestbetrag je Saison (mindestBetrag): Nächte + Endreinigung kosten
+ *     mindestens so viel; kürzere Aufenthalte werden darauf angehoben
+ *     (ohne Ortstaxe). Maßgeblich ist die Saison der Anreise.
  *
- * Die Saisonpreise müssen mit den Airbnb-Preisen abgeglichen werden: Der Website-Preis darf nie über
- * dem Airbnb-Preis liegen, sonst stimmt die Bestpreis-Zusage nicht.
+ * Eine Bestpreis-Zusage gegenüber Airbnb gibt es seit Oktober 2026 nicht mehr;
+ * Website- und Airbnb-Preise dürfen voneinander abweichen.
  * ============================================================
  */
 
@@ -47,6 +50,7 @@ const PREISE = {
       zeitraeume: [ ['03-01', '05-31'], ['09-01', '12-19'] ],
       preis:      125,   // € pro Nacht, ganze Wohnung
       mindest:    2,     // Nächte
+      mindestBetrag: 0,  // € für Nächte + Endreinigung (0 = kein Mindestbetrag)
       langzeitRabatt: true,  // Langzeitrabatt gilt nur hier (siehe rabatte)
       featured:   true,      // wird auf der Preisseite als Tipp hervorgehoben
     },
@@ -57,6 +61,7 @@ const PREISE = {
       zeitraeume: [ ['06-01', '06-30'] ],
       preis:      150,
       mindest:    3,
+      mindestBetrag: 0,
     },
     {
       key:        'winter',
@@ -65,6 +70,7 @@ const PREISE = {
       zeitraeume: [ ['01-07', '02-29'] ],
       preis:      175,
       mindest:    4,
+      mindestBetrag: 1000,
     },
     {
       key:        'sommer',
@@ -72,7 +78,8 @@ const PREISE = {
       zeitraum:   'Juli und August · Ostern',
       zeitraeume: [ ['07-01', '08-31'] ],
       preis:      185,
-      mindest:    5,
+      mindest:    4,
+      mindestBetrag: 1000,
     },
     {
       key:        'weihnachten',
@@ -80,7 +87,8 @@ const PREISE = {
       zeitraum:   '20. Dezember bis 6. Jänner',
       zeitraeume: [ ['12-20', '12-31'], ['01-01', '01-06'] ],
       preis:      225,
-      mindest:    7,
+      mindest:    4,
+      mindestBetrag: 1000,
     },
   ],
 
@@ -123,8 +131,8 @@ const PREISE = {
       { abNaechte: 7,  prozent: 7  },
       { abNaechte: 14, prozent: 12 },
     ],
-    // Direktbucher-Vorteil: Bestpreis (nie teurer als auf Portalen) und
-    // persönlicher Kontakt. Einen Begrüßungskorb gibt es nicht. Reiner Text, siehe preise.html.
+    // Direktbucher-Vorteil: persönlicher Kontakt (keine Bestpreis-Zusage,
+    // kein Begrüßungskorb). Reiner Text, siehe preise.html.
   },
 
   // ----------------------------------------------------------
@@ -171,11 +179,14 @@ const PREISE = {
     }
     const naechtePreis = Math.round(saison.preis * naechte * (1 - rabatt / 100));
     const abgabe = PREISE.ortstaxe.betrag * personen * naechte;
+    // Mindestbetrag: Nächte + Endreinigung werden bei kurzen Aufenthalten angehoben
+    const aufschlag = Math.max(0, (saison.mindestBetrag || 0) - naechtePreis - PREISE.zusatz.endreinigung);
     return {
       naechtePreis,
       rabatt,
       abgabe,
-      summe: naechtePreis + PREISE.zusatz.endreinigung + abgabe,
+      aufschlag,
+      summe: naechtePreis + PREISE.zusatz.endreinigung + aufschlag + abgabe,
     };
   }
 
@@ -187,6 +198,7 @@ const PREISE = {
       setze('saison-' + s.key + '-preis',    fmtEur(s.preis));
       setze('saison-' + s.key + '-zeitraum', s.zeitraum);
       setze('saison-' + s.key + '-mindest',  s.mindest + ' Nächte');
+      if (s.mindestBetrag) setze('saison-' + s.key + '-mindestbetrag', fmtEur(s.mindestBetrag));
     });
     const guenstigste = Math.min(...p.saisons.map((s) => s.preis));
     setze('ab-preis', fmtEur(guenstigste));

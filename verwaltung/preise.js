@@ -24,6 +24,7 @@
     ORIGINAL.saisons.forEach((s, i) => {
       f.push({ gruppe: 'Saisons', pfad: ['saisons', i, 'preis'], label: s.label + ' – € pro Nacht', hilfe: s.zeitraum, min: 50, max: 600, schritt: 1 });
       f.push({ gruppe: 'Saisons', pfad: ['saisons', i, 'mindest'], label: s.label + ' – Mindestnächte', min: 1, max: 28, schritt: 1 });
+      f.push({ gruppe: 'Saisons', pfad: ['saisons', i, 'mindestBetrag'], label: s.label + ' – Mindestbetrag (€, 0 = keiner)', min: 0, max: 5000, schritt: 10, hilfe: 'Nächte + Endreinigung, ohne Ortstaxe' });
     });
     f.push(
       { gruppe: 'Zusatzkosten', pfad: ['zusatz', 'endreinigung'], label: 'Endreinigung (€)', min: 0, max: 300, schritt: 1 },
@@ -330,7 +331,7 @@
       zeile('Vorschau', 'erst nach Korrektur der Fehler');
     }
 
-    $('pv-speichern').disabled = !(ok && ae.length && $('pv-airbnb').checked);
+    $('pv-speichern').disabled = !(ok && ae.length);
     $('pv-status').textContent = '';
   }
 
@@ -368,12 +369,10 @@
       anzeigen();
     });
     form.addEventListener('submit', (e) => e.preventDefault());
-    $('pv-airbnb').addEventListener('change', anzeigen);
 
     $('pv-zuruecksetzen').addEventListener('click', () => {
       werte = kopie(ORIGINAL);
       formularBauen();
-      $('pv-airbnb').checked = false;
       anzeigen();
     });
 

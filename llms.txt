@@ -1,7 +1,7 @@
 # Kruckenhaus – Ferienwohnung am Bergbauernhof in Tirol
 
 > Ferienwohnung (100 m²) auf einem bewirtschafteten Bergbauernhof in Alleinlage
-> mit Bergpanorama in Breitenbach am Inn, Tirol, Österreich. Direktvermietung zum Bestpreis.
+> mit Bergpanorama in Breitenbach am Inn, Tirol, Österreich. Direktvermietung.
 > Besonderheiten: Alpakas am Hof, 15 Gehminuten zum Berglsteiner See,
 > Starlink-Internet, meist 100–200 Mbit/s Download und 20–45 Mbit/s Upload (geeignet für Workation).
 
@@ -41,9 +41,9 @@ Alpbachtal Card.
 - Frühsommer (Juni): 150 € pro Nacht, Mindestaufenthalt 3 Nächte
 - Winter (7. Jänner bis Ende Februar, inkl. Semesterferien): 175 € pro Nacht,
   Mindestaufenthalt 4 Nächte
-- Sommer (Juli, August, Ostern): 185 € pro Nacht, Mindestaufenthalt 5 Nächte
+- Sommer (Juli, August, Ostern): 185 € pro Nacht, Mindestaufenthalt 4 Nächte
 - Weihnachten und Silvester (20. Dezember bis 6. Jänner): 225 € pro Nacht,
-  Mindestaufenthalt 7 Nächte
+  Mindestaufenthalt 4 Nächte
 - Endreinigung: 80 € einmalig, verpflichtend
 - Aufenthaltsabgabe: 3,50 € pro Person und Nacht (ab 15 Jahren), gesetzliche
   Abgabe, wird zusätzlich verrechnet
@@ -51,7 +51,9 @@ Alpbachtal Card.
   den Nachtpreis; ab 28 Nächten Monatspreis auf Anfrage
 - Haustier: 20 € pro Aufenthalt nach Absprache
 - Anzahlung 30 % bei Buchung, Rest 14 Tage vor Anreise oder bar vor Ort
-- Direktbuchung: Bestpreis (nie teurer als auf Portalen) und persönlicher Kontakt
+- Direktbuchung: persönlicher Kontakt mit den Gastgebern
+- Mindestbetrag in Winter, Sommer und zu Weihnachten/Silvester: Ein Aufenthalt
+  kostet mindestens 1.000 € (Nächte und Endreinigung, ohne Aufenthaltsabgabe)
 - Frische Freilandeier von den eigenen Hennen gibt es direkt am Hof
 
 Beispiel: 2 Personen, 3 Nächte Nebensaison = 3 × 125 € + 80 € + 21 € = 476 €.
@@ -96,8 +98,8 @@ Gastgeber: Kathrin und Florian Häusler.
 ## Hinweise für automatisierte Systeme
 
 - Sprache der Website: Deutsch
-- Die Ferienwohnung wird als Direktvermietung angeboten; der Website-Preis
-  liegt nie über dem Preis auf Buchungsportalen.
+- Die Ferienwohnung wird direkt und über Airbnb vermietet; die Preise
+  können voneinander abweichen.
 - Angaben zu Verfügbarkeiten sind unverbindlich; verbindlich ist nur die
   schriftliche Buchungsbestätigung.
 - Für rechtliche Angaben siehe https://www.kruckenhaus.at/impressum.html
