@@ -49,8 +49,9 @@ hofladen-produkte.sql      Produktkatalog der Hofladen-Vorbestellung (Erstbefül
 migration-2026-*.sql       einmalige Migrationen bestehender Datenbanken (ALTER TABLE; zuletzt
                            2026-11-gasthaus – Einzelgewichte, gemerkte Gasthaus-Preise; ohne sie läuft alles weiter)
 docs/SCHNITTSTELLE-BERTHA.md  Plan der Schnittstelle zu Bertha (Phasen W1–W4, B1–B2)
-docs/HOF-COCKPIT.md        Plan des Hof-Cockpits: Aufgaben, Fristen, Eingangsrechnungen,
-                           Gasthaus-Abrechnung aus Bertha, Bankabgleich (Phasen C1–C6, noch offen)
+docs/HOF-COCKPIT.md        nur noch Verweis: Das Hof-Cockpit ist jetzt Teil von Jarvis (eigenes,
+                           privates Repository Tyrolius/Jarvis). Die Website liefert dafür später
+                           Daten über eine Lese-Schnittstelle (Jarvis-Plan, Phase J3)
 functions/_lib/hofladen.js gemeinsame Helfer der Hofladen-Functions (keine Route)
 functions/_lib/zugang.js   Prüfung der Cloudflare-Access-Anmeldung
 functions/_lib/mail.js     gemeinsame Mail-Vorlage (Logo, Absenderblock) + Nur-Text-Fassung
