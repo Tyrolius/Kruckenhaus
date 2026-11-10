@@ -6836,3 +6836,68 @@ button.vw-foto-wahl:focus-visible {
 }
 .vw-detail-mehr > .vw-knopfreihe { flex-wrap: nowrap; }
 .vw-detail-mehr > .vw-knopfreihe .vw-chip { flex: none; }
+
+/* ============================================================
+   71. VERWALTUNG – LIEFERSCHEIN IM AUFBAU DES BERTHA-LIEFERSCHEINS
+   Gleiches Blatt wie das PDF aus der Bertha-App: Kopf in zwei Spalten
+   (links Titel, Nummer, Tag, Stempel – rechts Logo), Absender,
+   „Lieferung an", Positionen mit Spaltenköpfen, Unterschriftszeile
+   und Fußzeile am Blattende. Hier zusätzlich mit Preisen und Summe.
+   ============================================================ */
+@media print {
+  .vw-lieferschein {
+    display: flex;
+    flex-direction: column;
+    min-height: 24cm;
+    font-size: 11pt;
+    color: var(--color-black);
+  }
+  .vw-ls-kopf {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    padding-bottom: 0.5rem;
+    margin-bottom: 0.9rem;
+    border-bottom: 1px solid var(--color-border);
+  }
+  .vw-ls-kopf h2 { font-family: var(--font-heading); font-size: 22pt; font-weight: 700; margin: 0 0 0.2rem; }
+  .vw-ls-meta { margin: 0 0 0.35rem; color: var(--color-text-light); line-height: 1.35; }
+  .vw-ls-stempel {
+    display: inline-block;
+    padding: 0.1rem 0.55rem;
+    border: 1px solid var(--color-terracotta);
+    border-radius: 999px;
+    color: var(--color-terracotta);
+    font-size: 8.5pt;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .vw-ls-stempel--erledigt { border-color: var(--color-primary); color: var(--color-primary); }
+  .vw-ls-logo { display: block; width: 4.6cm; height: auto; }
+  .vw-ls-block { display: flex; flex-direction: column; gap: 0.1rem; margin-bottom: 0.9rem; line-height: 1.35; }
+  .vw-ls-grau { color: var(--color-text-light); font-size: 10pt; }
+  .vw-ls-empfaenger { font-size: 13pt; }
+  .vw-ls-tabelle { width: 100%; border-collapse: collapse; margin-top: 0.3rem; }
+  .vw-ls-tabelle th {
+    padding: 0 0 0.3rem;
+    text-align: left;
+    font-size: 8.5pt;
+    font-weight: 400;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--color-text-light);
+  }
+  .vw-ls-tabelle td { padding: 0.35rem 0; border-top: 1px solid var(--color-border); vertical-align: top; }
+  .vw-ls-tabelle th + th,
+  .vw-ls-tabelle td + td { padding-left: 0.8rem; }
+  .vw-ls-tabelle .vw-zahl { text-align: right; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .vw-ls-tabelle tr { break-inside: avoid; }
+  .vw-ls-tabelle tfoot td { font-weight: 700; border-top: 1px solid var(--color-black); }
+  /* Unterschrift und Fußzeile stehen wie in Bertha unten am Blatt */
+  .vw-ls-fuss { margin-top: auto; padding-top: 1.5rem; break-inside: avoid; }
+  .vw-ls-fuss > span { display: block; }
+  .vw-ls-linie { width: 6.5cm; height: 1.3cm; border-bottom: 1px solid var(--color-black); margin-bottom: 0.15rem; }
+  .vw-ls-fusszeile { margin: 0.9rem 0 0; padding-top: 0.4rem; border-top: 1px solid var(--color-border); font-size: 9pt; color: var(--color-text-light); }
+}

@@ -622,7 +622,7 @@ Startbildschirm hinzufügen – dann wirkt sie wie eine App.
    Stückzahl direkt eintippen (Höchstmenge der Runde gilt nur für die
    Website). Jedes Gewicht wird beim Weitertippen gespeichert – lädt das Handy
    die Seite neu, ist nichts verloren. Nach der Übergabe (oder in den Details unter „Mehr")
-   *Lieferschein drucken*: Logo, jedes Stück mit Gewicht, Summe und Feld „Ware erhalten" – ohne
+   *Lieferschein drucken* (gleicher Aufbau wie der Lieferschein aus der Bertha-App, zusätzlich mit Preisen): Logo, jedes Stück mit Gewicht, Summe und Feld „Ware erhalten" – ohne
    Bankdaten und QR-Code, die gehören auf die Rechnung. Steht ein Gasthaus auf der Warteliste, weil nicht mehr genug
    frei ist: in den Details die Menge auf das Freie senken, dann
    *Nachrücken lassen*.

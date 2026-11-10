@@ -364,11 +364,11 @@ function druckenWennBereit(druck) {
   setTimeout(los, 3000);
 }
 
-// Ein Packzettel bzw. Lieferschein: Kunde, Termin, jede Position mit
-// Gewicht (bei mehreren Stücken auch jedes Stück einzeln) und Summe.
-// zahlung = false (Lieferschein): ohne Zahlart, Bankdaten und QR-Code –
-// die Zahlungsaufforderung gehört auf die Rechnung.
-// unterschrift = true (Lieferschein): Feld „Ware erhalten" für den Kunden
+// Ein Packzettel: Kunde, Termin, jede Position mit Gewicht (bei mehreren
+// Stücken auch jedes Stück einzeln) und Summe.
+// zahlung = false: ohne Zahlart, Bankdaten und QR-Code.
+// unterschrift = true: Feld „Ware erhalten" für den Kunden.
+// Der Lieferschein hat ein eigenes Blatt: lieferscheinHtml().
 function packzettelHtml(b, { titel = '', zahlung = true, unterschrift = false } = {}) {
   const ch = chargeVon(b);
   const k = kundeVon(b);
@@ -417,11 +417,69 @@ function packzettelDrucken() {
 
 // Lieferschein für eine einzelne Bestellung (z. B. ein Gasthaus mit 15 Gänsen).
 // Ohne Zahlungsangaben – die stehen auf der Rechnung.
+// Lieferschein im Aufbau des Bertha-Lieferscheins (DeliveryNotePdfBuilder in
+// der App), damit ein Kunde von beiden denselben Beleg kennt: links Titel,
+// Nummer, Tag und Stempel, rechts das Logo; darunter Absender, „Lieferung an",
+// Positionen mit Spaltenköpfen, unten eine Unterschriftszeile und die Fußzeile.
+// Anders als in Bertha bleiben Preise, Beträge und Summe drauf (Fleisch nach
+// Gewicht – das Gasthaus will den Betrag sehen). Ohne Zahlart, Bankdaten und
+// QR-Code: die Zahlungsaufforderung gehört auf die Rechnung.
+function lieferscheinHtml(b) {
+  const ch = chargeVon(b);
+  const k = kundeVon(b);
+  const t = terminVon(b);
+  const lieferung = t && t.art === 'lieferung';
+  const datumLang = (iso) => new Date(`${iso}T12:00:00`).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  const tag = t ? `${lieferung ? 'Liefertag' : 'Abholtag'} ${datumLang(t.datum)}` : istHofverkauf(b) ? 'Verkauf am Hof' : '';
+  const [betrieb, ...anschrift] = ABSENDER.split(' · ');
+  const mitGewicht = b.positionen.some((p) => artikelVon(ch, p.artikelId).art === 'gewicht');
+  const zeilen = b.positionen.map((p) => {
+    const a = artikelVon(ch, p.artikelId);
+    const einzeln = einzelgewichteText(p);
+    return `<tr><td>${esc(a.name)}${einzeln ? `<br><span class="vw-druck-klein">je Stück: ${einzeln}</span>` : ''}</td>
+      <td class="vw-zahl">${p.menge}</td>
+      ${mitGewicht ? `<td class="vw-zahl">${p.gewichtG ? kg(p.gewichtG) : ''}</td>` : ''}
+      <td class="vw-zahl">${euro(preisVon(ch, p))}${a.art === 'gewicht' ? '/kg' : ''}</td>
+      <td class="vw-zahl">${betragText(positionBetrag(ch, p))}</td></tr>`;
+  }).join('');
+  return `<section class="vw-lieferschein">
+    <div class="vw-ls-kopf">
+      <div>
+        <h2>Lieferschein</h2>
+        <p class="vw-ls-meta">Nr. ${esc(b.nummer)}${tag ? `<br>${tag}` : ''}</p>
+        <span class="vw-ls-stempel${b.uebergeben ? ' vw-ls-stempel--erledigt' : ''}">${b.uebergeben ? 'Übergeben' : 'Offen'}</span>
+      </div>
+      <img class="vw-ls-logo" src="${LOGO}" alt="Kruckenhaus 1895" width="323" height="112" />
+    </div>
+    <div class="vw-ls-block">
+      <strong>${esc(betrieb)}</strong>
+      <span class="vw-ls-grau">${anschrift.map(esc).join(' · ')}</span>
+      <span class="vw-ls-grau">UID: ${esc(UID)}</span>
+    </div>
+    <div class="vw-ls-block">
+      <span class="vw-ls-grau">${lieferung ? 'Lieferung an' : 'Übergabe an'}</span>
+      <strong class="vw-ls-empfaenger">${esc(k.name)}</strong>
+      ${k.strasse ? `<span>${esc(adresseVon(k))}</span>` : ''}
+      ${k.telefon ? `<span class="vw-ls-grau">${esc(k.telefon)}</span>` : ''}
+    </div>
+    <table class="vw-ls-tabelle">
+      <thead><tr><th>Artikel</th><th class="vw-zahl">Menge</th>${mitGewicht ? '<th class="vw-zahl">Gewicht</th>' : ''}<th class="vw-zahl">Preis</th><th class="vw-zahl">Betrag</th></tr></thead>
+      <tbody>${zeilen}</tbody>
+      <tfoot><tr><td colspan="${mitGewicht ? 4 : 3}">Summe</td><td class="vw-zahl">${betragText(bestellBetrag(b))}</td></tr></tfoot>
+    </table>
+    <div class="vw-ls-fuss">
+      <span class="vw-ls-grau">Ware erhalten</span>
+      <span class="vw-ls-linie"></span>
+      <span class="vw-druck-klein">Ort, Datum, Unterschrift</span>
+      <p class="vw-ls-fusszeile">Gedruckt ${new Date().toLocaleString('de-AT', { dateStyle: 'short', timeStyle: 'short' })}</p>
+    </div>
+  </section>`;
+}
+
 function lieferscheinDrucken(b) {
   const druck = document.getElementById('vw-druck');
   if (!druck || !b) return;
-  druck.innerHTML = packzettelHtml(b, { titel: 'Lieferschein', zahlung: false, unterschrift: true })
-    + `<p class="vw-druck-klein">Gedruckt ${new Date().toLocaleString('de-AT', { dateStyle: 'short', timeStyle: 'short' })}</p>`;
+  druck.innerHTML = lieferscheinHtml(b);
   druckenWennBereit(druck);
 }
 
