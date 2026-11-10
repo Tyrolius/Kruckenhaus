@@ -38,7 +38,7 @@ Datenbank, ohne Mails, ohne Anmeldung:
 | Datei | Inhalt |
 |---|---|
 | `verwaltung/index.html` | Gerüst, Navigation (Handy: unten, PC: links) |
-| `verwaltung/verwaltung.js` | Ansichten Übersicht, Bestellungen, Erfassen, Wiegen, Übergabe, Zahlungen; Excel-Export; Packzettel-Druck |
+| `verwaltung/verwaltung*.js` (seit 11/2026 in sieben Dateien geteilt, Überblick im Kopf von `verwaltung.js`) | Ansichten Übersicht, Bestellungen, Erfassen, Wiegen, Übergabe, Zahlungen; Excel-Export; Packzettel-Druck |
 | `verwaltung/entwurf-daten.js` | Beispieldaten (zwei Bestellrunden, 19 Bestellungen) |
 | `css/style.css` Abschnitt 40 | Gestaltung der Verwaltung |
 
@@ -455,7 +455,7 @@ ein Gewicht eingetragen ist.
 hofladen.html                           öffentliche Vorbestellseite
 js/hofladen.js                          Angebot laden, Formular, Summen
 verwaltung/index.html                   Verwaltung (eine Seite, mehrere Ansichten) – Entwurf vorhanden
-verwaltung/verwaltung.js                Logik der Verwaltung – Entwurf vorhanden
+verwaltung/verwaltung*.js               Logik der Verwaltung (sieben Dateien, Überblick im Kopf von verwaltung.js)
 verwaltung/entwurf-daten.js             Beispieldaten – entfällt in Phase 2
 functions/api/hofladen/angebot.js       GET  – offene Bestellrunden + Restmengen
 functions/api/hofladen/bestellung.js    POST – Bestellung aufgeben
