@@ -453,15 +453,77 @@ function packzettelDrucken() {
 }
 
 // Lieferschein für eine einzelne Bestellung (z. B. ein Gasthaus mit 15 Gänsen).
-// Ohne Zahlungsangaben – die stehen auf der Rechnung.
 // Lieferschein im Aufbau des Bertha-Lieferscheins (DeliveryNotePdfBuilder in
 // der App), damit ein Kunde von beiden denselben Beleg kennt: links Titel,
 // Nummer, Tag und Stempel, rechts das Logo; darunter Absender, „Lieferung an",
 // Positionen mit Spaltenköpfen, unten eine Unterschriftszeile und die Fußzeile.
-// Anders als in Bertha bleiben Preise, Beträge und Summe drauf (Fleisch nach
-// Gewicht – das Gasthaus will den Betrag sehen). Ohne Zahlart, Bankdaten und
-// QR-Code: die Zahlungsaufforderung gehört auf die Rechnung.
-function lieferscheinHtml(b) {
+// Wie in Bertha ohne Preise, Beträge und Summe – die stehen auf der Rechnung,
+// ebenso Zahlart, Bankdaten und QR-Code.
+// Darunter „Angaben zur Ware": Verbrauchsdatum, Herkunft, Hinweise und ein
+// Zusatz (z. B. separat gewogene Innereien). Diese Angaben werden vor dem
+// Drucken abgefragt (lieferscheinDialog) und nicht in D1 gespeichert.
+
+// Vorschläge für den Lieferschein-Dialog. Die letzten Eingaben gelten bis zum
+// Neuladen der Seite als Vorschlag für den nächsten Lieferschein (z. B. beide
+// Gasthäuser derselben Gänse-Runde); der Zusatz gilt nur für die eine Bestellung.
+const LS_HERKUNFT = 'Ursprung: Österreich · aus bäuerlicher Schlachtung · Erzeuger: Bergbauernhof Kruckenhaus, '
+  + 'Florian & Kathrin Häusler, Oberberg 70, 6252 Breitenbach am Inn';
+const LS_HINWEISE = 'Frisch, nicht tiefgekühlt. Gekühlt bei höchstens +4 °C lagern, Kühlkette nicht unterbrechen. '
+  + 'Rohes Geflügel getrennt von anderen Lebensmitteln lagern und verarbeiten; Hände, Arbeitsflächen und Geräte '
+  + 'nach dem Kontakt gründlich reinigen, Fleischsaft nicht mit anderen Speisen in Berührung bringen. '
+  + 'Vor dem Verzehr vollständig durchgaren (Kerntemperatur mindestens 70 °C).';
+const lsLetzte = { verbrauchenBis: '', herkunft: null, hinweise: null };
+const lsZusatz = new Map();
+
+// Fleisch in der Bestellung? Dann sind Herkunft und Hinweise vorbelegt.
+function mitFleisch(b) {
+  const ch = chargeVon(b);
+  return b.positionen.some((p) => {
+    const a = artikelVon(ch, p.artikelId);
+    return a.art === 'gewicht' || (produktVon(a.produktId) || {}).kategorie === 'fleisch';
+  });
+}
+
+function lieferscheinDialog(b) {
+  const dialog = document.getElementById('vw-dialog');
+  if (!dialog || !b) return;
+  const k = kundeVon(b);
+  const fleisch = mitFleisch(b);
+  const herkunft = lsLetzte.herkunft ?? (fleisch ? LS_HERKUNFT : '');
+  const hinweise = lsLetzte.hinweise ?? (fleisch ? LS_HINWEISE : '');
+  dialog.innerHTML = `<div class="vw-dialog-inhalt">
+    <div class="vw-dialog-kopf">
+      <div><h2 id="vw-dialog-titel">Lieferschein drucken</h2><span class="vw-klein">${esc(k.name)} · ${esc(b.nummer)}</span></div>
+      <button type="button" class="vw-schliessen" data-aktion="schliessen" aria-label="Schließen">×</button>
+    </div>
+    <form id="vw-lieferschein-formular" data-id="${b.id}" novalidate>
+      <label class="vw-feld"><span>Verbrauchen bis</span><input name="verbrauchenBis" type="date" value="${esc(lsLetzte.verbrauchenBis)}" />
+        <span class="vw-klein">Bei frischem Geflügel „Verbrauchen bis" statt Mindesthaltbarkeit. Leer lassen = steht nicht drauf.</span></label>
+      <label class="vw-feld"><span>Herkunft</span><textarea name="herkunft" rows="2">${esc(herkunft)}</textarea></label>
+      <label class="vw-feld"><span>Hinweise für Lagerung und Küche</span><textarea name="hinweise" rows="5">${esc(hinweise)}</textarea></label>
+      <label class="vw-feld"><span>Zusatz (nur auf diesem Lieferschein)</span><textarea name="zusatz" rows="2" placeholder="z. B. Innereien (Herz, Leber, Magen, Hals) separat beigepackt: 1,85 kg">${esc(lsZusatz.get(b.id) || '')}</textarea></label>
+      <p class="vw-klein">Zutaten und Allergene aus dem Sortiment werden automatisch mitgedruckt. Diese Angaben werden nicht gespeichert, nur bis zum Neuladen der Seite gemerkt.</p>
+      <button type="submit" class="vw-knopf vw-knopf--voll">Drucken</button>
+    </form>
+  </div>`;
+  delete dialog.dataset.id;
+  if (!dialog.open) dialog.showModal();
+}
+
+function lieferscheinFormular(form) {
+  const b = bestellungVon(form.dataset.id);
+  if (!b) return;
+  const angaben = {};
+  ['verbrauchenBis', 'herkunft', 'hinweise', 'zusatz'].forEach((n) => { angaben[n] = feld(form, n).value.trim(); });
+  lsLetzte.verbrauchenBis = angaben.verbrauchenBis;
+  lsLetzte.herkunft = angaben.herkunft;
+  lsLetzte.hinweise = angaben.hinweise;
+  lsZusatz.set(b.id, angaben.zusatz);
+  document.getElementById('vw-dialog').close();
+  lieferscheinDrucken(b, angaben);
+}
+
+function lieferscheinHtml(b, angaben = {}) {
   const ch = chargeVon(b);
   const k = kundeVon(b);
   const t = terminVon(b);
@@ -475,10 +537,23 @@ function lieferscheinHtml(b) {
     const einzeln = einzelgewichteText(p);
     return `<tr><td>${esc(a.name)}${einzeln ? `<br><span class="vw-druck-klein">je Stück: ${einzeln}</span>` : ''}</td>
       <td class="vw-zahl">${p.menge}</td>
-      ${mitGewicht ? `<td class="vw-zahl">${p.gewichtG ? kg(p.gewichtG) : ''}</td>` : ''}
-      <td class="vw-zahl">${euro(preisVon(ch, p))}${a.art === 'gewicht' ? '/kg' : ''}</td>
-      <td class="vw-zahl">${betragText(positionBetrag(ch, p))}</td></tr>`;
+      ${mitGewicht ? `<td class="vw-zahl">${p.gewichtG ? kg(p.gewichtG) : ''}</td>` : ''}</tr>`;
   }).join('');
+  // Gesamtgewicht nur, wenn alle Gewichtsartikel gewogen sind
+  const gewichtsPos = b.positionen.filter((p) => artikelVon(ch, p.artikelId).art === 'gewicht');
+  const gesamtG = gewichtsPos.every((p) => p.gewichtG) ? gewichtsPos.reduce((s, p) => s + p.gewichtG, 0) : 0;
+  // Zutaten/Allergene aus dem Sortiment, je Produkt einmal
+  const produktAngaben = [...new Set(b.positionen.map((p) => artikelVon(ch, p.artikelId).produktId))]
+    .map((id) => produktVon(id)).filter((p) => p && (p.pflichtangaben || p.allergene))
+    .map((p) => `<p><strong>${esc(p.name)}:</strong> ${esc(p.pflichtangaben || '')}${p.allergene ? `${p.pflichtangaben ? ' · ' : ''}Allergene: ${esc(p.allergene)}` : ''}</p>`)
+    .join('');
+  const ware = [
+    angaben.verbrauchenBis ? `<p class="vw-ls-verbrauch">Verbrauchen bis: ${datumLang(angaben.verbrauchenBis)}</p>` : '',
+    angaben.herkunft ? `<p>${esc(angaben.herkunft)}</p>` : '',
+    produktAngaben,
+    angaben.hinweise ? `<p>${esc(angaben.hinweise)}</p>` : '',
+    angaben.zusatz ? `<p><strong>${esc(angaben.zusatz)}</strong></p>` : '',
+  ].join('');
   return `<section class="vw-lieferschein">
     <div class="vw-ls-kopf">
       <div>
@@ -500,10 +575,11 @@ function lieferscheinHtml(b) {
       ${k.telefon ? `<span class="vw-ls-grau">${esc(k.telefon)}</span>` : ''}
     </div>
     <table class="vw-ls-tabelle">
-      <thead><tr><th>Artikel</th><th class="vw-zahl">Menge</th>${mitGewicht ? '<th class="vw-zahl">Gewicht</th>' : ''}<th class="vw-zahl">Preis</th><th class="vw-zahl">Betrag</th></tr></thead>
+      <thead><tr><th>Artikel</th><th class="vw-zahl">Menge</th>${mitGewicht ? '<th class="vw-zahl">Gewicht</th>' : ''}</tr></thead>
       <tbody>${zeilen}</tbody>
-      <tfoot><tr><td colspan="${mitGewicht ? 4 : 3}">Summe</td><td class="vw-zahl">${betragText(bestellBetrag(b))}</td></tr></tfoot>
+      ${gesamtG ? `<tfoot><tr><td colspan="2">Gesamtgewicht</td><td class="vw-zahl">${kg(gesamtG)}</td></tr></tfoot>` : ''}
     </table>
+    ${ware ? `<div class="vw-ls-ware"><span class="vw-ls-grau">Angaben zur Ware</span>${ware}</div>` : ''}
     <div class="vw-ls-fuss">
       <span class="vw-ls-grau">Ware erhalten</span>
       <span class="vw-ls-linie"></span>
@@ -513,10 +589,10 @@ function lieferscheinHtml(b) {
   </section>`;
 }
 
-function lieferscheinDrucken(b) {
+function lieferscheinDrucken(b, angaben) {
   const druck = document.getElementById('vw-druck');
   if (!druck || !b) return;
-  druck.innerHTML = lieferscheinHtml(b);
+  druck.innerHTML = lieferscheinHtml(b, angaben);
   druckenWennBereit(druck);
 }
 
@@ -774,7 +850,7 @@ function initKlicks() {
         packzettelDrucken();
         break;
       case 'lieferschein':
-        lieferscheinDrucken(b);
+        lieferscheinDialog(b);
         break;
       case 'preis-gemerkt': {
         const p = b && b.positionen.find((x) => x.id === el.dataset.pos);
@@ -994,6 +1070,11 @@ function initEingaben() {
     if (id === 'vw-notiz-formular') {
       e.preventDefault();
       notizSpeichern(e.target);
+      return;
+    }
+    if (id === 'vw-lieferschein-formular') {
+      e.preventDefault();
+      lieferscheinFormular(e.target);
       return;
     }
     if (id === 'vw-produkt-formular') {
