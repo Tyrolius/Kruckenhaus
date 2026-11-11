@@ -93,14 +93,18 @@ function rundenKarte(st, mehrereRunden) {
     const aus = ch.artikel.filter((a) => freieMenge(ch, a.id) <= 0).length;
     // Am Handy zugeklappt, damit die Übersicht kurz bleibt
     const offen = window.matchMedia('(min-width: 768px)').matches || aus > 0;
-    freiHtml = `<details class="vw-mehr vw-frei"${offen ? ' open' : ''}><summary>Noch frei${aus ? ` – ${aus} ausverkauft` : ''}</summary>
+    // Gezählt werden Artikel, nicht Stück – deshalb „1 von 3 Artikeln", nie „1 ausverkauft"
+    const gesamt = ch.artikel.length;
+    const freiTitel = aus && aus === gesamt ? 'Ausverkauft'
+      : `Noch frei${aus ? ` – ${aus} von ${gesamt} Artikeln ausverkauft` : ''}`;
+    freiHtml = `<details class="vw-mehr vw-frei"${offen ? ' open' : ''}><summary>${freiTitel}</summary>
       <div class="vw-frei-liste">${ch.artikel.map((a) => {
         const frei = freieMenge(ch, a.id);
         const anteil = a.kontingent ? Math.min(100, Math.round(((a.kontingent - frei) / a.kontingent) * 100)) : 100;
         return `<div class="vw-frei-zeile">
           <span class="vw-frei-name">${esc(a.name)}</span>
           <span class="vw-balken${frei <= 0 ? ' vw-balken--voll' : ''}" aria-hidden="true"><span style="width:${anteil}%"></span></span>
-          <strong class="vw-frei-zahl">${frei > 0 ? `${frei} frei` : 'aus'}</strong>
+          <strong class="vw-frei-zahl">${frei > 0 ? `${frei} frei` : 'ausverkauft'}</strong>
         </div>`;
       }).join('')}</div></details>`;
   }
