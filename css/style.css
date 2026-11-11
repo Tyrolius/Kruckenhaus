@@ -2819,59 +2819,6 @@ body.season-winter .winter-image { display: block; }
 }
 
 /* ============================================================
-   33. TAGESBEISPIEL WORKATION
-   ============================================================ */
-.tagesplan {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin-block: var(--spacing-md);
-}
-
-.tagesplan-item {
-  display: flex;
-  align-items: flex-start;
-  gap: var(--spacing-sm);
-  padding: var(--spacing-sm) var(--spacing-sm);
-  position: relative;
-}
-
-.tagesplan-item:not(:last-child)::after {
-  content: '';
-  position: absolute;
-  left: 2.35rem;
-  top: 3.5rem;
-  width: 2px;
-  height: calc(100% - 1.5rem);
-  background: linear-gradient(to bottom, var(--color-primary), var(--color-green));
-}
-
-.tagesplan-zeit {
-  font-family: var(--font-heading);
-  font-weight: 700;
-  font-size: 1.1rem;
-  color: var(--color-primary);
-  min-width: 4rem;
-  flex-shrink: 0;
-}
-
-.tagesplan-icon {
-  font-size: 1.5rem;
-  flex-shrink: 0;
-  line-height: 1.6;
-}
-
-.tagesplan-text {
-  flex: 1;
-  padding-top: 0.1rem;
-}
-
-.tagesplan-text strong {
-  display: block;
-  color: var(--color-dark);
-}
-
-/* ============================================================
    34. TIERSTECKBRIEF (Bauernhof)
    ============================================================ */
 .tier-grid {
@@ -4866,7 +4813,7 @@ body.season-winter .winter-image { display: block; }
     flex: none;
   }
   .start-hero-note { font-size: 2.75rem; }
-  .start-karten,
+  .start-karten { grid-template-columns: repeat(3, 1fr); }
   .start-stimmen-grid,
   .hofchronik-liste { grid-template-columns: repeat(2, 1fr); }
 }
@@ -4874,7 +4821,6 @@ body.season-winter .winter-image { display: block; }
 @media (min-width: 1024px) {
   .start-intro { padding-block: var(--spacing-xl); }
   .start-intro-grid { grid-template-columns: 1fr 1fr; gap: var(--spacing-xl); }
-  .start-karten,
   .start-stimmen-grid { grid-template-columns: repeat(4, 1fr); }
   .hofchronik-liste { grid-template-columns: repeat(5, 1fr); gap: 2.5rem; }
   .start-erwartet { padding-block: var(--spacing-xl); }
@@ -4908,7 +4854,6 @@ body.season-winter .winter-image { display: block; }
 .saison-item .linien-icon,
 [style*="color:white"] > .linien-icon { color: inherit; }
 .highlight-icon .linien-icon { font-size: 2.5rem; }
-.tagesplan-icon .linien-icon { font-size: 1.35rem; vertical-align: -0.2em; }
 
 .alpbachtal-card-hinweis {
   margin: 0.75rem 0 0;
