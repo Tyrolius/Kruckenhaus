@@ -268,7 +268,7 @@ function exportieren() {
   const ch = aktiveCharge();
   const kopf = ['Bestellnr.', 'Datum', 'Kunde', 'Telefon', 'Adresse', 'Ort', 'Quelle', 'Status',
     'Übergabe', 'Termin', 'Artikel', 'Menge', 'Gewicht kg', 'Preis €', 'Preis je', 'Betrag €',
-    'geschätzt', 'Zahlart', 'Bezahlt', 'Übergeben', 'Anmerkung', 'Einzelgewichte kg'];
+    'USt %', 'Netto €', 'USt €', 'geschätzt', 'Zahlart', 'Bezahlt', 'Übergeben', 'Anmerkung', 'Einzelgewichte kg'];
   const zeilen = [kopf];
   bestellungenDerCharge(ch)
     .filter((b) => b.status !== 'storniert')
@@ -278,12 +278,16 @@ function exportieren() {
       b.positionen.forEach((p) => {
         const a = artikelVon(ch, p.artikelId);
         const betrag = positionBetrag(ch, p);
+        // USt-Satz zum Zeitpunkt der Bestellung; leer = Produkt noch nicht eingestuft
+        const satz = ustSatzVon(ch, p);
+        const anteil = ustAnteil(betrag.cent, satz);
         zeilen.push([b.nummer, b.erstellt, k.name, k.telefon.replace(/^\+/, '00'), k.strasse,
           `${k.plz} ${k.ort}`.trim(), quelleText(b), b.status,
           t ? (t.art === 'abholung' ? 'Abholung' : 'Lieferung') : (istHofverkauf(b) ? 'Verkauf am Hof' : 'offen'),
           t ? t.datum : '', a.name, p.menge,
           p.gewichtG ? p.gewichtG / 1000 : '', preisVon(ch, p) / 100, a.art === 'gewicht' ? 'kg' : 'Stück',
-          betrag.cent / 100, betrag.geschaetzt ? 'ja' : '', ZAHLARTEN[b.zahlart],
+          betrag.cent / 100, satz ?? '', satz != null ? anteil.nettoCent / 100 : '', satz != null ? anteil.ustCent / 100 : '',
+          betrag.geschaetzt ? 'ja' : '', ZAHLARTEN[b.zahlart],
           b.bezahlt ? ZAHLARTEN[b.bezahlt] : 'offen', b.uebergeben ? 'ja' : 'nein', b.anmerkung,
           einzelgewichteText(p).replace(/ kg$/, '')]);
       });
