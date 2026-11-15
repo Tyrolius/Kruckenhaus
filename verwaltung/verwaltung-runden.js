@@ -522,15 +522,8 @@ async function auswertungLaden(jahr) {
   if (aktuelleAnsicht() === 'auswertung') zeigen();
 }
 
-function ansichtAuswertung() {
-  const aw = zustand.auswertung;
-  if (!aw) { auswertungLaden(null); return; }
-  if (aw.laedt) { inhalt().innerHTML = '<div class="vw-kopf"><h1>Auswertung</h1></div><p class="vw-klein">Wird geladen …</p>'; return; }
-  if (aw.fehler) {
-    inhalt().innerHTML = `<div class="vw-kopf"><h1>Auswertung</h1></div><section class="vw-karte"><p>${esc(aw.fehler)}</p>
-      <button type="button" class="vw-knopf" data-aktion="auswertung-neu">Noch einmal versuchen</button></section>`;
-    return;
-  }
+// Zahlen der Auswertung – für die Ansicht und das PDF dieselben
+function auswertungRechnen(aw) {
   const summe = (liste) => liste.reduce((x, b) => x + b.cent, 0);
   const bar = aw.bestellungen.filter((b) => b.bezahlt === 'bar');
   const ueberwiesen = aw.bestellungen.filter((b) => b.bezahlt === 'ueberweisung');
@@ -563,6 +556,19 @@ function ansichtAuswertung() {
   const warenCent = steuer.reduce((x, e) => x + e.cent, 0);
   const lieferCent = summe(aw.bestellungen) - warenCent;
   const offenEingestuft = steuer.some((e) => !e.herkunft || e.ustSatz == null);
+  return { summe, bar, ueberwiesen, offen, produkte, bereiche, steuer, warenCent, lieferCent, offenEingestuft };
+}
+
+function ansichtAuswertung() {
+  const aw = zustand.auswertung;
+  if (!aw) { auswertungLaden(null); return; }
+  if (aw.laedt) { inhalt().innerHTML = '<div class="vw-kopf"><h1>Auswertung</h1></div><p class="vw-klein">Wird geladen …</p>'; return; }
+  if (aw.fehler) {
+    inhalt().innerHTML = `<div class="vw-kopf"><h1>Auswertung</h1></div><section class="vw-karte"><p>${esc(aw.fehler)}</p>
+      <button type="button" class="vw-knopf" data-aktion="auswertung-neu">Noch einmal versuchen</button></section>`;
+    return;
+  }
+  const { summe, bar, ueberwiesen, offen, produkte, bereiche, steuer, lieferCent, offenEingestuft } = auswertungRechnen(aw);
 
   const runden = aw.runden.map((r) => {
     const liste = aw.bestellungen.filter((b) => b.chargeId === r.id);
@@ -611,7 +617,11 @@ function ansichtAuswertung() {
     </section>` : ''}
     <section class="vw-karte"><h2>Bestellrunden</h2>${runden || '<p class="vw-klein">Keine.</p>'}
       <p class="vw-klein">Abgeschlossene Runden verschwinden aus Übersicht, Bestellungen und Übergabe, bleiben hier aber erhalten.</p></section>
-    <button type="button" class="vw-knopf vw-knopf--voll vw-knopf--breit" data-aktion="auswertung-export" ${aw.bestellungen.length ? '' : 'disabled'}>Für die Buchhaltung herunterladen (Excel)</button>
+    <div class="vw-knopfreihe vw-zl-knoepfe">
+      <button type="button" class="vw-knopf vw-knopf--voll" data-aktion="auswertung-pdf" ${aw.bestellungen.length ? '' : 'disabled'}>Als PDF speichern (Buchhaltung)</button>
+      <button type="button" class="vw-knopf" data-aktion="auswertung-export" ${aw.bestellungen.length ? '' : 'disabled'}>Für die Buchhaltung herunterladen (Excel)</button>
+    </div>
+    <p class="vw-klein">PDF: Jahresübersicht mit USt-Aufteilung, Bereichen, Produkten, Runden und allen Verkäufen. Im Druckfenster „Als PDF speichern" wählen (am iPhone: Teilen → „In Dateien sichern").</p>
     <p class="vw-klein">Eine Zeile je verkauftem Artikel mit Datum, Bestellnummer, Kunde, Bereich, Menge, Gewicht, Betrag und Zahlung – zum Weitergeben an die Buchhaltung.
       Mit Einstufung, USt-Satz, Netto und USt je Zeile.</p>`;
 }
@@ -638,6 +648,79 @@ function auswertungExport() {
       b.bezahlt ? ZAHLARTEN[b.bezahlt] : `offen (${ZAHLARTEN[b.zahlart]})`, b.bezahltAm || '']);
   }));
   csvHerunterladen(zeilen, `hofladen-auswertung-${aw.jahr}.csv`);
+}
+
+// Jahresauswertung als PDF für die Buchhaltung – Blatt wie die
+// Zahlungsübersicht: Summen, USt-Aufteilung, Bereiche, Produkte, Runden und
+// zum Schluss jeder Verkauf einzeln, sortiert nach Übergabetag.
+function auswertungPdf() {
+  const aw = zustand.auswertung;
+  const druck = document.getElementById('vw-druck');
+  if (!druck || !aw || !aw.bestellungen.length) return;
+  const r = auswertungRechnen(aw);
+  const anzahl = (liste) => `${liste.length} ${liste.length === 1 ? 'Verkauf' : 'Verkäufe'}`;
+  const rundeTitel = (id) => (aw.runden.find((x) => x.id === id) || {}).titel || '';
+  const eingestuft = r.steuer.filter((e) => e.ustSatz != null);
+  const nettoSumme = eingestuft.reduce((x, e) => x + e.nettoCent, 0);
+  const ustSumme = eingestuft.reduce((x, e) => x + e.ustCent, 0);
+  const verkaeufe = [...aw.bestellungen].sort((x, y) => String(x.uebergebenAm || '').localeCompare(String(y.uebergebenAm || ''))
+    || String(x.nummer).localeCompare(String(y.nummer), 'de', { numeric: true }));
+  const heute = new Date().toISOString().slice(0, 10);
+  const laufend = aw.jahr === heute.slice(0, 4);
+
+  const steuerTabelle = r.steuer.length ? `<h3 class="vw-zl-titel">Nach Einstufung und USt-Satz</h3>
+    <table class="vw-ls-tabelle vw-zl-tabelle"><thead><tr><th>Einstufung</th><th class="vw-zahl">Brutto</th><th class="vw-zahl">Netto</th><th class="vw-zahl">USt</th></tr></thead>
+    <tbody>${r.steuer.map((e) => `<tr><td>${(e.herkunft || e.ustSatz != null) && (!e.herkunft || e.ustSatz == null)
+        ? `${esc(einstufungText(e.herkunft, e.ustSatz))} <strong>(unvollständig)</strong>` : esc(einstufungText(e.herkunft, e.ustSatz))}</td>
+      <td class="vw-zahl">${euro(e.cent)}</td><td class="vw-zahl">${e.ustSatz != null ? euro(e.nettoCent) : ''}</td>
+      <td class="vw-zahl">${e.ustSatz != null ? euro(e.ustCent) : ''}</td></tr>`).join('')}
+      ${r.lieferCent ? `<tr><td>Liefergebühren</td><td class="vw-zahl">${euro(r.lieferCent)}</td><td></td><td></td></tr>` : ''}</tbody>
+    <tfoot><tr><td>Summe</td><td class="vw-zahl">${euro(r.summe(aw.bestellungen))}</td>
+      <td class="vw-zahl">${euro(nettoSumme)}${r.offenEingestuft || r.lieferCent ? '*' : ''}</td><td class="vw-zahl">${euro(ustSumme)}${r.offenEingestuft || r.lieferCent ? '*' : ''}</td></tr></tfoot></table>
+    <p class="vw-druck-klein">Preise sind Bruttopreise; es zählt der USt-Satz zum Zeitpunkt der Bestellung.${r.offenEingestuft || r.lieferCent
+      ? ` * Netto und USt nur für eingestufte Ware${r.lieferCent ? '; Liefergebühren folgen als Nebenleistung dem Satz der gelieferten Ware' : ''}.` : ''}</p>` : '';
+
+  // nur Runden mit Verkäufen in diesem Jahr (z. B. ohne leeres Dauersortiment)
+  const runden = aw.runden.filter((x) => aw.bestellungen.some((b) => b.chargeId === x.id));
+  const rundenTabelle = runden.length ? `<h3 class="vw-zl-titel">Bestellrunden</h3>
+    <table class="vw-ls-tabelle vw-zl-tabelle"><thead><tr><th>Runde</th><th>Stand</th><th class="vw-zahl">Verkäufe</th><th class="vw-zahl">nicht bezahlt</th><th class="vw-zahl">Umsatz</th></tr></thead>
+    <tbody>${runden.map((x) => {
+      const liste = aw.bestellungen.filter((b) => b.chargeId === x.id);
+      return `<tr><td>${esc(x.titel)}</td><td>${x.status === 'archiviert' ? 'abgeschlossen' : esc(CHARGE_KURZ[x.status] || 'laufend')}</td>
+        <td class="vw-zahl">${liste.length}</td><td class="vw-zahl">${euro(r.summe(liste.filter((b) => !b.bezahlt)))}</td>
+        <td class="vw-zahl">${euro(r.summe(liste))}</td></tr>`;
+    }).join('')}</tbody></table>` : '';
+
+  druck.innerHTML = `<section class="vw-zahlungsliste">
+    ${blattKopf(`Jahresauswertung ${aw.jahr}`, `Hofladen · Verkäufe nach Übergabetag<br>${laufend ? `Stand ${datumKurz(heute)} (Jahr läuft noch)` : `01.01.–31.12.${esc(aw.jahr)}`}`,
+      r.offen.length ? `${r.offen.length} nicht bezahlt` : 'Alles bezahlt', !r.offen.length)}
+    <div class="vw-zl-summen">
+      <div><span class="vw-ls-grau">Umsatz brutto</span><strong>${euro(r.summe(aw.bestellungen))}</strong><span class="vw-druck-klein">${anzahl(aw.bestellungen)}</span></div>
+      <div><span class="vw-ls-grau">Bar bezahlt</span><strong>${euro(r.summe(r.bar))}</strong><span class="vw-druck-klein">${anzahl(r.bar)}</span></div>
+      <div><span class="vw-ls-grau">Überweisung</span><strong>${euro(r.summe(r.ueberwiesen))}</strong><span class="vw-druck-klein">${anzahl(r.ueberwiesen)}</span></div>
+      <div class="${r.offen.length ? 'vw-zl-offen' : ''}"><span class="vw-ls-grau">Nicht bezahlt</span><strong>${euro(r.summe(r.offen))}</strong><span class="vw-druck-klein">${anzahl(r.offen)}</span></div>
+    </div>
+    ${steuerTabelle}
+    ${r.bereiche.length ? `<h3 class="vw-zl-titel">Nach Bereich</h3>
+      <table class="vw-ls-tabelle vw-zl-tabelle"><tbody>${r.bereiche.map(([name, cent]) => `<tr><td>${esc(name)}</td><td class="vw-zahl">${euro(cent)}</td></tr>`).join('')}</tbody></table>` : ''}
+    ${r.produkte.length ? `<h3 class="vw-zl-titel">Nach Produkt</h3>
+      <table class="vw-ls-tabelle vw-zl-tabelle"><thead><tr><th>Produkt</th><th>Bereich</th><th class="vw-zahl">Menge</th><th class="vw-zahl">kg</th><th class="vw-zahl">Umsatz</th></tr></thead>
+      <tbody>${r.produkte.map((p) => `<tr><td>${esc(p.produkt)}</td><td>${esc(p.bereich || '')}</td><td class="vw-zahl">${p.menge}</td>
+        <td class="vw-zahl">${p.art === 'gewicht' ? kgFormat.format(p.gramm / 1000) : ''}</td><td class="vw-zahl">${euro(p.cent)}</td></tr>`).join('')}</tbody></table>` : ''}
+    ${rundenTabelle}
+    <div class="vw-zl-verkaeufe">
+      <h3 class="vw-zl-titel">Alle Verkäufe ${esc(aw.jahr)}</h3>
+      <table class="vw-ls-tabelle vw-zl-tabelle"><thead><tr><th>Übergabe</th><th>Nr.</th><th>Kunde</th><th>Runde</th><th>Zahlung</th><th>Bezahlt am</th><th class="vw-zahl">Betrag</th></tr></thead>
+      <tbody>${verkaeufe.map((b) => `<tr><td>${datumKurz(b.uebergebenAm)}</td><td>${esc(b.nummer)}</td>
+        <td>${esc(b.kunde)}${b.hofverkauf ? ' <span class="vw-druck-klein">(am Hof)</span>' : ''}</td><td>${esc(rundeTitel(b.chargeId))}</td>
+        <td>${b.bezahlt ? (b.bezahlt === 'bar' ? 'Bar' : 'Überweisung') : `<strong>offen</strong> (${ZAHLARTEN[b.zahlart]})`}</td>
+        <td>${b.bezahlt ? datumKurz(b.bezahltAm) : ''}</td><td class="vw-zahl">${euro(b.cent)}</td></tr>`).join('')}</tbody>
+      <tfoot><tr><td colspan="6">Summe</td><td class="vw-zahl">${euro(r.summe(aw.bestellungen))}</td></tr></tfoot></table>
+    </div>
+    <p class="vw-ls-fusszeile">Alle Beträge brutto inkl. USt · gezählt nach dem Tag der Übergabe (Abholung, Lieferung, Verkauf am Hof) · Stornierte Bestellungen sind nicht enthalten.
+      <br>${erstelltText()}</p>
+  </section>`;
+  alsPdfDrucken(druck, `Hofladen Jahresauswertung ${aw.jahr}`);
 }
 
 // Bestellrunde abschließen bzw. wieder öffnen
