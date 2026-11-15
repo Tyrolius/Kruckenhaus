@@ -302,14 +302,13 @@ function zahlungenPdf() {
   const aktiv = bestellungenDerCharge(ch).filter(istAktiv)
     .sort((x, y) => String(x.nummer).localeCompare(String(y.nummer), 'de', { numeric: true }));
   if (!aktiv.length) return meldung('Keine Bestellungen in dieser Runde.');
-  const datum = (iso) => (iso ? new Date(`${iso}T12:00:00`).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '–');
+  const datum = datumKurz;
   const summe = (liste) => liste.reduce((s, b) => s + bestellBetrag(b).cent, 0);
   const bezahlt = aktiv.filter((b) => b.bezahlt);
   const offen = aktiv.filter((b) => !b.bezahlt);
   const bar = bezahlt.filter((b) => b.bezahlt === 'bar');
   const ueberw = bezahlt.filter((b) => b.bezahlt === 'ueberweisung');
   const geschaetzt = offen.some((b) => bestellBetrag(b).geschaetzt);
-  const [betrieb, ...anschrift] = ABSENDER.split(' · ');
   const uebergabe = (b) => {
     const t = terminVon(b);
     if (istHofverkauf(b)) return 'Verkauf am Hof';
@@ -328,19 +327,8 @@ function zahlungenPdf() {
   const stand = new Date().toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
   druck.innerHTML = `<section class="vw-zahlungsliste">
-    <div class="vw-ls-kopf">
-      <div>
-        <h2>Zahlungsübersicht</h2>
-        <p class="vw-ls-meta">${esc(ch.titel)}<br>Stand ${stand}</p>
-        <span class="vw-ls-stempel${offen.length ? '' : ' vw-ls-stempel--erledigt'}">${offen.length ? `${offen.length} offen` : 'Alles bezahlt'}</span>
-      </div>
-      <img class="vw-ls-logo" src="${LOGO}" alt="Kruckenhaus 1895" width="323" height="112" />
-    </div>
-    <div class="vw-ls-block">
-      <strong>${esc(betrieb)}</strong>
-      <span class="vw-ls-grau">${anschrift.map(esc).join(' · ')}</span>
-      <span class="vw-ls-grau">UID: ${esc(UID)}</span>
-    </div>
+    ${blattKopf('Zahlungsübersicht', `${esc(ch.titel)}<br>Stand ${stand}`,
+      offen.length ? `${offen.length} offen` : 'Alles bezahlt', !offen.length)}
     <div class="vw-zl-summen">
       <div><span class="vw-ls-grau">Gesamt</span><strong>${geschaetzt ? 'ca. ' : ''}${euro(summe(aktiv))}</strong><span class="vw-druck-klein">${anzahl(aktiv)}</span></div>
       <div><span class="vw-ls-grau">Bar erhalten</span><strong>${euro(summe(bar))}</strong><span class="vw-druck-klein">${anzahl(bar)}</span></div>
@@ -355,11 +343,44 @@ function zahlungenPdf() {
       <table class="vw-ls-tabelle vw-zl-tabelle">${kopfOffen}<tbody>${offen.map(zeileOffen).join('')}</tbody>
       <tfoot><tr><td colspan="4">Summe offen</td><td class="vw-zahl">${geschaetzt ? 'ca. ' : ''}${euro(summe(offen))}</td></tr></tfoot></table>` : ''}
     <p class="vw-ls-fusszeile">Alle Beträge brutto inkl. USt${geschaetzt ? ' · „ca." = noch nicht gewogen, Betrag geschätzt' : ''} · Stornierte Bestellungen und Warteliste sind nicht enthalten.
-      <br>Erstellt ${new Date().toLocaleString('de-AT', { dateStyle: 'short', timeStyle: 'short' })} in der Hofladen-Verwaltung</p>
+      <br>${erstelltText()}</p>
   </section>`;
+  alsPdfDrucken(druck, `Zahlungen ${ch.titel}`);
+}
 
+// Gemeinsame Teile der PDF-Blätter (Zahlungsübersicht, Jahresauswertung):
+// Kopf wie der Lieferschein – links Titel, Angaben und Stempel, rechts das
+// Logo, darunter Absender mit UID.
+function blattKopf(titel, metaHtml, stempel, erledigt) {
+  const [betrieb, ...anschrift] = ABSENDER.split(' · ');
+  return `<div class="vw-ls-kopf">
+      <div>
+        <h2>${esc(titel)}</h2>
+        <p class="vw-ls-meta">${metaHtml}</p>
+        ${stempel ? `<span class="vw-ls-stempel${erledigt ? ' vw-ls-stempel--erledigt' : ''}">${esc(stempel)}</span>` : ''}
+      </div>
+      <img class="vw-ls-logo" src="${LOGO}" alt="Kruckenhaus 1895" width="323" height="112" />
+    </div>
+    <div class="vw-ls-block">
+      <strong>${esc(betrieb)}</strong>
+      <span class="vw-ls-grau">${anschrift.map(esc).join(' · ')}</span>
+      <span class="vw-ls-grau">UID: ${esc(UID)}</span>
+    </div>`;
+}
+
+function erstelltText() {
+  return `Erstellt ${new Date().toLocaleString('de-AT', { dateStyle: 'short', timeStyle: 'short' })} in der Hofladen-Verwaltung`;
+}
+
+function datumKurz(iso) {
+  return iso ? new Date(`${iso}T12:00:00`).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '–';
+}
+
+// Drucken mit Dateinamen-Vorschlag: Der Seitentitel gilt in den meisten
+// Browsern als Name der PDF-Datei und wird nach dem Drucken zurückgesetzt.
+function alsPdfDrucken(druck, name) {
   const alterTitel = document.title;
-  document.title = `Zahlungen ${ch.titel} ${new Date().toISOString().slice(0, 10)}`.replace(/[\\/:*?"<>|]+/g, '-');
+  document.title = `${name} ${new Date().toISOString().slice(0, 10)}`.replace(/[\\/:*?"<>|]+/g, '-');
   window.addEventListener('afterprint', () => { document.title = alterTitel; }, { once: true });
   druckenWennBereit(druck);
 }
@@ -858,6 +879,9 @@ function initKlicks() {
         break;
       case 'zahlungen-pdf':
         zahlungenPdf();
+        break;
+      case 'auswertung-pdf':
+        auswertungPdf();
         break;
       case 'ankuendigung':
         ankuendigungOeffnen();

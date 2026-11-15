@@ -7059,6 +7059,7 @@ button.vw-foto-wahl:focus-visible {
    Blatt für die Buchhaltung (Zahlungen → „Als PDF speichern"): Kopf,
    Absender und Tabellen wie der Lieferschein (Abschnitt 71), dazu
    vier Summen und je eine Tabelle „Bezahlt" und „Noch offen".
+   Dasselbe Blatt nutzt die Jahresauswertung (Auswertung → PDF).
    ============================================================ */
 .vw-zl-knoepfe { margin-top: var(--spacing-sm); }
 .vw-zl-knoepfe .vw-knopf { flex: 1 1 14rem; }
@@ -7097,4 +7098,6 @@ button.vw-foto-wahl:focus-visible {
   .vw-zl-tabelle tfoot { display: table-row-group; }
   .vw-zl-tabelle td:first-child { white-space: nowrap; color: var(--color-text-light); }
   .vw-zahlungsliste .vw-ls-fusszeile { margin-top: 1.4rem; }
+  /* Überschrift nie allein am Seitenende */
+  .vw-zl-titel + .vw-zl-tabelle thead tr { break-before: avoid; }
 }
