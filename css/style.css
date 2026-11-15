@@ -7098,6 +7098,9 @@ button.vw-foto-wahl:focus-visible {
   .vw-zl-tabelle tfoot { display: table-row-group; }
   .vw-zl-tabelle td:first-child { white-space: nowrap; color: var(--color-text-light); }
   .vw-zahlungsliste .vw-ls-fusszeile { margin-top: 1.4rem; }
+  .vw-zl-tabelle th { white-space: nowrap; }
+  /* USt-Spalte: bei gemischten Bestellungen je Satz eine Zeile mit Bruttobetrag */
+  .vw-zl-ust-teil { display: block; white-space: nowrap; font-size: 8.5pt; }
   /* Überschrift nie allein am Seitenende */
   .vw-zl-titel + .vw-zl-tabelle thead tr { break-before: avoid; }
 }
