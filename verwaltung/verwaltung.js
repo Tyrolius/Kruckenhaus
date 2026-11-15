@@ -291,6 +291,33 @@ function exportieren() {
   csvHerunterladen(zeilen, `hofladen-${ch.titel.toLowerCase().replace(/[^a-z0-9äöüß]+/g, '-')}.csv`);
 }
 
+// USt-Satz einer Position: eingefroren bei der Bestellung, sonst der des
+// Produkts (wie v_positionen in D1); null = noch nicht eingestuft
+function ustSatzVon(ch, p) {
+  if (p.ustSatz != null) return p.ustSatz;
+  const produkt = produktVon(artikelVon(ch, p.artikelId).produktId);
+  return produkt && produkt.ustSatz != null ? produkt.ustSatz : null;
+}
+
+const ustText = (satz) => (satz == null ? 'nicht eingestuft' : satzText(satz));
+
+// Bruttobeträge einer Liste von Bestellungen je USt-Satz
+function jeUstSatz(bestellungen) {
+  const summen = new Map();
+  bestellungen.forEach((b) => {
+    const ch = chargeVon(b);
+    b.positionen.forEach((p) => {
+      const satz = ustSatzVon(ch, p);
+      const betrag = positionBetrag(ch, p);
+      const e = summen.get(satz) || { satz, cent: 0, geschaetzt: false };
+      e.cent += betrag.cent;
+      e.geschaetzt = e.geschaetzt || betrag.geschaetzt;
+      summen.set(satz, e);
+    });
+  });
+  return summen;
+}
+
 // Zahlungsübersicht der Bestellrunde als PDF für die Buchhaltung – im Aufbau
 // des Lieferscheins (Logo, Absender, UID). Ohne Bibliothek: Das Blatt wird
 // gedruckt, im Druckfenster „Als PDF speichern" wählen. Der Seitentitel gilt
@@ -317,14 +344,48 @@ function zahlungenPdf() {
   };
   const zeileBezahlt = (b) => `<tr><td>${esc(b.nummer)}</td><td>${esc(kundeVon(b).name)}</td>
     <td>${esc(uebergabe(b))}</td><td>${b.bezahlt === 'bar' ? 'Bar' : 'Überweisung'}</td>
-    <td>${datum(b.bezahltAm)}</td><td class="vw-zahl">${betragText(bestellBetrag(b))}</td></tr>`;
+    <td>${datum(b.bezahltAm)}</td><td>${ustSpalte(b)}</td><td class="vw-zahl">${betragText(bestellBetrag(b))}</td></tr>`;
   const zeileOffen = (b) => `<tr><td>${esc(b.nummer)}</td><td>${esc(kundeVon(b).name)}</td>
     <td>${esc(uebergabe(b))}</td><td>${b.zahlart === 'bar' ? 'Bar' : 'Überweisung'}</td>
-    <td class="vw-zahl">${betragText(bestellBetrag(b))}</td></tr>`;
-  const kopfBezahlt = '<thead><tr><th>Nr.</th><th>Kunde</th><th>Übergabe</th><th>Zahlart</th><th>Bezahlt am</th><th class="vw-zahl">Betrag</th></tr></thead>';
-  const kopfOffen = '<thead><tr><th>Nr.</th><th>Kunde</th><th>Übergabe</th><th>Zahlart</th><th class="vw-zahl">Betrag</th></tr></thead>';
+    <td>${ustSpalte(b)}</td><td class="vw-zahl">${betragText(bestellBetrag(b))}</td></tr>`;
+  const kopfBezahlt = '<thead><tr><th>Nr.</th><th>Kunde</th><th>Übergabe</th><th>Zahlart</th><th>Bezahlt am</th><th>USt</th><th class="vw-zahl">Betrag</th></tr></thead>';
+  const kopfOffen = '<thead><tr><th>Nr.</th><th>Kunde</th><th>Übergabe</th><th>Zahlart</th><th>USt</th><th class="vw-zahl">Betrag</th></tr></thead>';
   const anzahl = (liste) => `${liste.length} ${liste.length === 1 ? 'Bestellung' : 'Bestellungen'}`;
   const stand = new Date().toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  // USt je Bestellung: ein Satz, oder bei gemischten Bestellungen jeder Satz mit Bruttobetrag
+  const ustSpalte = (b) => {
+    const saetze = [...jeUstSatz([b]).values()];
+    if (saetze.length === 1) return ustText(saetze[0].satz);
+    return saetze.map((e) => `<span class="vw-zl-ust-teil">${e.satz == null ? 'ohne' : ustText(e.satz)} · ${betragText(e)}</span>`).join('');
+  };
+  // Aufteilung nach USt-Satz: bezahlt (Brutto, Netto, USt) und noch offen
+  const ustBezahlt = jeUstSatz(bezahlt);
+  const ustOffen = jeUstSatz(offen);
+  const saetze = [...new Set([...ustBezahlt.keys(), ...ustOffen.keys()])]
+    .sort((x, y) => (x == null) - (y == null) || x - y);
+  const leer = { cent: 0, geschaetzt: false };
+  const ustZeilen = saetze.map((satz) => {
+    const bz = ustBezahlt.get(satz) || leer;
+    const of = ustOffen.get(satz) || leer;
+    const anteil = ustAnteil(bz.cent, satz);
+    return { satz, bz, of, anteil };
+  });
+  const ohneSatz = saetze.includes(null);
+  const ustTabelle = `<h3 class="vw-zl-titel">Aufteilung nach USt-Satz</h3>
+    <table class="vw-ls-tabelle vw-zl-tabelle vw-zl-ust"><thead><tr><th>USt-Satz</th><th class="vw-zahl">Bezahlt brutto</th>
+      <th class="vw-zahl">davon netto</th><th class="vw-zahl">davon USt</th><th class="vw-zahl">Noch offen brutto</th></tr></thead>
+    <tbody>${ustZeilen.map((z) => `<tr><td>${z.satz == null ? '<strong>nicht eingestuft</strong>' : ustText(z.satz)}</td>
+      <td class="vw-zahl">${euro(z.bz.cent)}</td>
+      <td class="vw-zahl">${z.satz == null ? '–' : euro(z.anteil.nettoCent)}</td>
+      <td class="vw-zahl">${z.satz == null ? '–' : euro(z.anteil.ustCent)}</td>
+      <td class="vw-zahl">${betragText(z.of)}</td></tr>`).join('')}</tbody>
+    <tfoot><tr><td>Summe</td><td class="vw-zahl">${euro(summe(bezahlt))}</td>
+      <td class="vw-zahl">${euro(ustZeilen.filter((z) => z.satz != null).reduce((x, z) => x + z.anteil.nettoCent, 0))}${ohneSatz ? '*' : ''}</td>
+      <td class="vw-zahl">${euro(ustZeilen.filter((z) => z.satz != null).reduce((x, z) => x + z.anteil.ustCent, 0))}${ohneSatz ? '*' : ''}</td>
+      <td class="vw-zahl">${geschaetzt ? 'ca. ' : ''}${euro(summe(offen))}</td></tr></tfoot></table>
+    <p class="vw-druck-klein">Es gilt der USt-Satz zum Zeitpunkt der Bestellung; Netto und USt aus dem Bruttobetrag gerechnet (auf Cent gerundet).${ohneSatz
+      ? ' * ohne nicht eingestufte Ware – bitte im Sortiment Einstufung und USt-Satz eintragen.' : ''}</p>`;
 
   druck.innerHTML = `<section class="vw-zahlungsliste">
     ${blattKopf('Zahlungsübersicht', `${esc(ch.titel)}<br>Stand ${stand}`,
@@ -335,13 +396,14 @@ function zahlungenPdf() {
       <div><span class="vw-ls-grau">Überweisung erhalten</span><strong>${euro(summe(ueberw))}</strong><span class="vw-druck-klein">${anzahl(ueberw)}</span></div>
       <div class="${offen.length ? 'vw-zl-offen' : ''}"><span class="vw-ls-grau">Noch offen</span><strong>${geschaetzt ? 'ca. ' : ''}${euro(summe(offen))}</strong><span class="vw-druck-klein">${anzahl(offen)}</span></div>
     </div>
+    ${ustTabelle}
     <h3 class="vw-zl-titel">Bezahlt</h3>
     ${bezahlt.length ? `<table class="vw-ls-tabelle vw-zl-tabelle">${kopfBezahlt}<tbody>${bezahlt.map(zeileBezahlt).join('')}</tbody>
-      <tfoot><tr><td colspan="5">Summe bezahlt</td><td class="vw-zahl">${euro(summe(bezahlt))}</td></tr></tfoot></table>`
+      <tfoot><tr><td colspan="6">Summe bezahlt</td><td class="vw-zahl">${euro(summe(bezahlt))}</td></tr></tfoot></table>`
       : '<p class="vw-ls-grau">Noch nichts bezahlt.</p>'}
     ${offen.length ? `<h3 class="vw-zl-titel">Noch offen</h3>
       <table class="vw-ls-tabelle vw-zl-tabelle">${kopfOffen}<tbody>${offen.map(zeileOffen).join('')}</tbody>
-      <tfoot><tr><td colspan="4">Summe offen</td><td class="vw-zahl">${geschaetzt ? 'ca. ' : ''}${euro(summe(offen))}</td></tr></tfoot></table>` : ''}
+      <tfoot><tr><td colspan="5">Summe offen</td><td class="vw-zahl">${geschaetzt ? 'ca. ' : ''}${euro(summe(offen))}</td></tr></tfoot></table>` : ''}
     <p class="vw-ls-fusszeile">Alle Beträge brutto inkl. USt${geschaetzt ? ' · „ca." = noch nicht gewogen, Betrag geschätzt' : ''} · Stornierte Bestellungen und Warteliste sind nicht enthalten.
       <br>${erstelltText()}</p>
   </section>`;

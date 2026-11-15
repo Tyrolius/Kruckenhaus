@@ -190,7 +190,7 @@ async function standLaden(db, bank = null) {
                          uebergeben_am, bezahlt_art, bezahlt_am, anmerkung, interne_notiz, erstellt_am,
                          EXISTS (SELECT 1 FROM bestellung_gesehen g WHERE g.bestellung_id = bestellungen.id) AS gesehen
                   FROM bestellungen WHERE charge_id IN (${aktiv}) ORDER BY id`),
-      db.prepare(`SELECT p.id, p.bestellung_id, p.charge_artikel_id, p.menge, p.einzelpreis_cent, p.gewicht_g, ${stueckSpalte}
+      db.prepare(`SELECT p.id, p.bestellung_id, p.charge_artikel_id, p.menge, p.einzelpreis_cent, p.gewicht_g, p.ust_satz, ${stueckSpalte}
                   FROM bestell_positionen p JOIN bestellungen b ON b.id = p.bestellung_id
                   WHERE b.charge_id IN (${aktiv}) ORDER BY p.id`),
       db.prepare(`SELECT k.id, k.name, k.telefon, k.email, k.strasse, k.plz, k.ort, k.stammkunde, k.notiz,
@@ -220,6 +220,8 @@ async function standLaden(db, bank = null) {
     jePos.get(p.bestellung_id).push({
       id: id(p.id), artikelId: id(p.charge_artikel_id), menge: p.menge,
       einzelpreisCent: p.einzelpreis_cent, gewichtG: p.gewicht_g ?? undefined,
+      // USt-Satz zum Zeitpunkt der Bestellung (fehlt er, gilt der des Produkts)
+      ...(p.ust_satz != null ? { ustSatz: p.ust_satz } : {}),
       ...(p.stueckgewichte ? { stueckG: stueckLesen(p.stueckgewichte) } : {}),
     });
   }
