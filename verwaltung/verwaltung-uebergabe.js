@@ -359,8 +359,9 @@ async function uebergabeAbschliessen(b, zahlung) {
       if (g.stueck) p.stueckG = g.stueck;
     });
     b.uebergeben = true;
+    b.uebergebenAm = new Date().toISOString().slice(0, 10);
     b.neu = false;
-    if (zahlung === 'bar' && !b.bezahlt) { b.bezahlt = 'bar'; b.zahlart = 'bar'; }
+    if (zahlung === 'bar' && !b.bezahlt) { b.bezahlt = 'bar'; b.zahlart = 'bar'; b.bezahltAm = b.uebergebenAm; }
     if (zahlung === 'ueberweisung') b.zahlart = 'ueberweisung';
     return {};
   }, { erfolg: `${kundeVon(b).name}: übergeben${zahlung === 'bar' ? ' und bar kassiert' : ''}.` });
@@ -643,5 +644,9 @@ function ansichtZahlungen() {
     <section class="vw-karte"><h2>Bereits bezahlt</h2>
       ${bezahlt.length ? bezahlt.map(zeile).join('') : '<p class="vw-klein">Noch nichts.</p>'}
     </section>
-    <button type="button" class="vw-knopf vw-knopf--breit" data-aktion="export">Liste für Excel herunterladen</button>`;
+    <div class="vw-knopfreihe vw-zl-knoepfe">
+      <button type="button" class="vw-knopf vw-knopf--voll" data-aktion="zahlungen-pdf" ${aktiv.length ? '' : 'disabled'}>Als PDF speichern (Buchhaltung)</button>
+      <button type="button" class="vw-knopf" data-aktion="export">Liste für Excel herunterladen</button>
+    </div>
+    <p class="vw-klein">PDF: Im Druckfenster als Drucker „Als PDF speichern" wählen (am iPhone: Teilen → „In Dateien sichern").</p>`;
 }

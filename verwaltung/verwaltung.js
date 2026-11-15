@@ -291,6 +291,79 @@ function exportieren() {
   csvHerunterladen(zeilen, `hofladen-${ch.titel.toLowerCase().replace(/[^a-z0-9äöüß]+/g, '-')}.csv`);
 }
 
+// Zahlungsübersicht der Bestellrunde als PDF für die Buchhaltung – im Aufbau
+// des Lieferscheins (Logo, Absender, UID). Ohne Bibliothek: Das Blatt wird
+// gedruckt, im Druckfenster „Als PDF speichern" wählen. Der Seitentitel gilt
+// dabei in den meisten Browsern als Dateiname und wird danach zurückgesetzt.
+function zahlungenPdf() {
+  const ch = aktiveCharge();
+  const druck = document.getElementById('vw-druck');
+  if (!druck || !ch) return;
+  const aktiv = bestellungenDerCharge(ch).filter(istAktiv)
+    .sort((x, y) => String(x.nummer).localeCompare(String(y.nummer), 'de', { numeric: true }));
+  if (!aktiv.length) return meldung('Keine Bestellungen in dieser Runde.');
+  const datum = (iso) => (iso ? new Date(`${iso}T12:00:00`).toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '–');
+  const summe = (liste) => liste.reduce((s, b) => s + bestellBetrag(b).cent, 0);
+  const bezahlt = aktiv.filter((b) => b.bezahlt);
+  const offen = aktiv.filter((b) => !b.bezahlt);
+  const bar = bezahlt.filter((b) => b.bezahlt === 'bar');
+  const ueberw = bezahlt.filter((b) => b.bezahlt === 'ueberweisung');
+  const geschaetzt = offen.some((b) => bestellBetrag(b).geschaetzt);
+  const [betrieb, ...anschrift] = ABSENDER.split(' · ');
+  const uebergabe = (b) => {
+    const t = terminVon(b);
+    if (istHofverkauf(b)) return 'Verkauf am Hof';
+    if (b.uebergeben) return `übergeben ${b.uebergebenAm ? datum(b.uebergebenAm) : ''}`.trim();
+    return t ? terminText(t) : 'offen';
+  };
+  const zeileBezahlt = (b) => `<tr><td>${esc(b.nummer)}</td><td>${esc(kundeVon(b).name)}</td>
+    <td>${esc(uebergabe(b))}</td><td>${b.bezahlt === 'bar' ? 'Bar' : 'Überweisung'}</td>
+    <td>${datum(b.bezahltAm)}</td><td class="vw-zahl">${betragText(bestellBetrag(b))}</td></tr>`;
+  const zeileOffen = (b) => `<tr><td>${esc(b.nummer)}</td><td>${esc(kundeVon(b).name)}</td>
+    <td>${esc(uebergabe(b))}</td><td>${b.zahlart === 'bar' ? 'Bar' : 'Überweisung'}</td>
+    <td class="vw-zahl">${betragText(bestellBetrag(b))}</td></tr>`;
+  const kopfBezahlt = '<thead><tr><th>Nr.</th><th>Kunde</th><th>Übergabe</th><th>Zahlart</th><th>Bezahlt am</th><th class="vw-zahl">Betrag</th></tr></thead>';
+  const kopfOffen = '<thead><tr><th>Nr.</th><th>Kunde</th><th>Übergabe</th><th>Zahlart</th><th class="vw-zahl">Betrag</th></tr></thead>';
+  const anzahl = (liste) => `${liste.length} ${liste.length === 1 ? 'Bestellung' : 'Bestellungen'}`;
+  const stand = new Date().toLocaleDateString('de-AT', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
+  druck.innerHTML = `<section class="vw-zahlungsliste">
+    <div class="vw-ls-kopf">
+      <div>
+        <h2>Zahlungsübersicht</h2>
+        <p class="vw-ls-meta">${esc(ch.titel)}<br>Stand ${stand}</p>
+        <span class="vw-ls-stempel${offen.length ? '' : ' vw-ls-stempel--erledigt'}">${offen.length ? `${offen.length} offen` : 'Alles bezahlt'}</span>
+      </div>
+      <img class="vw-ls-logo" src="${LOGO}" alt="Kruckenhaus 1895" width="323" height="112" />
+    </div>
+    <div class="vw-ls-block">
+      <strong>${esc(betrieb)}</strong>
+      <span class="vw-ls-grau">${anschrift.map(esc).join(' · ')}</span>
+      <span class="vw-ls-grau">UID: ${esc(UID)}</span>
+    </div>
+    <div class="vw-zl-summen">
+      <div><span class="vw-ls-grau">Gesamt</span><strong>${geschaetzt ? 'ca. ' : ''}${euro(summe(aktiv))}</strong><span class="vw-druck-klein">${anzahl(aktiv)}</span></div>
+      <div><span class="vw-ls-grau">Bar erhalten</span><strong>${euro(summe(bar))}</strong><span class="vw-druck-klein">${anzahl(bar)}</span></div>
+      <div><span class="vw-ls-grau">Überweisung erhalten</span><strong>${euro(summe(ueberw))}</strong><span class="vw-druck-klein">${anzahl(ueberw)}</span></div>
+      <div class="${offen.length ? 'vw-zl-offen' : ''}"><span class="vw-ls-grau">Noch offen</span><strong>${geschaetzt ? 'ca. ' : ''}${euro(summe(offen))}</strong><span class="vw-druck-klein">${anzahl(offen)}</span></div>
+    </div>
+    <h3 class="vw-zl-titel">Bezahlt</h3>
+    ${bezahlt.length ? `<table class="vw-ls-tabelle vw-zl-tabelle">${kopfBezahlt}<tbody>${bezahlt.map(zeileBezahlt).join('')}</tbody>
+      <tfoot><tr><td colspan="5">Summe bezahlt</td><td class="vw-zahl">${euro(summe(bezahlt))}</td></tr></tfoot></table>`
+      : '<p class="vw-ls-grau">Noch nichts bezahlt.</p>'}
+    ${offen.length ? `<h3 class="vw-zl-titel">Noch offen</h3>
+      <table class="vw-ls-tabelle vw-zl-tabelle">${kopfOffen}<tbody>${offen.map(zeileOffen).join('')}</tbody>
+      <tfoot><tr><td colspan="4">Summe offen</td><td class="vw-zahl">${geschaetzt ? 'ca. ' : ''}${euro(summe(offen))}</td></tr></tfoot></table>` : ''}
+    <p class="vw-ls-fusszeile">Alle Beträge brutto inkl. USt${geschaetzt ? ' · „ca." = noch nicht gewogen, Betrag geschätzt' : ''} · Stornierte Bestellungen und Warteliste sind nicht enthalten.
+      <br>Erstellt ${new Date().toLocaleString('de-AT', { dateStyle: 'short', timeStyle: 'short' })} in der Hofladen-Verwaltung</p>
+  </section>`;
+
+  const alterTitel = document.title;
+  document.title = `Zahlungen ${ch.titel} ${new Date().toISOString().slice(0, 10)}`.replace(/[\\/:*?"<>|]+/g, '-');
+  window.addEventListener('afterprint', () => { document.title = alterTitel; }, { once: true });
+  druckenWennBereit(druck);
+}
+
 // Überweisungsdaten auf dem Packzettel (Bankverbindung aus den Cloudflare-
 // Einstellungen, siehe README; fehlt sie, erscheint ein Hinweis)
 function ueberweisungsBlock(b) {
@@ -738,7 +811,7 @@ function initKlicks() {
       }
       case 'bezahlt': {
         const art = el.dataset.wert || null;
-        bestellungAendern(b, { aktion: 'bezahlt', art }, () => { b.bezahlt = art; },
+        bestellungAendern(b, { aktion: 'bezahlt', art }, () => { b.bezahlt = art; b.bezahltAm = art ? new Date().toISOString().slice(0, 10) : null; },
           art ? `${name}: bezahlt (${ZAHLARTEN[art]}).` : 'Zahlung zurückgesetzt.');
         break;
       }
@@ -782,6 +855,9 @@ function initKlicks() {
       }
       case 'export':
         exportieren();
+        break;
+      case 'zahlungen-pdf':
+        zahlungenPdf();
         break;
       case 'ankuendigung':
         ankuendigungOeffnen();

@@ -187,7 +187,7 @@ async function standLaden(db, bank = null) {
       db.prepare(`SELECT id, charge_id, art, datum, von, bis, hinweis FROM termine
                   WHERE charge_id IN (${aktiv}) ORDER BY datum, von`),
       db.prepare(`SELECT id, nummer, charge_id, kunde_id, quelle, status, termin_id, lieferadresse, zahlart,
-                         uebergeben_am, bezahlt_art, anmerkung, interne_notiz, erstellt_am,
+                         uebergeben_am, bezahlt_art, bezahlt_am, anmerkung, interne_notiz, erstellt_am,
                          EXISTS (SELECT 1 FROM bestellung_gesehen g WHERE g.bestellung_id = bestellungen.id) AS gesehen
                   FROM bestellungen WHERE charge_id IN (${aktiv}) ORDER BY id`),
       db.prepare(`SELECT p.id, p.bestellung_id, p.charge_artikel_id, p.menge, p.einzelpreis_cent, p.gewicht_g, ${stueckSpalte}
@@ -246,7 +246,9 @@ async function standLaden(db, bank = null) {
       id: id(b.id), nummer: b.nummer, chargeId: id(b.charge_id), kundeId: id(b.kunde_id), quelle: b.quelle,
       erstellt: String(b.erstellt_am).slice(0, 10), status: b.status, terminId: id(b.termin_id),
       lieferadresse: b.lieferadresse || '', zahlart: b.zahlart, bezahlt: b.bezahlt_art || null,
-      uebergeben: Boolean(b.uebergeben_am), anmerkung: b.anmerkung || '', interneNotiz: b.interne_notiz || '',
+      bezahltAm: b.bezahlt_am ? String(b.bezahlt_am).slice(0, 10) : null,
+      uebergeben: Boolean(b.uebergeben_am), uebergebenAm: b.uebergeben_am ? String(b.uebergeben_am).slice(0, 10) : null,
+      anmerkung: b.anmerkung || '', interneNotiz: b.interne_notiz || '',
       neu: b.quelle === 'web' && !b.gesehen,
       ueberBertha: ueberBertha.has(b.id),
       positionen: jePos.get(b.id) || [],

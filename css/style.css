@@ -7053,3 +7053,48 @@ button.vw-foto-wahl:focus-visible {
   .tier-karte { display: block; }
   .tier-karte img { aspect-ratio: 3 / 2; margin-bottom: 0.9rem; }
 }
+
+/* ============================================================
+   74. VERWALTUNG – ZAHLUNGSÜBERSICHT ALS PDF
+   Blatt für die Buchhaltung (Zahlungen → „Als PDF speichern"): Kopf,
+   Absender und Tabellen wie der Lieferschein (Abschnitt 71), dazu
+   vier Summen und je eine Tabelle „Bezahlt" und „Noch offen".
+   ============================================================ */
+.vw-zl-knoepfe { margin-top: var(--spacing-sm); }
+.vw-zl-knoepfe .vw-knopf { flex: 1 1 14rem; }
+
+@media print {
+  @page { margin: 1.5cm 1.4cm; }
+  .vw-zahlungsliste { font-size: 10pt; color: var(--color-black); }
+  .vw-zl-summen {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.5rem;
+    margin: 0.2rem 0 1rem;
+  }
+  .vw-zl-summen > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    padding: 0.45rem 0.6rem;
+    border-radius: var(--border-radius);
+    background-color: var(--color-beige);
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .vw-zl-summen strong { font-size: 13pt; color: var(--color-primary); font-variant-numeric: tabular-nums; }
+  .vw-zl-summen .vw-zl-offen strong { color: var(--color-terracotta); }
+  .vw-zl-summen .vw-ls-grau { font-size: 8.5pt; text-transform: uppercase; letter-spacing: 0.04em; }
+  .vw-zl-titel {
+    font-family: var(--font-heading);
+    font-size: 13pt;
+    color: var(--color-primary);
+    margin: 1rem 0 0.2rem;
+    break-after: avoid;
+  }
+  .vw-zl-tabelle { font-size: 9.5pt; }
+  .vw-zl-tabelle thead { display: table-header-group; }
+  .vw-zl-tabelle tfoot { display: table-row-group; }
+  .vw-zl-tabelle td:first-child { white-space: nowrap; color: var(--color-text-light); }
+  .vw-zahlungsliste .vw-ls-fusszeile { margin-top: 1.4rem; }
+}
