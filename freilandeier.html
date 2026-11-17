@@ -151,9 +151,8 @@
         <div class="eier-karten">
           <article class="eier-karte slide-up">
             <h3>Preis</h3>
-            <!-- TODO: Stückzahl je Schachtel ergänzen (z. B. „10 Eier“), sobald bestätigt -->
             <p class="eier-gross">4 € <span>pro Schachtel</span></p>
-            <p class="eier-klein">Derzeitiger Preis.</p>
+            <p class="eier-klein">10 Eier pro Schachtel, derzeitiger Preis.</p>
           </article>
           <article class="eier-karte slide-up">
             <h3>Größen</h3>
@@ -226,18 +225,8 @@
           <div class="eier-zwei">
             <div class="form-group">
               <label for="eier-schachteln">Schachteln pro Lieferung <span class="pflicht">(Pflichtfeld)</span></label>
-              <select id="eier-schachteln" name="schachteln" required>
-                <option value="1">1 Schachtel</option>
-                <option value="2" selected>2 Schachteln</option>
-                <option value="3">3 Schachteln</option>
-                <option value="4">4 Schachteln</option>
-                <option value="5">5 Schachteln</option>
-                <option value="6">6 Schachteln</option>
-                <option value="7">7 Schachteln</option>
-                <option value="8">8 Schachteln</option>
-                <option value="9">9 Schachteln</option>
-                <option value="10">10 Schachteln</option>
-              </select>
+              <input type="number" id="eier-schachteln" name="schachteln" required min="1" step="1" value="2" inputmode="numeric" />
+              <div class="form-hint">10 Eier pro Schachtel</div>
             </div>
             <fieldset class="form-group eier-wahl">
               <legend>Wie oft? <span class="pflicht">(Pflichtfeld)</span></legend>
@@ -409,7 +398,7 @@
           </details>
           <details class="slide-up">
             <summary>Was kosten die Eier?<span aria-hidden="true">+</span></summary>
-            <p>Derzeit 4 € pro Schachtel, Größe M und L gemischt.</p>
+            <p>Derzeit 4 € pro Schachtel mit 10 Eiern, Größe M und L gemischt.</p>
           </details>
           <details class="slide-up">
             <summary>Wie bezahle ich?<span aria-hidden="true">+</span></summary>

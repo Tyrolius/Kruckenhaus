@@ -28,7 +28,7 @@ CREATE TABLE IF NOT EXISTS eier_anmeldungen (
   ort                TEXT    NOT NULL,
   telefon            TEXT    NOT NULL,
   email              TEXT    NOT NULL,
-  schachteln         INTEGER NOT NULL CHECK (schachteln BETWEEN 1 AND 10),
+  schachteln         INTEGER NOT NULL CHECK (schachteln >= 1),
   rhythmus           TEXT    NOT NULL CHECK (rhythmus IN ('woechentlich', '14-taegig')),
   abstellort         TEXT    NOT NULL,   -- Schlüssel, siehe ABSTELLORTE in functions/_lib/eier.js
   abstellort_hinweis TEXT,

@@ -133,7 +133,7 @@ await abgelehnt({ telefon: '12' }, /Telefonnummer/);
 await abgelehnt({ telefon: 'ruft mich an 0660123456' }, /Telefonnummer/);
 await abgelehnt({ email: 'keine-mail' }, /E-Mail/);
 await abgelehnt({ schachteln: 0 }, /Schachteln/);
-await abgelehnt({ schachteln: 11 }, /Schachteln/);
+await abgelehnt({ schachteln: -2 }, /Schachteln/);
 await abgelehnt({ schachteln: 1.5 }, /Schachteln/);
 await abgelehnt({ rhythmus: 'monatlich' }, /wöchentlich oder 14-tägig/);
 await abgelehnt({ abstellort: 'dach' }, /abstellen/);
@@ -226,6 +226,11 @@ ok(await vw('POST', `anmeldung/${formelId}/loeschen`, {}));
 assert.equal(roh.prepare('SELECT COUNT(*) AS n FROM eier_anmeldungen WHERE id = ?').get(formelId).n, 0);
 assert.equal((await vw('POST', `anmeldung/${formelId}/loeschen`, {})).status, 400);
 console.log('✓ Anmeldung endgültig löschen');
+
+// Keine Obergrenze bei den Schachteln (z. B. Gasthaus)
+ok(await oeffentlich('POST', 'anmeldung', { ...gueltig, name: 'Gasthaus Groß', schachteln: 30 }));
+assert.equal(roh.prepare(`SELECT schachteln FROM eier_anmeldungen WHERE name = 'Gasthaus Groß'`).get().schachteln, 30);
+console.log('✓ Schachteln ohne Obergrenze (30 angenommen)');
 
 /* ---------- 6. Aktuelles vom Stall ---------- */
 assert.deepEqual(ok(await oeffentlich('GET', 'neuigkeiten')).neuigkeiten, []);

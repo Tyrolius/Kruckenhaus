@@ -40,7 +40,6 @@ export const HERKUNFT = {
   hof: 'am Hof / bei uns gekauft',
   anderes: 'anderes',
 };
-export const MAX_SCHACHTELN = 10;
 
 // Liefergebiet nach Postleitzahl. Brixlegg beliefern wir derzeit nicht,
 // könnten es aber dazunehmen – deshalb eigene Stufe statt „außerhalb".
@@ -93,8 +92,8 @@ export function anmeldungPruefen(eingabe) {
     throw new EingabeFehler('Bitte gebt eine gültige Telefonnummer an.');
   }
   if (!istGueltigeEmail(d.email)) throw new EingabeFehler('Bitte gebt eine gültige E-Mail-Adresse an.');
-  if (!Number.isInteger(d.schachteln) || d.schachteln < 1 || d.schachteln > MAX_SCHACHTELN) {
-    throw new EingabeFehler(`Bitte wählt, wie viele Schachteln ihr pro Lieferung möchtet (1 bis ${MAX_SCHACHTELN}).`);
+  if (!Number.isInteger(d.schachteln) || d.schachteln < 1) {
+    throw new EingabeFehler('Bitte gebt an, wie viele Schachteln ihr pro Lieferung möchtet (mindestens 1).');
   }
   if (!RHYTHMUS[d.rhythmus]) throw new EingabeFehler('Bitte wählt wöchentlich oder 14-tägig.');
   if (!ABSTELLORTE[d.abstellort]) throw new EingabeFehler('Bitte wählt, wo wir die Eier abstellen dürfen.');
