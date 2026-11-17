@@ -34,7 +34,7 @@ Das ist eine bewusste Entscheidung (Wartbarkeit durch Nicht-Entwickler).
 ## Aufbau
 
 ```
-*.html                     11 eigenständige Seiten, jede vollständig
+*.html                     14 eigenständige Seiten, jede vollständig
                            (Head, Navigation, Footer dupliziert – kein Include)
 css/style.css              gesamtes Design, ~3400 Zeilen, nummerierte Abschnitte
 js/main.js                 Navigation, Lightbox, Scroll-Effekte, Formular
@@ -45,6 +45,7 @@ functions/api/kontakt.js      POST /api/kontakt → D1 + E-Mail via Resend
 functions/api/availability.js GET /api/availability → Airbnb-iCal parsen
 schema.sql                 D1-Schema (Tabelle „anfragen")
 schema-hofladen.sql        D1-Schema der Hofladen-Vorbestellung (im Aufbau)
+schema-eier.sql            D1-Schema Freilandeier: eier_anmeldungen (ohne IP), stall_neuigkeiten
 hofladen-produkte.sql      Produktkatalog der Hofladen-Vorbestellung (Erstbefüllung)
 migration-2026-*.sql       einmalige Migrationen bestehender Datenbanken (ALTER TABLE; zuletzt
                            2026-11-gasthaus – Einzelgewichte, gemerkte Gasthaus-Preise; ohne sie läuft alles weiter)
@@ -71,11 +72,20 @@ verwaltung/preise.html + preise.js     Preise ändern – derzeit nur Entwurf oh
 hofladen.html + js/hofladen.js   Bestellseite mit Sortiment für Kunden (noch noindex und nicht verlinkt,
                            bis die Bestellbedingungen geprüft sind; Wegweiser zeigt bis dahin auf bauernhof.html#hofladen)
 meine-bestellungen.html + js/meine-bestellungen.js   Ansicht zum persönlichen Link
+freilandeier.html + js/freilandeier.js   Freilandeier: einziger Einstieg für neue Eierkunden (Formular
+                           „Kunde werden" → Warteliste) und Wegweiser ins Bertha-Kundenportal; „Aktuelles
+                           vom Stall" lädt /api/eier/neuigkeiten. Fakten (Gebiet, Freitag, 4 €/Schachtel,
+                           Erzeugercode) stehen im HTML und in llms.txt – bei Änderungen beide anpassen
+functions/api/eier/        öffentlich: POST anmeldung, GET neuigkeiten; Helfer und Verwaltungs-Routen
+                           (/api/verwaltung/eier/…) in functions/_lib/eier.js; Schema in schema-eier.sql
+verwaltung/eier.html + eier.js   Anmeldungen (Status neu/warteliste/angenommen/abgelehnt, Notiz, CSV
+                           für Bertha – keine automatische Übergabe) und „Aktuelles vom Stall"
 functions/api/hofladen/    öffentliche Schnittstelle: Angebot, Bestellung, Voranmeldung, „meine"
 js/qrcode.js               Überweisungs-QR-Code (EPC-QR), eigener Kodierer ohne Bibliothek
 scripts/test-hofladen-*.mjs   Tests für Schema/Helfer, Verwaltung, Zugang, Bestellseite, QR-Code,
                               Dauerartikel, Gänse-Runde mit Gasthäusern (große Mengen, Einzelgewichte);
-                              scripts/test-extern-api.mjs für die Bertha-Schnittstelle
+                              scripts/test-extern-api.mjs für die Bertha-Schnittstelle,
+                              scripts/test-eier.mjs für Anmeldung, Neuigkeiten und Eier-Verwaltung
                               (node, ohne echte D1)
 _headers                   Security- und Cache-Header
 wrangler.toml              Pages-Konfiguration inkl. D1-Binding (nicht löschen!)
@@ -111,7 +121,8 @@ nach sich. Vor dem Abschließen jeweils prüfen:
 | Änderung | Überall anpassen |
 |---|---|
 | **Preis** | `js/preise-config.js` (Quelle der Wahrheit) **und** die hartkodierten „ab 125 €"-Stellen in `index.html` (Text, `priceRange`, `makesOffer`-JSON-LD), `ferienwohnung.html`, `preise.html` (og:description), `workation.html` (og:description) **und** `llms.txt` |
-| **Telefon / E-Mail** | alle `.html` (E-Mail steht in 11 Dateien) und `js/main.js` |
+| **Telefon / E-Mail** | alle `.html` (E-Mail steht in 13 Dateien), `js/main.js` und `js/freilandeier.js` |
+| **Eier-Fakten** (Liefergebiet, Liefertag, Preis, Haltung, Portal-Adresse) | `freilandeier.html` (Abschnitte und FAQ), `llms.txt`, Bestätigungsmail in `functions/_lib/eier.js`, Liefergebiet nach PLZ ebenda (`GEBIET`) |
 | **Navigationspunkt** | in *jeder* `.html` zweimal: `.nav-menu` (Desktop) und `.nav-overlay` (Mobile); ggf. zusätzlich `.bottom-tab-bar`; dazu `sitemap.xml` |
 | **FAQ-Text** | `kontakt.html` **zweimal**: sichtbar als `<details>` und im FAQPage-JSON-LD im `<head>` – beide identisch halten |
 | **Footer / Copyright-Jahr** | alle `.html` |
@@ -197,6 +208,10 @@ Es gibt keine automatisierten Tests und keinen Linter.
   Schema, `functions/_lib/` oder `functions/api/verwaltung/`:
   `node scripts/test-hofladen-db.mjs`, `…-api.mjs`, `…-zugang.mjs`, `…-oeffentlich.mjs`, `…-qr.mjs`,
   `…-dauer.mjs`, `…-gasthaus.mjs` und `node scripts/test-extern-api.mjs`.
+- Freilandeier: eigenes Schema `schema-eier.sql` (mehrfach ausführbar, in `kruckenhaus` **und**
+  `kruckenhaus-test` einspielen). Anmeldungen ohne IP-Adresse speichern (Datenschutzerklärung
+  `#eierkunden`), Bestätigungsmail ohne frei eingegebene Texte. Nach Änderungen an
+  `functions/_lib/eier.js` oder `functions/api/eier/`: `node scripts/test-eier.mjs`.
 - Vorschau-Adressen (`*.pages.dev`) nutzen die Test-Datenbank `kruckenhaus-test`
   (`[env.preview]` in `wrangler.toml`). Schemaänderungen dort ebenfalls einspielen;
   `[vars]` immer in beiden Blöcken gleich halten.

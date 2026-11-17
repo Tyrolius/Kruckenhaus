@@ -107,6 +107,7 @@
       <nav class="nav-menu" role="navigation" aria-label="Hauptnavigation">
         <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
         <a href="bauernhof.html" class="nav-link">Bauernhof</a>
+        <a href="freilandeier.html" class="nav-link">Freilandeier</a>
         <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
         <a href="lage.html" class="nav-link">Lage &amp; Umgebung</a>
         <a href="kontakt.html" class="nav-link">Kontakt</a>
@@ -123,6 +124,7 @@
     <a href="ferienwohnung.html" class="nav-link">Ferienwohnung</a>
     <a href="preise.html" class="nav-link">Preise &amp; Buchung</a>
     <a href="bauernhof.html" class="nav-link">Bauernhof</a>
+    <a href="freilandeier.html" class="nav-link">Freilandeier</a>
     <a href="berglsteiner-see.html" class="nav-link">Berglsteiner See</a>
     <a href="lage.html" class="nav-link">Lage &amp; Umgebung</a>
     <a href="kontakt.html" class="nav-link">Kontakt</a>
@@ -150,7 +152,7 @@
       <div class="container">
         <div class="legal-content">
 
-          <p class="update-date">Stand: Oktober 2026 | Letzte Aktualisierung: Oktober 2026</p>
+          <p class="update-date">Stand: November 2026 | Letzte Aktualisierung: November 2026</p>
 
           <!-- Inhaltsverzeichnis -->
           <nav class="legal-toc" aria-label="Inhaltsverzeichnis">
@@ -161,7 +163,7 @@
               <li><a href="#kontaktformular">Kontaktformular &amp; Datenverarbeitung</a></li>
               <li><a href="#kontaktwege">Kontakt per E-Mail, Telefon &amp; WhatsApp</a></li>
               <li><a href="#buchung">Buchung, Gästemeldung &amp; gesetzliche Pflichten</a></li>
-              <li><a href="#hofladen">Hofladen: Vorbestellungen &amp; Voranmeldungen</a></li>
+              <li><a href="#hofladen">Hofladen &amp; Freilandeier: Vorbestellungen, Voranmeldungen &amp; Anmeldungen</a></li>
               <li><a href="#cookies">Cookies &amp; lokale Speicherung</a></li>
               <li><a href="#schriftarten">Schriftarten (lokal gehostet)</a></li>
               <li><a href="#openstreetmap">OpenStreetMap (eingebettete Karte)</a></li>
@@ -353,7 +355,7 @@
 
           <!-- 6. Hofladen -->
           <section id="hofladen" aria-labelledby="h-hofladen">
-            <h2 id="h-hofladen">6. Hofladen: Vorbestellungen &amp; Voranmeldungen</h2>
+            <h2 id="h-hofladen">6. Hofladen &amp; Freilandeier: Vorbestellungen, Voranmeldungen &amp; Anmeldungen</h2>
             <p>
               Fleisch, Nudeln, Honig und weitere Hofprodukte verkaufen wir auf Vorbestellung.
               Sie können über das Bestellformular auf dieser Website bestellen oder sich
@@ -442,6 +444,44 @@
               <!-- TODO: Speicherort der Bertha-Datenbank (Firebase-Region) prüfen und hier ergänzen, z. B. „Die Daten werden in Rechenzentren in der EU gespeichert." -->
               Zu jedem Abruf protokollieren wir nur Zeitpunkt, Art des Abrufs und Ergebnis – ohne
               personenbezogene Daten – und löschen diese Einträge nach 90 Tagen.
+            </p>
+
+            <h3 id="eierkunden">Anmeldung als Eierkunde (Freilandeier)</h3>
+            <p>
+              Auf der Seite <a href="freilandeier.html">„Freilandeier"</a> können Sie sich für die
+              Lieferung unserer Eier anmelden. Bis wir neue Kundinnen und Kunden beliefern können,
+              führen wir die Anmeldungen auf einer Warteliste.
+            </p>
+            <ul>
+              <li>Name, Anschrift (Straße, Postleitzahl, Ort), Telefonnummer und E-Mail-Adresse (Pflichtfelder)</li>
+              <li>gewünschte Anzahl Schachteln, wöchentliche oder 14-tägige Lieferung und der Ort, an dem wir die Eier abstellen dürfen, samt Ihrem Hinweis dazu</li>
+              <li>freiwillig: wie Sie von uns erfahren haben und gegebenenfalls der Name der Person, die uns empfohlen hat</li>
+              <li>Zeitpunkt, zu dem Sie den Datenschutzhinweis bestätigt haben</li>
+              <li>freiwillig: Ihre Einwilligung in gelegentliche Neuigkeiten vom Hof per E-Mail, mit Zeitpunkt</li>
+              <li>der Stand Ihrer Anmeldung (neu, Warteliste, angenommen, abgelehnt) und unsere internen Notizen dazu</li>
+            </ul>
+            <p>
+              <strong>Zweck:</strong> Führen der Warteliste, Kontaktaufnahme mit Ihnen, Planung von
+              Lieferrunde und Tierhaltung sowie – wenn wir Sie beliefern – Ihre Aufnahme als Kundin
+              oder Kunde.<br>
+              <strong>Rechtsgrundlage:</strong> Art. 6 Abs. 1 lit. b DSGVO (vorvertragliche
+              Maßnahmen auf Ihre Anfrage); für die Neuigkeiten vom Hof Art. 6 Abs. 1 lit. a DSGVO
+              (Ihre Einwilligung, jederzeit widerrufbar, z. B. per E-Mail an
+              <a href="mailto:info@kruckenhaus.at">info@kruckenhaus.at</a>); für den Namen einer
+              empfehlenden Person Art. 6 Abs. 1 lit. f DSGVO (berechtigtes Interesse, die Empfehlung
+              zuordnen zu können).
+            </p>
+            <p>
+              <strong>Technische Umsetzung:</strong> Die Anmeldung wird wie das Kontaktformular bei
+              <strong>Cloudflare</strong> (Datenbank Cloudflare&nbsp;D1) gespeichert; über
+              <strong>Resend</strong> erhalten wir eine Benachrichtigung und Sie eine
+              Eingangsbestätigung (siehe Abschnitt 3). Ihre IP-Adresse und Browserkennung werden
+              nicht gespeichert, es werden keine Cookies gesetzt.
+            </p>
+            <p>
+              <strong>Übernahme in Bertha:</strong> Nehmen wir Sie als Kundin oder Kunde auf, tragen
+              wir Ihre Daten selbst in unser Kundenportal „Bertha" ein (siehe oben). Eine
+              automatische Übermittlung von dieser Website an Bertha gibt es dabei nicht.
             </p>
           </section>
 
@@ -548,6 +588,7 @@
               <li><strong>Unverbindliche Anfragen ohne Buchung:</strong> Löschung spätestens zwölf Monate nach der letzten Korrespondenz</li>
               <li><strong>Hofladen-Bestellungen:</strong> 7 Jahre, soweit sie abrechnungsrelevant sind (§ 132 BAO)</li>
               <li><strong>Voranmeldungen, aus denen keine Bestellung wird:</strong> Löschung spätestens zwölf Monate nach dem gewünschten Zeitraum</li>
+              <li><strong>Anmeldungen als Eierkunde:</strong> auf der Warteliste, bis wir Sie beliefern oder Sie sich abmelden; abgelehnte oder zurückgezogene Anmeldungen löschen wir spätestens zwölf Monate danach, angenommene spätestens zwölf Monate nach der Übernahme in Bertha</li>
               <li><strong>Kundendaten (Name, Kontaktdaten, Anschrift):</strong> solange Sie bei uns bestellen; auf Ihren Wunsch löschen wir sie, soweit keine Aufbewahrungspflicht entgegensteht</li>
               <li><strong>Zuordnung Ihrer Kundennummer aus Bertha zu unserer Kundendatei:</strong> solange Sie bei uns bestellen; auf Ihren Wunsch löschen wir sie, soweit keine Aufbewahrungspflicht entgegensteht</li>
               <li><strong>Server-Logs (Cloudflare):</strong> In der Regel nur wenige Tage</li>
@@ -668,6 +709,7 @@
             <li><a href="ferienwohnung.html">Ferienwohnung</a></li>
             <li><a href="preise.html">Preise &amp; Buchung</a></li>
             <li><a href="bauernhof.html">Bauernhof &amp; Alpakas</a></li>
+            <li><a href="freilandeier.html">Freilandeier</a></li>
             <li><a href="berglsteiner-see.html">Berglsteiner See</a></li>
             <li><a href="lage.html">Lage &amp; Umgebung</a></li>
             <li><a href="kontakt.html">Kontakt</a></li>

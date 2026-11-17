@@ -81,6 +81,15 @@ Am Hof leben Alpakas. Hofprodukte (u. a. frische Freilandeier,
 Nudeln, Honig) gibt es auf Vorbestellung zur Abholung am Hof; einen
 Selbstbedienungs-Hofladen gibt es derzeit nicht.
 
+## Freilandeier mit Lieferung
+
+Freilandeier von 500 Hennen (Feststall mit Wintergarten und Auslauf,
+Erzeugercode 1-AT-3830314) werden jeden Freitag wöchentlich oder 14-tägig an
+Haushalte in Breitenbach am Inn, Kundl und Kramsach geliefert, derzeit 4 € pro
+Schachtel (M und L gemischt), am liebsten bar beim Schachteltausch bezahlt. Ab Frühjahr 2027
+kommt ein Mobilstall mit 330 Hennen dazu; bis dahin nehmen wir Anmeldungen auf
+einer Warteliste an: https://www.kruckenhaus.at/freilandeier.html
+
 Gastgeber: Kathrin und Florian Häusler.
 
 ## Seiten
@@ -89,6 +98,7 @@ Gastgeber: Kathrin und Florian Häusler.
 - [Ferienwohnung](https://www.kruckenhaus.at/ferienwohnung.html): Ausstattung, Galerie, Verfügbarkeitskalender
 - [Preise](https://www.kruckenhaus.at/preise.html): Saisonpreise, Zusatzkosten, Storno, Zahlungsarten
 - [Bauernhof](https://www.kruckenhaus.at/bauernhof.html): Alpakas, Hofladen, Landwirtschaft
+- [Freilandeier](https://www.kruckenhaus.at/freilandeier.html): Eierlieferung nach Breitenbach am Inn, Kundl und Kramsach, Anmeldung, Kundenportal
 - [Berglsteiner See & Reintalersee](https://www.kruckenhaus.at/berglsteiner-see.html): Die beiden Seen, Wanderroute und Badesee
 - [Workation](https://www.kruckenhaus.at/workation.html): Arbeiten mit Starlink-Internet
 - [Umgebung](https://www.kruckenhaus.at/lage.html#umgebung): Ausflugsziele in der Region (Teil der Seite Lage & Umgebung)

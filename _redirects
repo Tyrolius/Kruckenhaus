@@ -21,6 +21,7 @@
 /wrangler.toml / 301
 /schema.sql / 301
 /schema-hofladen.sql / 301
+/schema-eier.sql / 301
 /hofladen-produkte.sql / 301
 /migration-2026-10-bereiche.sql / 301
 /migration-2026-10-dauerartikel.sql / 301

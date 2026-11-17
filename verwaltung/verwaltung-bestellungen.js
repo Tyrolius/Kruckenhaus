@@ -187,6 +187,11 @@ function ansichtMehr() {
         ${punkt('#bertha', 'Bertha', 'Verbindung zum Eierkunden-Portal')}
       </ul>
     </section>
+    <section class="vw-karte" aria-label="Freilandeier"><h2>Freilandeier</h2>
+      <ul class="vw-aufgaben">
+        ${punkt('eier.html', 'Eierkunden', 'Anmeldungen, Warteliste, Export für Bertha, Aktuelles vom Stall')}
+      </ul>
+    </section>
     <section class="vw-karte" aria-label="Ferienwohnung"><h2>Ferienwohnung</h2>
       <ul class="vw-aufgaben">
         ${punkt('angebot.html', 'Angebot', 'Antwort auf eine Anfrage berechnen und als Text holen')}

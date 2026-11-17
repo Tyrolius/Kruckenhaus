@@ -48,6 +48,8 @@
  *   POST /api/verwaltung/schnittstelle/zugang/<id>/sperren
  *   POST /api/verwaltung/schnittstelle/pausieren  Not-Aus ({ pausiert: true/false })
  *        (Plan: docs/SCHNITTSTELLE-BERTHA.md, Abschnitt 6.1)
+ *   …/api/verwaltung/eier/…                       Freilandeier: Anmeldungen (Status, Notiz,
+ *        CSV-Export für Bertha) und „Aktuelles vom Stall" – siehe functions/_lib/eier.js
  *
  * POST nur mit Content-Type application/json – fremde Seiten können so
  * keine Änderungen im Namen eines angemeldeten Nutzers auslösen.
@@ -71,6 +73,7 @@ import {
   BETRIEB, mailHtml, absatz, klein, knopf, kasten, gruss, positionenHtml, terminText,
 } from '../../_lib/mail.js';
 import { RECHTE, rechteLesen, zugangAnlegen, zugangSperren, istPausiert, pausiertSetzen } from '../../_lib/extern.js';
+import { eierVerwaltung } from '../../_lib/eier.js';
 
 /* ------------------------------------------------------------
    1. EINGABEN PRÜFEN
@@ -1459,6 +1462,8 @@ export async function onRequest({ request, env, params, data }) {
   const [bereich, teilId, unteraktion] = pfad;
 
   try {
+    // Freilandeier: Anmeldungen und „Aktuelles vom Stall" (functions/_lib/eier.js)
+    if (bereich === 'eier') return await eierVerwaltung(db, request, pfad.slice(1));
     if (request.method === 'GET' && bereich === 'stand' && pfad.length === 1) {
       return json({ ok: true, nutzer: data.nutzer, ...(await standLaden(db, bankAusEnv(env))) });
     }

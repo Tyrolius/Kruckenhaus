@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="description" content="Anmeldungen als Eierkunde und Aktuelles vom Stall verwalten (nur intern)." />
+  <meta name="robots" content="noindex, nofollow" />
+  <meta name="theme-color" content="#2F5848" />
+  <title>Freilandeier – Verwaltung</title>
+  <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="stylesheet" href="../css/style.css?v=2026-11-17a" />
+</head>
+<body class="ag-body">
+
+  <!-- Beispielmodus (verwaltung/eier.html?entwurf): erfundene Daten, nichts wird gespeichert -->
+  <div class="vw-entwurf-hinweis" id="ei-beispiel-hinweis" role="note" hidden>
+    Beispielmodus mit frei erfundenen Daten – nichts wird gespeichert.
+  </div>
+
+  <header class="ag-kopf">
+    <a href="./" class="ag-zurueck">← Verwaltung</a>
+    <h1>Freilandeier</h1>
+    <p>Anmeldungen aus dem Formular auf <a href="../freilandeier.html">freilandeier.html</a> und die Einträge
+       „Aktuelles vom Stall“. Angenommene Kunden legt ihr in Bertha an – dafür gibt es den CSV-Export.</p>
+    <nav class="ei-sprung" aria-label="Bereiche">
+      <a href="#ei-anmeldungen">Anmeldungen</a>
+      <a href="#ei-aktuelles">Aktuelles vom Stall</a>
+    </nav>
+  </header>
+
+  <main class="ei-raster" id="ei-inhalt">
+    <section class="vw-karte" id="ei-anmeldungen" aria-labelledby="ei-anm-titel">
+      <h2 id="ei-anm-titel">Anmeldungen</h2>
+      <p class="vw-klein">Wird geladen …</p>
+    </section>
+
+    <section class="vw-karte" id="ei-aktuelles" aria-labelledby="ei-akt-titel">
+      <h2 id="ei-akt-titel">Aktuelles vom Stall</h2>
+      <p class="vw-klein">Wird geladen …</p>
+    </section>
+  </main>
+
+  <div id="ei-toast" class="vw-toast" role="status" aria-live="polite"></div>
+
+  <script src="eier.js"></script>
+</body>
+</html>

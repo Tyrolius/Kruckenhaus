@@ -21,6 +21,7 @@ Offizielle Website der Ferienwohnung **Hof Kruckenhaus** in Breitenbach am Inn, 
 | Hofladen-Vorbestellung | 🛠 programmiert und getestet; Produktfotos direkt in der Verwaltung hochladen (vorher einmal `schema-hofladen.sql` in der D1-Konsole ausführen); offen: Bestellbedingungen prüfen lassen, Verwaltungs-Anmeldung einrichten, Produktfotos aufnehmen – Details in `docs/HOFLADEN-VORBESTELLUNG.md` |
 | Schnittstelle zu Bertha | 🛠 Website (W1–W4) und Bertha-Seite (B1/B2) programmiert und getestet; offen: Zugang „Bertha Test“ auf der Vorschau anlegen und Ende-zu-Ende testen, danach echter Zugang (Recht „bestellen“ erst nach Prüfung der Bestellbedingungen) – Details in `docs/SCHNITTSTELLE-BERTHA.md` |
 | Steuer und SVS im Hofladen | 🛠 Einstufung (Urprodukt/Be- und Verarbeitung/Zukauf) und USt-Satz je Produkt, Auswertung Brutto/Netto/USt, Excel-Export, Weitergabe an Bertha; offen: einmal die Zeile aus `docs/SCHNITTSTELLE-BERTHA.md` Abschnitt 8d in der D1-Konsole ausführen, dann alle Produkte einstufen |
+| Freilandeier | 🛠 Seite `freilandeier.html` mit Anmeldung „Kunde werden“ (Warteliste) und Wegweiser ins Bertha-Kundenportal, Verwaltung `verwaltung/eier.html` (Status, CSV für Bertha, Aktuelles vom Stall), getestet mit `node scripts/test-eier.mjs`; offen: `schema-eier.sql` in `kruckenhaus` und `kruckenhaus-test` einspielen (siehe [Datenbank: Freilandeier](#datenbank-freilandeier)), Fotos, Stückzahl je Schachtel, Empfehlungsregel ab Jänner |
 | Arbeitsweise | Änderungen entstehen auf einem Arbeitszweig (`claude/…`) und gehen erst live, wenn sie in `master` übernommen werden |
 
 ---
@@ -443,6 +444,7 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ├── _redirects               → Weiterleitungen; sperrt interne Dateien (docs/, README, Schemata …)
 ├── schema.sql               → D1-Datenbankschema (Tabelle „anfragen", Buchungsmodell)
 ├── schema-hofladen.sql      → D1-Schema der Hofladen-Vorbestellung
+├── schema-eier.sql          → D1-Schema Freilandeier (Anmeldungen, Aktuelles vom Stall)
 ├── hofladen-produkte.sql    → Produktkatalog zur Erstbefüllung (Startpreise)
 ├── migration-2026-10-bereiche.sql → einmalige Umstellung auf Bereiche (live erledigt)
 ├── sitemap.xml / robots.txt → Für Google & Co.
@@ -460,6 +462,7 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ├── functions/api/availability.js → Holt den Airbnb-Kalender (Server)
 ├── functions/api/kontakt.js      → Nimmt Formularanfragen entgegen (D1 + E-Mail)
 ├── functions/api/hofladen/       → öffentliche Schnittstelle: Angebot, Bestellung, Voranmeldung, Widerruf
+├── functions/api/eier/           → Anmeldung als Eierkunde, Aktuelles vom Stall (freilandeier.html)
 ├── functions/api/verwaltung/     → Schnittstelle der Verwaltung (Zugangsprüfung + Daten)
 ├── functions/_lib/          → gemeinsame Helfer (Hofladen, Zugang, Mail-Vorlage)
 ├── verwaltung/              → Hofladen-Verwaltung (Anmeldung über Cloudflare Access, nicht verlinkt)
@@ -470,6 +473,29 @@ habt. Nach reinen Bild- oder CSS-Änderungen ist es nicht nötig.
 ├── fonts/                   → Lokal gehostete Schriften (DSGVO – nicht löschen!)
 └── images/                  → Fotos in Themenordnern (siehe „Fotos")
 ```
+
+---
+
+## Datenbank: Freilandeier
+
+Die Anmeldungen vom Formular „Kunde werden“ auf `freilandeier.html` und die
+Einträge „Aktuelles vom Stall“ stehen in eigenen Tabellen (`schema-eier.sql`,
+darf mehrfach ausgeführt werden). Einmal in beiden Datenbanken einspielen:
+
+```
+npx wrangler d1 execute kruckenhaus --remote --file=./schema-eier.sql
+npx wrangler d1 execute kruckenhaus-test --remote --file=./schema-eier.sql
+```
+
+Ohne Terminal: Inhalt der Datei ohne die `--`-Kommentarzeilen in die D1-Console
+im Cloudflare-Dashboard einfügen (die Console nimmt nur eine Zeile).
+Bis dahin kommen Anmeldungen trotzdem per Mail an, werden aber nicht gespeichert.
+
+Gepflegt wird alles in der Verwaltung unter **Freilandeier → Eierkunden**
+(`verwaltung/eier.html`): Status setzen (neu → Warteliste → angenommen /
+abgelehnt), Notiz, löschen und **„Diese Liste als CSV“** – damit legt ihr
+angenommene Kunden von Hand in Bertha an. Eine automatische Übergabe an Bertha
+gibt es bewusst nicht.
 
 ---
 
