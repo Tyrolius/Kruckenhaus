@@ -63,7 +63,7 @@ functions/api/verwaltung/  Schnittstelle der Verwaltung (_middleware.js = Zugang
 verwaltung/                Hofladen-Verwaltung (inkl. Produktkatalog); ?entwurf = Beispielmodus.
                            Logik in sieben Dateien verwaltung-*.js + verwaltung.js (klassische Skripte,
                            gemeinsamer Namensraum, Reihenfolge in index.html; Überblick im Kopf von
-                           verwaltung.js). CSS dazu: Abschnitte 40, 47 und 70 in css/style.css; nach
+                           verwaltung.js). CSS dazu: Abschnitte 40, 47, 70 und 75 (Packzettel als Bon, 72 mm) in css/style.css; nach
                            CSS-Änderungen ?v=… in index.html, angebot.html und preise.html hochzählen
 verwaltung/angebot.html + angebot.js   Angebot für Anfragen zur Ferienwohnung: rechnet nach
                            js/preise-config.js (Saison je Nacht, Ostern, Langzeitrabatt, Ortstaxe) und baut den Antworttext
@@ -158,6 +158,8 @@ danach gegenprüfen, dass keine Fundstelle übrig blieb.
 - Defensiv gegen fehlende Elemente prüfen (`if (!el) return;`), weil dasselbe
   Skript auf allen Seiten läuft.
 - **Kein `localStorage`, `sessionStorage` oder Cookie-Setzen** (siehe Regel 1).
+  Einzige Ausnahme (ausdrücklich gewünscht): die Verwaltung merkt sich das
+  zuletzt benutzte Druckformat (`vw-druckformat`, Etikett oder Bon).
 
 **Cloudflare Functions**
 - Datei-Pfad = Route (`functions/api/kontakt.js` → `/api/kontakt`).

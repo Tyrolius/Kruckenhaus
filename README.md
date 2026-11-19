@@ -696,6 +696,30 @@ bezahlte Beträge innerhalb von 14 Tagen erstatten, dann „Erledigt". Die
 Tabelle `widerrufe` steht in `schema-hofladen.sql`; nach dem Update die
 Datei einmal erneut in der D1-Konsole ausführen.
 
+**Packzettel drucken – Etikett oder Bon:** Neben „Packzettel drucken"
+(Etikett, Epson ColorWorks CW-C4000 – unverändert) steht „Als Bon drucken"
+für den Bondrucker **Star TSP143ECO** (Thermo, 72 mm, USB am PC). Gedruckt
+wird ein Bon pro Bestellung, gleicher Inhalt und gleiche Reihenfolge wie
+beim Etikett, nur schmal und in reinem Schwarz. Der Browser merkt sich das
+zuletzt benutzte Format, dieser Knopf ist dunkel hervorgehoben.
+Einstellungen für den Bon:
+- Chrome-Druckdialog: Drucker **„Star TSP100 Cutter (TSP143)"**, Ränder
+  **Keine**, Skalierung **100 %**, „Kopf- und Fußzeilen" **aus**.
+- Damit jeder Bon einzeln abgeschnitten wird: Windows → Drucker →
+  Star TSP100 → *Druckereigenschaften → Geräteeinstellungen* →
+  **Seitenabschneidetyp = Teilschnitt**. Mit „Kein Schnitt" (Werkseinstellung)
+  wird nur am Ende des ganzen Stapels geschnitten.
+- Papier im Treiber: „72mm x Beleg". Die Seite ist im Code 72 × 297 mm groß
+  (`@page bon` in `css/style.css`, Abschnitt 75).
+- *Leerraum unter dem Bon:* noch beim ersten Testdruck prüfen. Schiebt der
+  Treiber nach jedem Bon den Rest der 297 mm als leeres Papier heraus, im
+  Treiber die Option zum Unterdrücken leerer Zeilen am Seitenende suchen
+  (futurePRNT: Papiersparfunktion/„Seitenende") oder in `@page bon` die Höhe
+  verkleinern (lange Bestellungen laufen dann auf einen zweiten Bon weiter).
+  Ergebnis hier eintragen: *(noch offen)*.
+- Das Bon-Logo ist `images/logo/kruckenhaus-logo-bon.png` (576 × 387 px,
+  reines Schwarz-Weiß; 576 Punkte = 72 mm bei 203 dpi).
+
 **Lokal testen** (mit Test-Datenbank, ohne Anmeldung – wirkt nur auf
 localhost):
 

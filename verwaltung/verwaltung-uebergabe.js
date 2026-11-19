@@ -30,7 +30,8 @@ function ansichtWiegen() {
           <span class="vw-wiegen-betrag" id="betrag-${b.id}-${index}">${gewichtsZeileText(ch, p)}</span>
         </label>`;
       }).join('') : '<p class="vw-klein">In dieser Bestellrunde gibt es keine Gewichtsware.</p>'}
-      <div class="vw-knopfreihe"><button type="button" class="vw-knopf" data-aktion="drucken">Packzettel drucken</button></div>
+      <div class="vw-knopfreihe"><button type="button" class="${druckKnopfKlasse('etikett', 'vw-knopf')}" data-aktion="drucken">Packzettel drucken</button>
+        <button type="button" class="${druckKnopfKlasse('bon', 'vw-knopf')}" data-aktion="drucken-bon">Als Bon drucken</button></div>
     </section>`;
 }
 

@@ -228,6 +228,7 @@
   --color-text-light: #6B6158;  /* Sekundärer Text – dunkler für Kontrast ≥ 4,5:1 auf Creme */
   --color-white:      #FFFFFF;
   --color-black:      #2C2420;  /* Footer */
+  --color-druck-schwarz: #000; /* Thermodrucker (Bon): kennt nur reines Schwarz */
   --color-border:     #D4CBC3;  /* Subtile Trennlinien */
   --color-overlay:    rgba(47, 88, 72, 0.50);
   --color-scrim-oben: rgba(20, 34, 28, 0.45);  /* Hero: Abdunkelung hinter der Navigation */
@@ -7103,4 +7104,76 @@ button.vw-foto-wahl:focus-visible {
   .vw-zl-ust-teil { display: block; white-space: nowrap; font-size: 8.5pt; }
   /* Überschrift nie allein am Seitenende */
   .vw-zl-titel + .vw-zl-tabelle thead tr { break-before: avoid; }
+}
+
+/* ============================================================
+   75. VERWALTUNG – PACKZETTEL ALS BON (Star TSP143, 72 mm)
+   Thermodrucker mit 203 dpi: 72 mm = 576 Punkte Druckbreite.
+   Thermo kennt kein Grau – alles reines Schwarz, keine Rahmen,
+   keine Hintergründe. Schrift serifenlos, mindestens 9 pt.
+   Nichts darf breiter als 72 mm werden: lange Wörter, IBAN und
+   Anmerkungen brechen notfalls mitten im Wort um.
+   Der Etikett-Packzettel (Abschnitt 40, Epson) bleibt unverändert;
+   diese Regeln greifen nur unter .vw-druck--bon.
+   ============================================================ */
+.vw-aufgaben .vw-aufgabe--zuletzt { font-weight: 700; color: var(--color-primary); }
+
+@media print {
+  @page bon { size: 72mm 297mm; margin: 0; }
+  .vw-druck--bon { page: bon; width: 72mm; max-width: 72mm; margin: 0; padding: 0; }
+  .vw-druck--bon .vw-packzettel {
+    page: bon;
+    box-sizing: border-box;
+    width: 72mm;
+    max-width: 72mm;
+    margin: 0;
+    padding: 2mm 1mm;
+    border: 0;
+    break-after: page;
+    break-inside: auto;
+    font: 10pt/1.25 sans-serif;
+    color: var(--color-druck-schwarz);
+    background: none;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    hyphens: manual;
+  }
+  .vw-druck--bon .vw-packzettel:last-child { break-after: auto; }
+  .vw-druck--bon .vw-packzettel * {
+    color: var(--color-druck-schwarz) !important;
+    background: none !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+    font-family: sans-serif;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+  .vw-druck--bon .vw-packzettel h2 { font-size: 12pt; line-height: 1.2; font-weight: 700; margin: 0 0 1mm; }
+  .vw-druck--bon .vw-packzettel p { font-size: 10pt; line-height: 1.25; margin: 0 0 1.5mm; }
+  .vw-druck--bon .vw-druck-klein { font-size: 9pt; }
+
+  /* Kopf untereinander: Logo über die volle Breite, Absender zentriert */
+  .vw-bon-kopf { text-align: center; margin-bottom: 2mm; }
+  .vw-bon-logo { display: block; width: 100%; height: auto; margin: 0 auto 1mm; }
+  .vw-druck--bon .vw-bon-absender { font-size: 9pt; line-height: 1.2; margin: 0; text-align: center; }
+
+  /* Positionen: Artikel links, Betrag rechts; Gewicht unter dem Artikel */
+  .vw-bon-tabelle { width: 100%; border-collapse: collapse; table-layout: fixed; margin: 1mm 0 2mm; }
+  .vw-bon-tabelle td { border: 0; padding: 0.8mm 0; vertical-align: top; text-align: left; }
+  .vw-bon-tabelle td.vw-zahl { width: 19mm; padding-left: 1.5mm; text-align: right; white-space: nowrap; overflow-wrap: normal; }
+  .vw-bon-tabelle tfoot td { font-size: 12pt; font-weight: 700; padding-top: 1.5mm; }
+  .vw-bon-tabelle .vw-bon-zahlart { font-size: 9pt; font-weight: 400; }
+
+  /* Überweisung: QR-Code mittig 30 mm, Bankdaten darunter */
+  .vw-druck--bon .vw-packzettel-bank { display: block; border: 0; padding: 0; margin-top: 2mm; font-size: 9pt; text-align: center; }
+  .vw-druck--bon .vw-packzettel-bank p { font-size: 9pt; margin: 1mm 0 0; }
+  .vw-druck--bon .vw-packzettel-qr small { font-size: 9pt; }
+  .vw-druck--bon .vw-packzettel-qr { display: block; font-size: 9pt; text-align: center; }
+  .vw-druck--bon .vw-packzettel-qr svg { display: block; width: 30mm; height: 30mm; margin: 0 auto 0.5mm; }
+
+  /* „Ware erhalten": Felder untereinander */
+  .vw-druck--bon .vw-unterschrift { margin-top: 3mm; font-size: 10pt; }
+  .vw-druck--bon .vw-unterschrift-felder { display: block; margin-top: 1mm; }
+  .vw-druck--bon .vw-unterschrift-felder > div { display: flex; flex-direction: column; margin-top: 2mm; }
+  .vw-druck--bon .vw-unterschrift-linie { border-bottom: 1px solid var(--color-druck-schwarz); height: 8mm; }
 }

@@ -76,6 +76,11 @@ function rundenKarte(st, mehrereRunden) {
   const zeile = (inhaltHtml) => `<li>${inhaltHtml}</li>`;
   const oeffnen = (ziel, text) => `<button type="button" data-aktion="runde-oeffnen" data-runde="${ch.id}" data-ziel="${ziel}">${text}</button>`;
   const aktion = (name, text) => `<button type="button" data-aktion="${name}" data-runde="${ch.id}">${text}</button>`;
+  // Packzettel als Etikett oder Bon – der zuletzt benutzte ist hervorgehoben
+  const druckAktion = (name, format, text) => {
+    const klasse = druckKnopfKlasse(format, 'aufgabe');
+    return `<button type="button"${klasse ? ` class="${klasse}"` : ''} data-aktion="${name}" data-runde="${ch.id}">${text}</button>`;
+  };
   const hatGewichtsware = ch.artikel.some((a) => a.art === 'gewicht');
 
   const aufgaben = RUNDEN_AUFGABEN.filter(([feldName]) => st[feldName]).map(([feldName, text, ziel, filter]) =>
@@ -134,7 +139,8 @@ function rundenKarte(st, mehrereRunden) {
         ${zeile(aktion('ankuendigung', 'Ankündigung für WhatsApp'))}
         ${zeile(aktion('listen-drucken', 'Abhol- und Lieferlisten drucken (alle Tage)'))}
         ${zeile(oeffnen('#zahlungen', 'Alle Zahlungen'))}
-        ${zeile(hatGewichtsware ? oeffnen('#wiegen', 'Vorab wiegen und Packzettel drucken') : aktion('drucken', 'Packzettel drucken'))}
+        ${hatGewichtsware ? zeile(oeffnen('#wiegen', 'Vorab wiegen und Packzettel drucken'))
+          : zeile(druckAktion('drucken', 'etikett', 'Packzettel drucken')) + zeile(druckAktion('drucken-bon', 'bon', 'Als Bon drucken'))}
         ${zeile(aktion('export', 'Liste für Excel herunterladen'))}
       </ul>
       ${dauer ? '' : `<p class="vw-klein">Termine: ${ch.termine.length ? ch.termine.map(terminText).join(' · ') : 'noch keine'}</p>`}

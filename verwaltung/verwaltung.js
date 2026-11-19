@@ -5,7 +5,8 @@
  * Abschnitt 7). Lädt den Stand von /api/verwaltung/stand und speichert
  * jede Änderung sofort über /api/verwaltung/… (Zugang nur über
  * Cloudflare Access). Nichts wird im Browser gespeichert – bewusst ohne
- * localStorage (siehe CLAUDE.md).
+ * localStorage (siehe CLAUDE.md); einzige Ausnahme auf ausdrücklichen Wunsch:
+ * das zuletzt benutzte Druckformat (Etikett oder Bon, druckformatLesen()).
  *
  * Beispielmodus: verwaltung/?entwurf – erfundene Daten aus
  * entwurf-daten.js, nur im Arbeitsspeicher, nichts wird gespeichert.
@@ -566,7 +567,9 @@ function druckenWennBereit(druck) {
 // zahlung = false: ohne Zahlart, Bankdaten und QR-Code.
 // unterschrift = true: Feld „Ware erhalten" für den Kunden.
 // Der Lieferschein hat ein eigenes Blatt: lieferscheinHtml().
-function packzettelHtml(b, { titel = '', zahlung = true, unterschrift = false } = {}) {
+// format = 'bon': schmaler Bon für den Thermodrucker (packzettelBonHtml).
+function packzettelHtml(b, { titel = '', zahlung = true, unterschrift = false, format = 'etikett' } = {}) {
+  if (format === 'bon') return packzettelBonHtml(b, { titel, zahlung, unterschrift });
   const ch = chargeVon(b);
   const k = kundeVon(b);
   const t = terminVon(b);
@@ -601,14 +604,86 @@ function packzettelHtml(b, { titel = '', zahlung = true, unterschrift = false } 
   </section>`;
 }
 
-function packzettelDrucken() {
+// Bon für den Thermodrucker (Star TSP143, 72 mm breit, 203 dpi): derselbe
+// Inhalt wie der Packzettel, aber untereinander statt nebeneinander, ohne
+// Rahmen und Grautöne (Thermo kennt nur Schwarz). Das Gewicht steht unter
+// dem Artikel statt in einer eigenen Spalte. CSS: Abschnitt 75.
+const LOGO_BON = '../images/logo/kruckenhaus-logo-bon.png';
+function packzettelBonHtml(b, { titel = '', zahlung = true, unterschrift = false } = {}) {
+  const ch = chargeVon(b);
+  const k = kundeVon(b);
+  const t = terminVon(b);
+  const lieferung = t && t.art === 'lieferung';
+  const teile = ABSENDER.split(' · ');
+  return `<section class="vw-packzettel vw-packzettel--bon">
+    <div class="vw-bon-kopf">
+      <img class="vw-bon-logo" src="${LOGO_BON}" alt="Kruckenhaus 1895" width="576" height="387" />
+      <p class="vw-bon-absender">${teile.map(esc).join('<br>')}<br>UID: ${esc(UID)}</p>
+    </div>
+    <h2>${titel ? `${esc(titel)} ` : ''}${esc(b.nummer)} – ${esc(k.name)}</h2>
+    <p>${t ? terminText(t) : istHofverkauf(b) ? 'Verkauf am Hof' : 'Termin offen'}${lieferung && k.strasse ? `<br>${esc(adresseVon(k))}` : ''}${k.telefon ? `<br>${esc(k.telefon)}` : ''}</p>
+    <table class="vw-bon-tabelle"><tbody>${b.positionen.map((p) => {
+      const a = artikelVon(ch, p.artikelId);
+      const einzeln = einzelgewichteText(p);
+      const preis = a.art === 'gewicht' ? `${euro(preisVon(ch, p))}/kg` : `je ${euro(preisVon(ch, p))}`;
+      return `<tr><td>${p.menge}× ${esc(a.name)} <span class="vw-druck-klein">(${preis})</span>
+          ${p.gewichtG ? `<br><span class="vw-druck-klein">Gewicht: ${kg(p.gewichtG)}</span>` : ''}
+          ${einzeln ? `<br><span class="vw-druck-klein">je Stück: ${einzeln}</span>` : ''}</td>
+        <td class="vw-zahl">${betragText(positionBetrag(ch, p))}</td></tr>`;
+    }).join('')}</tbody>
+    <tfoot><tr><td>Summe${zahlung ? `<br><span class="vw-bon-zahlart">${b.bezahlt ? `bezahlt (${ZAHLARTEN[b.bezahlt]})` : ZAHLARTEN[b.zahlart]}</span>` : ''}</td>
+      <td class="vw-zahl">${betragText(bestellBetrag(b))}</td></tr></tfoot></table>
+    ${zahlung && !b.bezahlt && b.zahlart === 'ueberweisung' ? ueberweisungsBlock(b) : ''}
+    ${unterschrift ? `<div class="vw-unterschrift">
+      <strong>Ware erhalten</strong>
+      <div class="vw-unterschrift-felder">
+        <div><span class="vw-unterschrift-linie"></span><span class="vw-druck-klein">Datum</span></div>
+        <div><span class="vw-unterschrift-linie"></span><span class="vw-druck-klein">Name in Blockschrift</span></div>
+        <div><span class="vw-unterschrift-linie"></span><span class="vw-druck-klein">Unterschrift</span></div>
+      </div>
+    </div>` : ''}
+  </section>`;
+}
+
+// Zuletzt benutztes Druckformat ('etikett' oder 'bon'). Auf ausdrücklichen
+// Wunsch im Browser gemerkt (localStorage, nur diese eine Einstellung, keine
+// Daten); wenn der Browser das sperrt, gilt einfach 'etikett'.
+const DRUCKFORMAT_SCHLUESSEL = 'vw-druckformat';
+function druckformatLesen() {
+  try {
+    return window.localStorage.getItem(DRUCKFORMAT_SCHLUESSEL) === 'bon' ? 'bon' : 'etikett';
+  } catch {
+    return 'etikett';
+  }
+}
+function druckformatMerken(format) {
+  try { window.localStorage.setItem(DRUCKFORMAT_SCHLUESSEL, format); } catch { /* egal */ }
+  // Hervorhebung sofort umstellen, ohne die Ansicht neu aufzubauen
+  document.querySelectorAll('[data-aktion="drucken"], [data-aktion="drucken-bon"]').forEach((el) => {
+    const zuletzt = (el.dataset.aktion === 'drucken-bon') === (format === 'bon');
+    el.classList.toggle(el.classList.contains('vw-knopf') ? 'vw-knopf--voll' : 'vw-aufgabe--zuletzt', zuletzt);
+  });
+}
+// Klassen für die beiden Druckknöpfe: der zuletzt benutzte ist hervorgehoben
+function druckKnopfKlasse(format, basis) {
+  const zuletzt = druckformatLesen() === format;
+  if (basis === 'vw-knopf') return `vw-knopf${zuletzt ? ' vw-knopf--voll' : ''}`;
+  return zuletzt ? 'vw-aufgabe--zuletzt' : '';
+}
+
+function packzettelDrucken({ format = 'etikett' } = {}) {
   const ch = aktiveCharge();
   const druck = document.getElementById('vw-druck');
   if (!druck) return;
+  const bon = format === 'bon';
+  druckformatMerken(bon ? 'bon' : 'etikett');
   druck.innerHTML = bestellungenDerCharge(ch)
     .filter((b) => istAktiv(b) && !istHofverkauf(b))
     .sort((x, y) => kundeVon(x).name.localeCompare(kundeVon(y).name, 'de'))
-    .map((b) => packzettelHtml(b)).join('');
+    .map((b) => packzettelHtml(b, { format: bon ? 'bon' : 'etikett' })).join('');
+  // Bon-Seitenformat nur für diesen Druck – Listen und Lieferschein bleiben A4
+  druck.classList.toggle('vw-druck--bon', bon);
+  if (bon) window.addEventListener('afterprint', () => druck.classList.remove('vw-druck--bon'), { once: true });
   druckenWennBereit(druck);
 }
 
@@ -1014,6 +1089,9 @@ function initKlicks() {
       }
       case 'drucken':
         packzettelDrucken();
+        break;
+      case 'drucken-bon':
+        packzettelDrucken({ format: 'bon' });
         break;
       case 'lieferschein':
         lieferscheinDialog(b);
